@@ -1,3 +1,4 @@
+{$mode TP}
 Unit Bits;
 
 Interface
