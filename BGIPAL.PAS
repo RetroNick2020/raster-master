@@ -1,3 +1,4 @@
+{$mode TP}
 Unit bgiPal;
 
  Interface
@@ -9,15 +10,12 @@ Type
 
 Procedure SetRGBColorX(ColorN,R,G,B : Word);
 Procedure GetRgbColorX(NColor : Word;Var R,G,B : Word);
-Procedure PalEdit(xp,yp,CurColor : Word);
 Procedure SetPaletteList(Var Pal : PaletteT; NColors : Word);
 Procedure GrabPaletteList(Var Pal : PaletteT;NColors : Word);
 Procedure GrabPalette16(Var myPal : Pal16 );
 Procedure SetPalette16(Var myPal : Pal16 );
 Procedure SetDefaultPalette;
 Procedure dumpPalToDisk;
- Implementation
-   uses dos,graph,bgiMouse,bgiMisc,bgiText,bgiImage,bgigadge;
 
 const
 (*
@@ -148,93 +146,60 @@ Var
  WorkPal : PaletteT;
 
 
+ implementation
 
 
 Procedure SetRGBColorX(ColorN,R,G,B : Word);
-Var
-  reg : registers;
 Begin
-
-if (GetMaxColor=15) AND (ColorN <16) then
-begin
- Reg.ah := $10;
- Reg.al := $0;
- Reg.bl := ColorN;
- Reg.bh := ColorN;
- intr ($10, Reg);
-end;
-
- Reg.ah := $10;
- Reg.al := $10;
- Reg.bx := ColorN;
- Reg.dh := R;
- Reg.ch := G;
- Reg.cl := B;
- intr ($10, Reg);
-
- WorkPal[ColorN,0]:=R;
- WorkPal[ColorN,1]:=G;
- WorkPal[ColorN,2]:=B;
 
 end;
 
 
 Procedure GetRgbColorX(NColor : Word;Var R,G,B : Word);
-var
-  Reg : registers;
 begin
-(*
-  Reg.ah:=$10;
-  Reg.al:=$15;
-  Reg.bx:=NColor;
-  intr($10,reg);
-  R:=reg.dh;
-  G:=reg.ch;
-  B:=reg.cl;
-*)
- R:=WorkPal[NColor,0];
- G:=WorkPal[NColor,1];
- B:=WorkPal[NColor,2];
-
 end;
 
 Procedure SetDefaultPalette;
 Var
  i : Word;
 begin
- WorkPal:=DefaultPal;
+(*
+WorkPal:=DefaultPal;
  For i:=0 to GetMaxColor do
  begin
    SetRGBColorX(i,WorkPal[i,0],WorkPal[i,1],WorkPal[i,2]);
  end;
+ *)
 end;
 
 Procedure GrabPalette16(Var myPal : Pal16 );
-var
-  Reg : registers;
+//var
+//  Reg : registers;
 begin
-  Reg.ax:=$1017;
+(*
+Reg.ax:=$1017;
   Reg.bx:=0;
   Reg.cx:=16;
 
   Reg.es:=Seg(myPal);
   Reg.dx:=ofs(myPal);
   intr($10,reg);
-
+  *)
 end;
 
 Procedure SetPalette16(Var myPal : Pal16 );
-var
-  Reg : registers;
+//var
+//  Reg : registers;
 begin
-  Reg.ax:=$1012;
+(*
+Reg.ax:=$1012;
   Reg.bx:=0;
   Reg.cx:=16;
 
   Reg.es:=Seg(myPal);
   Reg.dx:=ofs(myPal);
   intr($10,reg);
-
+ *)
 end;
 
 
@@ -270,378 +235,6 @@ end;
 
 
 
-Procedure DrawCurCol(x,y,col : Word);
-begin
- SetFIllStyle(SolidFill,col);
- Bar(x,y,x+22,y+9+(15*8));
-end;
-
-Procedure DrawColors(x,y : Word);
-Var
- I,J,C : Word;
-begin
- SetColor(Black);
- If GetMaxColor = 15 then
- begin
-   Rectangle(x,y,x+22,y+8+(15*8)+1);
-   For i:=0 To 15 do
-   begin
-     SetFIllStyle(SolidFill,i);
-     Bar(x+1,y+(i*8)+1,x+21,y+8+(i*8));
-   end;
- end
- else if GetMaxColor = 255 then
- begin
-  Rectangle(x-1,y,x+160,y+8+(15*8)+1);
-  C:=0;
-  For j:=0 to 15 do
-  begin
-   For i:=0 To 15 do
-   begin
-     SetFIllStyle(SolidFill,c);
-     Bar(x+(j*10),y+(i*8)+1,x+(J*10)+9,y+8+(i*8));
-     inc(c);
-   end;
-  end;
- end;
-end;
-
-Procedure DrawPalFrame(x,y,Width,Height : Word);
-Var
- x2,y2 : Word;
-begin
- x2:=x+Width-1;
- y2:=y+Height-1;
- SetFillStyle(SolidFill,Black);
- Bar(x,y,x2,y2);
- Border(x,y,x2,y2);
- SetFillStyle(SolidFill,White);
- Bar(x+3,y+22,x2-3,y2-3);
- SetFillStyle(SolidFill,LightGray);
- Bar(x+3,y+3,x2-3,y+20);
- ShadowText(x+5,y+8,'Palette Editor');
-end;
-Procedure PrintRGB(xp,yp : Word);
-begin
- SetColor(Black);
- OutTextXY(xp,yp,' R');
- OutTextXY(xp+20,yp,' G');
- OutTextXY(xp+40,yp,' B');
-end;
-
-Procedure PrintRGBV(xp,yp,r,g,b : Word);
-Var
-cStr : String[2];
-begin
- SetFillStyle(SolidFill,White);
- Bar(xp,yp,xp+60,yp+10);
- SetColor(Black);
- Str(r:2,cStr);
- OutTextXY(xp,yp,cStr);
- Str(g:2,cStr);
- OutTextXY(xp+20,yp,cStr);
- Str(b:2,cStr);
- OutTextXY(xp+40,yp,cStr);
-end;
-
-Procedure PalSlider(x,y,Width,Height,Brange,ws,cc : Word);
-Var
- h,n : Word;
- st,mx,my : Integer;
- Old_my   : Integer;
- f        : boolean;
- x2,y2 : Word;
- ty : Integer;
- v  : Word;
- r,g,b : Word;
-begin
- x2:=x+Width-1;
- y2:=y+Height;
- MouseHide;
- SetFillStyle(SolidFill,LightGray);
- Bar(x+1,y+1,x2-1,y2-1);
- MouseShow;
- dec(y2,15);
- f:=false;
- GetRGBColorX(cc,r,g,b);
-Repeat
- mouseGetStatus(st,my,mx);
- dec(my,7);
- if my < y then my:=y;
- if my > y2 then my:=y2;
- if Old_my <> my then
- begin
-   MouseHide;                  (* mouse hide *)
-   if f then
-   begin
-     SetColor(LightGray);
-     Rectangle(x+1,Old_my+1,x2-1,old_my+14);
-   end;
-   f:=true;
-   SetColor(White);
-   Rectangle(x+1,my+1,x2-1,my+14);
-
-
-  ty:=my;
-  if ty < y then ty:=y;
-  h:=y2-y;
-  v:=(Brange*(ty-y)) div h;
-  if ws=1 then
-  begin
-    r:=v;
-  end
-  else if ws=2 then
-  begin
-    g:=v;
-  end
-  else if ws=3 then
-  begin
-    b:=v;
-  end;
-  SetRGBColorX(cc,r,g,v);
-  PrintRGBV(x-(ws*20)+20,y+110,r,g,b);
-  MouseShow;
-
-   Old_my:=my;                   (* mouse show *)
- end;
-Until st =0;
-  MouseHide;
-  DrawVSlider(x,y,Width,Height+1,v+1,64);
-  MouseShow;
-end;
-
-Procedure PalEdit(xp,yp,CurColor : Word);
-Const
- ngads = 11;
-Var
- PalGads  : GLPtr;
-     P,P2 : Pointer;
-       gn : Word;
- r,g,b    : Word;
- st,mx,my : Integer;
- x,y,x2,y2: Word;
-      xoff: Word;
-     Img  : Pointer;
-begin
- Xoff:=0;
- if GetMaxColor=255 then
- begin
-  xoff:=140;
- end;
- GetMem(Img,ImageSize(xp,yp,xp+135+xoff,yp+210));
- MouseHide;
- GetImage(xp,yp,xp+135+xoff,yp+210,Img^);
- DrawPalFrame(xp,yp,135+xoff,210);
- DrawColors(xp+35,yp+40);
- DrawCurCol(xp+10,yp+40,CurColor);
-
- GetGadgetMem(PalGads,Ngads);
- If GetMaxColor=15 then
- begin
-   P:=@Up16a;
-   P2:=@Up16b;
- end
- else
- begin
-   P:=@Up256a;
-   P2:=@Up256b;
- end;
- DefineImageGadget(PalGads,1,xp+xoff+60,yp+104,17,16,P,P2,TRUE,FALSE);
- DefineImageGadget(PalGads,2,xp+xoff+80,yp+104,17,16,P,P2,TRUE,FALSE);
- DefineImageGadget(PalGads,3,xp+xoff+100,yp+104,17,16,P,P2,TRUE,FALSE);
-
- If GetMaxColor=15 then
- begin
-   P:=@Down16a;
-   P2:=@Down16b;
- end
- else
- begin
-   P:=@Down256a;
-   P2:=@Down256b;
- end;
- DefineImageGadget(PalGads,4,xp+xoff+60,yp+121,17,16,P,P2,TRUE,FALSE);
- DefineImageGadget(PalGads,5,xp+xoff+80,yp+121,17,16,P,P2,TRUE,FALSE);
- DefineImageGadget(PalGads,6,xp+xoff+100,yp+121,17,16,P,P2,TRUE,FALSE);
-
- DefineBlankGadget(PalGads,7,xp+xoff+60,yp+40,17,64,TRUE,FALSE);
- DefineBlankGadget(PalGads,8,xp+xoff+80,yp+40,17,64,TRUE,FALSE);
- DefineBlankGadget(PalGads,9,xp+xoff+100,yp+40,17,64,TRUE,FALSE);
-
- if GetMaxColor = 15 then
- begin
-  DefineBlankGadget(PalGads,10,xp+35,yp+40,22,128,TRUE,FALSE);
- end
- else if GetMaxColor = 255 then
- begin
-  DefineBlankGadget(PalGads,10,xp+35,yp+40,160,128,TRUE,FALSE);
- end;
-
-
- DefineStringGadget(PalGads,11,xp+xoff+60,yp+180,'   OK   ',TRUE,FALSE);
-
- DrawAllGadgets(PalGads,Ngads);
-
- GetRGBColorX(CurColor,r,g,b);
- GetGadgetCords(PalGads,7,x,y,x2,y2);
- DrawVSlider(x,y,17,64,r+1,64);
- GetGadgetCords(PalGads,8,x,y,x2,y2);
- DrawVSlider(x,y,17,64,g+1,64);
- GetGadgetCords(PalGads,9,x,y,x2,y2);
- DrawVSlider(x,y,17,64,b+1,64);
-
- PrintRGB(xp+xoff+60,yp+140);
- PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-
- MouseShow;
- Repeat
-   MouseWaitForAnyKey;
-   gn:=GetGadgetPressed(PalGads,Ngads);
-   if (gn > 0) AND (gn < 7) then
-   begin
-    MouseHide;
-    DrawGadget(PalGads,gn,TRUE);
-    MouseShow;
-    GetRGBColorX(CurColor,r,g,b);
-    Repeat
-      If gn=1 then
-      begin
-        if r > 0 then
-        begin
-         Dec(r);
-         MouseHide;
-         PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-         GetGadgetCords(PalGads,7,x,y,x2,y2);
-         DrawVSlider(x,y,x2-x+1,y2-y+1,r+1,64);
-         MouseShow;
-
-        end;
-      end
-      else if gn=4 then
-      begin
-        if r < 63 then
-        begin
-         Inc(r);
-         MouseHide;
-         PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-         GetGadgetCords(PalGads,7,x,y,x2,y2);
-         DrawVSlider(x,y,x2-x+1,y2-y+1,r+1,64);
-         MouseShow;
-        end;
-      end
-      else if gn=2 then
-      begin
-        if g > 0  then
-        begin
-         Dec(g);
-         MouseHide;
-         PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-         GetGadgetCords(PalGads,8,x,y,x2,y2);
-         DrawVSlider(x,y,x2-x+1,y2-y+1,g+1,64);
-         MouseShow;
-        end;
-      end
-      else if gn=5 then
-      begin
-        if g < 63 then
-        begin
-         Inc(g);
-         MouseHide;
-         PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-         GetGadgetCords(PalGads,8,x,y,x2,y2);
-         DrawVSlider(x,y,x2-x+1,y2-y+1,g+1,64);
-         MouseShow;
-        end;
-      end
-      else if gn=3 then
-      begin
-        if b > 0  then
-        begin
-         Dec(b);
-         MouseHide;
-         PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-         GetGadgetCords(PalGads,9,x,y,x2,y2);
-         DrawVSlider(x,y,x2-x+1,y2-y+1,b+1,64);
-         MouseShow;
-        end;
-      end
-      else if gn=6 then
-      begin
-        if b < 63 then
-        begin
-         Inc(b);
-         MouseHide;
-         PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-         GetGadgetCords(PalGads,9,x,y,x2,y2);
-         DrawVSlider(x,y,x2-x+1,y2-y+1,b+1,64);
-         MouseShow;
-        end;
-      end;
-
-      SetRGBColorX(CurColor,r,g,b);
-      MouseGetStatus(st,my,mx);
-      Until st <> 2;
-      MouseWaitForKeyRelease;
-      MouseHide;
-      DrawGadget(PalGads,gn,False);
-      MouseShow;
-   end
-   else if gn = 7 then
-   begin
-    GetGadgetCords(PalGads,7,x,y,x2,y2);
-    PalSlider(x,y,17,63,63,1,CurColor);
-   end
-   else if gn = 8 then
-   begin
-    GetGadgetCords(PalGads,8,x,y,x2,y2);
-    PalSlider(x,y,17,63,63,2,CurColor);
-   end
-   else if gn = 9 then
-   begin
-    GetGadgetCords(PalGads,9,x,y,x2,y2);
-    PalSlider(x,y,17,63,63,3,CurColor);
-   end
-   else if gn = 10 then
-   begin
-     MouseGetStatus(st,my,mx);
-     GetGadgetCords(PalGads,10,x,y,x2,y2);
-     If GetMaxColor = 15 then
-     begin
-      CurColor:=(my-y) div 8;
-     end
-     else if GetMaxColor=255 then
-     begin
-      CurColor:=(my-y) div 8+(((mx-x) div 10)*16);
-     end;
-     MouseHide;
-     DrawCurCol(xp+10,yp+40,CurColor);
-     GetRGBColorX(CurColor,r,g,b);
-     GetGadgetCords(PalGads,7,x,y,x2,y2);
-     DrawVSlider(x,y,17,64,r+1,64);
-     GetGadgetCords(PalGads,8,x,y,x2,y2);
-     DrawVSlider(x,y,17,64,g+1,64);
-     GetGadgetCords(PalGads,9,x,y,x2,y2);
-     DrawVSlider(x,y,17,64,b+1,64);
-     PrintRGBV(xp+xoff+60,yp+150,r,g,b);
-     MouseShow;
-   end
-   else if gn = 11 then
-   begin
-     MouseHide;
-     DrawGadget(PalGads,11,TRUE);
-     MouseShow;
-     MouseWaitForKeyRelease;
-     MouseHide;
-     DrawGadget(PalGads,11,FALSE);
-     PutImage(xp,yp,Img^,NormalPut);
-     MouseShow;
-     FreeMem(Img,ImageSize(xp,yp,xp+135+xoff,yp+210));
-     FreeGadgetMem(PalGads,Ngads);
-     exit;
-   end;
- Until 0=1;
-
-end;
 
 Procedure dumpPalToDisk;
 Var

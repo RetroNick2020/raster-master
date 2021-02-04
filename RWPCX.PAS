@@ -1,8 +1,9 @@
+{$mode TP}
 Unit RwPcx;
 
 Interface
 uses
-  Dos,Vars,Core,Graph,bgiPal,bits;
+  bits,bgipal,RMCore;
 Function ReadPcxImg(x,y,x2,y2,Pal : Word;Filename : string): word;
 Function SavePcxImg(x,y,x2,y2 : Word;Filename : String): Word;
 Implementation
@@ -403,6 +404,10 @@ begin
     end;
 end;
 
+function GetMaxColor : integer;
+begin
+ GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
+end;
 
 Function ReadPcxImg(x,y,x2,y2,Pal : Word;Filename : string): word;
 var
@@ -485,7 +490,8 @@ Begin
      MonoTOsp(Uline,uncomline,BytesPerLine);
      For i:=1 to myWidth do
      begin
-        IconImage[x+i-1,Ln+y-1]:=Uncomline[i-1];
+//        IconImage[x+i-1,Ln+y-1]:=Uncomline[i-1];
+          RMCoreBase.PutPixel(x+i-1,Ln+y-1,Uncomline[i-1]);
      end;
    end;
  end
@@ -508,7 +514,8 @@ Begin
      PackTOsp(Uline,uncomline,BytesPerLine);
      For i:=1 to myWidth do
      begin
-        IconImage[x+i-1,Ln+y-1]:=Uncomline[i-1];
+       // IconImage[x+i-1,Ln+y-1]:=Uncomline[i-1];
+        RMCoreBase.PutPixel(x+i-1,Ln+y-1,Uncomline[i-1]);
      end;
    end;
  end
@@ -533,7 +540,8 @@ Begin
      mpTosp(Uline,uncomLine,BitPlane2,BitPlane3,BitPlane4);
      For i:=1 to myWidth do
      begin
-        IconImage[x+i-1,Ln+y-1]:=Uncomline[i-1];
+        //IconImage[x+i-1,Ln+y-1]:=Uncomline[i-1];
+        RMCoreBase.PutPixel(x+i-1,Ln+y-1,Uncomline[i-1]);
      end;
    end;
  end
@@ -554,12 +562,13 @@ Begin
      end;
      For i:=1 to myWidth do
      begin
-        IconImage[x+i-1,Ln+y-1]:=Uline[i-1];
+        //IconImage[x+i-1,Ln+y-1]:=Uline[i-1];
+        RMCoreBase.PutPixel(x+i-1,Ln+y-1,Uline[i-1]);
      end;
    end;
    If GetMAxColor=15 then
    begin
-     ReduceTo16;
+//     ReduceTo16;
    end;
  end;
  Close(PcxFile);
@@ -593,6 +602,23 @@ Begin
 
 end;
 
+//Function BytesPerRow(width : word) : Word;
+//begin
+// BytesPerRow :=(width+7) div 8;
+//end;
+
+Function ImageSize(x,y,x2,y2 : word) : word;
+var
+ width ,  height : integer;
+  bpl : integer;
+begin
+  width:=x2-x+1;
+  height:=y2-y+1;
+  bpl:=(width+7) div 8;
+//bpl:=width;
+  ImageSize:=(bpl*4)*height+6;
+end;
+
 Function SavePcxImg(x,y,x2,y2 : Word;Filename : String): Word;
 var
  PcxPal         : PaletteT;
@@ -614,7 +640,8 @@ var
  splane         : uncpLine;
 Begin
  SavePcxImg:=0;
- NColors:=GetMaxColor+1;
+// NColors:=GetMaxColor+1;
+ NColors:=16;
  If (Ncolors<>16) AND (Ncolors<>256) Then
  begin
    SavePcxImg:=3;
@@ -681,7 +708,8 @@ Begin
    begin
      For i:=1 to myWidth do
      begin
-       splane[i-1]:=IconImage[i+x-1,Ln];
+//       splane[i-1]:=IconImage[i+x-1,Ln];
+       splane[i-1]:= RMCoreBase.GetPixel(i+x-1,Ln);
      end;
      spTOmp(splane,uline,BitPlane2,BitPlane3,BitPlane4);
      Cbytes:=CompressLine(Uline,Cline,BytesPerLine);
@@ -702,7 +730,9 @@ Begin
    begin
      For i:=1 to myWidth do
      begin
-       splane[i-1]:=IconImage[i+x-1,Ln];
+//       splane[i-1]:=IconImage[i+x-1,Ln];
+         splane[i-1]:=RMCoreBase.GetPixel(i+x-1,Ln);
+
      end;
      Cbytes:=CompressLine(Splane,Cline,BytesPerLine);
      BlockWrite(PcxFile,Cline,Cbytes);
