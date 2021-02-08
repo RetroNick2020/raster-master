@@ -1,13 +1,15 @@
+{$mode TP}
+{$PACKRECORDS 1}
 Unit rwbmp;
  Interface
 Function ReadBMP(x,y,x2,y2,lp : Word;Filename : String) : Word;
 Function WriteBMP(x,y,x2,y2 : Word;Filename : String) : Word;
 Implementation
-  uses vars,core,dos,graph,bgiPal;
+  uses SysUtils,RMCore,interfaces,Dialogs,bits;
 
 type
  bmpRec = Record
-             ID              : Array[1..2] of CHAR;
+             ID              : Array[1..2] of char;
              Fsize           : LongInt;
              reserved1       : Word;
              reserved2       : Word;
@@ -36,7 +38,9 @@ type
 
  LineBufType = Array[0..1023] of Byte;
 
-Procedure PackedToSingle(Var imgLine,uline : lineBufType;bpl,width : Word);
+
+//for 2 pixels 16 colors
+Procedure PackedToSingle16(Var imgLine,uline : lineBufType;bpl,width : Word);
 Var
  i    :  Word;
  xp   :  Word;
@@ -52,7 +56,33 @@ begin
    end;
 end;
 
-Procedure SingleToPacked(Var uline,imgline : lineBufType;bpl : Word);
+Procedure packedToSingle4(Var imgLine,uline : lineBufType;bpl,width : Word);
+var
+ cb,i : Word;
+begin
+ cb:=0;
+ For i:=0 to BPL-1 do
+ begin
+
+   uline[cb]:=imgLine[i] shr 6;
+
+   uline[cb+1]:=imgLine[i] shl 2;
+   uline[cb+1]:=uline[cb+1] shr 6;
+
+   uline[cb+2]:=imgLine[i]  shl 4;
+   uline[cb+2]:=uline[cb+2] shr 6;
+
+   uline[cb+3]:=imgLine[i] shl 6;
+   uline[cb+3]:=uline[cb+3] shr 6;
+
+   inc(cb,4);
+  end;
+end;
+
+
+
+//for 2 pixels in 16 colors
+Procedure SingleToPacked16(Var uline,imgline : lineBufType;bpl : Word);
 Var
  i    :  Word;
  xp   :  Word;
@@ -63,6 +93,70 @@ begin
     imgline[i]:=(uLine[xp] SHL 4)+uline[xp+1];
     inc(xp,2);
    end;
+end;
+
+//for 4 pixels in 4 colors
+Procedure SingleToPacked4(Var uline,imgline : lineBufType;bpl : Word);
+Var
+ i    :  Word;
+ cb   :  Word;
+begin
+   FillChar(imgline,sizeof(imgline),0);
+   cb:=0;
+   for i:=0 to bpl-1 do
+   begin
+    imgline[i] := (uline[cb] shl 6) + (uline[cb+1] shl 4) + (uline[cb+2] shl 2) + (uline[cb+3]);
+    inc(cb,4);
+   end;
+end;
+
+// for 8 pixels in 2 colors
+Procedure singleToPacked8(var uline,imgline : lineBufType;
+                  BPL : Word);
+var
+ cb,i,j : Word;
+ x : integer;
+begin
+ cb:=0;
+ x:=0;
+ FillChar(imgline,sizeof(imgline),0);
+ For i:=0 to BPL-1 do
+ begin
+
+   For j:=7 downto 0 do
+    begin
+      //if Biton(j,pplane[i]) then splane[cb+(7-j)]:=1;
+       if  uline[x] = 1 then  SetBit(j,1,imgline[i]);
+        inc(x);
+
+    end;
+   // monoplane[i]:=254;
+   inc(cb,8);
+ //  imgline[i]:=254;
+ end;
+end;
+
+Procedure MonoToSingle(var uline,imgline : lineBufType;
+                  BPL : Word);
+var
+ cb,i,j : Word;
+begin
+ cb:=0;
+ FillChar(imgline,sizeof(imgline),0);
+ For i:=0 to BPL-1 do
+ begin
+    For j:=7 downto 0 do
+    begin
+      if Biton(j,uline[i]) then imgline[cb+(7-j)]:=1;
+    end;
+   inc(cb,8);
+ end;
+end;
+
+
+function GetMaxColor : integer;
+begin
+   GetMaxColor:=RMCoreBase.Palette.GetColorCount-1;
 end;
 
 Function ReadBMP(x,y,x2,y2,lp : Word;Filename : String) : Word;
@@ -76,9 +170,10 @@ Var
  uline,
  imgline  : lineBufType;
  bmpPal   : Array[0..255] of bmpRGB;
- stdPal   : PaletteT;
+ //stdPal   : PaletteT;
  i,j      : Word;
  Error    : Word;
+ cr       : TRMColorRec;
 begin
  myHeight:=y2-y+1;
  myWidth:=x2-x+1;
@@ -94,15 +189,16 @@ begin
    ReadBMP:=Error;
    exit;
  end;
-
+ (*
  if NOT ((mybmp.biCompression=0) AND (mybmp.ID='BM') AND ((mybmp.bits=4) OR (mybmp.bits=8))) then
  begin
+  ShowMessage('Not Valid');
   ReadBMP:=1000;
   Close(F);
   Error:=IORESULT;
   exit;
  end;
-
+  *)
  if myHeight>mybmp.biHeight then
  begin
    myHeight:=myBmp.biHeight;
@@ -114,7 +210,63 @@ begin
  end;
 
  myColNum:=1 SHL myBmp.bits;
- if myBmp.Bits=4 then
+
+ if myBmp.Bits=1 then
+ begin
+  blockread(f,bmpPal,64);
+  BPL:=(myBmp.biWidth+7) Div 8;
+  BPL:=((BPL+3) Div 4);
+  BPL:=BPL*4;
+
+  Seek(F,mybmp.fsize-(bpl*myHeight));
+  for j:=myHeight downto 1 do
+  begin
+    Blockread(f,imgLine,BPL);
+    Error:=IORESULT;
+    if Error <> 0 then
+    begin
+     Close(F);
+     ReadBMP:=Error;
+    exit;
+    end;
+    MonoToSingle(imgLine,Uline,BPL);
+    For i:=1 to myWidth do
+    begin
+      //IconImage[x+i-1,y+j-1]:=Uline[i-1];
+      RMCoreBase.PutPixel(x+i-1,y+j-1,Uline[i-1]);
+    end;
+   end;
+ end
+ else if myBmp.Bits=2 then
+ begin
+  ShowMessage('Reading for bits = 2');
+  blockread(f,bmpPal,64);
+ BPL:=(myBmp.biWidth+7) Div 2;
+  BPL:=((BPL+3) Div 4);
+  BPL:=BPL*4;
+
+
+  Seek(F,mybmp.fsize-(bpl*myHeight));
+  for j:=myHeight downto 1 do
+  begin
+    Blockread(f,imgLine,BPL);
+    Error:=IORESULT;
+    if Error <> 0 then
+    begin
+     Close(F);
+     ReadBMP:=Error;
+    exit;
+    end;
+   PackedToSingle4(imgLine,Uline,BPL,mywidth);
+    For i:=1 to myWidth do
+    begin
+      //IconImage[x+i-1,y+j-1]:=Uline[i-1];
+      RMCoreBase.PutPixel(x+i-1,y+j-1,Uline[i-1]);
+    end;
+ end;
+
+ end
+ else if myBmp.Bits=4 then
  begin
   blockread(f,bmpPal,64);
   BPL:=((myBmp.biWidth+7) div 8);
@@ -130,10 +282,11 @@ begin
      ReadBMP:=Error;
     exit;
     end;
-    PackedToSingle(imgLine,Uline,BPL,myWidth);
+    PackedToSingle16(imgLine,Uline,BPL,myWidth);
     For i:=1 to myWidth do
     begin
-      IconImage[x+i-1,y+j-1]:=Uline[i-1];
+      //IconImage[x+i-1,y+j-1]:=Uline[i-1];
+      RMCoreBase.PutPixel(x+i-1,y+j-1,Uline[i-1]);
     end;
  end;
  end
@@ -155,7 +308,8 @@ begin
     Blockread(f,ULine,BPL);
     For i:=1 to myWidth do
     begin
-      IconImage[x+i-1,y+j-1]:=Uline[i-1];
+      //IconImage[x+i-1,y+j-1]:=Uline[i-1];
+      RMCoreBase.PutPixel(x+i-1,y+j-1,Uline[i-1]);
     end;
   end;
  end
@@ -171,18 +325,22 @@ begin
  if GetMaxColor < (myColNum-1) then
  begin
    myColNum:=GetMaxColor+1;
-   ReduceTo16;
+   //ReduceTo16;
  end;
 
  if lp=1 then
  begin
    For i:=0 to myColNum-1 do
    begin
-    StdPal[i,0]:=bmpPal[i].red SHR 2;
-    StdPal[i,1]:=bmpPal[i].green SHR 2;
-    StdPal[i,2]:=bmpPal[i].blue SHR 2;
+//    StdPal[i,0]:=bmpPal[i].red SHR 2;
+//    StdPal[i,1]:=bmpPal[i].green SHR 2;
+//    StdPal[i,2]:=bmpPal[i].blue SHR 2;
+      cr.r:=bmpPal[i].red;
+      cr.g:=bmpPal[i].green;
+      cr.b:=bmpPal[i].blue;
+      RMCoreBase.palette.SetColor(i,cr);
    end;
-   SetPaletteList(StdPal,myColNum);
+//   SetPaletteList(StdPal,myColNum);
  end;
 
 Error:=IORESULT;
@@ -202,17 +360,38 @@ Var
  uline,
  imgline  : lineBufType;
  bmpPal   : Array[0..255] of bmpRGB;
- stdPal   : PaletteT;
+ //stdPal   : PaletteT;
  i,j      : Word;
  Error    : Word;
+ padcount : word;
 begin
  myHeight:=y2-y+1;
  myWidth:=x2-x+1;
  myNumCol:=GetMAxColor+1;
  If MyNumCol=16 then
  begin
+   ShowMessage('NumCol is 16');
      BPL:=(myWidth+7) Div 8;
      BPL:=(BPL*8) DIV 2;
+ end
+  else If MyNumCol=2 then
+ begin
+   ShowMessage('NumCol is 2');
+    BPL:=(myWidth+7) Div 8;
+    BPL:=((BPL+3) Div 4);
+    BPL:=BPL*  4;
+    ShowMessage('NumCol is 2 BPL='+IntToStr(BPL));
+
+ end
+ else If MyNumCol=4 then
+ begin
+   ShowMessage('NumCol is 4');
+    BPL:=(myWidth+7) Div 2;
+    BPL:=((BPL+3) Div 4);
+    BPL:=BPL*  4;
+   // BPL:=1;
+//    PadCount:=(4-(BPL mod 4)) mod 4;
+ //   BPL:=BPL+PadCount;
  end
  else
  begin
@@ -222,7 +401,7 @@ begin
  FillChar(myBmp,SizeOf(myBMP),0);
  mybmp.ID:='BM';
  mybmp.offbits :=SizeOf(myBMP)+(mynumCol*4);
- mybmp.Fsize   :=mybmp.offbits+(BPL*myHeight);
+ mybmp.Fsize   :=longint(mybmp.offbits+(BPL*myHeight));
  mybmp.biSize  :=40;
  mybmp.biWidth :=myWidth;
  mybmp.biHeight:=myHeight;
@@ -232,17 +411,25 @@ begin
  begin
    mybmp.bits:=4;
  end
+ else if myNumCol=4 then
+ begin
+   mybmp.bits:=2;
+ end
+ else if myNumCol=2 then
+ begin
+   mybmp.bits:=1;
+ end
  else
  begin
    mybmp.bits:=8;
  end;
 
- GrabPaletteList(StdPal,myNumCol);
+ //GrabPaletteList(StdPal,myNumCol);
  For i:=0 to myNumCol-1 do
  begin
-  bmpPal[i].red:=StdPal[i,0] SHL 2;
-  bmpPal[i].green:=StdPal[i,1] SHL 2;
-  bmpPal[i].blue:=StdPal[i,2] SHL 2;
+  bmpPal[i].red:=RMCoreBase.palette.GetRed(i);
+  bmpPal[i].green:=RMCoreBase.palette.GetGreen(i);
+  bmpPal[i].blue:=RMCoreBase.palette.GetBlue(i);
   bmpPal[i].filler:=0;
  end;
 
@@ -269,10 +456,53 @@ begin
    begin
      For i:=1 to myWidth do
      begin
-       uline[i-1]:=IconImage[x+i-1,j];
+//       uline[i-1]:=IconImage[x+i-1,j];
+         uline[i-1]:=RMCoreBase.GetPixel(x+i-1,j);
      end;
-     SingleToPacked(uline,imgline,BPL);
+     SingleToPacked16(uline,imgline,BPL);
      BlockWrite(F,imgLine,BPL);
+    error:=IORESULT;
+    if Error<>0 then
+    begin
+      WriteBMP:=Error;
+      Close(F);
+      Error:=IORESULT;
+      exit;
+    end;
+   end;
+ end
+else if myNumCol=4 then
+ begin
+   For j:=y2 downto y do
+   begin
+     For i:=1 to myWidth do
+     begin
+//       uline[i-1]:=IconImage[x+i-1,j];
+         uline[i-1]:=RMCoreBase.GetPixel(x+i-1,j);
+     end;
+    SingleToPacked4(uline,imgline,BPL);
+    BlockWrite(F,imgLine,BPL);
+    error:=IORESULT;
+    if Error<>0 then
+    begin
+      WriteBMP:=Error;
+      Close(F);
+      Error:=IORESULT;
+      exit;
+    end;
+   end;
+ end
+else if myNumCol=2 then
+ begin
+   For j:=y2 downto y do
+   begin
+     For i:=1 to myWidth do
+     begin
+//       uline[i-1]:=IconImage[x+i-1,j];
+         uline[i-1]:=RMCoreBase.GetPixel(x+i-1,j);
+     end;
+    SingleToPacked8(uline,imgline,BPL);
+    BlockWrite(F,imgLine,BPL);
     error:=IORESULT;
     if Error<>0 then
     begin
@@ -289,7 +519,8 @@ begin
    begin
      For i:=1 to myWidth do
      begin
-       uline[i-1]:=IconImage[x+i-1,j];
+//       uline[i-1]:=IconImage[x+i-1,j];
+         uline[i-1]:=RMCoreBase.GetPixel(x+i-1,j);
      end;
      BlockWrite(F,uLine,BPL);
      error:=IORESULT;

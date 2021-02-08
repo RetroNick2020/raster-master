@@ -3,7 +3,7 @@ Unit RwPcx;
 
 Interface
 uses
-  bits,bgipal,RMCore;
+  bits,bgipal,RMCore,interfaces,Dialogs,SysUtils;
 Function ReadPcxImg(x,y,x2,y2,Pal : Word;Filename : string): word;
 Function SavePcxImg(x,y,x2,y2 : Word;Filename : String): Word;
 Implementation
@@ -316,6 +316,30 @@ begin
  end;
 end;
 
+Procedure spToMono(Var splane : uncpLine;Var monoPlane : UncpLine;
+                  BPL : Word);
+var
+ cb,i,j : Word;
+ x : integer;
+begin
+ cb:=0;
+ x:=0;
+ FillChar(monoplane,sizeof(monoplane),0);
+ For i:=0 to BPL-1 do
+ begin
+    For j:=7 downto 0 do
+    begin
+      //if Biton(j,pplane[i]) then splane[cb+(7-j)]:=1;
+       if  splane[x] = 1 then  SetBit(j,1,monoplane[i]);
+        inc(x);
+
+    end;
+   // monoplane[i]:=254;
+   inc(cb,8);
+ end;
+end;
+
+
 Procedure packTOsp(Var pPlane : UncpLine;Var splane : uncpLine;
                   BPL : Word);
 var
@@ -339,6 +363,22 @@ begin
    inc(cb,4);
   end;
 end;
+
+Procedure spTOpack(Var splane : uncpLine;var pPlane : UncpLine;
+                  BPL : Word);
+var
+ cb,i : Word;
+begin
+ cb:=0;
+ For i:=0 to BPL-1 do
+ begin
+   pplane[i] := (splane[cb] shl 6) + (splane[cb+1] shl 4) + (splane[cb+2] shl 2) + (splane[cb+3]);
+   inc(cb,4);
+  end;
+end;
+
+
+
 
 Procedure mpTOsp(Var mPlane : UncpLine;Var splane : uncpLine;
                  ImgOff2,ImgOff3,ImgOff4 : Word);
@@ -404,8 +444,35 @@ begin
     end;
 end;
 
+
+Procedure spTOmp2(Var sPlane : UncpLine;Var mplane : uncpLine;
+                  ImgOff2 : Word);
+Var
+ xp,cp,cl : Word;
+ i,j,x    : Word;
+begin
+ xp:=0;
+ cp:=0;
+ FillChar(mPlane,SizeOf(mplane),0);
+  for x:=0 to ImgOff2-1 do
+    begin
+      for j:=0 to 7 do
+      begin
+            cl:=sPlane[xp+j];
+           // if biton(3,cl) then setbit((7-j),1,mplane[ImgOff4+cp]);
+           // if biton(2,cl) then setbit((7-j),1,mplane[ImgOff3+cp]);
+            if biton(1,cl) then setbit((7-j),1,mplane[ImgOff2+cp]);
+            if biton(0,cl) then setbit((7-j),1,mplane[cp]);
+      end;
+      inc(cp);
+      inc(xp,8);
+    end;
+end;
+
+
 function GetMaxColor : integer;
 begin
+ //GetMaxColor:=15;
  GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
 end;
 
@@ -429,6 +496,7 @@ var
  Colors        : Word;
  Temp           : Byte;
  uncomLine      : uncpLine;
+ cr             : TRMColorRec;
 Begin
  ReadPcxImg:=0;
 
@@ -470,10 +538,15 @@ Begin
    Exit;
  end;
 
+
+
  GetMem(BlockData,SizeOf(BlockArray));
  if Colors=2 then
  begin
-   BytesPerLine:=Header.Bytes_per_line_per_plane;;
+   BytesPerLine:=Header.Bytes_per_line_per_plane;
+   ShowMessage('Bytes_per_line_per_plane = '+IntToStr(Header.Bytes_per_line_per_plane)+'Bits_per_pixel= '+intTostr(  Header.Bits_per_pixel)+' nplanes = '+intTostr(  Header.Nplanes));
+    Header.Bits_per_pixel:=1;
+   Header.Nplanes:=1;
 
    For Ln:=1 to myHeight do
    begin
@@ -497,8 +570,8 @@ Begin
  end
  else if Colors=4 then
  begin
-   BytesPerLine:=Header.Bytes_per_line_per_plane;;
-
+   BytesPerLine:=Header.Bytes_per_line_per_plane;
+    ShowMessage('Header.Bytes_per_line_per_plane = '+IntToStr(Header.Bytes_per_line_per_plane));
    For Ln:=1 to myHeight do
    begin
      ReadPCXLine(PcxFile,Uline,BytesPerLine);
@@ -578,25 +651,42 @@ Begin
  begin
    GetPcxInfo(filename,Header,PcxPal);
    Colors:=GetNPcxColors(Header);
+  // RMCoreBase.palette.ClearColors;
    if colors < (GetMaxColor+1) then
-   begin
-     For i:=0 to Colors-1 do
+    // if (1=1) then
      begin
-       PcxPal[i,0]:=PcxPal[i,0] SHR 2;
-       PcxPal[i,1]:=PcxPal[i,1] SHR 2;
-       PcxPal[i,2]:=PcxPal[i,2] SHR 2;
+     For i:=0 to Colors-1 do
+   //  For i:=0 to 15 do
+     begin
+       //PcxPal[i,0]:=PcxPal[i,0] SHR 2;
+      // PcxPal[i,1]:=PcxPal[i,1] SHR 2;
+      // PcxPal[i,2]:=PcxPal[i,2] SHR 2;
+       cr.r:=PcxPal[i,0];
+       cr.g:=PcxPal[i,1];
+       cr.b:=PcxPal[i,2];
+      RMCoreBase.Palette.SetColor(i,cr);
+       //    RMCoreBase.Palette.AddColor(cr.r,cr.g,cr.b);
+
      end;
-     SetPaletteList(PcxPal,Colors);
+     //SetPaletteList(PcxPal,Colors);
    end
    else
    begin
+
      For i:=0 to GetMaxColor do
+     // For i:=0 to 15 do
      begin
-       PcxPal[i,0]:=PcxPal[i,0] SHR 2;
-       PcxPal[i,1]:=PcxPal[i,1] SHR 2;
-       PcxPal[i,2]:=PcxPal[i,2] SHR 2;
-     end;
-     SetPaletteList(PcxPal,GetMaxColor+1);
+//       PcxPal[i,0]:=PcxPal[i,0] SHR 2;
+//       PcxPal[i,1]:=PcxPal[i,1] SHR 2;
+//       PcxPal[i,2]:=PcxPal[i,2] SHR 2;
+
+  //   SetPaletteList(PcxPal,GetMaxColor+1);
+       cr.r:=PcxPal[i,0];
+       cr.g:=PcxPal[i,1];
+       cr.b:=PcxPal[i,2];
+      RMCoreBase.Palette.SetColor(i,cr);
+       //  RMCoreBase.Palette.AddColor(cr.r,cr.g,cr.b);
+      end;
    end;
  end;
 
@@ -611,12 +701,32 @@ Function ImageSize(x,y,x2,y2 : word) : word;
 var
  width ,  height : integer;
   bpl : integer;
+  colorcount : integer;
 begin
   width:=x2-x+1;
   height:=y2-y+1;
   bpl:=(width+7) div 8;
 //bpl:=width;
-  ImageSize:=(bpl*4)*height+6;
+  colorcount:=RMCoreBase.Palette.GetColorCount;
+   if colorcount= 16 then
+   begin
+     ImageSize:=(bpl*4)*height+6;
+   end
+   else if colorcount = 256 then
+   begin
+     ImageSize:=width + 6;
+   end
+   else if colorcount = 4 then
+   begin
+     ImageSize:=bpl div 4 + 6;
+   end
+    else if colorcount = 2 then
+   begin
+
+     if odd(bpl) then inc(bpl);
+     ImageSize:=bpl+6;
+   end;
+
 end;
 
 Function SavePcxImg(x,y,x2,y2 : Word;Filename : String): Word;
@@ -640,9 +750,9 @@ var
  splane         : uncpLine;
 Begin
  SavePcxImg:=0;
-// NColors:=GetMaxColor+1;
- NColors:=16;
- If (Ncolors<>16) AND (Ncolors<>256) Then
+ NColors:=GetMaxColor+1;
+ //NColors:=16;
+ If (Ncolors<>16) AND (Ncolors<>256) ANd (NColors<>4) AND (NColors<>2) Then
  begin
    SavePcxImg:=3;
    Exit;
@@ -667,19 +777,35 @@ Begin
    Header.Nplanes:=4;
    Header.Bytes_per_line_per_plane:=BytesPerLine SHR 2;
  end
- else
+ else if NColors=256 then
  begin
    Header.Bits_per_pixel:=8;
    Header.Nplanes:=1;
    Header.Bytes_per_line_per_plane:=BytesPerLine;
+ end
+ else if NColors = 4 then
+ begin
+   Header.Bits_per_pixel:=2;
+   Header.Nplanes:=1;
+   Header.Bytes_per_line_per_plane:=(mywidth+3) div 4;
+   BytesPerLine:=(mywidth+3) div 4;
+ end
+ else if NColors = 2 then
+ begin
+   BytesPerLine:=(mywidth+7) div 8;
+   if odd(BytesPerLine) then inc(BytesPerLine);
+   Header.Bits_per_pixel:=1;
+   Header.Nplanes:=1;
+   Header.Bytes_per_line_per_plane:=BytesPerLine;
  end;
 
- GrabPaletteList(PcxPal,GetMaxColor+1);
+
+ //GrabPaletteList(PcxPal,GetMaxColor+1);
  For i:=0 to GetMaxColor do
  begin
-   PcxPal[i,0]:=PcxPal[i,0] SHL 2;
-   PcxPal[i,1]:=PcxPal[i,1] SHL 2;
-   PcxPal[i,2]:=PcxPal[i,2] SHL 2;
+   PcxPal[i,0]:=RMCoreBase.Palette.GetRed(i);
+   PcxPal[i,1]:=RMCoreBase.Palette.GetGreen(i);
+   PcxPal[i,2]:=RMCoreBase.Palette.GetBlue(i);
  end;
 
  Move(PcxPal,header.colormap,16*3);
@@ -724,7 +850,7 @@ Begin
      end;
    end;
  end
- else  (* must be 256 *)
+ else if NColors = 256   then
  begin
    For Ln:=y to y2 do
    begin
@@ -748,7 +874,55 @@ Begin
    Temp:=$C;
    BlockWrite(PcxFile,Temp,1);
    BlockWrite(PcxFile,PcxPal,Sizeof(PcxPal));
- end;
+ end
+ else if NColors = 4   then
+ begin
+  For Ln:=y to y2 do
+  begin
+    For i:=1 to myWidth do
+    begin
+//       splane[i-1]:=IconImage[i+x-1,Ln];
+        splane[i-1]:=RMCoreBase.GetPixel(i+x-1,Ln);
+    end;
+    spTOpack(splane,uline,bytesperline);
+    Cbytes:=CompressLine(uline,Cline,BytesPerLine);
+    BlockWrite(PcxFile,Cline,Cbytes);
+    Error:=IORESULT;
+    If Error<>0 then
+    begin
+      SavePcxImg:=Error;
+      Close(PcxFile);
+      Error:=IORESULT;
+      Exit;
+    end;
+  end;
+ end
+ else if NColors = 2   then
+ begin
+  For Ln:=y to y2 do
+  begin
+    For i:=1 to myWidth do
+    begin
+//       splane[i-1]:=IconImage[i+x-1,Ln];
+        splane[i-1]:=RMCoreBase.GetPixel(i+x-1,Ln);
+    end;
+    spTOMono(splane,uline,bytesperline);
+    Cbytes:=CompressLine(uline,Cline,BytesPerLine);
+    BlockWrite(PcxFile,Cline,Cbytes);
+    Error:=IORESULT;
+    If Error<>0 then
+    begin
+      SavePcxImg:=Error;
+      Close(PcxFile);
+      Error:=IORESULT;
+      Exit;
+    end;
+  end;
+  Temp:=$C;
+  BlockWrite(PcxFile,Temp,1);
+  BlockWrite(PcxFile,PcxPal,Sizeof(PcxPal));
+end;
+
  Close(PcxFile);
 {$I+}
 end;
