@@ -49,7 +49,73 @@ begin
   GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
 end;
 
-Procedure WriteXgfLine(Var F: File;xp,ln,width,bytesPerLine,LanType : word);
+
+//2 color - 1 bitplanes - packed - 1 bits per color
+Procedure WriteXgfLine2(Var F: File;xp,ln,width,bytesPerLine,LanType : word);
+var
+ cb,i : Word;
+  mylinebuf : Linebuftype;
+  mycolors  : LinebufType;
+  x : integer;
+
+begin
+ {$I-}
+ Fillchar(mylinebuf,sizeof(mylinebuf),0);
+ Fillchar(mycolors,sizeof(mycolors),0);
+
+ cb:=0;
+ x:=0;
+
+ for i:=0 to width-1 do
+ begin
+     mycolors[i]:=RMCoreBase.GetPixel(xp+i,ln);
+ end;
+
+ For i:=0 to BytesPerLine-1 do
+ begin
+   myLineBuf[i] := (mycolors[x] shl 7) + (mycolors[x+1] shl 6) + (mycolors[x+2] shl 5) + (mycolors[x+3] shl 4) +
+                   (mycolors[x+4] shl 3) + (mycolors[x+5] shl 2) + (mycolors[x+6] shl 1) + mycolors[x+7];
+   inc(x,8);
+  end;
+
+ BlockWrite(F,mylinebuf,BytesPerLine);
+{$I+}
+end;
+
+
+//4 color - 1 bitplanes - packed - 2 bits per color
+Procedure WriteXgfLine4(Var F: File;xp,ln,width,bytesPerLine,LanType : word);
+var
+ cb,i : Word;
+  mylinebuf : Linebuftype;
+  mycolors  : LinebufType;
+  x : integer;
+
+begin
+ {$I-}
+ Fillchar(mylinebuf,sizeof(mylinebuf),0);
+ Fillchar(mycolors,sizeof(mycolors),0);
+
+ cb:=0;
+ x:=0;
+
+ for i:=0 to width-1 do
+ begin
+     mycolors[i]:=RMCoreBase.GetPixel(xp+i,ln);
+ end;
+
+ For i:=0 to BytesPerLine-1 do
+ begin
+   myLineBuf[i] := (mycolors[x] shl 6) + (mycolors[x+1] shl 4) + (mycolors[x+2] shl 2) + mycolors[x+3];
+   inc(x,4);
+  end;
+
+ BlockWrite(F,mylinebuf,BytesPerLine);
+{$I+}
+end;
+
+//16 color - 4 bitplanes
+Procedure WriteXgfLine16(Var F: File;xp,ln,width,bytesPerLine,LanType : word);
 var
  BitPlane1 : Word;
  BitPlane2 : Word;
@@ -153,12 +219,42 @@ begin
    exit;
  end;
 
- if GetMaxColor=15 then
+ if GetMaxColor=1 then
  begin
    BPL:=(mywidth+7) div 8;
    For j:=0 to myheight-1 do
    begin
-     WriteXgfline(F,x,y+j,mywidth,BPL,LanType);
+     WriteXgfline2(F,x,y+j,mywidth,BPL,LanType);
+     Error:=IOResult;
+     if Error <> 0 then
+     begin
+       close(F);
+       WriteXgf:=Error;
+       exit;
+     end;
+    end;
+ end
+ else if GetMaxColor=3 then
+ begin
+   BPL:=(mywidth+3) div 4;
+   For j:=0 to myheight-1 do
+   begin
+     WriteXgfline4(F,x,y+j,mywidth,BPL,LanType);
+     Error:=IOResult;
+     if Error <> 0 then
+     begin
+       close(F);
+       WriteXgf:=Error;
+       exit;
+     end;
+    end;
+ end
+ else if GetMaxColor=15 then
+ begin
+   BPL:=(mywidth+7) div 8;
+   For j:=0 to myheight-1 do
+   begin
+     WriteXgfline16(F,x,y+j,mywidth,BPL,LanType);
      Error:=IOResult;
      if Error <> 0 then
      begin
