@@ -544,7 +544,7 @@ Begin
  if Colors=2 then
  begin
    BytesPerLine:=Header.Bytes_per_line_per_plane;
-   ShowMessage('Bytes_per_line_per_plane = '+IntToStr(Header.Bytes_per_line_per_plane)+'Bits_per_pixel= '+intTostr(  Header.Bits_per_pixel)+' nplanes = '+intTostr(  Header.Nplanes));
+  // ShowMessage('Bytes_per_line_per_plane = '+IntToStr(Header.Bytes_per_line_per_plane)+'Bits_per_pixel= '+intTostr(  Header.Bits_per_pixel)+' nplanes = '+intTostr(  Header.Nplanes));
     Header.Bits_per_pixel:=1;
    Header.Nplanes:=1;
 
@@ -571,7 +571,7 @@ Begin
  else if Colors=4 then
  begin
    BytesPerLine:=Header.Bytes_per_line_per_plane;
-    ShowMessage('Header.Bytes_per_line_per_plane = '+IntToStr(Header.Bytes_per_line_per_plane));
+   // ShowMessage('Header.Bytes_per_line_per_plane = '+IntToStr(Header.Bytes_per_line_per_plane));
    For Ln:=1 to myHeight do
    begin
      ReadPCXLine(PcxFile,Uline,BytesPerLine);
