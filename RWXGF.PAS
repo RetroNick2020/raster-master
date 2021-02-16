@@ -196,7 +196,11 @@ begin
  end
  else
  begin
-   If GetMaxColor=255 then
+   If GetMaxColor=3 then
+   begin
+     myhead.Width:=mywidth*2
+   end
+   else If GetMaxColor=255 then
    begin
      myhead.Width:=mywidth SHL 3;
    end
