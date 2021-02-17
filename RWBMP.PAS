@@ -5,7 +5,7 @@ Unit rwbmp;
 Function ReadBMP(x,y,x2,y2,lp : Word;Filename : String) : Word;
 Function WriteBMP(x,y,x2,y2 : Word;Filename : String) : Word;
 Implementation
-  uses SysUtils,RMCore,interfaces,Dialogs,bits;
+  uses SysUtils,RMCore,Dialogs,bits;
 
 type
  bmpRec = Record

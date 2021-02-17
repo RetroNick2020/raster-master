@@ -3,13 +3,14 @@ Unit RwPcx;
 
 Interface
 uses
-  bits,bgipal,RMCore,interfaces,Dialogs,SysUtils;
+  bits,RMCore,Dialogs,SysUtils;
 Function ReadPcxImg(x,y,x2,y2,Pal : Word;Filename : string): word;
 Function SavePcxImg(x,y,x2,y2 : Word;Filename : String): Word;
 Implementation
 
 Type
 
+   PaletteT = Array[0..255,0..2] of Byte;
    PcxPalette = Array[0..255,0..2] of Byte;
 
    PCXHeaderRec = Record
