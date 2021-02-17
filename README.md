@@ -9,3 +9,7 @@ It turns out i was l little too optimistic - it might take me a little longer th
 Feb 15 - 2021
 I have managed to Port 90% of the program features. I also managed to include some features not in the original. There are a few main pieces of code that have hard paths. Cleaning up code so that it can be compiled on other systems. Not cleaning up to make pretty!
 
+Feb 17 - 2021
+I have release version - all code uploaded
+
+
