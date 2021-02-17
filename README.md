@@ -11,9 +11,9 @@ I have managed to Port 90% of the program features. I also managed to include so
 
 Feb 17 - 2021
 I have release version - all code uploaded
+![](https://github.com/nickshardware/raster-master/wiki/images/RM.PNG)
 
 Feb 17 - 2021 later at 2:00pm EST
 Turns out because i used Lazarus to port my Turbo Pascal code it compiles without any modifications on ubuntu Linux
-
-![](https://github.com/nickshardware/raster-master/wiki/images/RM.PNG)
+![](https://github.com/nickshardware/raster-master/wiki/images/rmlinux.png)
 
