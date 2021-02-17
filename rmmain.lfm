@@ -1,0 +1,478 @@
+object RMMainForm: TRMMainForm
+  Left = 36
+  Height = 991
+  Top = 24
+  Width = 1629
+  Caption = 'Raster Master'
+  ClientHeight = 966
+  ClientWidth = 1629
+  DefaultMonitor = dmMainForm
+  DesignTimePPI = 120
+  Menu = MainMenu1
+  OnCreate = FormCreate
+  Position = poDefault
+  LCLVersion = '2.0.10.0'
+  object ActualBox: TImage
+    Left = 16
+    Height = 256
+    Top = 16
+    Width = 256
+    OnClick = ActualBoxClick
+  end
+  object HorizScroll: TScrollBar
+    Left = 368
+    Height = 32
+    Top = 744
+    Width = 690
+    PageSize = 0
+    TabOrder = 0
+    OnChange = HorizScrollChange
+  end
+  object ZoomBox: TImage
+    Left = 368
+    Height = 618
+    Top = 112
+    Width = 690
+    OnClick = ZoomBoxClick
+    OnMouseDown = ZoomBoxMouseDown
+    OnMouseMove = ZoomBoxMouseMove
+    OnMouseUp = ZoomBoxMouseUp
+    OnMouseWheel = ZoomBoxMouseWheel
+  end
+  object TrackBar1: TTrackBar
+    Left = 1064
+    Height = 125
+    Top = 112
+    Width = 30
+    Min = 1
+    OnChange = TrackBar1Change
+    Orientation = trVertical
+    Position = 1
+    TickMarks = tmTopLeft
+    TabOrder = 1
+  end
+  object ColorBox: TShape
+    Left = 1104
+    Height = 64
+    Top = 112
+    Width = 60
+    Brush.Color = clSkyBlue
+    OnMouseDown = ColorBoxMouseDown
+  end
+  object InfoBarLabel: TLabel
+    Left = 376
+    Height = 72
+    Top = 16
+    Width = 280
+    AutoSize = False
+    Caption = 'InfoBarLabel'
+    ParentColor = False
+    WordWrap = True
+  end
+  object VirtScroll: TScrollBar
+    Left = 1068
+    Height = 486
+    Top = 244
+    Width = 26
+    Kind = sbVertical
+    PageSize = 0
+    TabOrder = 2
+    OnChange = VirtScrollChange
+  end
+  object ColorPalette1: TColorPalette
+    Left = 1104
+    Height = 234
+    Top = 184
+    Width = 60
+    ButtonHeight = 30
+    ButtonWidth = 30
+    ColumnCount = 8
+    Flipped = True
+    PickedIndex = 0
+    SelectionColor = clWhite
+    SelectionKind = pskThickInverted
+    OnColorPick = ColorPalette1ColorPick
+    ParentColor = False
+  end
+  object Panel1: TPanel
+    Left = 664
+    Height = 88
+    Top = 16
+    Width = 394
+    ClientHeight = 88
+    ClientWidth = 394
+    TabOrder = 3
+    object ToolCircleIcon: TImage
+      Left = 96
+      Height = 32
+      Hint = 'Empty Circle'
+      Top = 8
+      Width = 32
+      OnClick = ToolCircleMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolFCircleIcon: TImage
+      Left = 96
+      Height = 32
+      Hint = 'Filled Circle'
+      Top = 48
+      Width = 32
+      OnClick = ToolFCircleMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolPencilIcon: TImage
+      Left = 16
+      Height = 32
+      Hint = 'Pencil'
+      Top = 8
+      Width = 32
+      OnClick = ToolPencilMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolLineIcon: TImage
+      Left = 16
+      Height = 32
+      Hint = 'Line'
+      Top = 48
+      Width = 32
+      OnClick = ToolLineMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolRectangleIcon: TImage
+      Left = 56
+      Height = 32
+      Hint = 'Empty Rectangle'
+      Top = 8
+      Width = 32
+      OnClick = ToolRectangleMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolFRectangleIcon: TImage
+      Left = 56
+      Height = 32
+      Hint = 'Filled Rectangle'
+      Top = 48
+      Width = 32
+      OnClick = ToolFRectangleMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolSprayPaintIcon: TImage
+      Left = 136
+      Height = 32
+      Hint = 'Spray Paint'
+      Top = 8
+      Width = 32
+      OnClick = ToolMenuSprayPaintClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolPaintIcon: TImage
+      Left = 136
+      Height = 32
+      Hint = 'Paint'
+      Top = 48
+      Width = 32
+      OnClick = ToolMenuPaintClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolGridIcon: TImage
+      Left = 176
+      Height = 32
+      Hint = 'Toggle Grid'
+      Top = 8
+      Width = 32
+      OnClick = ToolGridMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolSelectAreaIcon: TImage
+      Left = 176
+      Height = 32
+      Hint = 'Select Area'
+      Top = 48
+      Width = 32
+      OnClick = ToolMenuSelectAreaMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolHFLIPButton: TButton
+      Left = 256
+      Height = 31
+      Top = 8
+      Width = 54
+      Caption = 'HFLIP'
+      OnClick = ToolFlipHorizMenuClick
+      TabOrder = 0
+    end
+    object ToolVFLIPButton: TButton
+      Left = 322
+      Height = 31
+      Top = 8
+      Width = 54
+      Caption = 'VFLIP'
+      OnClick = ToolFlipVirtMenuClick
+      TabOrder = 1
+    end
+    object ToolScrollLeftIcon: TImage
+      Left = 248
+      Height = 32
+      Hint = 'Scroll Left'
+      Top = 48
+      Width = 32
+      OnClick = ToolScrollLeftMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolScrollRightIcon: TImage
+      Left = 278
+      Height = 32
+      Hint = 'Scroll Right'
+      Top = 48
+      Width = 32
+      OnClick = ToolScrollRightMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolScrollUpIcon: TImage
+      Left = 312
+      Height = 32
+      Hint = 'Scroll Up'
+      Top = 48
+      Width = 32
+      OnClick = ToolScrollUpMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolScrollDownIcon: TImage
+      Left = 344
+      Height = 32
+      Hint = 'Scroll Down'
+      Top = 48
+      Width = 32
+      OnClick = ToolScrollDownMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolUndoIcon: TImage
+      Left = 216
+      Height = 32
+      Hint = 'Undo'
+      Top = 8
+      Width = 32
+      OnClick = ToolUndoIconClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+  end
+  object RMPanel: TPanel
+    Left = 32
+    Height = 136
+    Top = 594
+    Width = 168
+    ClientHeight = 136
+    ClientWidth = 168
+    TabOrder = 4
+    object RMLogo: TImage
+      Cursor = crHandPoint
+      Left = 16
+      Height = 96
+      Top = 16
+      Width = 128
+      AutoSize = True
+      OnClick = RMLogoClick
+      StretchOutEnabled = False
+      StretchInEnabled = False
+      Transparent = True
+    end
+  end
+  object MainMenu1: TMainMenu
+    Left = 1584
+    Top = 216
+    object FileExitMenu: TMenuItem
+      Caption = 'File'
+      object NewFile: TMenuItem
+        Caption = 'New'
+        OnClick = NewClick
+      end
+      object OpenFile: TMenuItem
+        Caption = 'Open'
+        OnClick = OpenFileClick
+      end
+      object SaveFile: TMenuItem
+        Caption = 'Save'
+        OnClick = SaveFileClick
+      end
+      object SaveFileAs: TMenuItem
+        Caption = 'Save As'
+        Enabled = False
+        Visible = False
+      end
+      object MenuItem10: TMenuItem
+        Caption = 'Import'
+        Enabled = False
+        Visible = False
+      end
+      object MenuItem9: TMenuItem
+        Caption = 'Export'
+        object QBasicData: TMenuItem
+          Caption = 'QBasic DATA'
+          OnClick = QBasicDataClick
+        end
+        object TurboPascalConst: TMenuItem
+          Caption = 'Turbo Pascal Const'
+          OnClick = TurboPascalConstClick
+        end
+      end
+      object MenuItem11: TMenuItem
+        Caption = 'Exit'
+        OnClick = MenuItem11Click
+      end
+    end
+    object MenuItem4: TMenuItem
+      Caption = 'Palette'
+      object PaletteMono: TMenuItem
+        Caption = 'Mono'
+        OnClick = PaletteMonoClick
+      end
+      object PaletteCGA0: TMenuItem
+        Caption = 'CGA Palette 0'
+        OnClick = PaletteCGA0Click
+      end
+      object PaletteCGA1: TMenuItem
+        Caption = 'CGA Palette 1'
+        OnClick = PaletteCGA1Click
+      end
+      object PaletteEGA: TMenuItem
+        Caption = 'EGA Palette'
+        OnClick = PaletteEGAClick
+      end
+      object PaletteVGA: TMenuItem
+        Caption = 'VGA Palette'
+        OnClick = PaletteVGAClick
+      end
+      object PaletteVGA256: TMenuItem
+        Caption = 'VGA Palette 256'
+        OnClick = PaletteVGA256Click
+      end
+    end
+    object ToolMenu: TMenuItem
+      Caption = 'Tools'
+      object ToolPencilMenu: TMenuItem
+        Caption = 'Pencil'
+        OnClick = ToolPencilMenuClick
+      end
+      object ToolLineMenu: TMenuItem
+        Caption = 'Line'
+        OnClick = ToolLineMenuClick
+      end
+      object ToolRectangleMenu: TMenuItem
+        Caption = 'Rectanle'
+        OnClick = ToolRectangleMenuClick
+      end
+      object ToolFRectangleMenu: TMenuItem
+        Caption = 'Filled Rectangle'
+        OnClick = ToolFRectangleMenuClick
+      end
+      object ToolCircleMenu: TMenuItem
+        Caption = 'Circle'
+        OnClick = ToolCircleMenuClick
+      end
+      object ToolFCircleMenu: TMenuItem
+        Caption = 'Filled Circle'
+        OnClick = ToolFCircleMenuClick
+      end
+      object ToolMenuPaint: TMenuItem
+        Caption = 'Paint'
+        OnClick = ToolMenuPaintClick
+      end
+      object ToolMenuSprayPaint: TMenuItem
+        Caption = 'Spray Paint'
+        OnClick = ToolMenuSprayPaintClick
+      end
+      object ToolSelectAreaMenu: TMenuItem
+        Caption = 'Select Area'
+        OnClick = ToolMenuSelectAreaMenuClick
+      end
+      object ToolGridMenu: TMenuItem
+        Caption = 'Grid'
+        Checked = True
+        OnClick = ToolGridMenuClick
+      end
+      object ToolFlipMenu: TMenuItem
+        Caption = 'Flip'
+        object ToolFlipHorizMenu: TMenuItem
+          Caption = 'Horintal'
+          OnClick = ToolFlipHorizMenuClick
+        end
+        object ToolFlipVirtMenu: TMenuItem
+          Caption = 'Virtical'
+          OnClick = ToolFlipVirtMenuClick
+        end
+      end
+      object ToolScrollMenu: TMenuItem
+        Caption = 'Scroll'
+        object ToolScrollRightMenu: TMenuItem
+          Caption = 'Right'
+          OnClick = ToolScrollRightMenuClick
+        end
+        object ToolScrollLeftMenu: TMenuItem
+          Caption = 'Left'
+          OnClick = ToolScrollLeftMenuClick
+        end
+        object ToolScrollUpMenu: TMenuItem
+          Caption = 'Up'
+          OnClick = ToolScrollUpMenuClick
+        end
+        object ToolScrollDownMenu: TMenuItem
+          Caption = 'Down'
+          OnClick = ToolScrollDownMenuClick
+        end
+      end
+    end
+    object HelpMenu: TMenuItem
+      Caption = 'Help'
+      object RMAboutDialog: TMenuItem
+        Caption = 'About'
+        OnClick = RMAboutDialogClick
+      end
+    end
+  end
+  object ActionList1: TActionList
+    Left = 1584
+    Top = 288
+    object EditCut1: TEditCut
+      Category = 'Edit'
+      Caption = 'Cu&t'
+      Hint = 'Cut'
+      ShortCut = 16472
+    end
+    object Action1: TAction
+      Caption = 'Action1'
+      OnExecute = Action1Execute
+    end
+    object FileOpen1: TFileOpen
+      Category = 'File'
+      Caption = '&Open ...'
+      Hint = 'Open'
+      ShortCut = 16463
+    end
+  end
+  object OpenDialog1: TOpenDialog
+    Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
+    Left = 1584
+    Top = 368
+  end
+  object SaveDialog1: TSaveDialog
+    Title = 'Export'
+    Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
+    Left = 1584
+    Top = 448
+  end
+end

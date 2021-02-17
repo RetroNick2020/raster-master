@@ -1,0 +1,50 @@
+object RMEGAColorDialog: TRMEGAColorDialog
+  Left = 250
+  Height = 256
+  Top = 218
+  Width = 415
+  BorderStyle = bsDialog
+  Caption = 'EGA Palette'
+  ClientHeight = 256
+  ClientWidth = 415
+  DesignTimePPI = 120
+  OnCreate = FormCreate
+  LCLVersion = '2.0.10.0'
+  object OK: TButton
+    Left = 280
+    Height = 37
+    Top = 176
+    Width = 97
+    Caption = 'OK'
+    OnClick = OKClick
+    TabOrder = 0
+  end
+  object ColorPalette1: TColorPalette
+    Left = 16
+    Height = 26
+    Top = 32
+    Width = 386
+    ButtonHeight = 25
+    ButtonWidth = 25
+    ColumnCount = 16
+    PickedIndex = 0
+    SelectionColor = clWhite
+    SelectionKind = pskThickInverted
+    OnColorPick = ColorPalette1ColorPick
+    ParentColor = False
+  end
+  object Shape1: TShape
+    Left = 24
+    Height = 81
+    Top = 152
+    Width = 81
+  end
+  object EGAIndexLabel: TLabel
+    Left = 120
+    Height = 20
+    Top = 160
+    Width = 71
+    Caption = 'EGA Index:'
+    ParentColor = False
+  end
+end

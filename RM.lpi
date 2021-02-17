@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <General>
+      <SessionStorage Value="InProjectDir"/>
+      <MainUnit Value="0"/>
+      <Title Value="RM"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
+      <Resources Count="27">
+        <Resource_0 FileName="Images\CIRC1.BMP" Type="BITMAP" ResourceName="CIRC1"/>
+        <Resource_1 FileName="Images\CIRC2.BMP" Type="BITMAP" ResourceName="CIRC2"/>
+        <Resource_2 FileName="Images\DOWN1.BMP" Type="BITMAP" ResourceName="DOWN1"/>
+        <Resource_3 FileName="Images\FCIRC1.BMP" Type="BITMAP" ResourceName="FCIRC1"/>
+        <Resource_4 FileName="Images\FCIRC2.BMP" Type="BITMAP" ResourceName="FCIRC2"/>
+        <Resource_5 FileName="Images\FRECT1.BMP" Type="BITMAP" ResourceName="FRECT1"/>
+        <Resource_6 FileName="Images\FRECT2.BMP" Type="BITMAP" ResourceName="FRECT2"/>
+        <Resource_7 FileName="Images\GRID1.BMP" Type="BITMAP" ResourceName="GRID1"/>
+        <Resource_8 FileName="Images\GRID2.BMP" Type="BITMAP" ResourceName="GRID2"/>
+        <Resource_9 FileName="Images\LEFT1.BMP" Type="BITMAP" ResourceName="LEFT1"/>
+        <Resource_10 FileName="Images\LINE1.BMP" Type="BITMAP" ResourceName="LINE1"/>
+        <Resource_11 FileName="Images\LINE2.BMP" Type="BITMAP" ResourceName="LINE2"/>
+        <Resource_12 FileName="Images\PAINT1.BMP" Type="BITMAP" ResourceName="PAINT1"/>
+        <Resource_13 FileName="Images\PAINT2.BMP" Type="BITMAP" ResourceName="PAINT2"/>
+        <Resource_14 FileName="Images\PEN1.BMP" Type="BITMAP" ResourceName="PEN1"/>
+        <Resource_15 FileName="Images\PEN2.BMP" Type="BITMAP" ResourceName="PEN2"/>
+        <Resource_16 FileName="Images\RECT1.BMP" Type="BITMAP" ResourceName="RECT1"/>
+        <Resource_17 FileName="Images\RECT2.BMP" Type="BITMAP" ResourceName="RECT2"/>
+        <Resource_18 FileName="Images\RIGHT1.BMP" Type="BITMAP" ResourceName="RIGHT1"/>
+        <Resource_19 FileName="Images\SELECT1.BMP" Type="BITMAP" ResourceName="SELECT1"/>
+        <Resource_20 FileName="Images\SELECT2.BMP" Type="BITMAP" ResourceName="SELECT2"/>
+        <Resource_21 FileName="Images\SPRAY1.BMP" Type="BITMAP" ResourceName="SPRAY1"/>
+        <Resource_22 FileName="Images\SPRAY2.BMP" Type="BITMAP" ResourceName="SPRAY2"/>
+        <Resource_23 FileName="Images\UNDO1.BMP" Type="BITMAP" ResourceName="UNDO1"/>
+        <Resource_24 FileName="Images\UNDO2.BMP" Type="BITMAP" ResourceName="UNDO2"/>
+        <Resource_25 FileName="Images\UP1.BMP" Type="BITMAP" ResourceName="UP1"/>
+        <Resource_26 FileName="Images\RM.bmp" Type="BITMAP" ResourceName="RM"/>
+      </Resources>
+    </General>
+    <BuildModes Count="2">
+      <Item1 Name="Default" Default="True"/>
+      <Item2 Name="Release">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="RM"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="2"/>
+            </Optimizations>
+            <SmallerCode Value="True"/>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+        </CompilerOptions>
+      </Item2>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default"/>
+      </Modes>
+    </RunParams>
+    <RequiredPackages Count="2">
+      <Item1>
+        <PackageName Value="LazColorPalette"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="LCL"/>
+      </Item2>
+    </RequiredPackages>
+    <Units Count="8">
+      <Unit0>
+        <Filename Value="RM.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="rmmain.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="RMMainForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="RMMain"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="rmcore.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RMCore"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="rmtools.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RMTools"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="rmcolor.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="RMEGAColorDialog"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="RMColor"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="rmcolorvga.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="RMVgaColorDialog"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="RMColorVga"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="flood.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Flood"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="rmabout.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="AboutDialog"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit7>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="RM"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <CodeGeneration>
+      <Optimizations>
+        <OptimizationLevel Value="0"/>
+      </Optimizations>
+    </CodeGeneration>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
