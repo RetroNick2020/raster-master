@@ -17,3 +17,7 @@ Feb 17 - 2021 later at 2:00pm EST
 Turns out because i used Lazarus to port my Turbo Pascal code it compiles without any modifications on ubuntu Linux
 ![](https://github.com/nickshardware/raster-master/wiki/images/rmlinux.png)
 
+Feb 17 - 2021 later at 5:55pm EST
+I have compiled a 32 bit version binary - it can be downloaded in the release secion RM32.EXE or RM32.ZIP
+
+
