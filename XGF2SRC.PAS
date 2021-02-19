@@ -46,6 +46,12 @@ begin
           WriteLn(F,'(* Turbo Pascal, Width= ',myWidth,
                     ' Height= ',myHeight,' Colors= ',Ncolors,' *)');
        end;
+                          FPLan:
+                                 begin
+                                    WriteLn(F,'(* FreePascal, Width= ',myWidth,
+                                              ' Height= ',myHeight,' Colors= ',Ncolors,' *)');
+                                 end;
+
                            TCLan:
        begin
           Writeln(F,'/* Turbo C, Width= ',myWidth,
@@ -127,7 +133,7 @@ begin
    Writeln(F);
  end;
 
- If myComp = TPlan then
+ If (myComp = TPlan) OR (myComp =FPLan)  then
  begin
    WriteLn(F,myImageName, ' : Array[1..',myFileSize,'] of Byte = (');
  end
@@ -223,7 +229,7 @@ begin
  Repeat
 
 
-                               case myComp of   TPlan: Write(F,'$');
+                               case myComp of   TPlan,FPLan: Write(F,'$');
                                     GWLan,QBLan,PBLan: Write(F,'&H');
                                           TCLan,QCLan: Write(F,'0x');
                                end;
@@ -249,7 +255,7 @@ begin
                                      Write(F,S:2);
                                    end;
                                  end;
-                               TCLan,QCLan,TPLan:
+                               TCLan,QCLan,TPLan,FPLan:
                                  begin
                                    myByte:=myBuf^[i];
                                    Inc(NumRead);
@@ -274,7 +280,7 @@ begin
                                      Write(F,myLineNumber,' DATA ');
                                      inc(myLineNumber,10);
                                     end;
-                 QCLan,TCLan,TPLan:begin
+                 QCLan,TCLan,TPLan,FPLan:begin
                                      WriteLn(F,',');
                                      Write(F,'':10);
                                    end;
@@ -309,7 +315,7 @@ begin
  FreeMem(myBuf,NumToRead);
 
  Case myComp of QCLan,TCLan:writeln(F,'};');
-                      TPLan:writeln(F,');');
+                      TPLan,FPLan:writeln(F,');');
  End;
  Close(F);
  close(F2);

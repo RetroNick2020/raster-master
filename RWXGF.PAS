@@ -6,12 +6,13 @@ Unit RWXgf;
    uses RMCore,Bits;
 
 Const
-  TPLan   = 1;
+   TPLan   = 1;
    TCLan   = 2;
    QCLan   = 3;
    QBLan   = 4;
    PBLan   = 5;
    GWLan   = 6;
+   FPLan   = 7;
 
    Binary2   = 1;
    Binary4   = 2;
@@ -33,6 +34,8 @@ Const
 
    PALSource = 14;
 
+
+
 Function WriteXgf(x,y,x2,y2,LanType : word;filename:string):word;
 Function ReadRaw(x,y,x2,y2,pal : Word;FileName : String) : Word;
 Function WriteRaw(x,y,x2,y2 : Word;FileName : String) : Word;
@@ -47,6 +50,54 @@ type
 function GetMaxColor : integer;
 begin
   GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
+end;
+
+Function WriteXgfFP(x,y,x2,y2 : word;filename:string):word;
+type
+ //free pascal graph - each pixel takes a Word
+ XGFHeadFP = Record
+              Width,Height : LongInt;
+              reserved     : LongInt;
+ end;
+ linebufFP = array[0..1023] of Word;
+var
+ Header : XGFHeadFP;
+ lineBuf:linebufFP;
+ counter : integer;
+ F         : File;
+ Error     : Word;
+ j,i       : integer;
+begin
+ Header.Width:=x2-x+1;
+ Header.Height:=y2-y+1;
+ Header.reserved:=0;
+{$I+}
+ Assign(F,filename);
+ Rewrite(F,1);
+ Blockwrite(F,Header,sizeof(Header));
+
+ Error:=IOResult;
+ if Error <> 0 then
+ begin
+   close(F);
+   WriteXgfFP:=Error;
+   exit;
+ end;
+
+ For j:=y to y2 do
+ begin
+   counter:=0;
+   for i:=x to x2 do
+   begin
+      linebuf[counter]:=RMCoreBase.GetPixel(i,j);
+      inc(counter);
+   end;
+   blockwrite(F,linebuf,header.Width*sizeof(word));
+ end;
+
+ Close(F);
+ WriteXgfFP:=IOResult;
+{$I+}
 end;
 
 
@@ -168,6 +219,7 @@ begin
 end;
 
 
+
 Function WriteXgf(x,y,x2,y2,LanType : word;filename:string):word;
 Type
  XgfHead = Record
@@ -185,7 +237,13 @@ Var
  J,I       : Word;
  Temp         : Word;
 begin
-{$I-}
+ if LanType = FPLan then
+ begin
+   WriteXGF:=WriteXgfFP(x,y,x2,y2,filename);
+   exit;
+ end;
+
+ {$I-}
  myWidth:=x2-x+1;
  myHeight:=y2-y+1;
 
