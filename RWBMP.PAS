@@ -239,7 +239,7 @@ begin
  end
  else if myBmp.Bits=2 then
  begin
-  ShowMessage('Reading for bits = 2');
+  //ShowMessage('Reading for bits = 2');
   blockread(f,bmpPal,64);
  BPL:=(myBmp.biWidth+7) Div 2;
   BPL:=((BPL+3) Div 4);
@@ -370,22 +370,22 @@ begin
  myNumCol:=GetMAxColor+1;
  If MyNumCol=16 then
  begin
-   ShowMessage('NumCol is 16');
+  // ShowMessage('NumCol is 16');
      BPL:=(myWidth+7) Div 8;
      BPL:=(BPL*8) DIV 2;
  end
   else If MyNumCol=2 then
  begin
-   ShowMessage('NumCol is 2');
+ //  ShowMessage('NumCol is 2');
     BPL:=(myWidth+7) Div 8;
     BPL:=((BPL+3) Div 4);
     BPL:=BPL*  4;
-    ShowMessage('NumCol is 2 BPL='+IntToStr(BPL));
+//    ShowMessage('NumCol is 2 BPL='+IntToStr(BPL));
 
  end
  else If MyNumCol=4 then
  begin
-   ShowMessage('NumCol is 4');
+ //  ShowMessage('NumCol is 4');
     BPL:=(myWidth+7) Div 2;
     BPL:=((BPL+3) Div 4);
     BPL:=BPL*  4;
