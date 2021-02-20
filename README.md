@@ -20,6 +20,6 @@ Turns out because i used Lazarus to port my Turbo Pascal code it compiles withou
 Feb 17 - 2021 later at 5:55pm EST
 I have compiled a 32 bit version binary - it can be downloaded in the release secion RM32.EXE or RM32.ZIP
 
-Feb 19 = 2021
+Feb 19 - 2021
 I have added Freepascal Export menu option. I have tested this under FP Graph unit on GO32V2/Windows using PutImage 
 ![](https://github.com/nickshardware/raster-master/wiki/images/rmfp.png)
