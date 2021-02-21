@@ -39,6 +39,7 @@ type
     Action1: TAction;
     ActionList1: TActionList;
     FreePascalConst: TMenuItem;
+    QuickCChar: TMenuItem;
     TurboCChar: TMenuItem;
     RMLogo: TImage;
     RMPanel: TPanel;
@@ -124,6 +125,7 @@ type
       Shift: TShiftState);
     procedure FormCreate(Sender: TObject);
     procedure FreePascalConstClick(Sender: TObject);
+    procedure QuickCCharClick(Sender: TObject);
     procedure RMAboutDialogClick(Sender: TObject);
     procedure LineDrawChange(Sender: TObject);
     procedure MenuItem11Click(Sender: TObject);
@@ -1630,6 +1632,47 @@ begin
           exit;
         end;
    end;
+end;
+
+procedure TRMMainForm.QuickCCharClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ ca   : TClipAreaRec;
+ pm : integer;
+ sourcemode : word;
+begin
+   SaveDialog1.Filter := 'Quick C Char|*.CHA' ;
+   if RMDrawTools.GetClipStatus = 1 then
+   begin
+        RMDrawTools.GetClipAreaCoords(ca);
+        x:=ca.x+XOffset;
+        y:=ca.y+Yoffset;
+        x2:=ca.x2+XOffset;
+        y2:=ca.y2+YOffset;
+   end
+   else
+   begin
+        x:=0;
+        y:=0;
+        x2:=255;
+        y2:=255;
+   end;
+   if SaveDialog1.Execute then
+   begin
+        pm:=GetPaletteMode;
+        case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+                         PaletteModeVGA256:sourcemode:=source256;
+        end;
+
+        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,QCLan,SaveDialog1.FileName) <> 0 then
+        begin
+          ShowMessage('Error Saving CHA file!');
+          exit;
+        end;
+   end;
+
 end;
 
 procedure TRMMainForm.TurboCCharClick(Sender: TObject);
