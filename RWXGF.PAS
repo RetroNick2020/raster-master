@@ -257,7 +257,7 @@ begin
    myhead.Width:=mywidth;
    myhead.Height:=myheight;
  end
- else  if (LanType=QBLan) OR (LanType=QCLan) then
+ else  if (LanType=QBLan) OR (LanType=QCLan) OR (LanType=GWLan) then
  begin
    If GetMaxColor=3 then
    begin
