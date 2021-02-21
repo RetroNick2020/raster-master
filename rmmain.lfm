@@ -333,6 +333,10 @@ object RMMainForm: TRMMainForm
           Caption = 'FreePascal Const'
           OnClick = FreePascalConstClick
         end
+        object TurboCChar: TMenuItem
+          Caption = 'Turbo C Char'
+          OnClick = TurboCCharClick
+        end
       end
       object MenuItem11: TMenuItem
         Caption = 'Exit'
