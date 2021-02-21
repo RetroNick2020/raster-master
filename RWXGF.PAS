@@ -13,6 +13,7 @@ Const
    PBLan   = 5;
    GWLan   = 6;
    FPLan   = 7;
+   FBLan   = 8;
 
    Binary2   = 1;
    Binary4   = 2;
@@ -99,6 +100,58 @@ begin
  WriteXgfFP:=IOResult;
 {$I+}
 end;
+
+
+Function WriteXgfFB(x,y,x2,y2 : word;filename:string):word;
+type
+ //free takes a Word
+ XGFHeadFB = Record
+              Width,Height : word;
+ end;
+ linebufFB = array[0..1023] of Byte;
+var
+ Header : XGFHeadFB;
+ lineBuf:linebufFB;
+ counter : integer;
+ F         : File;
+ Error     : Word;
+ j,i       : integer;
+ width,height : word;
+begin
+ width:=x2-x+1;
+ Height:=y2-y+1;
+ Header.Width:=width SHL 3;
+ Header.Height:=height;
+{$I+}
+ Assign(F,filename);
+ Rewrite(F,1);
+ Blockwrite(F,Header,sizeof(Header));
+
+ Error:=IOResult;
+ if Error <> 0 then
+ begin
+   close(F);
+   WriteXgfFB:=Error;
+   exit;
+ end;
+
+ For j:=y to y2 do
+ begin
+   counter:=0;
+   for i:=x to x2 do
+   begin
+      linebuf[counter]:=RMCoreBase.GetPixel(i,j);
+      inc(counter);
+   end;
+   blockwrite(F,linebuf,width);
+ end;
+
+ Close(F);
+ WriteXgfFB:=IOResult;
+{$I+}
+end;
+
+
 
 
 //2 color - 1 bitplanes - packed - 1 bits per color
@@ -240,6 +293,11 @@ begin
  if LanType = FPLan then
  begin
    WriteXGF:=WriteXgfFP(x,y,x2,y2,filename);
+   exit;
+ end
+ else if LanType = FBLan then
+ begin
+   WriteXGF:=WriteXgfFB(x,y,x2,y2,filename);
    exit;
  end;
 

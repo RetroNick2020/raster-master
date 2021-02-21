@@ -64,11 +64,19 @@ begin
        end;
                     QBLan:
        begin
-          Writeln(F,#39,'  QuickBASIC, Array Size= ',myFileSize div 2,
+          Writeln(F,#39,'  QuickBASIC\QB64, Array Size= ',myFileSize div 2,
           ' Width= ',myWidth,' Height= ',myHeight,' Colors= ',Ncolors);
 
           Writeln(F,#39,'  ',myImageName);
        end;
+                    FBLan:
+       begin
+          Writeln(F,#39,'  FreeBASIC, Array Size= ',myFileSize div 2,
+          ' Width= ',myWidth,' Height= ',myHeight,' Colors= ',Ncolors);
+
+          Writeln(F,#39,'  ',myImageName);
+       end;
+
                     PBLan:
        begin
           Writeln(F,#39,'  PowerBASIC, Array Size= ',myFileSize div 2,
@@ -182,7 +190,7 @@ begin
  FilenameToImagename(SrcFile,myImageName);
  Numread:=0;
  NumPerLine:=12;
- Case myComp of GWLan,PBLan,QBLan: begin
+ Case myComp of GWLan,PBLan,QBLan,FBLan: begin
                                      if myFormat < SPRBinary then NumPerLine:=8;
                                    end;
 
@@ -216,7 +224,7 @@ begin
  WriteHeaders(F,myImageName,myWidth,myHeight,nColors,myComp,myFormat,myFileSize);
 
 
- Case myComp of QBLan,PBLan: Write(F,'DATA ');
+ Case myComp of QBLan,PBLan,FBLan: Write(F,'DATA ');
                       GWLan: Write(F,'1030 DATA ');
    else
      Write(F,'':10);
@@ -230,11 +238,11 @@ begin
 
 
                                case myComp of   TPlan,FPLan: Write(F,'$');
-                                    GWLan,QBLan,PBLan: Write(F,'&H');
+                                    GWLan,QBLan,PBLan,FBLan: Write(F,'&H');
                                           TCLan,QCLan: Write(F,'0x');
                                end;
 
-                               Case myComp of GWLan,QBLan,PBLan:
+                               Case myComp of GWLan,QBLan,PBLan,FBLan:
                                  begin
                                    If myFormat<SPRsource then
                                    begin
@@ -271,7 +279,7 @@ begin
      Counter:=0;
      If NumRead<NumToRead then
      begin
-       Case myComp of QBLan,PBLan : begin
+       Case myComp of QBLan,PBLan,FBLan : begin
                                      WriteLn(F);
                                      Write(F,'DATA ');
                                     end;

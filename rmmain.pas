@@ -40,6 +40,7 @@ type
     ActionList1: TActionList;
     FreePascalConst: TMenuItem;
     GWBASIC: TMenuItem;
+    FreeBASICDATA: TMenuItem;
     TurboPowerBasicData: TMenuItem;
     QuickCChar: TMenuItem;
     TurboCChar: TMenuItem;
@@ -126,6 +127,7 @@ type
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
     procedure FormCreate(Sender: TObject);
+    procedure FreeBASICDATAClick(Sender: TObject);
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
     procedure QuickCCharClick(Sender: TObject);
@@ -325,6 +327,8 @@ HideSelectAreaTools;
 UpdateToolSelectionIcons;
 ToolPencilMenu.Checked:=true; //enable pencil tool in menu
 end;
+
+
 
 
 
@@ -1801,6 +1805,49 @@ begin
           exit;
         end;
    end;
+
+end;
+
+
+procedure TRMMainForm.FreeBASICDATAClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ ca   : TClipAreaRec;
+ pm : integer;
+ sourcemode : word;
+begin
+   SaveDialog1.Filter := 'FreeBASIC DATA|*.DAT' ;
+   if RMDrawTools.GetClipStatus = 1 then
+   begin
+        RMDrawTools.GetClipAreaCoords(ca);
+        x:=ca.x+XOffset;
+        y:=ca.y+Yoffset;
+        x2:=ca.x2+XOffset;
+        y2:=ca.y2+YOffset;
+   end
+   else
+   begin
+        x:=0;
+        y:=0;
+        x2:=255;
+        y2:=255;
+   end;
+   if SaveDialog1.Execute then
+   begin
+        pm:=GetPaletteMode;
+        case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+                         PaletteModeVGA256:sourcemode:=source256;
+        end;
+
+        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,FBLan,SaveDialog1.FileName) <> 0 then
+        begin
+          ShowMessage('Error Saving DAT file!');
+          exit;
+        end;
+   end;
+
 
 end;
 

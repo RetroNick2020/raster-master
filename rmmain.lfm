@@ -4,8 +4,8 @@ object RMMainForm: TRMMainForm
   Top = 24
   Width = 1629
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 966
+  ClientWidth = 1629
   DefaultMonitor = dmMainForm
   DesignTimePPI = 120
   Menu = MainMenu1
@@ -322,7 +322,7 @@ object RMMainForm: TRMMainForm
       object MenuItem9: TMenuItem
         Caption = 'Export'
         object QBasicData: TMenuItem
-          Caption = 'QBasic DATA'
+          Caption = 'QuickBasic\QB64 DATA'
           OnClick = QBasicDataClick
         end
         object TurboPascalConst: TMenuItem
@@ -348,6 +348,10 @@ object RMMainForm: TRMMainForm
         object GWBASIC: TMenuItem
           Caption = 'GWBASIC DATA'
           OnClick = GWBASICClick
+        end
+        object FreeBASICDATA: TMenuItem
+          Caption = 'FreeBASIC DATA'
+          OnClick = FreeBASICDATAClick
         end
       end
       object MenuItem11: TMenuItem
