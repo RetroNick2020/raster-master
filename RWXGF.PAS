@@ -247,12 +247,17 @@ begin
  myWidth:=x2-x+1;
  myHeight:=y2-y+1;
 
- If (LanType=TPLan) OR (LanType=TCLan) then
+ If (LanType=TPLan) OR (LanType=TCLan)  then
  begin
    myhead.Width:=mywidth-1;
    myhead.Height:=myheight-1;
  end
- else
+ else If (LanType=PBLan) then
+ begin
+   myhead.Width:=mywidth;
+   myhead.Height:=myheight;
+ end
+ else  if (LanType=QBLan) OR (LanType=QCLan) then
  begin
    If GetMaxColor=3 then
    begin

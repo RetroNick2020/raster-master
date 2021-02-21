@@ -4,8 +4,8 @@ object RMMainForm: TRMMainForm
   Top = 24
   Width = 1629
   Caption = 'Raster Master'
-  ClientHeight = 966
-  ClientWidth = 1629
+  ClientHeight = 0
+  ClientWidth = 0
   DefaultMonitor = dmMainForm
   DesignTimePPI = 120
   Menu = MainMenu1
@@ -340,6 +340,10 @@ object RMMainForm: TRMMainForm
         object QuickCChar: TMenuItem
           Caption = 'Quick C Char'
           OnClick = QuickCCharClick
+        end
+        object TurboPowerBasicData: TMenuItem
+          Caption = 'Turbo/Power Basic DATA'
+          OnClick = TurboPowerBasicDataClick
         end
       end
       object MenuItem11: TMenuItem
