@@ -23,3 +23,6 @@ I have compiled a 32 bit version binary - it can be downloaded in the release se
 Feb 19 - 2021
 I have added Freepascal Export menu option. I have tested this under FP Graph unit on GO32V2/Windows using PutImage 
 ![](https://github.com/nickshardware/raster-master/wiki/images/rmfp.png)
+
+Feb 21 - 2021
+I have Added Export formats for Turbo\Power Basic, QB64. FreeBASIC, GWBASIC and PC-BASIC, Turbo C and QuickC
