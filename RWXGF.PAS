@@ -14,6 +14,7 @@ Const
    GWLan   = 6;
    FPLan   = 7;
    FBLan   = 8;
+   ABLan   = 9; //AmigaBasic
 
    Binary2   = 1;
    Binary4   = 2;
@@ -52,6 +53,95 @@ function GetMaxColor : integer;
 begin
   GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
 end;
+
+Function WriteXgfAmigaBasic(x,y,x2,y2 : word;filename:string):word;
+type
+ //free takes a Word
+ XGFHeadAB = Record
+              Width,Height : word;
+              BitPlanes    : word;
+ end;
+ linebufAB = array[0..1023] of Byte;
+var
+ Header : XGFHeadAB;
+ lineBuf:linebufAB;
+ counter : integer;
+ F         : File;
+ Error     : Word;
+ j,i       : integer;
+ width,height : word;
+ pixcolor : integer;
+ plane    : integer;
+ bitposition: integer;
+ minBytesPerLine    : integer;
+begin
+ width:=x2-x+1;
+ Height:=y2-y+1;
+ Header.Width:=width SHL 8;
+ Header.Height:=height SHL 8;
+ Header.BitPlanes:=4 SHL 8;
+
+ minBytesPerLine:=((width+15) div 16)*2;
+{$I+}
+ Assign(F,filename);
+ Rewrite(F,1);
+ Blockwrite(F,Header,sizeof(Header));
+
+ Error:=IOResult;
+ if Error <> 0 then
+ begin
+   close(F);
+   WriteXgfAmigaBasic:=Error;
+   exit;
+ end;
+
+
+ For plane:=1 to 4 do
+ begin
+ For j:=y to y2 do
+ begin
+   counter:=0;
+   fillchar(linebuf,sizeof(linebuf),0);
+   bitposition:=0;
+   for i:=x to x2 do
+   begin
+     pixcolor:=RMCoreBase.GetPixel(i,j);
+     inc(bitposition);
+     if (pixcolor = 1) and (plane=1) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 2) and (plane=2) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 3) and ((plane=1) or (plane=2)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 4) and (plane=3) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 5) and ((plane=1) or (plane=3)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 6) and ((plane=2) or (plane=3)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 7) and ((plane=1) or (plane=2) or (plane=3))then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 8) and (plane=4) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 9) and ((plane=1) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 10) and ((plane=2) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 11) and ((plane=1) or (plane=2) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 12) and ((plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 13) and ((plane=1) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 14) and ((plane=2) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
+     if  pixcolor = 15 then setbit(8-bitposition,1,linebuf[counter]);
+
+     if bitposition=8 then
+     begin
+      bitposition:=0;
+      inc(counter);
+     end;
+
+   end;
+   blockwrite(F,linebuf,minBytesPerLine);
+ end;
+ end;
+ Close(F);
+ WriteXgfAmigaBasic:=IOResult;
+{$I+}
+end;
+
+
+
+
+
 
 Function WriteXgfFP(x,y,x2,y2 : word;filename:string):word;
 type
@@ -298,6 +388,11 @@ begin
  else if LanType = FBLan then
  begin
    WriteXGF:=WriteXgfFB(x,y,x2,y2,filename);
+   exit;
+ end
+ else if LanType = ABLan then
+ begin
+   WriteXGF:=WriteXgfAmigaBasic(x,y,x2,y2,filename);
    exit;
  end;
 

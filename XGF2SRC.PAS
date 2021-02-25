@@ -77,6 +77,15 @@ begin
           Writeln(F,#39,'  ',myImageName);
        end;
 
+                    ABLan:
+       begin
+          Writeln(F,#39,'  AmigaBASIC, Array Size= ',myFileSize div 2,
+          ' Width= ',myWidth,' Height= ',myHeight,' Colors= ',Ncolors);
+
+          Writeln(F,#39,'  ',myImageName);
+       end;
+
+
                     PBLan:
        begin
           Writeln(F,#39,'  PowerBASIC, Array Size= ',myFileSize div 2,
@@ -190,7 +199,7 @@ begin
  FilenameToImagename(SrcFile,myImageName);
  Numread:=0;
  NumPerLine:=12;
- Case myComp of GWLan,PBLan,QBLan,FBLan: begin
+ Case myComp of GWLan,PBLan,QBLan,FBLan,ABLan: begin
                                      if myFormat < SPRBinary then NumPerLine:=8;
                                    end;
 
@@ -224,7 +233,7 @@ begin
  WriteHeaders(F,myImageName,myWidth,myHeight,nColors,myComp,myFormat,myFileSize);
 
 
- Case myComp of QBLan,PBLan,FBLan: Write(F,'DATA ');
+ Case myComp of QBLan,PBLan,FBLan,ABLan: Write(F,'DATA ');
                       GWLan: Write(F,'1030 DATA ');
    else
      Write(F,'':10);
@@ -238,11 +247,11 @@ begin
 
 
                                case myComp of   TPlan,FPLan: Write(F,'$');
-                                    GWLan,QBLan,PBLan,FBLan: Write(F,'&H');
+                                    GWLan,QBLan,PBLan,FBLan,ABLan: Write(F,'&H');
                                           TCLan,QCLan: Write(F,'0x');
                                end;
 
-                               Case myComp of GWLan,QBLan,PBLan,FBLan:
+                               Case myComp of GWLan,QBLan,PBLan,FBLan,ABLan:
                                  begin
                                    If myFormat<SPRsource then
                                    begin
@@ -252,7 +261,15 @@ begin
 
                                      Byte2Str(Hi(myWord),S);
                                      Byte2Str(Lo(myWord),S2);
-                                     Write(F,S,S2);
+                                     //insert code here for Amiga Byte swapping for integer
+                                     if myComp = ABLan then
+                                     begin
+                                       Write(F,S2,S);
+                                     end
+                                     else
+                                     begin
+                                       Write(F,S,S2);
+                                     end;
                                    end
                                    else
                                    begin
@@ -279,7 +296,7 @@ begin
      Counter:=0;
      If NumRead<NumToRead then
      begin
-       Case myComp of QBLan,PBLan,FBLan : begin
+       Case myComp of QBLan,PBLan,FBLan,ABLan : begin
                                      WriteLn(F);
                                      Write(F,'DATA ');
                                     end;

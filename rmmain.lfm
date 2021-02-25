@@ -353,6 +353,10 @@ object RMMainForm: TRMMainForm
           Caption = 'FreeBASIC DATA'
           OnClick = FreeBASICDATAClick
         end
+        object AmigaBasic: TMenuItem
+          Caption = 'AmigaBasic DATA'
+          OnClick = AmigaBasicClick
+        end
       end
       object MenuItem11: TMenuItem
         Caption = 'Exit'
