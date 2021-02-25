@@ -3,11 +3,13 @@ Sprite editor for QuickBasic\C Turbo Pascal\C
 
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I am working on touching up the user interface. In a few days there should be something here.
 
+Feb 25 - 2021 -I forgot to post video for QuickBasic\QB64 https://youtu.be/rZPc7VJhbeE
 Feb 25 - 2021 -I also figured out the AmigaBasic Bob and sprite formats also. Check out the video.
 https://youtu.be/OGh5yVsTEcA
 
 Feb 23 - 2021
 Big milestone today. I managed to figure out the AmigaBasic PUT format. It will now be an export option!
+Check out the video https://youtu.be/WCjZ0lyd_EM
 
 Feb 21 - 2021
 I have Added Export formats for Turbo\Power Basic, QB64. FreeBASIC, GWBASIC and PC-BASIC, Turbo C and QuickC
