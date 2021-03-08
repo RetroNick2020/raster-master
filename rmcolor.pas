@@ -72,24 +72,20 @@ var
   cr : TRMColorRec;
   r,g,b : integer;
 begin
-   PickedIndex:=-1;
+  PickedIndex:=-1;
   SelectedColor:=RMCoreBase.GetCurColor;
-
-
-  // SelectedColor:=2;
-  ColorPalette1.ClearColors;
-//  ColorPalette1.PickedIndex:=SelectedColor;
- // ColorPalette1.Refresh;
-  AddEGA64;
-  ColorPalette1.PickedIndex:=SelectedColor;
-//  RMCoreBase.Palette.GetColor(2,cr);
   r:=RMCoreBase.Palette.GetRed(SelectedColor);
   g:=RMCoreBase.Palette.GetGreen(SelectedColor);
   b:=RMCoreBase.Palette.GetBlue(SelectedColor);
+  SelectedColor:=RGBToEGAIndex(r,g,b);
+
+  ColorPalette1.ClearColors;
+  AddEGA64;
+
+  ColorPalette1.PickedIndex:=SelectedColor;
   PickedColor:=rgbToColor(r,g,b);
   Shape1.Brush.Color:=PickedColor;
   EGAIndexLabel.Caption:='EGA Index: '+IntToStr(RGBToEGAIndex(r,g,b));
-
 end;
 
 procedure TRMEGAColorDialog.AddEGA64;

@@ -14,7 +14,7 @@ type
 
   TRMVgaColorDialog = class(TForm)
     Button1: TButton;
-    ColorPalette1: TColorPalette;
+    ColorPalette: TColorPalette;
     VGAIndexLabel: TLabel;
     Label1: TLabel;
     Label2: TLabel;
@@ -28,7 +28,7 @@ type
     TrackBar3: TTrackBar;
 
     procedure Button1Click(Sender: TObject);
-    procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
+    procedure ColorPaletteColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
     procedure OKClick(Sender: TObject);
 
@@ -70,11 +70,11 @@ var
   tc      : TColor;
   cr      : TRMColorRec;
 begin
-  count:=ColorPalette1.ColorCount;
+  count:=ColorPalette.ColorCount;
  // ShowMessage('count='+inttostr(count));
   for i:=0 to count-1 do
   begin
-     tc:=ColorPalette1.Colors[i];
+     tc:=ColorPalette.Colors[i];
      cr.r:=Red(tc);
      cr.g:=Green(tc);
      cr.b:=blue(tc);
@@ -94,13 +94,13 @@ begin
   g:=Green(Shape1.Brush.Color);
   b:=Blue(Shape1.Brush.Color);
   //TrackBar1.position:=round((double(r) * 63) / 255);
-  TrackBar1.position:=ToSixBit(r);
-  TrackBar2.position:=ToSixBit(g);
-  TrackBar3.position:=ToSixBit(b);
+  TrackBar1.position:=EightToSixBit(r);
+  TrackBar2.position:=EightToSixBit(g);
+  TrackBar3.position:=EightToSixBit(b);
 //  Label4.Caption:=IntToStr(TrackBar1.position)+' '+IntToStr((TrackBar1.position * 255) div 63 );
-  Label4.Caption:='['+IntToStr(TrackBar1.position)+'] '+IntToStr(ToEightBit(TrackBar1.Position));
-  Label5.Caption:='['+IntToStr(TrackBar2.position)+'] '+IntToStr(ToEightBit(TrackBar2.Position));
-  Label6.Caption:='['+IntToStr(TrackBar3.position)+'] '+IntToStr(ToEightBit(TrackBar3.Position));
+  Label4.Caption:='['+IntToStr(TrackBar1.position)+'] '+IntToStr(SixToEightBit(TrackBar1.Position));
+  Label5.Caption:='['+IntToStr(TrackBar2.position)+'] '+IntToStr(SixToEightBit(TrackBar2.Position));
+  Label6.Caption:='['+IntToStr(TrackBar3.position)+'] '+IntToStr(SixToEightBit(TrackBar3.Position));
 end;
 
 procedure TRMVgaColorDialog.OKClick(Sender: TObject);
@@ -108,10 +108,10 @@ begin
    modalresult:= mrOk;
 end;
 
-procedure TRMVgaColorDialog.ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
+procedure TRMVgaColorDialog.ColorPaletteColorPick(Sender: TObject; AColor: TColor;
   Shift: TShiftState);
 begin
-   PickedIndex:=ColorPalette1.PickedIndex;
+   PickedIndex:=ColorPalette.PickedIndex;
  //  EGAIndexLabel.Caption:='EGA Index: '+IntToStr(PickedIndex);
    PickedColor:=AColor;
    Shape1.Brush.Color:=PickedColor;
@@ -129,16 +129,16 @@ var
  begin
   SelectedColor:=RMCoreBase.GetCurColor;
   PickedIndex:=SelectedColor;
-  ColorPalette1.ColumnCount:=8;
-  ColorPalette1.ButtonHeight:=60;
-  ColorPalette1.ButtonWidth:=60;
+  ColorPalette.ColumnCount:=8;
+  ColorPalette.ButtonHeight:=60;
+  ColorPalette.ButtonWidth:=60;
 
-  ColorPalette1.ClearColors;
+  ColorPalette.ClearColors;
 
   AddVGA16;
-  ColorPalette1.PickedIndex:=PickedIndex;
+  ColorPalette.PickedIndex:=PickedIndex;
 
-  PickedColor:=ColorPalette1.Colors[PickedIndex];
+  PickedColor:=ColorPalette.Colors[PickedIndex];
   Shape1.Brush.Color:=PickedColor;
   UpdateTrackValues;
   UpDateColorChange;
@@ -151,15 +151,15 @@ var
 begin
   SelectedColor:=RMCoreBase.GetCurColor;
   PickedIndex:=SelectedColor;
-  ColorPalette1.ColumnCount:=32;
-  ColorPalette1.ButtonHeight:=15;
-  ColorPalette1.ButtonWidth:=15;
+  ColorPalette.ColumnCount:=32;
+  ColorPalette.ButtonHeight:=15;
+  ColorPalette.ButtonWidth:=15;
 
-  ColorPalette1.ClearColors;
+  ColorPalette.ClearColors;
   AddVGA256;
 
-  ColorPalette1.PickedIndex:=PickedIndex;
-  PickedColor:=ColorPalette1.Colors[PickedIndex];
+  ColorPalette.PickedIndex:=PickedIndex;
+  PickedColor:=ColorPalette.Colors[PickedIndex];
   Shape1.Brush.Color:=PickedColor;
   UpdateTrackValues;
   UpDateColorChange;
@@ -175,7 +175,7 @@ begin
   begin
       RMCoreBase.Palette.GetColor(i,cr);
       TC:=RGBToColor(cr.r,cr.g,cr.b);
-      ColorPalette1.AddColor(TC);
+      ColorPalette.AddColor(TC);
   end;
 end;
 
@@ -190,7 +190,7 @@ begin
   begin
       RMCoreBase.Palette.GetColor(i,cr);
       TC:=RGBToColor(cr.r,cr.g,cr.b);
-      ColorPalette1.AddColor(TC);
+      ColorPalette.AddColor(TC);
   end;
  // ShowMessage('after AddVGA16 Count='+IntToStr(RMCoreBase.Palette.GetColorCount));
 end;
@@ -200,14 +200,15 @@ procedure TRMVgaColorDialog.UpdateColorChange;
   var
   r,g,b : integer;
 begin
-  r:=ToEightBit(TrackBar1.position);
-  g:=ToEightBit(TrackBar2.position);
-  b:=ToEightBit(TrackBar3.position);
+  r:=SixToEightBit(TrackBar1.position);
+  g:=SixToEightBit(TrackBar2.position);
+  b:=SixToEightBit(TrackBar3.position);
 
   PickedColor:=rgbToColor(r,g,b);
   Shape1.Brush.Color:=PickedColor;
-  PickedIndex:=ColorPalette1.PickedIndex;
-  ColorPalette1.Colors[PickedIndex]:=PickedColor;
+  PickedIndex:=ColorPalette.PickedIndex;
+  VgaIndexLabel.Caption:='VGA Index: '+IntToStr(PickedIndex);
+  ColorPalette.Colors[PickedIndex]:=PickedColor;
 end;
 
 procedure TRMVgaColorDialog.TrackBar1Change(Sender: TObject);
@@ -236,9 +237,9 @@ var
   cr : TRMColorRec;
   r,g,b : byte;
 begin
-  for i:=0 to 16 do
+  for i:=0 to 15 do
   begin
-      tc:=ColorPalette1.Colors[i];
+      tc:=ColorPalette.Colors[i];
       RedGreenBlue(tc,r,g,b);
       cr.r:=r;
       cr.g:=g;
@@ -254,9 +255,9 @@ var
   cr : TRMColorRec;
   r,g,b : byte;
 begin
-  for i:=0 to 16 do
+  for i:=0 to 255 do
   begin
-      tc:=ColorPalette1.Colors[i];
+      tc:=ColorPalette.Colors[i];
       RedGreenBlue(tc,r,g,b);
       cr.r:=r;
       cr.g:=g;

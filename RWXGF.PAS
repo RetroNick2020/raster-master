@@ -18,31 +18,33 @@ Const
 
    Binary2   = 1;
    Binary4   = 2;
-   Binary16  = 3;
-   Binary256 = 4;
+   Binary8   = 3;
+   Binary16  = 4;
+   Binary32  = 5;
+   Binary256 = 6;
 
-   Source2   = 5;
-   Source4   = 6;
-   Source16  = 7;
-   Source256 = 8;
+   Source2   = 7;
+   Source4   = 8;
+   Source8   = 9;
+   Source16  = 10;
+   Source32  = 11;
+   Source256 = 12;
 
-   SPRBinary = 9;
-   SPRSource = 10;
+   SPRBinary = 13;
+   SPRSource = 14;
 
-   PPRBinary = 11;
-   PPRSource = 12;
+   PPRBinary = 15;
+   PPRSource = 16;
 
-   TEGLText  = 13;
+   TEGLText  = 17;
 
-   PALSource = 14;
+   PALSource = 18;
 
 
 
 Function WriteXgf(x,y,x2,y2,LanType : word;filename:string):word;
-Function ReadRaw(x,y,x2,y2,pal : Word;FileName : String) : Word;
-Function WriteRaw(x,y,x2,y2 : Word;FileName : String) : Word;
-Function ReadPAL(Filename : String) : Word;
-Function WritePAL(Filename : String) : Word;
+
+
 
 Implementation
 
@@ -74,12 +76,24 @@ var
  plane    : integer;
  bitposition: integer;
  minBytesPerLine    : integer;
+ BitPlaneCount : integer;
+ ColorCount    : integer;
 begin
+ ColorCount:=GetMaxColor+1;
+ BitPlaneCount:=0;
+ Case ColorCount of 2:BitplaneCount:=1;
+                    4:BitPlaneCount:=2;
+                    8:BitPlaneCount:=3;
+                    16:BitPlaneCount:=4;
+                    32:BitPlaneCount:=5;
+
+ end;
+
  width:=x2-x+1;
  Height:=y2-y+1;
  Header.Width:=width SHL 8;
  Header.Height:=height SHL 8;
- Header.BitPlanes:=4 SHL 8;
+ Header.BitPlanes:=BitPlaneCount SHL 8;
 
  minBytesPerLine:=((width+15) div 16)*2;
 {$I+}
@@ -96,7 +110,7 @@ begin
  end;
 
 
- For plane:=1 to 4 do
+ For plane:=1 to BitPlaneCount do
  begin
  For j:=y to y2 do
  begin
@@ -121,7 +135,23 @@ begin
      if (pixcolor = 12) and ((plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
      if (pixcolor = 13) and ((plane=1) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
      if (pixcolor = 14) and ((plane=2) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-     if  pixcolor = 15 then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 15) and ((plane=1) or (plane=2) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 16) and (plane=5) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 17) and ((plane=1) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 18) and ((plane=2) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 19) and ((plane=1) or (plane=2) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 20) and ((plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 21) and ((plane=1) or (plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 22) and ((plane=2) or (plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 23) and ((plane=1) or (plane=2) or (plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 24) and ((plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 25) and ((plane=1) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 26) and ((plane=2) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 27) and ((plane=1) or (plane=2) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 28) and ((plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 29) and ((plane=1) or (plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 30) and ((plane=2) or (plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
+     if (pixcolor = 31) and ((plane=1) or (plane=2) or (plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
 
      if bitposition=8 then
      begin
@@ -647,77 +677,6 @@ begin
  Error:=IORESULT;
  ReadRaw:=Error;
 {$I+}
-end;
-
-
-Function WritePAL(FileName : String): Word;
-Var
- F : File;
-  myPal :  Array[0..255,0..2] of Byte;
- Colors : Word;
- Error : Word;
- i : integer;
-
-begin
-{$I-}
- Colors:=GetMaxColor+1;
- //GrabPaletteList(myPal,Colors);
-
- For i:=0 to 255 do
-begin
-  myPal[i,0]:=RMCoreBase.Palette.GetRed(i);
-  myPal[i,1]:=RMCoreBase.Palette.GetGreen(i);
-  myPal[i,2]:=RMCoreBase.Palette.GetBlue(i);
-end;
-
- Assign(F,FileName);
- Rewrite(F,1);
- BlockWrite(F,myPAL,Colors*3);
- Close(F);
- Error:=IORESULT;
- WritePAL:=Error;
-{$I+}
-end;
-
-Function ReadPAL(Filename : String) : Word;
-Var
- F      : File;
- Fsize  : LongInt;
- Colors : word;
- Error  : Word;
-  myPal :  Array[0..255,0..2] of Byte;
-  cr : TRMColorRec;
-  i : integer;
-begin
- Colors:=GetMaxCOlor+1;
- Assign(F,FileName);
- Reset(F,1);
- Fsize:=FIleSize(F);
- If (Fsize<>48) AND (Fsize<>768) then
- begin
-  ReadPAL:=1000;
-  Exit;
- end;
- BlockRead(F,myPAL,Fsize);
- Close(F);
- Error:=IORESULT;
- ReadPAl:=Error;
- If Error = 0 then
- begin
-  If Colors > (Fsize div 3) then
-  begin
-    Colors:=(Fsize div 3);
-  end;
-  //SetPaletteList(myPal,Colors);
-  for i:=0 to Colors-1 do
-     begin
-       cr.r:=mypal[i,0];
-       cr.g:=mypal[i,1];
-       cr.b:=mypal[i,2];
-
-       RMCoreBase.Palette.SetColor(i,cr);
-     end;
- end;
 end;
 
 begin

@@ -2,7 +2,7 @@
 {$PACKRECORDS 1}
 Unit rwbmp;
  Interface
-Function ReadBMP(x,y,x2,y2,lp : Word;Filename : String) : Word;
+Function ReadBMP(x,y,x2,y2,lp,pm : Word;Filename : String) : Word;
 Function WriteBMP(x,y,x2,y2 : Word;Filename : String) : Word;
 Implementation
   uses SysUtils,RMCore,Dialogs,bits;
@@ -159,7 +159,7 @@ begin
    GetMaxColor:=RMCoreBase.Palette.GetColorCount-1;
 end;
 
-Function ReadBMP(x,y,x2,y2,lp : Word;Filename : String) : Word;
+Function ReadBMP(x,y,x2,y2,lp,pm : Word;Filename : String) : Word;
 Var
  mybmp    : bmpRec;
  myWidth  : Word;
@@ -328,19 +328,43 @@ begin
    //ReduceTo16;
  end;
 
- if lp=1 then
- begin
-   For i:=0 to myColNum-1 do
+
+
+  If (lp=1) and (CanLoadPaletteFile(pm)) and (myColNum > 0) then     //we do not load palette for mono and cga or if we are select/clip open mode pal=0
    begin
-//    StdPal[i,0]:=bmpPal[i].red SHR 2;
-//    StdPal[i,1]:=bmpPal[i].green SHR 2;
-//    StdPal[i,2]:=bmpPal[i].blue SHR 2;
-      cr.r:=bmpPal[i].red;
-      cr.g:=bmpPal[i].green;
-      cr.b:=bmpPal[i].blue;
-      RMCoreBase.palette.SetColor(i,cr);
+   if pm=PaletteModeEGA then       //if we are in ega palette mode we need to be able to remap rgb color ega64 palette
+   begin                           //if not we skip setting that color
+     for i:=0 to myColNum-1 do
+     begin
+       cr.r:=bmpPal[i].red;
+       cr.g:=bmpPal[i].green;
+       cr.b:=bmpPal[i].blue;
+       if RGBToEGAIndex(cr.r,cr.g,cr.b) > -1 then    //if this returns an index to EGA color we can accept it
+       begin
+        RMCoreBase.Palette.SetColor(i,cr);
+       end;
+     end;
+   end
+   else if isAmigaPaletteMode(pm) then
+   begin
+     for i:=0 to myColNum-1 do
+     begin
+      cr.r:=FourToEightBit(EightToFourBit(bmpPal[i].red));
+      cr.g:=FourToEightBit(EightToFourBit(bmpPal[i].green));
+      cr.b:=FourToEightBit(EightToFourBit(bmpPal[i].blue));
+      RMCoreBase.Palette.SetColor(i,cr);
+     end;
+   end
+   else    //most liekly vga or vga256 - no modifications needed
+   begin
+     for i:=0 to myColNum-1 do
+     begin
+       cr.r:=bmpPal[i].red;
+       cr.g:=bmpPal[i].green;
+       cr.b:=bmpPal[i].blue;
+       RMCoreBase.Palette.SetColor(i,cr);
+     end;
    end;
-//   SetPaletteList(StdPal,myColNum);
  end;
 
 Error:=IORESULT;

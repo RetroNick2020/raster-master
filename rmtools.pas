@@ -105,6 +105,7 @@ Type
              procedure AddEGAPalette(var CP : TColorPalette);
              procedure AddVGAPalette(var CP : TColorPalette);
              procedure AddVGAPalette256(var CP : TColorPalette);
+             procedure AddAmigaPalette(var CP : TColorPalette; ColorNum : integer);
              procedure CreateRandomSprayPoints;
              Procedure HFlip(x,y,x2,y2: word);
              Procedure VFlip(x,y,x2,y2: word);
@@ -1238,6 +1239,21 @@ begin
     end;
 end;
 
+procedure TRMDrawTools.AddAmigaPalette(var CP : TColorPalette; ColorNum : integer);
+var
+  TC : TColor;
+  i : integer;
+begin
+    CP.ClearColors;
+    for i:=0 to ColorNum-1 do
+    begin
+      TC:=RGBToColor(AmigaDefault32[i].r,
+                     AmigaDefault32[i].g,
+                     AmigaDefault32[i].b);
+      CP.AddColor(TC);
+
+    end;
+end;
 
 Procedure TRMDrawTools.Hflip(x,y,x2,y2: word);
 Var

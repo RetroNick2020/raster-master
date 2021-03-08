@@ -4,7 +4,7 @@ Unit RwPcx;
 Interface
 uses
   bits,RMCore,Dialogs,SysUtils;
-Function ReadPcxImg(x,y,x2,y2,Pal : Word;Filename : string): word;
+Function ReadPcxImg(x,y,x2,y2,Pal,pm : Word;Filename : string): word;
 Function SavePcxImg(x,y,x2,y2 : Word;Filename : String): Word;
 Implementation
 
@@ -477,7 +477,7 @@ begin
  GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
 end;
 
-Function ReadPcxImg(x,y,x2,y2,Pal : Word;Filename : string): word;
+Function ReadPcxImg(x,y,x2,y2,Pal,pm : Word;Filename : string): word;
 var
  PcxPal         : PaletteT;
  PcxFile        : File;
@@ -640,7 +640,7 @@ Begin
         RMCoreBase.PutPixel(x+i-1,Ln+y-1,Uline[i-1]);
      end;
    end;
-   If GetMAxColor=15 then
+   If GetMaxColor=15 then
    begin
 //     ReduceTo16;
    end;
@@ -648,49 +648,45 @@ Begin
  Close(PcxFile);
  FreeMem(BlockData,SizeOf(BlockArray));
 {$I+}
- If Pal = 1 then
- begin
    GetPcxInfo(filename,Header,PcxPal);
    Colors:=GetNPcxColors(Header);
-  // RMCoreBase.palette.ClearColors;
-   if colors < (GetMaxColor+1) then
-    // if (1=1) then
-     begin
-     For i:=0 to Colors-1 do
-   //  For i:=0 to 15 do
-     begin
-       //PcxPal[i,0]:=PcxPal[i,0] SHR 2;
-      // PcxPal[i,1]:=PcxPal[i,1] SHR 2;
-      // PcxPal[i,2]:=PcxPal[i,2] SHR 2;
-       cr.r:=PcxPal[i,0];
-       cr.g:=PcxPal[i,1];
-       cr.b:=PcxPal[i,2];
-      RMCoreBase.Palette.SetColor(i,cr);
-       //    RMCoreBase.Palette.AddColor(cr.r,cr.g,cr.b);
 
-     end;
-     //SetPaletteList(PcxPal,Colors);
-   end
-   else
+   If (Pal=1) and (CanLoadPaletteFile(pm)) and (Colors > 0) then     //we do not load palette for mono and cga or if we are select/clip open mode pal=0
    begin
-
-     For i:=0 to GetMaxColor do
-     // For i:=0 to 15 do
+   if pm=PaletteModeEGA then       //if we are in ega palette mode we need to be able to remap rgb color ega64 palette
+   begin                           //if not we skip setting that color
+     for i:=0 to Colors-1 do
      begin
-//       PcxPal[i,0]:=PcxPal[i,0] SHR 2;
-//       PcxPal[i,1]:=PcxPal[i,1] SHR 2;
-//       PcxPal[i,2]:=PcxPal[i,2] SHR 2;
-
-  //   SetPaletteList(PcxPal,GetMaxColor+1);
        cr.r:=PcxPal[i,0];
        cr.g:=PcxPal[i,1];
        cr.b:=PcxPal[i,2];
+       if RGBToEGAIndex(cr.r,cr.g,cr.b) > -1 then    //if this returns an index to EGA color we can accept it
+       begin
+        RMCoreBase.Palette.SetColor(i,cr);
+       end;
+     end;
+   end
+   else if isAmigaPaletteMode(pm) then
+   begin
+     for i:=0 to Colors-1 do
+     begin
+      cr.r:=FourToEightBit(EightToFourBit(PcxPal[i,0]));
+      cr.g:=FourToEightBit(EightToFourBit(PcxPal[i,1]));
+      cr.b:=FourToEightBit(EightToFourBit(PcxPal[i,2]));
       RMCoreBase.Palette.SetColor(i,cr);
-       //  RMCoreBase.Palette.AddColor(cr.r,cr.g,cr.b);
-      end;
+     end;
+   end
+   else    //most liekly vga or vga256 - no modifications needed
+   begin
+     for i:=0 to Colors-1 do
+     begin
+       cr.r:=PcxPal[i,0];
+       cr.g:=PcxPal[i,1];
+       cr.b:=PcxPal[i,2];
+       RMCoreBase.Palette.SetColor(i,cr);
+     end;
    end;
  end;
-
 end;
 
 //Function BytesPerRow(width : word) : Word;

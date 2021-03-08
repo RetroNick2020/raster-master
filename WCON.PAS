@@ -2,8 +2,9 @@
 {$PACKRECORDS 1}
 Unit Wcon;
  Interface
-     uses RMCore,rwXGF,WPRF,Xgf2src;
- Function WriteDat(x,y,x2,y2,myFormat,LanType : word; filename : string) : word;
+     uses RMCore,rwpal,rwXGF,WPRF,Xgf2src;
+
+     Function WriteDat(x,y,x2,y2,myFormat,LanType : word; filename : string) : word;
 
  Implementation
  function GetMaxColor : integer;

@@ -126,7 +126,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="8">
+    <Units Count="11">
       <Unit0>
         <Filename Value="RM.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -177,6 +177,22 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit7>
+      <Unit8>
+        <Filename Value="rmamigacolor.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="RMAmigaColorDialog"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="RMamigacolor"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="rwraw.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="rwpal.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

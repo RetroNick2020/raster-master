@@ -17,7 +17,6 @@ object RMMainForm: TRMMainForm
     Height = 256
     Top = 16
     Width = 256
-    OnClick = ActualBoxClick
   end
   object HorizScroll: TScrollBar
     Left = 368
@@ -33,7 +32,6 @@ object RMMainForm: TRMMainForm
     Height = 618
     Top = 112
     Width = 690
-    OnClick = ZoomBoxClick
     OnMouseDown = ZoomBoxMouseDown
     OnMouseMove = ZoomBoxMouseMove
     OnMouseUp = ZoomBoxMouseUp
@@ -360,11 +358,30 @@ object RMMainForm: TRMMainForm
       end
       object MenuItem11: TMenuItem
         Caption = 'Exit'
-        OnClick = MenuItem11Click
+        OnClick = FileExitMenuClick
       end
     end
     object MenuItem4: TMenuItem
       Caption = 'Palette'
+      object PaletteOpen: TMenuItem
+        Caption = 'Open'
+        OnClick = PaletteOpenClick
+      end
+      object PaletteSave: TMenuItem
+        Caption = 'Save'
+        OnClick = PaletteSaveClick
+      end
+      object PaletteExport: TMenuItem
+        Caption = 'Export'
+        object PaletteExportQBasic: TMenuItem
+          Caption = 'QuickBasic\QB64 DATA\Palette Commands'
+          OnClick = PaletteExportQBasicClick
+        end
+        object PaletteExportAmigaBasic: TMenuItem
+          Caption = 'AmigaBasic DATA\Palette Commands'
+          OnClick = PaletteExportAmigaBasicClick
+        end
+      end
       object PaletteMono: TMenuItem
         Caption = 'Mono'
         OnClick = PaletteMonoClick
@@ -388,6 +405,29 @@ object RMMainForm: TRMMainForm
       object PaletteVGA256: TMenuItem
         Caption = 'VGA Palette 256'
         OnClick = PaletteVGA256Click
+      end
+      object PaletteAmiga: TMenuItem
+        Caption = 'Amiga'
+        object PaletteAmiga2: TMenuItem
+          Caption = '2 Color'
+          OnClick = PaletteAmiga2Click
+        end
+        object PaletteAmiga4: TMenuItem
+          Caption = '4 Color'
+          OnClick = PaletteAmiga4Click
+        end
+        object PaletteAmiga8: TMenuItem
+          Caption = '8 Color'
+          OnClick = PaletteAmiga8Click
+        end
+        object PaletteAmiga16: TMenuItem
+          Caption = '16 Color'
+          OnClick = PaletteAmiga16Click
+        end
+        object PaletteAmiga32: TMenuItem
+          Caption = '32 Color'
+          OnClick = PaletteAmiga32Click
+        end
       end
     end
     object ToolMenu: TMenuItem
@@ -483,7 +523,6 @@ object RMMainForm: TRMMainForm
     end
     object Action1: TAction
       Caption = 'Action1'
-      OnExecute = Action1Execute
     end
     object FileOpen1: TFileOpen
       Category = 'File'

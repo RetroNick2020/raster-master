@@ -7,7 +7,8 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ColorBox, ActnList, StdActns, ColorPalette, Types,
-  LResources,lclintf, RMTools, RMCore,RMColor,RMColorVGA,rmabout,RWPCX,RWBMP,RWXGF,WCON,XGF2SRC,bits,flood;
+  LResources,lclintf, RMTools, RMCore,RMColor,RMColorVGA,RMAmigaColor,
+  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,XGF2SRC,bits,flood;
 
 
 
@@ -22,13 +23,7 @@ const
 //  GridYThick=1;
 //  GridXThick=1;
 
-  PaletteModeNone = 0;
-  PaletteModeMono = 1;
-  PaletteModeCGA0 = 2;
-  PaletteModeCGA1 = 3;
-  PaletteModeEGA  = 4;
-  PaletteModeVGA =  5;
-  PaletteModeVGA256 = 6;
+
 
 
 type
@@ -42,6 +37,17 @@ type
     GWBASIC: TMenuItem;
     FreeBASICDATA: TMenuItem;
     AmigaBasic: TMenuItem;
+    PaletteExportAmigaBasic: TMenuItem;
+    PaletteExportQBasic: TMenuItem;
+    PaletteExport: TMenuItem;
+    PaletteOpen: TMenuItem;
+    PaletteSave: TMenuItem;
+    PaletteAmiga2: TMenuItem;
+    PaletteAmiga4: TMenuItem;
+    PaletteAmiga8: TMenuItem;
+    PaletteAmiga16: TMenuItem;
+    PaletteAmiga32: TMenuItem;
+    PaletteAmiga: TMenuItem;
     TurboPowerBasicData: TMenuItem;
     QuickCChar: TMenuItem;
     TurboCChar: TMenuItem;
@@ -118,11 +124,7 @@ type
 
     TrackBar1: TTrackBar;
     VirtScroll: TScrollBar;
-    procedure Action1Execute(Sender: TObject);
-    procedure Action2Execute(Sender: TObject);
-    procedure ActualBoxClick(Sender: TObject);
     procedure AmigaBasicClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
 
     procedure ColorBox1Change(Sender: TObject);
@@ -132,10 +134,17 @@ type
     procedure FreeBASICDATAClick(Sender: TObject);
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
+    procedure PaletteExportAmigaBasicClick(Sender: TObject);
+    procedure PaletteOpenClick(Sender: TObject);
+    procedure PaletteSaveClick(Sender: TObject);
+    procedure PaletteAmiga16Click(Sender: TObject);
+    procedure PaletteAmiga2Click(Sender: TObject);
+    procedure PaletteAmiga32Click(Sender: TObject);
+    procedure PaletteAmiga4Click(Sender: TObject);
+    procedure PaletteAmiga8Click(Sender: TObject);
+    procedure PaletteExportQBasicClick(Sender: TObject);
     procedure QuickCCharClick(Sender: TObject);
     procedure RMAboutDialogClick(Sender: TObject);
-    procedure LineDrawChange(Sender: TObject);
-    procedure MenuItem11Click(Sender: TObject);
     procedure QBasicDataClick(Sender: TObject);
     procedure NewClick(Sender: TObject);
     procedure RMLogoClick(Sender: TObject);
@@ -162,14 +171,12 @@ type
     procedure PencilDrawChange(Sender: TObject);
     procedure ColorBoxMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure ToggleBox1Change(Sender: TObject);
     procedure ToolRectangleMenuClick(Sender: TObject);
     procedure ToolScrollDownMenuClick(Sender: TObject);
     procedure ToolScrollLeftMenuClick(Sender: TObject);
     procedure ToolScrollRightMenuClick(Sender: TObject);
     procedure ToolScrollUpMenuClick(Sender: TObject);
     procedure ToolUndoIconClick(Sender: TObject);
-    procedure ToolVFLIPButtonClick(Sender: TObject);
     procedure TurboPowerBasicDataClick(Sender: TObject);
     procedure TurboCCharClick(Sender: TObject);
     procedure TurboPascalConstClick(Sender: TObject);
@@ -189,9 +196,6 @@ type
     procedure OpenFileClick(Sender: TObject);
     procedure HorizScrollChange(Sender: TObject);
     procedure VirtScrollChange(Sender: TObject);
-
-    procedure Shape1ChangeBounds(Sender: TObject);
-    procedure ToolBar1Click(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
   private
        FX,FY,FX2,FY2 : Integer;
@@ -228,6 +232,7 @@ type
        procedure UnFreezeScrollAndZoom;
        procedure ShowSelectAreaTools;
        procedure HideSelectAreaTools;
+       procedure GetOpenSaveRegion(var x,y,x2,y2 : integer);  //if we are in select/clip area use those coords
 
   public
 
@@ -306,7 +311,6 @@ ZoomBox.Canvas.Brush.Color := clwhite;
 RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
 LoadResourceIcons;
 
-
 MaxXOffset:=RMDrawTools.GetMaxXOffset(MaxImagePixelWidth,ZoomBox.Width);
 HorizScroll.Max:=MaxXOffset;
 MaxYOffset:=RMDrawTools.GetMaxYOffset(MaxImagePixelHeight,ZoomBox.Height);
@@ -322,35 +326,19 @@ UpdatePalette;
 ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
 ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor;
 
-
 RMDrawTools.SetDrawTool(DrawShapePencil);
 ClearSelectedToolsMenu;
+PaletteVGA.Checked:=true; // set vga palette
 HideSelectAreaTools;
 UpdateToolSelectionIcons;
 ToolPencilMenu.Checked:=true; //enable pencil tool in menu
 end;
 
-
-
-
-
 procedure TRMMainForm.RMAboutDialogClick(Sender: TObject);
 begin
  Aboutdialog.InitName;
- AboutDialog.showmodal;
+ AboutDialog.ShowModal;
 end;
-
-procedure TRMMainForm.LineDrawChange(Sender: TObject);
-begin
-
-end;
-
-procedure TRMMainForm.MenuItem11Click(Sender: TObject);
-begin
-  Close;
-end;
-
-
 
 procedure TRMMainForm.NewClick(Sender: TObject);
 begin
@@ -521,7 +509,6 @@ begin
   begin
     RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
   end;
-
 end;
 
 procedure TRMMainForm.ToolUndoIconClick(Sender: TObject);
@@ -540,19 +527,6 @@ begin
   end;
 end;
 
-procedure TRMMainForm.ToolVFLIPButtonClick(Sender: TObject);
-begin
-
-end;
-
-
-
-
-
-
-
-
-
 procedure TRMMainForm.ToolFRectangleMenuClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
@@ -563,8 +537,6 @@ begin
   UpdateToolSelectionIcons;
   ToolFRectangleMenu.Checked:=true;
 end;
-
-
 
 procedure TRMMainForm.ToolCircleMenuClick(Sender: TObject);
 begin
@@ -658,6 +630,45 @@ begin
   UpdateZoomArea;
 end;
 
+procedure TRMMainForm.PaletteAmiga32Click(Sender: TObject);
+begin
+ ClearSelectedPaletteMenu;
+ PaletteAmiga.Checked:=true;
+ PaletteAmiga32.Checked:=true;
+ SetPaletteMode(PaletteModeAmiga32);
+ UpdatePalette;
+ RMCoreBase.SetCurColor(1);
+ UpdateColorBox;
+ UpdateActualArea;
+ UpdateZoomArea;
+end;
+
+procedure TRMMainForm.PaletteAmiga4Click(Sender: TObject);
+begin
+ ClearSelectedPaletteMenu;
+ PaletteAmiga.Checked:=true;
+ PaletteAmiga4.Checked:=true;
+ SetPaletteMode(PaletteModeAmiga4);
+ UpdatePalette;
+ RMCoreBase.SetCurColor(1);
+ UpdateColorBox;
+ UpdateActualArea;
+ UpdateZoomArea;
+end;
+
+procedure TRMMainForm.PaletteAmiga8Click(Sender: TObject);
+begin
+ ClearSelectedPaletteMenu;
+ PaletteAmiga.Checked:=true;
+ PaletteAmiga8.Checked:=true;
+ SetPaletteMode(PaletteModeAmiga8);
+ UpdatePalette;
+ RMCoreBase.SetCurColor(1);
+ UpdateColorBox;
+ UpdateActualArea;
+ UpdateZoomArea;
+end;
+
 
 
 procedure TRMMainForm.MenuItem4Click(Sender: TObject);
@@ -673,6 +684,13 @@ begin
   PaletteEGA.Checked:=false;
   PaletteVGA.Checked:=false;
   PaletteVGA256.Checked:=false;
+  PaletteAmiga.Checked:=false;
+  PaletteAmiga2.Checked:=false;
+  PaletteAmiga4.Checked:=false;
+  PaletteAmiga8.Checked:=false;
+  PaletteAmiga16.Checked:=false;
+  PaletteAmiga32.Checked:=false;
+
 end;
 
 procedure TRMMainForm.PaletteVGAClick(Sender: TObject);
@@ -764,9 +782,29 @@ begin
           UpdateZoomArea;
        end;
      end;
-  end;
+  end
+  else if (pm >= PaletteModeAmiga2) AND (pm <= PaletteModeAmiga32) then
+  begin
+    case pm of PaletteModeAmiga2:RMAmigaColorDialog.InitColorBox2;
+               PaletteModeAmiga4:RMAmigaColorDialog.InitColorBox4;
+               PaletteModeAmiga8:RMAmigaColorDialog.InitColorBox8;
+               PaletteModeAmiga16:RMAmigaColorDialog.InitColorBox16;
+               PaletteModeAmiga32:RMAmigaColorDialog.InitColorBox32
+    end;
 
+    if RMAmigaColorDialog.ShowModal = mrOK then
+    begin
+       PI:=RMAmigaColorDialog.GetPickedIndex;
+       RMCoreBase.SetCurColor(PI);
+       ColorPalette1.PickedIndex:=PI;
 
+       ColorBox.Brush.Color:=RMAmigaColorDialog.GetPickedColor;
+       RMAmigaColorDialog.PaletteToCore;
+       CoreToPalette;
+       UpdateActualArea;
+       UpdateZoomArea;
+   end;
+ end;
 end;
 
 procedure TRMMainForm.FreezeScrollAndZoom;
@@ -782,29 +820,6 @@ begin
   HorizScroll.Enabled:=true;
   TrackBar1.Enabled:=true;
 end;
-
-procedure TRMMainForm.ToggleBox1Change(Sender: TObject);
-begin
-(*
-   if ToggleBox1.Checked then
-  begin
-    RMDrawTools.SetDrawTool(DrawShapeClip);
-    VirtScroll.Enabled:=false;
-    HorizScroll.Enabled:=false;
-    TrackBar1.Enabled:=false;
-  end
-  else
-  begin
-    RMDrawTools.SetDrawTool(DrawShapeNothing);
-    VirtScroll.Enabled:=true;
-    HorizScroll.Enabled:=true;
-    TrackBar1.Enabled:=true;
-  end;
-  *)
-end;
-
-
-
 
 
 procedure TRMMainForm.VirtScrollChange(Sender: TObject);
@@ -890,7 +905,6 @@ begin
    end;
 end;
 
-
 procedure TRMMainForm.UpdateColorBox;
 begin
   ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
@@ -949,31 +963,49 @@ begin
    ColorPalette1.ButtonHeight:=50;
    ColorPalette1.ButtonWidth:=30;
    PaletteToCore;
-  end;
+  end
+  else if pm = PaletteModeAmiga32 then
+   begin
+    RMDrawTools.AddAmigaPalette(ColorPalette1,32);
+    ColorPalette1.ColumnCount:=16;
+    ColorPalette1.ButtonHeight:=25;
+    ColorPalette1.ButtonWidth:=30;
+    PaletteToCore;
+   end
+   else if pm = PaletteModeAmiga16 then
+   begin
+    RMDrawTools.AddAmigaPalette(ColorPalette1,16);
+    ColorPalette1.ColumnCount:=8;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+    PaletteToCore;
+   end
+   else if pm = PaletteModeAmiga8 then
+    begin
+     RMDrawTools.AddAmigaPalette(ColorPalette1,8);
+     ColorPalette1.ColumnCount:=4;
+     ColorPalette1.ButtonHeight:=50;
+     ColorPalette1.ButtonWidth:=30;
+     PaletteToCore;
+    end
+   else if pm = PaletteModeAmiga4 then
+   begin
+    RMDrawTools.AddAmigaPalette(ColorPalette1,4);
+    ColorPalette1.ColumnCount:=2;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+    PaletteToCore;
+   end
+   else if pm = PaletteModeAmiga2 then
+   begin
+    RMDrawTools.AddAmigaPalette(ColorPalette1,2);
+    ColorPalette1.ColumnCount:=1;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+    PaletteToCore;
+   end;
 end;
 
-procedure TRMMainForm.Action1Execute(Sender: TObject);
-begin
-
-end;
-
-procedure TRMMainForm.Action2Execute(Sender: TObject);
-begin
-
-end;
-
-procedure TRMMainForm.ActualBoxClick(Sender: TObject);
-begin
-
-end;
-
-
-
-procedure TRMMainForm.Button1Click(Sender: TObject);
-
-begin
-
-end;
 
 Procedure TRMMainForm.UpdateGridDisplay;
 var
@@ -1008,15 +1040,12 @@ begin
     begin
        RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
     end;
-
 end;
 
 procedure TRMMainForm.Button2Click(Sender: TObject);
 begin
   UpdateGridDisplay;
 end;
-
-
 
 procedure TRMMainForm.ColorBox1Change(Sender: TObject);
 begin
@@ -1025,14 +1054,9 @@ end;
 procedure TRMMainForm.ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
   Shift: TShiftState);
 begin
-  //Label5.Caption:= ColorToString(AColor)+' '+IntToStr(ColorPalette1.PickedIndex);
   ColorBox.Brush.Color:= AColor;
   RMCoreBase.SetCurColor(ColorPalette1.PickedIndex);
- // MyDraw(ActualBox);
 end;
-
-
-
 
 procedure TRMMainForm.ZoomBoxClick(Sender: TObject);
 var
@@ -1110,16 +1134,6 @@ begin
      RMDrawTools.SetClipStatus(0);
      RMDrawTools.SetClipSizedStatus(0);
    end;
-
-
-
-
-//   PT := Mouse.CursorPos;
-  // now have SCREEN position
- // Label1.Caption := 'X = '+IntToStr(x)+', Y = '+IntToStr(y);
- // pt := ScreenToClient(pt);
-  // now have FORM position
- // Label2.Caption := 'X = '+IntToStr(pt.x)+', Y = '+IntToStr(pt.y);
 end;
 
 procedure TRMMainForm.ZoomBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -1202,8 +1216,6 @@ begin
   RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,1,DT,0);
   RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1,DT,0);
 
-
-
   DrawFirst:=FALSE;
   DrawMode:=False;
 
@@ -1212,7 +1224,6 @@ begin
 //  RMDrawTools.Rect(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,0);
 //  RMDrawTools.SetZoomMode(1);
 //  RMDrawTools.Rect(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,0);
-
 
   if DT = DrawShapeClip then
   begin
@@ -1241,7 +1252,6 @@ begin
    If WheelDelta < 0 then dec(ZoomSize)
    else if WheelDelta > 0 then inc(ZoomSize);
 
-   //Label3.Caption := 'Wheel = '+IntToStr(WheelDelta)+' ZoomSize - '+IntToStr(ZoomSize);
    RMDrawTools.SetZoomSize(ZoomSize);
    RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
    MaxXOffset:=RMDrawTools.GetMaxXOffset(MaxImagePixelWidth,ZoomBox.Width);
@@ -1255,7 +1265,6 @@ end;
 procedure TRMMainForm.ToolCircleIconClick(Sender: TObject);
 begin
   ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRCLE_BLACK');
-  //drawgrid(0,0,20,20,'');
 end;
 
 procedure TRMMainForm.FileExitMenuClick(Sender: TObject);
@@ -1266,22 +1275,12 @@ end;
 
 procedure TRMMainForm.HorizScrollChange(Sender: TObject);
 begin
-  //Label6.Caption:='ScrollBar Pos='+IntToStr(HorizScroll.Position);
   XOffset:=HorizScroll.Position;
   updatezoomarea;
 end;
 
 
 
-procedure TRMMainForm.Shape1ChangeBounds(Sender: TObject);
-begin
-
-end;
-
-procedure TRMMainForm.ToolBar1Click(Sender: TObject);
-begin
-
-end;
 
 procedure TRMMainForm.TrackBar1Change(Sender: TObject);
 begin
@@ -1391,33 +1390,34 @@ begin
 end;
 
 
+procedure TRMMainForm.GetOpenSaveRegion(var x,y,x2,y2 : integer);
+var
+  ca   : TClipAreaRec;
+begin
+   x:=0;
+   y:=0;
+   x2:=255;
+   y2:=255;
+   if RMDrawTools.GetClipStatus = 1 then
+   begin
+     RMDrawTools.GetClipAreaCoords(ca);
+     x:=ca.x+XOffset;
+     y:=ca.y+Yoffset;
+     x2:=ca.x2+XOffset;
+     y2:=ca.y2+YOffset;
+   end;
+end;
+
 procedure TRMMainForm.SaveFileClick(Sender: TObject);
 var
  ext : string;
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
 begin
-   SaveDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
+   SaveDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
-     // ShowMessage(SaveDialog1.Filename);
-     // ShowMessage(SaveDialog1.DefaultExt);
       if ext = '.PCX' then
       begin
          if SavePcxImg(x,y,x2,y2,SaveDialog1.FileName) <> 0 then
@@ -1431,6 +1431,13 @@ begin
         begin
           ShowMessage('Error Saving BMP file!');
         end;
+      end
+      else if ext = '.RAW' then
+      begin
+        if WriteRAW(x,y,x2,y2,SaveDialog1.FileName) <> 0 then
+        begin
+          ShowMessage('Error Saving RAW file!');
+        end;
       end;
    end;
 end;
@@ -1439,35 +1446,21 @@ procedure TRMMainForm.OpenFileClick(Sender: TObject);
 var
  ext : string;
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  lp   : integer;
+ pm   : integer;
 begin
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        lp:=0;
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        lp:=1;
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
-
-   OpenDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*' ;
+   GetOpenSaveRegion(x,y,x2,y2);
+   lp:=1;
+   pm:=GetPaletteMode;
+   if RMDrawTools.GetClipStatus = 1 then lp:=0;
+   OpenDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|RM RAW Files|*.raw|All Files|*.*' ;
 
    if OpenDialog1.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(OpenDialog1.FileName));
       if ext = '.PCX' then
       begin
-         if ReadPcxImg(x,y,x2,y2,lp,OpenDialog1.FileName) <> 0 then
+         if ReadPcxImg(x,y,x2,y2,lp,pm,OpenDialog1.FileName) <> 0 then
          begin
            ShowMessage('Error Opening PCX file!');
            exit;
@@ -1475,74 +1468,81 @@ begin
       end
       else if ext = '.BMP' then
       begin
-        if ReadBMP(x,y,x2,y2,lp,OpenDialog1.FileName) <> 0 then
+        if ReadBMP(x,y,x2,y2,lp,pm,OpenDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Opening BMP file!');
           exit;
         end;
+      end
+      else if ext = '.RAW' then
+      begin
+        if ReadRAW(x,y,x2,y2,lp,pm,OpenDialog1.FileName) <> 0 then
+        begin
+          ShowMessage('Error Opening RAW file!');
+          exit;
+        end;
       end;
-      if RMDrawTools.GetClipStatus <> 1 then CoreToPalette;
+      if lp = 1 then CoreToPalette;
       UpDateZoomArea;
       UpdateActualArea;
+      UpdateColorBox;
+   end;
+end;
+
+
+procedure TRMMainForm.PaletteExportQBasicClick(Sender: TObject);
+var
+ pm : integer;
+ ColorFormat : integer;
+ ext : string;
+ error : word;
+begin
+   SaveDialog1.Filter := 'QuickBasic\QB64 DATA|*.dat|QuickBasic\QB64 Palette Commands|*.bas' ;
+   if SaveDialog1.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
+      pm:=GetPaletteMode;
+
+      ColorFormat:=ColorSixBitFormat;
+      if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+      if ext='.DAT' then
+      begin
+         error:=WritePalData(SaveDialog1.FileName,QBLan,ColorFormat);
+      end
+      else if ext='.BAS' then
+      begin
+        error:=WritePalStatements(SaveDialog1.FileName,QBLan,ColorFormat);
+      end;
+
+      if error<>0 then
+      begin
+         ShowMessage('Error Saving Palette file!');
+         exit;
+      end;
    end;
 end;
 
 procedure TRMMainForm.QBasicDataClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
+ sourcemode : word;
 begin
    SaveDialog1.Filter := 'QuickBasic\QB64 DATA|*.dat' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
       pm:=GetPaletteMode;
-      if (pm = PaletteModeMono)  then
-          begin
-            if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source2,QBLan,SaveDialog1.FileName) <> 0 then
-            begin
-              ShowMessage('Error Saving DAT file!');
-              exit;
-            end;
-          end
-       else if (pm = PaletteModeCGA0) or (pm = PaletteModeCGA1) then
-          begin
-            if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source4,QBLan,SaveDialog1.FileName) <> 0 then
-            begin
-              ShowMessage('Error Saving DAT file!');
-              exit;
-            end;
-          end
-      else if (pm = PaletteModeEGA) or (pm = PaletteModeVGA) then
+      case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+                         PaletteModeVGA256:sourcemode:=source256;
+      end;
+      if WriteDat(x,y,x2,y2,sourcemode,QBLan,SaveDialog1.FileName) <> 0 then
       begin
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source16,QBLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving DAT file!');
-          exit;
-        end;
-      end
-      else  if  (pm = PaletteModeVGA256) then
-      begin
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source256,QBLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving DAT file!');
-          exit;
-        end;
+         ShowMessage('Error Saving DAT file!');
+         exit;
       end;
    end;
  end;
@@ -1550,62 +1550,25 @@ begin
 procedure TRMMainForm.TurboPascalConstClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
+ sourcemode : word;
 begin
    SaveDialog1.Filter := 'Turbo Pascal Const|*.con' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
       pm:=GetPaletteMode;
-      if (pm = PaletteModeMono)  then
-          begin
-            if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source2,TPLan,SaveDialog1.FileName) <> 0 then
-            begin
-              ShowMessage('Error Saving CON file!');
-              exit;
-            end;
-          end
-       else if (pm = PaletteModeCGA0) or (pm = PaletteModeCGA1) then
-          begin
-            if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source4,TPLan,SaveDialog1.FileName) <> 0 then
-            begin
-              ShowMessage('Error Saving CON file!');
-              exit;
-            end;
-          end
-      else if (pm = PaletteModeEGA) or (pm = PaletteModeVGA) then
+      case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+                         PaletteModeVGA256:sourcemode:=source256;
+      end;
+      if WriteDat(x,y,x2,y2,SourceMode,TPLan,SaveDialog1.FileName) <> 0 then
       begin
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source16,TPLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving CON file!');
-          exit;
-        end;
-      end
-      else  if  (pm = PaletteModeVGA256) then
-      begin
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,Source256,TPLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving CON file!');
-          exit;
-        end;
+        ShowMessage('Error Saving CON file!');
+        exit;
       end;
    end;
-
 end;
 
 procedure TRMMainForm.FreePascalConstClick(Sender: TObject);
@@ -1616,21 +1579,7 @@ var
  sourcemode : word;
 begin
    SaveDialog1.Filter := 'FreePascal Const|*.con' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
         pm:=GetPaletteMode;
@@ -1639,8 +1588,7 @@ begin
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
                          PaletteModeVGA256:sourcemode:=source256;
         end;
-
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,FPLan,SaveDialog1.FileName) <> 0 then
+        if WriteDat(x,y,x2,y2,sourcemode,FPLan,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving CON file!');
           exit;
@@ -1651,26 +1599,11 @@ end;
 procedure TRMMainForm.GWBASICClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
  sourcemode : word;
 begin
    SaveDialog1.Filter := 'GWBASIC DATA|*.DAT' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
         pm:=GetPaletteMode;
@@ -1680,39 +1613,83 @@ begin
                          PaletteModeVGA256:sourcemode:=source256;
         end;
 
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,GWLan,SaveDialog1.FileName) <> 0 then
+        if WriteDat(x,y,x2,y2,sourcemode,GWLan,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving DAT file!');
           exit;
         end;
    end;
+end;
 
 
+
+procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
+Var
+ pm : integer;
+begin
+ OpenDialog1.Filter := 'RM Palette|*.pal|All Files|*.*';
+ if OpenDialog1.Execute then
+ begin
+     pm:=GetPaletteMode;
+     if ReadPAL(OpenDialog1.FileName,pm) <> 0 then
+     begin
+        ShowMessage('Error Opening PAL file!');
+        exit;
+     end;
+     CoreToPalette;
+     UpdateColorBox;
+     UpDateZoomArea;
+     UpdateActualArea;
+ end;
+end;
+
+procedure TRMMainForm.PaletteSaveClick(Sender: TObject);
+begin
+ SaveDialog1.Filter := 'RM Palette|*.PAL|All Files|*.*';
+ if SaveDialog1.Execute then
+   begin
+        if WritePal(SaveDialog1.FileName) <> 0 then
+        begin
+          ShowMessage('Error Saving PAL file!');
+          exit;
+        end;
+   end;
+end;
+
+procedure TRMMainForm.PaletteAmiga16Click(Sender: TObject);
+begin
+  ClearSelectedPaletteMenu;
+  PaletteAmiga.Checked:=true;
+  PaletteAmiga16.Checked:=true;
+  SetPaletteMode(PaletteModeAmiga16);
+  UpdatePalette;
+  RMCoreBase.SetCurColor(1);
+  UpdateColorBox;
+  UpdateActualArea;
+  UpdateZoomArea;
+end;
+
+procedure TRMMainForm.PaletteAmiga2Click(Sender: TObject);
+begin
+ ClearSelectedPaletteMenu;
+ PaletteAmiga.Checked:=true;
+ PaletteAmiga2.Checked:=true;
+ SetPaletteMode(PaletteModeAmiga2);
+ UpdatePalette;
+ RMCoreBase.SetCurColor(1);
+ UpdateColorBox;
+ UpdateActualArea;
+ UpdateZoomArea;
 end;
 
 procedure TRMMainForm.QuickCCharClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
  sourcemode : word;
 begin
    SaveDialog1.Filter := 'Quick C Char|*.CHA' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
         pm:=GetPaletteMode;
@@ -1722,38 +1699,22 @@ begin
                          PaletteModeVGA256:sourcemode:=source256;
         end;
 
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,QCLan,SaveDialog1.FileName) <> 0 then
+        if WriteDat(x,y,x2,y2,sourcemode,QCLan,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving CHA file!');
           exit;
         end;
    end;
-
 end;
 
 procedure TRMMainForm.TurboCCharClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
  sourcemode : word;
 begin
    SaveDialog1.Filter := 'Turbo C Char|*.CHA' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
         pm:=GetPaletteMode;
@@ -1762,8 +1723,7 @@ begin
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
                          PaletteModeVGA256:sourcemode:=source256;
         end;
-
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,TCLan,SaveDialog1.FileName) <> 0 then
+        if WriteDat(x,y,x2,y2,sourcemode,TCLan,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving CHA file!');
           exit;
@@ -1774,26 +1734,11 @@ end;
 procedure TRMMainForm.TurboPowerBasicDataClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
  sourcemode : word;
 begin
    SaveDialog1.Filter := 'Turbo/Power Basic DATA|*.DAT' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
         pm:=GetPaletteMode;
@@ -1803,39 +1748,22 @@ begin
                          PaletteModeVGA256:sourcemode:=source256;
         end;
 
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,PBLan,SaveDialog1.FileName) <> 0 then
+        if WriteDat(x,y,x2,y2,sourcemode,PBLan,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving DAT file!');
           exit;
         end;
    end;
-
 end;
-
 
 procedure TRMMainForm.FreeBASICDATAClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
  sourcemode : word;
 begin
    SaveDialog1.Filter := 'FreeBASIC DATA|*.DAT' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
         pm:=GetPaletteMode;
@@ -1845,7 +1773,7 @@ begin
                          PaletteModeVGA256:sourcemode:=source256;
         end;
 
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,FBLan,SaveDialog1.FileName) <> 0 then
+        if WriteDat(x,y,x2,y2,sourcemode,FBLan,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving DAT file!');
           exit;
@@ -1856,36 +1784,22 @@ end;
 procedure TRMMainForm.AmigaBasicClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
  sourcemode : word;
 begin
    SaveDialog1.Filter := 'AmigaBASIC DATA|*.DAT' ;
-   if RMDrawTools.GetClipStatus = 1 then
-   begin
-        RMDrawTools.GetClipAreaCoords(ca);
-        x:=ca.x+XOffset;
-        y:=ca.y+Yoffset;
-        x2:=ca.x2+XOffset;
-        y2:=ca.y2+YOffset;
-   end
-   else
-   begin
-        x:=0;
-        y:=0;
-        x2:=255;
-        y2:=255;
-   end;
+   GetOpenSaveRegion(x,y,x2,y2);
    if SaveDialog1.Execute then
    begin
         pm:=GetPaletteMode;
-        case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
+        case pm of         PaletteModeAmiga2:sourcemode:=Source2;
+                           PaletteModeAmiga4:sourcemode:=Source4;
+                           PaletteModeAmiga8:sourcemode:=Source8;
+                           PaletteModeAmiga16:sourcemode:=Source16;
+                           PaletteModeAmiga32:sourcemode:=Source32;
         end;
 
-        if WriteDat(x+XOffset,y+YOffset,x2+XOffset,y2+YOffset,sourcemode,ABLan,SaveDialog1.FileName) <> 0 then
+        if WriteDat(x,y,x2,y2,sourcemode,ABLan,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving DAT file!');
           exit;
@@ -1894,7 +1808,38 @@ begin
 
 end;
 
+procedure TRMMainForm.PaletteExportAmigaBasicClick(Sender: TObject);
+var
+ pm : integer;
+ ColorFormat : integer;
+ ext : string;
+ error : word;
+begin
+   SaveDialog1.Filter := 'AmigaBasic DATA|*.dat|AmigaBasic Palette Commands|*.bas' ;
+   if SaveDialog1.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
+      pm:=GetPaletteMode;
 
+      ColorFormat:=ColorOnePercentFormat;
+
+      if ext='.DAT' then
+      begin
+         error:=WritePalData(SaveDialog1.FileName,ABLan,ColorFormat);
+      end
+      else if ext='.BAS' then
+      begin
+        error:=WritePalStatements(SaveDialog1.FileName,ABLan,ColorFormat);
+      end;
+
+      if error<>0 then
+      begin
+         ShowMessage('Error Saving Palette file!');
+         exit;
+      end;
+   end;
+
+end;
 
 
 end.

@@ -1,7 +1,7 @@
 object RMVgaColorDialog: TRMVgaColorDialog
-  Left = 341
+  Left = 461
   Height = 348
-  Top = 407
+  Top = 354
   Width = 512
   BorderStyle = bsDialog
   Caption = 'VGA Color'
@@ -9,7 +9,7 @@ object RMVgaColorDialog: TRMVgaColorDialog
   ClientWidth = 512
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
-  object ColorPalette1: TColorPalette
+  object ColorPalette: TColorPalette
     Left = 16
     Height = 120
     Top = 8
@@ -19,7 +19,7 @@ object RMVgaColorDialog: TRMVgaColorDialog
     ColumnCount = 8
     PickedIndex = 0
     SelectionKind = pskThick
-    OnColorPick = ColorPalette1ColorPick
+    OnColorPick = ColorPaletteColorPick
     ParentColor = False
   end
   object Shape1: TShape

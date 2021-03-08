@@ -7,7 +7,6 @@ uses
   Classes, SysUtils;
 
 
-
 Type
   TRMColorRec = Record
                    r : integer;
@@ -59,12 +58,10 @@ Type
 
                   Palette  : TRMPalette;
                  private
-
                   ImageBuf      : TRMImageBuf;
                   TempImageBuf  : TRMImageBuf;
-                  UndoImageBuf : TRMImageBuf;
-
-                  CurColor    : integer; // current color
+                  UndoImageBuf  : TRMImageBuf;
+                  CurColor      : integer; // current color
 
                  public
 
@@ -82,6 +79,20 @@ Type
 
 
   const
+     PaletteModeNone = 0;
+     PaletteModeMono = 1;
+     PaletteModeCGA0 = 2;
+     PaletteModeCGA1 = 3;
+     PaletteModeEGA  = 4;
+     PaletteModeVGA =  5;
+     PaletteModeVGA256 = 6;
+     PaletteModeAmiga2 = 7;
+     PaletteModeAmiga4 = 8;
+     PaletteModeAmiga8 = 9;
+     PaletteModeAmiga16 = 10;
+     PaletteModeAmiga32 = 11;
+
+
     MonoDefault : array[0..1] of TRMColorRec = ((r:0;g:0;b:0),
                                                 (r:255;g:255;b:255));
 
@@ -116,7 +127,6 @@ Type
 
 
     EGADefault64 : array[0..63] of TRMColorRec = ((r:0;g:0;b:0),
-
                                                   (r:0;g:0;b:170),
                                                   (r:0;g:170;b:0),
                                                   (r:0;g:170;b:170),
@@ -132,9 +142,6 @@ Type
                                                   (r:170;g:0;b:255),
                                                   (r:170;g:170;b:85),
                                                   (r:170;g:170;b:255),
-
-
-
                                                   (r:0;g:85;b:0),
                                                   (r:0;g:85;b:170),
                                                   (r:0;g:255;b:0),
@@ -151,7 +158,6 @@ Type
                                                   (r:170;g:85;b:255),
                                                   (r:170;g:255;b:85),
                                                   (r:170;g:255;b:255),
-
                                                   (r:85;g:0;b:0),
                                                   (r:85;g:0;b:170),
                                                   (r:85;g:170;b:0),
@@ -168,16 +174,12 @@ Type
                                                   (r:255;g:0;b:255),
                                                   (r:255;g:170;b:85),
                                                   (r:255;g:170;b:255),
-
-
-
                                                   (r:85;g:85;b:0),
                                                   (r:85;g:85;b:170),
                                                   (r:85;g:255;b:0),
                                                   (r:85;g:255;b:170),
                                                   (r:255;g:85;b:0),
                                                   (r:255;g:85;b:170),
-
                                                   (r:255;g:255;b:0),
                                                   (r:255;g:255;b:170),
                                                   (r:85;g:85;b:85),
@@ -192,21 +194,21 @@ Type
 
     VGADefault256 : array[0..255] of TRMColorRec =(
     (r:   0;g:   0;b:   0),
-      (r:   0;g:   0;b: 168),
-      (r:   0;g: 168;b:   0),
-      (r:   0;g: 168;b: 168),
-      (r: 168;g:   0;b:   0),
-      (r: 168;g:   0;b: 168),
-      (r: 168;g:  84;b:   0),
-      (r: 168;g: 168;b: 168),
-      (r:  84;g:  84;b:  84),
-      (r:  84;g:  84;b: 252),
-      (r:  84;g: 252;b:  84),
-      (r:  84;g: 252;b: 252),
-      (r: 252;g:  84;b:  84),
-      (r: 252;g:  84;b: 252),
-      (r: 252;g: 252;b:  84),
-      (r: 252;g: 252;b: 252),
+    (r:0;g:0;b:170),
+    (r:0;g:170;b:0),
+    (r:0;g:170;b:170),
+    (r:170;g:0;b:0),
+    (r:170;g:0;b:170),
+    (r:170;g:85;b:0),
+    (r:170;g:170;b:170),
+      (r:  85;g:  85;b:  85),
+      (r:  85;g:  85;b: 255),
+      (r:  85;g: 255;b:  85),
+      (r:  85;g: 255;b: 255),
+      (r: 255;g:  85;b:  85),
+      (r: 255;g:  85;b: 255),
+      (r: 255;g: 255;b:  85),
+      (r: 255;g: 255;b: 255),
       (r:   0;g:   0;b:   0),
       (r:  20;g:  20;b:  20),
       (r:  32;g:  32;b:  32),
@@ -449,6 +451,40 @@ Type
       (r:   0;g:   0;b:   0));
 
 
+    AmigaDefault32 : array[0..31] of TRMColorRec = (
+              (r:0;g:85;b:170),
+              (r:255;g:255;b:255),
+              (r:0;g:0;b:34),
+              (r:255;g:136;b:0),
+              (r:0;g:0;b:255),
+              (r:255;g:0;b:255),
+              (r:0;g:255;b:255),
+              (r:255;g:255;b:255),
+              (r:102;g:34;b:0),
+              (r:238;g:85;b:0),
+              (r:153;g:255;b:17),
+              (r:238;g:187;b:0),
+              (r:85;g:85;b:255),
+              (r:153;g:34;b:255),
+              (r:0;g:255;b:236),
+              (r:204;g:204;b:204),
+              (r:0;g:0;b:0),
+              (r:221;g:34;b:34),
+              (r:0;g:0;b:0),
+              (r:255;g:204;b:170),
+              (r:68;g:68;b:68),
+              (r:85;g:85;b:85),
+              (r:102;g:102;b:102),
+              (r:119;g:119;b:119),
+              (r:136;g:136;b:136),
+              (r:153;g:153;b:153),
+              (r:187;g:187;b:187),
+              (r:170;g:170;b:170),
+              (r:204;g:204;b:204),
+              (r:221;g:221;b:221),
+              (r:238;g:238;b:238),
+              (r:255;g:255;b:255));
+
 
 
   var
@@ -457,19 +493,55 @@ Type
 procedure GetRGBEGA64(index : integer;var cr : TRMColorREc);
 procedure GetRGBVGA(index : integer;var cr : TRMColorREc);
 function RGBToEGAIndex(r,g,b : integer) : integer;
-function ToSixBit(EightBitValue : integer) : integer;
-function ToEightBit(SixBitValue : integer) : integer;
+function EightToSixBit(EightBitValue : integer) : integer;
+function SixToEightBit(SixBitValue : integer) : integer;
+function EightToFourBit(EightBitValue : integer) : integer;
+function FourToEightBit(FourBitValue : integer) : integer;
+function CanLoadPaletteFile(PaletteMode : integer) : boolean;
+function isAmigaPaletteMode(pm : integer) : boolean;
 
 implementation
 
-function ToSixBit(EightBitValue : integer) : integer;
+function EightToSixBit(EightBitValue : integer) : integer;
 begin
-  ToSixBit:=round((double(EightBitValue) * 63) / 255)
+  EightToSixBit:=round((double(EightBitValue) * 63) / 255)
 end;
 
-function ToEightBit(SixBitValue : integer) : integer;
+function SixToEightBit(SixBitValue : integer) : integer;
 begin
-   ToEightBit := SixBitValue * 255 div 63
+   SixToEightBit := SixBitValue * 255 div 63
+end;
+
+function EightToFourBit(EightBitValue : integer) : integer;
+begin
+(*  EightToFourBit:=EightBitValue SHR 4;*)   //not precise
+  EightToFourBit:=round((double(EightBitValue) * 15) / 255)
+end;
+
+function FourToEightBit(FourBitValue : integer) : integer;
+begin
+(*   FourToEightBit := FourBitValue SHL 4;*)  // not precise
+  FourToEightBit := FourBitValue * 255 div 15
+end;
+
+function CanLoadPaletteFile(PaletteMode : integer) : boolean;
+begin
+  CanLoadPaletteFile:=true;  //most mode can load palettes
+  Case PaletteMode of PaletteModeMono,
+                      PaletteModeCGA0,
+                      PaletteModeCGA1: CanLoadPaletteFile:=false;   //fixed hardware
+  end;
+end;
+
+function isAmigaPaletteMode(pm : integer) : boolean;
+begin
+  isAmigaPaletteMode:=false;
+  Case pm of PaletteModeAmiga2,
+             PaletteModeAmiga4,
+             PaletteModeAmiga8,
+             PaletteModeAmiga16,
+             PaletteModeAmiga32:isAmigaPaletteMode:=true;
+  end;
 end;
 
 function RGBToEGAIndex(r,g,b : integer) : integer;
@@ -515,6 +587,7 @@ end;
 
 procedure TRMPalette.DeleteColor(index : integer);
 begin
+  // add code to remove single color from list
 end;
 
 procedure TRMPalette.GetColor(index : integer;var cr : TRMColorRec);
@@ -536,7 +609,7 @@ end;
 
 procedure TRMPalette.ClearColors;
 begin
-ColorCount:=0;
+  ColorCount:=0;
 end;
 
 function TRMPalette.GetColorCount : integer;
