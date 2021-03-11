@@ -4,7 +4,7 @@ unit RMCore;
 
 interface
 uses
-  Classes, SysUtils;
+  Classes, Graphics, SysUtils,GraphUtil,Math;
 
 
 Type
@@ -31,6 +31,7 @@ Type
                function GetRed(index : integer) : integer;
                function GetGreen(index : integer) : integer;
                function GetBlue(index : integer) : integer;
+               function FindColorMatch(r,g,b : integer) : integer;
 
                procedure DownToVGA;
                procedure DownToEGA;
@@ -524,6 +525,16 @@ begin
   FourToEightBit := FourBitValue * 255 div 15
 end;
 
+function ColorDistance(col1, col2: TColor): Double;
+var
+  H1,S1,L1 : byte;
+  H2,S2,L2 : byte;
+ begin
+    ColorToHLS(col1, H1, S1, L1);
+    ColorToHLS(col2, H2, S2, L2);
+    ColorDistance:=sqr(H1-H2) + sqr(S1-S2) + sqr(L1-L2);
+end;
+
 function CanLoadPaletteFile(PaletteMode : integer) : boolean;
 begin
   CanLoadPaletteFile:=true;  //most mode can load palettes
@@ -600,6 +611,29 @@ begin
     begin
       cr:=palettebuf[index];
     end;
+end;
+
+
+function TRMPalette.FindColorMatch(r,g,b : integer) : integer;
+var
+  c1,c2 : TColor;
+  gap,tgap : double;
+  i,fcm : integer;
+begin
+  c1:=RGBToColor(r,g,b);
+  gap:=10000;
+  fcm:=0;
+  for i:=0 to GetColorCount-1 do
+  begin
+     c2:=RGBToColor(GetRed(i),GetGreen(i),GetBlue(i));
+     tgap:=ColorDistance(c1,c2);
+     if tgap < gap then
+     begin
+        gap:=tgap;
+        fcm:=i;
+     end;
+  end;
+  FindColorMatch:=fcm;
 end;
 
 procedure TRMPalette.SetColor(index : integer;cr : TRMColorRec);

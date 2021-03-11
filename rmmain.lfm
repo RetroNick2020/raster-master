@@ -323,6 +323,22 @@ object RMMainForm: TRMMainForm
           Caption = 'QuickBasic\QB64 DATA'
           OnClick = QBasicDataClick
         end
+        object AmigaBasic: TMenuItem
+          Caption = 'AmigaBasic DATA'
+          OnClick = AmigaBasicClick
+        end
+        object TurboPowerBasicData: TMenuItem
+          Caption = 'Turbo/Power Basic DATA'
+          OnClick = TurboPowerBasicDataClick
+        end
+        object GWBASIC: TMenuItem
+          Caption = 'GWBASIC DATA'
+          OnClick = GWBASICClick
+        end
+        object FreeBASICDATA: TMenuItem
+          Caption = 'FreeBASIC DATA'
+          OnClick = FreeBASICDATAClick
+        end
         object TurboPascalConst: TMenuItem
           Caption = 'Turbo Pascal Const'
           OnClick = TurboPascalConstClick
@@ -339,26 +355,21 @@ object RMMainForm: TRMMainForm
           Caption = 'Quick C Char'
           OnClick = QuickCCharClick
         end
-        object TurboPowerBasicData: TMenuItem
-          Caption = 'Turbo/Power Basic DATA'
-          OnClick = TurboPowerBasicDataClick
-        end
-        object GWBASIC: TMenuItem
-          Caption = 'GWBASIC DATA'
-          OnClick = GWBASICClick
-        end
-        object FreeBASICDATA: TMenuItem
-          Caption = 'FreeBASIC DATA'
-          OnClick = FreeBASICDATAClick
-        end
-        object AmigaBasic: TMenuItem
-          Caption = 'AmigaBasic DATA'
-          OnClick = AmigaBasicClick
-        end
       end
       object MenuItem11: TMenuItem
         Caption = 'Exit'
         OnClick = FileExitMenuClick
+      end
+    end
+    object MenuItem1: TMenuItem
+      Caption = 'Edit'
+      object EditCopy: TMenuItem
+        Caption = 'Copy'
+        OnClick = EditCopyClick
+      end
+      object EditPaste: TMenuItem
+        Caption = 'Paste'
+        OnClick = EditPasteClick
       end
     end
     object MenuItem4: TMenuItem
@@ -380,6 +391,22 @@ object RMMainForm: TRMMainForm
         object PaletteExportAmigaBasic: TMenuItem
           Caption = 'AmigaBasic DATA\Palette Commands'
           OnClick = PaletteExportAmigaBasicClick
+        end
+        object PaletteExportGWBasic: TMenuItem
+          Caption = 'GWBASIC DATA\Palette Commands'
+          OnClick = PaletteExportGWBasicClick
+        end
+        object PaletteExportTurboPascal: TMenuItem
+          Caption = 'Turbo Pascal Const\Palette Commands'
+          OnClick = PaletteExportTurboPascalClick
+        end
+        object PaletteExportTurboC: TMenuItem
+          Caption = 'Turbo C CHA\Palette Commands'
+          OnClick = PaletteExportTurboCClick
+        end
+        object PaletteExportQuickC: TMenuItem
+          Caption = 'Quick C CHA\Palette Commands'
+          OnClick = PaletteExportQuickCClick
         end
       end
       object PaletteMono: TMenuItem
@@ -537,9 +564,14 @@ object RMMainForm: TRMMainForm
     Top = 368
   end
   object SaveDialog1: TSaveDialog
-    Title = 'Export'
+    Title = 'Save'
     Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
     Left = 1584
     Top = 448
+  end
+  object ExportDialog: TSaveDialog
+    Title = 'Export'
+    Left = 1584
+    Top = 536
   end
 end

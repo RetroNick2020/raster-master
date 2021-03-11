@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,lclintf;
 
 Const
-  ProgramName ='Raster Master v1.0 Beta R5';
+  ProgramName ='Raster Master v1.0 Beta R6';
   ProgramLicense = 'Released under MIT License';
 
 type
@@ -48,7 +48,7 @@ end;
 
 procedure TAboutDialog.StaticText1Click(Sender: TObject);
 begin
-   OpenUrl('http://www.youtube.com/channel/UCogrq1maRKDUOT_r0dADlEQ?sub_confirmation=1');
+   OpenUrl('http://www.youtube.com/channel/UCLak9dN2fgKU9keY2XEBRFQ?sub_confirmation=1');
 end;
 
 end.

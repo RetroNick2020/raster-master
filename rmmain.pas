@@ -37,6 +37,13 @@ type
     GWBASIC: TMenuItem;
     FreeBASICDATA: TMenuItem;
     AmigaBasic: TMenuItem;
+    MenuItem1: TMenuItem;
+    EditCopy: TMenuItem;
+    EditPaste: TMenuItem;
+    PaletteExportQuickC: TMenuItem;
+    PaletteExportGWBasic: TMenuItem;
+    PaletteExportTurboC: TMenuItem;
+    PaletteExportTurboPascal: TMenuItem;
     PaletteExportAmigaBasic: TMenuItem;
     PaletteExportQBasic: TMenuItem;
     PaletteExport: TMenuItem;
@@ -48,6 +55,7 @@ type
     PaletteAmiga16: TMenuItem;
     PaletteAmiga32: TMenuItem;
     PaletteAmiga: TMenuItem;
+    ExportDialog: TSaveDialog;
     TurboPowerBasicData: TMenuItem;
     QuickCChar: TMenuItem;
     TurboCChar: TMenuItem;
@@ -130,11 +138,17 @@ type
     procedure ColorBox1Change(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
+    procedure EditCopyClick(Sender: TObject);
+    procedure EditPasteClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FreeBASICDATAClick(Sender: TObject);
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
+    procedure PaletteExportQuickCClick(Sender: TObject);
+    procedure PaletteExportTurboCClick(Sender: TObject);
     procedure PaletteExportAmigaBasicClick(Sender: TObject);
+    procedure PaletteExportGWBasicClick(Sender: TObject);
+    procedure PaletteExportTurboPascalClick(Sender: TObject);
     procedure PaletteOpenClick(Sender: TObject);
     procedure PaletteSaveClick(Sender: TObject);
     procedure PaletteAmiga16Click(Sender: TObject);
@@ -342,6 +356,7 @@ end;
 
 procedure TRMMainForm.NewClick(Sender: TObject);
 begin
+  ClearClipAreaOutline;
   RMCoreBase.ClearBuf(0);
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
@@ -351,7 +366,7 @@ end;
 
 procedure TRMMainForm.RMLogoClick(Sender: TObject);
 begin
-    OpenUrl('https://www.youtube.com/channel/UCogrq1maRKDUOT_r0dADlEQ');
+    OpenUrl('https://www.youtube.com/channel/UCLak9dN2fgKU9keY2XEBRFQ');
 end;
 
 procedure TRMMainForm.ToolFlipHorizMenuClick(Sender: TObject);
@@ -603,7 +618,12 @@ begin
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
+
   UpdateZoomArea;
+  if RMDrawTools.GetClipStatus = 1 then
+  begin
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+  end;
 end;
 
 procedure TRMMainForm.PaletteCGA0Click(Sender: TObject);
@@ -616,6 +636,10 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+  if RMDrawTools.GetClipStatus = 1 then
+  begin
+     RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+  end;
 end;
 
 procedure TRMMainForm.PaletteCGA1Click(Sender: TObject);
@@ -628,6 +652,10 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+  if RMDrawTools.GetClipStatus = 1 then
+  begin
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+  end;
 end;
 
 procedure TRMMainForm.PaletteAmiga32Click(Sender: TObject);
@@ -641,6 +669,10 @@ begin
  UpdateColorBox;
  UpdateActualArea;
  UpdateZoomArea;
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+ end;
 end;
 
 procedure TRMMainForm.PaletteAmiga4Click(Sender: TObject);
@@ -654,6 +686,10 @@ begin
  UpdateColorBox;
  UpdateActualArea;
  UpdateZoomArea;
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+ end;
 end;
 
 procedure TRMMainForm.PaletteAmiga8Click(Sender: TObject);
@@ -667,9 +703,11 @@ begin
  UpdateColorBox;
  UpdateActualArea;
  UpdateZoomArea;
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+ end;
 end;
-
-
 
 procedure TRMMainForm.MenuItem4Click(Sender: TObject);
 begin
@@ -703,6 +741,10 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+  if RMDrawTools.GetClipStatus = 1 then
+  begin
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+  end;
 end;
 
 procedure TRMMainForm.PaletteVGA256Click(Sender: TObject);
@@ -715,6 +757,10 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+  if RMDrawTools.GetClipStatus = 1 then
+  begin
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+  end;
 end;
 
 procedure TRMMainForm.PaletteEGAClick(Sender: TObject);
@@ -727,6 +773,10 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+  if RMDrawTools.GetClipStatus = 1 then
+  begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+  end;
 end;
 
 procedure TRMMainForm.PencilDrawChange(Sender: TObject);
@@ -884,12 +934,16 @@ procedure TRMMainForm.updateZoomArea;
 var
 i,j,w,h,xoff,yoff : integer;
 tc : TColor;
+clipstatus : integer;
 begin
    xoff:=HorizScroll.Position;
    yoff:=VirtScroll.Position;
 
    w:=RMDrawTools.GetCellsPerRow(ZoomBox.Width);
    h:=RMDrawTools.GetCellsPerCol(ZoomBox.Height);
+
+   clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
+
 
    for i:=0 to w do
    begin
@@ -899,7 +953,8 @@ begin
         RMDrawTools.PutPixel(ZoomBox.Canvas,i,j,tc,0);
      end;
    end;
-   if RMDrawTools.GetClipStatus = 1 then
+
+   if ClipStatus = 1 then
    begin
       RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.Brush.color,1);
    end;
@@ -1057,6 +1112,11 @@ begin
   ColorBox.Brush.Color:= AColor;
   RMCoreBase.SetCurColor(ColorPalette1.PickedIndex);
 end;
+
+
+
+
+
 
 procedure TRMMainForm.ZoomBoxClick(Sender: TObject);
 var
@@ -1483,9 +1543,13 @@ begin
         end;
       end;
       if lp = 1 then CoreToPalette;
-      UpDateZoomArea;
       UpdateActualArea;
       UpdateColorBox;
+      UpDateZoomArea;
+      if RMDrawTools.GetClipStatus = 1 then
+      begin
+        RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+      end;
    end;
 end;
 
@@ -1497,10 +1561,10 @@ var
  ext : string;
  error : word;
 begin
-   SaveDialog1.Filter := 'QuickBasic\QB64 DATA|*.dat|QuickBasic\QB64 Palette Commands|*.bas' ;
-   if SaveDialog1.Execute then
+   ExportDialog.Filter := 'QuickBasic\QB64 DATA|*.dat|QuickBasic\QB64 Palette Commands|*.bas' ;
+   if ExportDialog.Execute then
    begin
-      ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       pm:=GetPaletteMode;
 
       ColorFormat:=ColorSixBitFormat;
@@ -1508,11 +1572,11 @@ begin
 
       if ext='.DAT' then
       begin
-         error:=WritePalData(SaveDialog1.FileName,QBLan,ColorFormat);
+         error:=WritePalData(ExportDialog.FileName,QBLan,ColorFormat);
       end
       else if ext='.BAS' then
       begin
-        error:=WritePalStatements(SaveDialog1.FileName,QBLan,ColorFormat);
+        error:=WritePalStatements(ExportDialog.FileName,QBLan,ColorFormat);
       end;
 
       if error<>0 then
@@ -1528,20 +1592,31 @@ var
  x,y,x2,y2 : integer;
  pm : integer;
  sourcemode : word;
-begin
-   SaveDialog1.Filter := 'QuickBasic\QB64 DATA|*.dat' ;
+ ext : string;
+ error : word;
+ begin
+   ExportDialog.Filter := 'QuickBasic\QB64 DATA|*.dat|XGF Binary|*.xgf';
    GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
+   if ExportDialog.Execute then
    begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
       pm:=GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
       end;
-      if WriteDat(x,y,x2,y2,sourcemode,QBLan,SaveDialog1.FileName) <> 0 then
+      if ext='.DAT' then
       begin
-         ShowMessage('Error Saving DAT file!');
+        error:=WriteDat(x,y,x2,y2,sourcemode,QBLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,QBLan,ExportDialog.FileName);
+      end;
+      if (error<>0) then
+      begin
+         ShowMessage('Error Saving file!');
          exit;
       end;
    end;
@@ -1552,20 +1627,31 @@ var
  x,y,x2,y2 : integer;
  pm : integer;
  sourcemode : word;
+ ext : string;
+ error : word;
 begin
-   SaveDialog1.Filter := 'Turbo Pascal Const|*.con' ;
+   ExportDialog.Filter := 'Turbo Pascal Const|*.con|XGF Binary|*.xgf';
    GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
+   if ExportDialog.Execute then
    begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
       pm:=GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
       end;
-      if WriteDat(x,y,x2,y2,SourceMode,TPLan,SaveDialog1.FileName) <> 0 then
+      if ext='.CON' then
       begin
-        ShowMessage('Error Saving CON file!');
+        error:=WriteDat(x,y,x2,y2,SourceMode,TPLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,TPLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
         exit;
       end;
    end;
@@ -1574,25 +1660,35 @@ end;
 procedure TRMMainForm.FreePascalConstClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- ca   : TClipAreaRec;
  pm : integer;
  sourcemode : word;
+ ext : string;
+ error : word;
 begin
-   SaveDialog1.Filter := 'FreePascal Const|*.con' ;
+   ExportDialog.Filter := 'FreePascal Const|*.con|XGF Binary|*.xgf';
    GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
+   if ExportDialog.Execute then
    begin
-        pm:=GetPaletteMode;
-        case pm of         PaletteModeMono:sourcemode:=Source2;
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+      pm:=GetPaletteMode;
+      case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
-        end;
-        if WriteDat(x,y,x2,y2,sourcemode,FPLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving CON file!');
-          exit;
-        end;
+      end;
+      if ext='.CON' then
+      begin
+        error:=WriteDat(x,y,x2,y2,SourceMode,FPLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,FPLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
    end;
 end;
 
@@ -1601,23 +1697,274 @@ var
  x,y,x2,y2 : integer;
  pm : integer;
  sourcemode : word;
+ ext : string;
+ error : word;
 begin
-   SaveDialog1.Filter := 'GWBASIC DATA|*.DAT' ;
+   ExportDialog.Filter := 'GWBASIC DATA|*.dat|XGF Binary|*.xgf';
    GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
+   if ExportDialog.Execute then
    begin
-        pm:=GetPaletteMode;
-        case pm of         PaletteModeMono:sourcemode:=Source2;
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+      pm:=GetPaletteMode;
+      case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
+      end;
+      if ext='.CON' then
+      begin
+        error:=WriteDat(x,y,x2,y2,SourceMode,GWLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,GWLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
+procedure TRMMainForm.PaletteExportQuickCClick(Sender: TObject);
+var
+  pm : integer;
+  ColorFormat : integer;
+  ext : string;
+  error : word;
+ begin
+    ExportDialog.Filter := 'QuickC CHA|*.cha|Palette Commands|*.c' ;
+    if ExportDialog.Execute then
+    begin
+       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+       pm:=GetPaletteMode;
+
+       ColorFormat:=ColorSixBitFormat;
+       if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+       if ext='.CHA' then
+       begin
+          error:=WritePalData(ExportDialog.FileName,QCLan,ColorFormat);
+       end
+       else if ext='.C' then
+       begin
+         error:=WritePalStatements(ExportDialog.FileName,QCLan,ColorFormat);
+       end;
+
+       if error<>0 then
+       begin
+          ShowMessage('Error Saving Palette file!');
+          exit;
+       end;
+    end;
+ end;
+
+procedure TRMMainForm.PaletteExportTurboCClick(Sender: TObject);
+  var
+   pm : integer;
+   ColorFormat : integer;
+   ext : string;
+   error : word;
+  begin
+     ExportDialog.Filter := 'Turbo C CHA|*.cha|Palette Commands|*.c' ;
+     if ExportDialog.Execute then
+     begin
+        ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+        pm:=GetPaletteMode;
+
+        ColorFormat:=ColorSixBitFormat;
+        if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+        if ext='.CHA' then
+        begin
+           error:=WritePalData(ExportDialog.FileName,TCLan,ColorFormat);
+        end
+        else if ext='.C' then
+        begin
+          error:=WritePalStatements(ExportDialog.FileName,TCLan,ColorFormat);
         end;
 
-        if WriteDat(x,y,x2,y2,sourcemode,GWLan,SaveDialog1.FileName) <> 0 then
+        if error<>0 then
         begin
-          ShowMessage('Error Saving DAT file!');
-          exit;
+           ShowMessage('Error Saving Palette file!');
+           exit;
         end;
+     end;
+  end;
+
+procedure TRMMainForm.QuickCCharClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ sourcemode : word;
+ ext : string;
+ error : word;
+begin
+   ExportDialog.Filter := 'Quick C Char|*.cha|XGF Binary|*.xgf';
+   GetOpenSaveRegion(x,y,x2,y2);
+   if ExportDialog.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+      pm:=GetPaletteMode;
+      case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+      end;
+      if ext='.CHA' then
+      begin
+        error:=WriteDat(x,y,x2,y2,SourceMode,QCLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,QCLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
+procedure TRMMainForm.TurboCCharClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ sourcemode : word;
+ ext : string;
+ error : word;
+begin
+   SaveDialog1.Filter := 'Turbo C Char|*.cha|XGF Binary|*.xgf';
+   GetOpenSaveRegion(x,y,x2,y2);
+   if ExportDialog.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+      pm:=GetPaletteMode;
+      case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+      end;
+     if ext='.CHA' then
+      begin
+        error:=WriteDat(x,y,x2,y2,SourceMode,TCLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,TCLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
+procedure TRMMainForm.TurboPowerBasicDataClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ sourcemode : word;
+ ext : string;
+ error : word;
+begin
+  ExportDialog.Filter := 'Turbo\Power Basic DATA|*.dat|XGF Binary|*.xgf';
+  GetOpenSaveRegion(x,y,x2,y2);
+  if ExportDialog.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+      pm:=GetPaletteMode;
+      case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+      end;
+     if ext='.DAT' then
+      begin
+        error:=WriteDat(x,y,x2,y2,SourceMode,PBLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,PBLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
+procedure TRMMainForm.FreeBASICDATAClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ sourcemode : word;
+ ext : string;
+ error : word;
+begin
+   ExportDialog.Filter := 'FreeBASIC DATA|*.dat|XGF Binary|*.xgf';
+   GetOpenSaveRegion(x,y,x2,y2);
+   if ExportDialog.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+      pm:=GetPaletteMode;
+      case pm of         PaletteModeMono:sourcemode:=Source2;
+           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+      end;
+      if ext='.DAT' then
+      begin
+        error:=WriteDat(x,y,x2,y2,SourceMode,FBLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,FBLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
+procedure TRMMainForm.AmigaBasicClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ sourcemode : word;
+ ext : string;
+ error : word;
+begin
+   ExportDialog.Filter := 'AmigaBASIC DATA|*.dat|XGF Binary|*.xgf';
+   GetOpenSaveRegion(x,y,x2,y2);
+   if ExportDialog.Execute then
+   begin
+       sourcemode:=Source32;   //PaletteModeAmiga32
+       pm:=GetPaletteMode;
+       case pm of         PaletteModeAmiga2:sourcemode:=Source2;
+                          PaletteModeAmiga4:sourcemode:=Source4;
+                          PaletteModeAmiga8:sourcemode:=Source8;
+                          PaletteModeAmiga16:sourcemode:=Source16;
+       end;
+      if ext='.DAT' then
+      begin
+        error:=WriteDat(x,y,x2,y2,SourceMode,ABLan,ExportDialog.FileName);
+      end
+      else if ext='.XGF' then
+      begin
+        error:=WriteXGF(x,y,x2,y2,ABLan,ExportDialog.FileName);
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
    end;
 end;
 
@@ -1667,6 +2014,10 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+  if RMDrawTools.GetClipStatus = 1 then
+  begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+  end;
 end;
 
 procedure TRMMainForm.PaletteAmiga2Click(Sender: TObject);
@@ -1680,156 +2031,68 @@ begin
  UpdateColorBox;
  UpdateActualArea;
  UpdateZoomArea;
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+ end;
 end;
 
-procedure TRMMainForm.QuickCCharClick(Sender: TObject);
-var
- x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
-begin
-   SaveDialog1.Filter := 'Quick C Char|*.CHA' ;
-   GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
-   begin
-        pm:=GetPaletteMode;
-        case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
-        end;
 
-        if WriteDat(x,y,x2,y2,sourcemode,QCLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving CHA file!');
-          exit;
-        end;
-   end;
-end;
 
-procedure TRMMainForm.TurboCCharClick(Sender: TObject);
-var
- x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
-begin
-   SaveDialog1.Filter := 'Turbo C Char|*.CHA' ;
-   GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
-   begin
-        pm:=GetPaletteMode;
-        case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
-        end;
-        if WriteDat(x,y,x2,y2,sourcemode,TCLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving CHA file!');
-          exit;
-        end;
-   end;
-end;
 
-procedure TRMMainForm.TurboPowerBasicDataClick(Sender: TObject);
-var
- x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
-begin
-   SaveDialog1.Filter := 'Turbo/Power Basic DATA|*.DAT' ;
-   GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
-   begin
-        pm:=GetPaletteMode;
-        case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
-        end;
-
-        if WriteDat(x,y,x2,y2,sourcemode,PBLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving DAT file!');
-          exit;
-        end;
-   end;
-end;
-
-procedure TRMMainForm.FreeBASICDATAClick(Sender: TObject);
-var
- x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
-begin
-   SaveDialog1.Filter := 'FreeBASIC DATA|*.DAT' ;
-   GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
-   begin
-        pm:=GetPaletteMode;
-        case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-                         PaletteModeVGA256:sourcemode:=source256;
-        end;
-
-        if WriteDat(x,y,x2,y2,sourcemode,FBLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving DAT file!');
-          exit;
-        end;
-   end;
-end;
-
-procedure TRMMainForm.AmigaBasicClick(Sender: TObject);
-var
- x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
-begin
-   SaveDialog1.Filter := 'AmigaBASIC DATA|*.DAT' ;
-   GetOpenSaveRegion(x,y,x2,y2);
-   if SaveDialog1.Execute then
-   begin
-        pm:=GetPaletteMode;
-        case pm of         PaletteModeAmiga2:sourcemode:=Source2;
-                           PaletteModeAmiga4:sourcemode:=Source4;
-                           PaletteModeAmiga8:sourcemode:=Source8;
-                           PaletteModeAmiga16:sourcemode:=Source16;
-                           PaletteModeAmiga32:sourcemode:=Source32;
-        end;
-
-        if WriteDat(x,y,x2,y2,sourcemode,ABLan,SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving DAT file!');
-          exit;
-        end;
-   end;
-
-end;
 
 procedure TRMMainForm.PaletteExportAmigaBasicClick(Sender: TObject);
+var
+ ColorFormat : integer;
+ ext : string;
+ error : word;
+begin
+   ExportDialog.Filter := 'AmigaBasic DATA|*.dat|AmigaBasic Palette Commands|*.bas' ;
+   if ExportDialog.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      ColorFormat:=ColorOnePercentFormat;
+
+      if ext='.DAT' then
+      begin
+         error:=WritePalData(ExportDialog.FileName,ABLan,ColorFormat);
+      end
+      else if ext='.BAS' then
+      begin
+        error:=WritePalStatements(ExportDialog.FileName,ABLan,ColorFormat);
+      end;
+
+      if error<>0 then
+      begin
+         ShowMessage('Error Saving Palette file!');
+         exit;
+      end;
+   end;
+end;
+
+procedure TRMMainForm.PaletteExportGWBasicClick(Sender: TObject);
 var
  pm : integer;
  ColorFormat : integer;
  ext : string;
  error : word;
 begin
-   SaveDialog1.Filter := 'AmigaBasic DATA|*.dat|AmigaBasic Palette Commands|*.bas' ;
-   if SaveDialog1.Execute then
+   ExportDialog.Filter := 'GWBasic DATA|*.dat|Palette Commands|*.bas' ;
+   if ExportDialog.Execute then
    begin
-      ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       pm:=GetPaletteMode;
 
-      ColorFormat:=ColorOnePercentFormat;
+      ColorFormat:=ColorSixBitFormat;
+      if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
       if ext='.DAT' then
       begin
-         error:=WritePalData(SaveDialog1.FileName,ABLan,ColorFormat);
+         error:=WritePalData(ExportDialog.FileName,GWLan,ColorFormat);
       end
       else if ext='.BAS' then
       begin
-        error:=WritePalStatements(SaveDialog1.FileName,ABLan,ColorFormat);
+        error:=WritePalStatements(ExportDialog.FileName,GWLan,ColorFormat);
       end;
 
       if error<>0 then
@@ -1840,6 +2103,67 @@ begin
    end;
 
 end;
+
+procedure TRMMainForm.PaletteExportTurboPascalClick(Sender: TObject);
+var
+ pm : integer;
+ ColorFormat : integer;
+ ext : string;
+ error : word;
+begin
+   ExportDialog.Filter := 'Turbo Pascal Const|*.con|Palette Commands|*.pas' ;
+   if ExportDialog.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+
+      ColorFormat:=ColorSixBitFormat;
+      pm:=GetPaletteMode;
+      if (pm=PaletteModeEGA) then ColorFormat:=ColorIndexFormat;
+
+      if ext='.CON' then
+      begin
+         error:=WritePalConstants(ExportDialog.FileName,TPLan,ColorFormat);
+      end
+      else if ext='.PAS' then
+      begin
+        error:=WritePalStatements(ExportDialog.FileName,TPLan,ColorFormat);
+      end;
+
+
+      if error<>0 then
+      begin
+         ShowMessage('Error Saving Palette file!');
+         exit;
+      end;
+   end;
+end;
+
+procedure TRMMainForm.EditCopyClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+begin
+ GetOpenSaveRegion(x,y,x2,y2);
+ RMDrawTools.Copy(x,y,x2,y2);
+end;
+
+procedure TRMMainForm.EditPasteClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ clipstatus : integer;
+begin
+ clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
+
+ GetOpenSaveRegion(x,y,x2,y2);
+ RMDrawTools.Paste(x,y,x2,y2);
+
+ UpdateActualArea;
+ UpdateZoomArea;
+ if clipstatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+ end;
+end;
+
 
 
 end.

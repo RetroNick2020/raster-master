@@ -4,7 +4,7 @@ unit RMTools;
 
 interface
 uses
-  Classes, SysUtils,Graphics,ColorPalette,RMCore,math;
+  Classes, SysUtils,Graphics,Clipbrd,LCLIntf,LCLType,ColorPalette,RMCore,math;
 
 const
   CellWidthBorderRemove  =2 ;
@@ -113,6 +113,8 @@ Type
              Procedure ScrollDown(x,y,x2,y2: word);
              Procedure ScrollLeft(x,y,x2,y2: word);
              Procedure ScrollRight(x,y,x2,y2: word);
+             Procedure Copy(x,y,x2,y2 : integer);
+             Procedure Paste(x,y,x2,y2 : integer);
 
   end;
  var
@@ -1360,6 +1362,70 @@ begin
    end;
    RMCoreBase.PutPixel(i,y,d);
  end;
+end;
+
+Procedure TRMDrawTools.Copy(x,y,x2,y2 : integer);
+var
+ bmp : TBitmap;
+ tcol : TColor;
+ colindex : integer;
+ i,j : integer;
+ width,height : integer;
+begin
+ bmp:=TBitmap.Create;
+ Width:=x2-x+1;
+ height:=y2-y+1;
+ bmp.Width:=width;
+ bmp.height:=height;
+
+ for j:=0 to height-1 do
+ begin
+   for i:=0 to width-1 do
+   begin
+        colIndex:=RMCoreBase.GetPixel(x+i,y+j);
+        tcol:=RGBToColor(RMCoreBase.Palette.GetRed(colIndex),
+                         RMCoreBase.Palette.GetGreen(colIndex),
+                         RMCoreBase.Palette.GetBlue(colIndex));
+        bmp.canvas.Pixels[i,j]:=tcol;
+   end;
+ end;
+ Clipboard.Assign(bmp);
+ bmp.Free;
+end;
+
+Procedure TRMDrawTools.Paste(x,y,x2,y2 : integer);
+var
+ bmp : TBitmap;
+ pwidth,pheight : integer;
+ width,height  : integer;
+ i,j           : integer;
+ tcol : TColor;
+ colindex : integer;
+
+begin
+ width:=x2-x+1;
+ height:=y2-y+1;
+
+ bmp:=TBitmap.Create;
+
+ if Clipboard.HasFormat(PredefinedClipboardFormat(pcfBitmap)) then
+ begin
+   bmp.LoadFromClipboardFormat(PredefinedClipboardFormat(pcfBitmap));
+
+   if bmp.width > width then pwidth:=width else pwidth:=bmp.Width;
+   if bmp.height > height then pHeight:=height else pheight:=bmp.height;
+
+   for j:=0 to pheight-1 do
+   begin
+     for i:=0 to pwidth-1 do
+     begin
+       tcol :=bmp.canvas.Pixels[i,j];
+       colindex:=RMCoreBase.Palette.FindColorMatch(Red(tcol),Green(tcol),blue(tcol));
+       RMCoreBase.PutPixel(x+i,y+j,colindex);
+     end;
+   end;
+ end;
+ bmp.Free;
 end;
 
 

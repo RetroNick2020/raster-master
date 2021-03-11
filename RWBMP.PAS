@@ -392,7 +392,21 @@ begin
  myHeight:=y2-y+1;
  myWidth:=x2-x+1;
  myNumCol:=GetMAxColor+1;
- If MyNumCol=16 then
+
+
+  if MyNumCol =8 then
+  begin
+    MyNumCol:=16;
+  end
+  else if MyNumCol =32 then
+  begin
+    MyNumCol:=256;
+  end;
+
+
+
+
+  If MyNumCol=16 then
  begin
   // ShowMessage('NumCol is 16');
      BPL:=(myWidth+7) Div 8;

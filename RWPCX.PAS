@@ -524,6 +524,10 @@ Begin
  if Fwidth < myWidth then myWidth:=FWidth;
  if FHeight < myHeight then myHeight:=Fheight;
 
+
+
+
+
  If (Colors<>2) AND (Colors<>4) AND (Colors<>16) AND (Colors<>256) then
  begin
    ReadPcxImg:=1000;
@@ -619,7 +623,7 @@ Begin
      end;
    end;
  end
- else if Colors=256 then (* must be 256 *)
+ else if (Colors=256) then
  begin
    BytesPerLine:=Header.Bytes_per_line_per_plane;
    For Ln:=1 to myHeight do
@@ -705,6 +709,16 @@ begin
   bpl:=(width+7) div 8;
 //bpl:=width;
   colorcount:=RMCoreBase.Palette.GetColorCount;
+
+  if colorcount = 8 then
+  begin
+     colorcount:=16;
+  end
+  else if colorcount=32 then
+  begin
+    colorcount:=256;
+  end;
+
    if colorcount= 16 then
    begin
      ImageSize:=(bpl*4)*height+6;
@@ -719,11 +733,9 @@ begin
    end
     else if colorcount = 2 then
    begin
-
-     if odd(bpl) then inc(bpl);
+       if odd(bpl) then inc(bpl);
      ImageSize:=bpl+6;
    end;
-
 end;
 
 Function SavePcxImg(x,y,x2,y2 : Word;Filename : String): Word;
@@ -749,6 +761,15 @@ Begin
  SavePcxImg:=0;
  NColors:=GetMaxColor+1;
  //NColors:=16;
+ if NColors=8 then  (* promote amiga color modes to next available formats *)
+ begin
+     NColors:=16;
+ end
+ else if NColors = 32 then
+ begin
+     NColors:=256;
+ end;
+
  If (Ncolors<>16) AND (Ncolors<>256) ANd (NColors<>4) AND (NColors<>2) Then
  begin
    SavePcxImg:=3;
