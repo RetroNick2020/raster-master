@@ -1945,6 +1945,7 @@ begin
    GetOpenSaveRegion(x,y,x2,y2);
    if ExportDialog.Execute then
    begin
+       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
        sourcemode:=Source32;   //PaletteModeAmiga32
        pm:=GetPaletteMode;
        case pm of         PaletteModeAmiga2:sourcemode:=Source2;
