@@ -7,7 +7,7 @@ uses
   Classes, SysUtils,Graphics,Clipbrd,LCLIntf,LCLType,ColorPalette,RMCore,math;
 
 const
-  CellWidthBorderRemove  =2 ;
+  CellWidthBorderRemove  =2;
   CellHeightBorderRemove =2;
 
   DrawShapeNothing = 0;
@@ -17,8 +17,10 @@ const
   DrawShapeFRectangle = 4;
   DrawShapeCircle = 5;
   DrawShapeFCircle = 6;
-  DrawShapePaint = 7;
-  DrawShapeSpray = 8;
+  DrawShapeEllipse = 7;
+  DrawShapeFEllipse = 8;
+  DrawShapePaint = 9;
+  DrawShapeSpray = 10;
   DrawShapeClip = 11;
 
   MaxSprayPoints = 3;
@@ -63,6 +65,11 @@ Type
              procedure HLine(Image : TCanvas;x,x2,y : integer;color : TColor; mode : integer);
              procedure VLine(Image : TCanvas;y,y2,x : integer;color : TColor; mode : integer);
              Procedure DLine(Image : TCanvas;x1,y1,x2,y2:Integer;color : TColor; mode : integer);
+             procedure rRectFill(Image : TCanvas;x,y,w,h : integer;color : TColor; mode : integer);
+             procedure rLine(Image : TCanvas;x,y,w : integer;color : TColor; mode : integer);
+             procedure draw_ellipse(Image : TCanvas;xc,  yc,  a, b : Integer;color : TColor; mode : integer);
+             procedure fill_ellipse(Image : TCanvas;xc, yc,  a,  b  : integer;color : TColor; mode : integer);
+             Procedure DEllipse(Image : TCanvas;xc,yc,x2,y2:Integer;color : TColor; mode : integer;Full:integer);
              Procedure DCircle(Image : TCanvas;xc,yc,x2,y2:Integer;color : TColor; mode : integer;Full:integer);
 
              procedure Rect(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,full : integer);
@@ -482,6 +489,208 @@ begin
  end;
 
 
+
+
+procedure TRMDrawTools.draw_ellipse(Image : TCanvas;xc,  yc,  a, b : Integer;color : TColor; mode : integer);
+var
+ x,y : integer;
+ a2,b2 : longint;
+ crit1,crit2,crit3 : longint;
+ t,dxt,d2xt,dyt,d2yt : longint;
+begin
+ x := 0;
+ y := b;
+
+ a2 :=a*a;
+ b2 :=b*b;
+ crit1 := -(a2 div 4 + a mod 2 + b2);
+ crit2 := -(b2 div 4 + b mod 2 + a2);
+ crit3 := -(b2 div 4 + b mod 2);
+ t := -a2*y;
+ dxt := 2*b2*x;
+ dyt := -2*a2*y;
+ d2xt := 2*b2;
+ d2yt := 2*a2;
+
+while (y>=0) AND (x<=a) do
+begin
+  putpixel(image,xc+x, yc+y,color,mode);
+  if (x<>0) OR (y<>0) then
+  begin
+    putpixel(image,xc-x, yc-y,color,mode);
+    if (x<>0) AND (y<>0) then
+    begin
+      putpixel(image,xc+x, yc-y,color,mode);
+      putpixel(image,xc-x, yc+y,color,mode);
+    end;
+    if (t + b2*x <= crit1) OR  (t + a2*y <= crit3) then
+    begin
+      inc(x);
+      inc(dxt,d2xt);
+      inc(t,dxt);
+    end
+    else if (t - a2*y > crit2)	then
+    begin
+      dec(y);
+      inc(dyt,d2yt);
+      inc(t,dyt);
+    end
+    else
+    begin
+      inc(x);
+      inc(dxt,d2xt);
+      inc(t,dxt);
+
+      dec(y);
+      inc(dyt,d2yt);
+      inc(t,dyt);
+    end;
+  end;
+end;
+end;
+
+
+procedure TRMDrawTools.rLine(Image : TCanvas;x,y,w : integer;color : TColor; mode : integer);
+var
+ i : integer;
+begin
+  for i:=x to x+w-1 do
+  begin
+    putpixel(image,i,y,color,mode);
+  end;
+end;
+
+procedure TRMDrawTools.rRectFill(Image : TCanvas;x,y,w,h : integer;color : TColor; mode : integer);
+var
+ i,j : integer;
+ x2,y2 : integer;
+ t     : integer;
+begin
+x2:=x+w;
+y2:=y+h-1;
+if x2 < x then
+begin
+  t:=x2;
+  x2:=x;
+  x:=t;
+end;
+
+if y2 < y then
+begin
+  t:=y2;
+  y2:=y;
+  y:=t;
+end;
+
+for j:=y to y2 do
+begin
+  for i:=x to x2 do
+  begin
+    putpixel(image,i,j,color,mode);
+  end;
+end;
+
+end;
+
+
+
+procedure TRMDrawTools.fill_ellipse(Image : TCanvas;xc, yc,  a,  b : integer;color : TColor; mode : integer);
+var
+ x,y : integer;
+ a2,b2 : longint;
+ crit1,crit2,crit3 : longint;
+ t,dxt,d2xt,dyt,d2yt : longint;
+ width : word;
+begin
+  x := 0;
+  y := b;
+  width := 1;
+  a2 := longint(a)*a;
+  b2 := longint(b)*b;
+  crit1 := -(a2 div 4 + (a mod 2) + b2);
+  crit2 := -(b2 div 4 + (b mod 2) + a2);
+  crit3 := -(b2 div 4 + (b mod 2));
+  t := -a2*y;
+  dxt := 2*b2*x;
+  dyt := -2*a2*y;
+  d2xt := 2*b2;
+  d2yt := 2*a2;
+
+  while (y>=0) AND (x<=a)  do
+  begin
+   if ((t + b2*x) <= crit1) OR ((t + a2*y) <= crit3) then
+   begin
+     inc(x);
+     inc(dxt,d2xt);
+     inc(t,dxt);
+
+      inc(width,2);
+    end
+    else if ((t - a2*y) > crit2) then
+    begin
+      rline(Image,xc-x, yc-y, width,color,mode);
+      if (y<>0) then rline(Image,xc-x, yc+y, width,color,mode);
+      dec(y);
+      inc(dyt,d2yt);
+      inc(t,dyt);
+    end
+   else
+   begin
+     rline(Image,xc-x, yc-y, width,color,mode);
+     if (y<>0) then   rline(Image,xc-x, yc+y, width,color,mode);
+     inc(x);
+     inc(dxt,d2xt);
+     inc(t,dxt);
+
+     dec(y);
+     inc(dyt,d2yt);
+     inc(t,dyt);
+
+     inc(width,2);
+   end;
+  end;
+  if (b = 0) then rline(Image,xc-a, yc, 2*a+1,color,mode);
+end;
+
+
+
+Procedure TRMDrawTools.DEllipse(Image : TCanvas;xc,yc,x2,y2:Integer;color : TColor; mode : integer;Full:integer);
+var
+ rx,ry : integer;
+begin
+ rx:=abs(x2-xc);
+ if rx < 1 then rx:=1;
+ ry:=abs(y2-yc);
+ if ry < 1 then ry:=1;
+ if full=1 then
+ begin
+  fill_ellipse(image,xc,yc,rx,ry,color,mode);
+ end
+ else
+ begin
+   draw_ellipse(image,xc,yc,rx,ry,color,mode);
+ end;
+end;
+
+Procedure TRMDrawTools.DCircle(Image : TCanvas;xc,yc,x2,y2:Integer;color : TColor; mode : integer;Full:integer);
+var
+ rx,ry,radius : integer;
+begin
+ rx:=abs(x2-xc);
+ ry:=abs(y2-yc);
+ radius:=rx;
+ if ry > radius then radius:=ry;
+ if radius < 1 then radius:=1;
+ if full=1 then
+ begin
+  fill_ellipse(image,xc,yc,radius,radius,color,mode);
+ end
+ else
+ begin
+   draw_ellipse(image,xc,yc,radius,radius,color,mode);
+ end;
+end;
+(*
 Procedure TRMDrawTools.DCircle(Image : TCanvas;xc,yc,x2,y2:Integer;color : TColor; mode : integer;Full:integer);
 var
  radius : Integer;
@@ -582,7 +791,7 @@ begin
 end;
 
 
-
+ *)
 
 
 
@@ -617,7 +826,19 @@ begin
       DCircle(Image,x,y,x2,y2,color,mode,full);
       SetZoomMode(1);
    end
-  else if shape = DrawShapePencil then
+   else if shape = DrawShapeEllipse then
+   begin
+      SetZoomMode(0);
+      DEllipse(Image,x,y,x2,y2,color,mode,0);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeFEllipse then
+   begin
+      SetZoomMode(0);
+      DEllipse(Image,x,y,x2,y2,color,mode,full);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapePencil then
    begin
       SetZoomMode(0);
       PutPixel(Image,x,y,color,mode);
@@ -653,7 +874,15 @@ begin
    begin
       DCircle(Image,x,y,x2,y2,color,mode,full);
    end
-    else if shape = DrawShapePencil then
+   else if shape = DrawShapeEllipse then
+   begin
+      DEllipse(Image,x,y,x2,y2,color,mode,0);
+   end
+   else if shape = DrawShapeFEllipse then
+   begin
+      DEllipse(Image,x,y,x2,y2,color,mode,full);
+   end
+   else if shape = DrawShapePencil then
    begin
      PutPixel(Image,x,y,color,mode);
    end

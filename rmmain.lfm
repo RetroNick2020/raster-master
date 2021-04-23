@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
-  Left = 36
+  Left = 153
   Height = 991
-  Top = 24
+  Top = 72
   Width = 1629
   Caption = 'Raster Master'
-  ClientHeight = 966
-  ClientWidth = 1629
+  ClientHeight = 0
+  ClientWidth = 0
   DefaultMonitor = dmMainForm
   DesignTimePPI = 120
   Menu = MainMenu1
@@ -61,7 +61,7 @@ object RMMainForm: TRMMainForm
     Left = 376
     Height = 72
     Top = 16
-    Width = 280
+    Width = 224
     AutoSize = False
     Caption = 'InfoBarLabel'
     ParentColor = False
@@ -93,12 +93,12 @@ object RMMainForm: TRMMainForm
     ParentColor = False
   end
   object Panel1: TPanel
-    Left = 664
+    Left = 624
     Height = 88
     Top = 16
-    Width = 394
+    Width = 434
     ClientHeight = 88
-    ClientWidth = 394
+    ClientWidth = 434
     TabOrder = 3
     object ToolCircleIcon: TImage
       Left = 96
@@ -161,7 +161,7 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolSprayPaintIcon: TImage
-      Left = 136
+      Left = 176
       Height = 32
       Hint = 'Spray Paint'
       Top = 8
@@ -171,7 +171,7 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolPaintIcon: TImage
-      Left = 136
+      Left = 176
       Height = 32
       Hint = 'Paint'
       Top = 48
@@ -181,17 +181,17 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolGridIcon: TImage
-      Left = 176
+      Left = 216
       Height = 32
       Hint = 'Toggle Grid'
-      Top = 8
+      Top = 7
       Width = 32
       OnClick = ToolGridMenuClick
       ParentShowHint = False
       ShowHint = True
     end
     object ToolSelectAreaIcon: TImage
-      Left = 176
+      Left = 216
       Height = 32
       Hint = 'Select Area'
       Top = 48
@@ -201,16 +201,16 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolHFLIPButton: TButton
-      Left = 256
+      Left = 296
       Height = 31
-      Top = 8
+      Top = 9
       Width = 54
       Caption = 'HFLIP'
       OnClick = ToolFlipHorizMenuClick
       TabOrder = 0
     end
     object ToolVFLIPButton: TButton
-      Left = 322
+      Left = 354
       Height = 31
       Top = 8
       Width = 54
@@ -219,7 +219,7 @@ object RMMainForm: TRMMainForm
       TabOrder = 1
     end
     object ToolScrollLeftIcon: TImage
-      Left = 248
+      Left = 256
       Height = 32
       Hint = 'Scroll Left'
       Top = 48
@@ -229,7 +229,7 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolScrollRightIcon: TImage
-      Left = 278
+      Left = 296
       Height = 32
       Hint = 'Scroll Right'
       Top = 48
@@ -239,7 +239,7 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolScrollUpIcon: TImage
-      Left = 312
+      Left = 336
       Height = 32
       Hint = 'Scroll Up'
       Top = 48
@@ -249,7 +249,7 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolScrollDownIcon: TImage
-      Left = 344
+      Left = 376
       Height = 32
       Hint = 'Scroll Down'
       Top = 48
@@ -259,12 +259,32 @@ object RMMainForm: TRMMainForm
       ShowHint = True
     end
     object ToolUndoIcon: TImage
-      Left = 216
+      Left = 256
       Height = 32
       Hint = 'Undo'
       Top = 8
       Width = 32
       OnClick = ToolUndoIconClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolEllipseIcon: TImage
+      Left = 136
+      Height = 32
+      Hint = 'Empty Ellipse'
+      Top = 9
+      Width = 32
+      OnClick = ToolEllipseMenuClick
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object ToolFEllipseIcon: TImage
+      Left = 136
+      Height = 32
+      Hint = 'Filled Ellipse'
+      Top = 48
+      Width = 32
+      OnClick = ToolFEllipseMenuClick
       ParentShowHint = False
       ShowHint = True
     end
@@ -482,6 +502,13 @@ object RMMainForm: TRMMainForm
       object ToolFCircleMenu: TMenuItem
         Caption = 'Filled Circle'
         OnClick = ToolFCircleMenuClick
+      end
+      object ToolEllipseMenu: TMenuItem
+        Caption = 'Ellipse'
+        OnClick = ToolEllipseMenuClick
+      end
+      object ToolFEllipseMenu: TMenuItem
+        Caption = 'Filled Ellipse'
       end
       object ToolMenuPaint: TMenuItem
         Caption = 'Paint'

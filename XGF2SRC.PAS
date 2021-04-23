@@ -8,7 +8,6 @@ Procedure FilenameToImageName(Var filename,Imagename : string);
 
 Implementation
 
-
 Procedure Byte2str(mybyte : byte;Var mystring :string);
 const
  hexa : array[0..15] of char=('0','1','2','3','4','5','6','7','8','9',

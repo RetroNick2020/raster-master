@@ -10,7 +10,7 @@
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
-      <Resources Count="27">
+      <Resources Count="31">
         <Resource_0 FileName="Images\CIRC1.BMP" Type="BITMAP" ResourceName="CIRC1"/>
         <Resource_1 FileName="Images\CIRC2.BMP" Type="BITMAP" ResourceName="CIRC2"/>
         <Resource_2 FileName="Images\DOWN1.BMP" Type="BITMAP" ResourceName="DOWN1"/>
@@ -38,6 +38,10 @@
         <Resource_24 FileName="Images\UNDO2.BMP" Type="BITMAP" ResourceName="UNDO2"/>
         <Resource_25 FileName="Images\UP1.BMP" Type="BITMAP" ResourceName="UP1"/>
         <Resource_26 FileName="Images\RM.bmp" Type="BITMAP" ResourceName="RM"/>
+        <Resource_27 FileName="Images\ELLIP1.BMP" Type="BITMAP" ResourceName="ELLIP1"/>
+        <Resource_28 FileName="Images\ELLIP2.bmp" Type="BITMAP" ResourceName="ELLIP2"/>
+        <Resource_29 FileName="Images\FELLIP1.bmp" Type="BITMAP" ResourceName="FELLIP1"/>
+        <Resource_30 FileName="Images\FELLIP2.bmp" Type="BITMAP" ResourceName="FELLIP2"/>
       </Resources>
     </General>
     <BuildModes Count="3">
@@ -126,7 +130,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="11">
+    <Units Count="12">
       <Unit0>
         <Filename Value="RM.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -193,6 +197,11 @@
         <Filename Value="rwpal.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
+      <Unit11>
+        <Filename Value="rmamigarwxgf.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RMAmigaRWXGF"/>
+      </Unit11>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

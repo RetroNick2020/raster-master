@@ -8,7 +8,7 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lazcolorpalette, RMMain, rmcore, rmtools, RMColor, RMColorVga, rmabout,
-  rmamigacolor, rwraw, rwpal
+  rmamigacolor, rwraw, rwpal, rmamigarwxgf
      { you can add units after this };
 
 {$R *.res}

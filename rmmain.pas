@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ColorBox, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, RMTools, RMCore,RMColor,RMColorVGA,RMAmigaColor,
-  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,XGF2SRC,bits,flood;
+  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,XGF2SRC,bits,flood,RMAmigaRWXGF;
 
 
 
@@ -40,6 +40,8 @@ type
     MenuItem1: TMenuItem;
     EditCopy: TMenuItem;
     EditPaste: TMenuItem;
+    ToolEllipseMenu: TMenuItem;
+    ToolFEllipseMenu: TMenuItem;
     PaletteExportQuickC: TMenuItem;
     PaletteExportGWBasic: TMenuItem;
     PaletteExportTurboC: TMenuItem;
@@ -56,6 +58,8 @@ type
     PaletteAmiga32: TMenuItem;
     PaletteAmiga: TMenuItem;
     ExportDialog: TSaveDialog;
+    ToolEllipseIcon: TImage;
+    ToolFEllipseIcon: TImage;
     TurboPowerBasicData: TMenuItem;
     QuickCChar: TMenuItem;
     TurboCChar: TMenuItem;
@@ -144,6 +148,7 @@ type
     procedure FreeBASICDATAClick(Sender: TObject);
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
+    procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
     procedure PaletteExportTurboCClick(Sender: TObject);
     procedure PaletteExportAmigaBasicClick(Sender: TObject);
@@ -162,6 +167,8 @@ type
     procedure QBasicDataClick(Sender: TObject);
     procedure NewClick(Sender: TObject);
     procedure RMLogoClick(Sender: TObject);
+    //procedure ToolEllipseMenuClick(Sender: TObject);
+    procedure ToolFEllipseMenuClick(Sender: TObject);
     procedure ToolFlipHorizMenuClick(Sender: TObject);
     procedure ToolFlipVirtMenuClick(Sender: TObject);
     procedure ToolGridMenuClick(Sender: TObject);
@@ -369,6 +376,8 @@ begin
     OpenUrl('https://www.youtube.com/channel/UCLak9dN2fgKU9keY2XEBRFQ');
 end;
 
+
+
 procedure TRMMainForm.ToolFlipHorizMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
@@ -573,6 +582,29 @@ begin
   RMDrawTools.SetDrawTool(DrawShapeFCircle);
   UpdateToolSelectionIcons;
   ToolFCircleMenu.Checked:=true;
+end;
+
+procedure TRMMainForm.ToolEllipseMenuClick(Sender: TObject);
+begin
+ ClearClipAreaOutline;
+ UnFreezeScrollAndZoom;
+ ClearSelectedToolsMenu;
+ HideSelectAreaTools;
+ RMDrawTools.SetDrawTool(DrawShapeEllipse);
+ UpdateToolSelectionIcons;
+ ToolEllipseMenu.Checked:=true;
+
+end;
+
+procedure TRMMainForm.ToolFEllipseMenuClick(Sender: TObject);
+begin
+ ClearClipAreaOutline;
+ UnFreezeScrollAndZoom;
+ ClearSelectedToolsMenu;
+ HideSelectAreaTools;
+ RMDrawTools.SetDrawTool(DrawShapeFEllipse);
+ UpdateToolSelectionIcons;
+ ToolFEllipseMenu.Checked:=true;
 end;
 
 procedure TRMMainForm.ToolMenuPaintClick(Sender: TObject);
@@ -1357,7 +1389,6 @@ end;
 
 procedure TRMMainForm.ClearSelectedToolsMenu;
 begin
-     ToolCircleMenu.Checked:=false;
      ToolFRectangleMenu.Checked:=false;
      ToolRectangleMenu.Checked:=false;
      ToolLineMenu.Checked:=false;
@@ -1365,7 +1396,11 @@ begin
 
      ToolMenuSprayPaint.Checked:=false;
      ToolMenuPaint.Checked:=false;
+     ToolCircleMenu.Checked:=false;
      ToolFCircleMenu.Checked:=false;
+     ToolEllipseMenu.Checked:=false;
+     ToolFEllipseMenu.Checked:=false;
+
      ToolPencilMenu.Checked:=false;
 
      //menus - we disable menus instead of making them invisible
@@ -1379,6 +1414,10 @@ begin
   ToolLineIcon.Picture.LoadFromResourceName(HInstance,'LINE1');
   ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRC1');
   ToolFCircleIcon.Picture.LoadFromResourceName(HInstance,'FCIRC1');
+
+  ToolEllipseIcon.Picture.LoadFromResourceName(HInstance,'ELLIP1');
+  ToolFEllipseIcon.Picture.LoadFromResourceName(HInstance,'FELLIP1');
+
   ToolRectangleIcon.Picture.LoadFromResourceName(HInstance,'RECT1');
   ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT1');
   ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY1');
@@ -1405,6 +1444,8 @@ begin
   ToolLineIcon.Picture.LoadFromResourceName(HInstance,'LINE1');
   ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRC1');
   ToolFCircleIcon.Picture.LoadFromResourceName(HInstance,'FCIRC1');
+  ToolEllipseIcon.Picture.LoadFromResourceName(HInstance,'ELLIP1');
+  ToolFEllipseIcon.Picture.LoadFromResourceName(HInstance,'FELLIP1');
   ToolRectangleIcon.Picture.LoadFromResourceName(HInstance,'RECT1');
   ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT1');
   ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY1');
@@ -1416,7 +1457,9 @@ begin
               DrawShapeLine:ToolLineIcon.Picture.LoadFromResourceName(HInstance,'LINE2');
             DrawShapeCircle:ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRC2');
            DrawShapeFCircle:ToolFCircleIcon.Picture.LoadFromResourceName(HInstance,'FCIRC2');
-         DrawShapeRectangle:ToolRectangleIcon.Picture.LoadFromResourceName(HInstance,'RECT2');
+           DrawShapeEllipse:ToolEllipseIcon.Picture.LoadFromResourceName(HInstance,'ELLIP2');
+          DrawShapeFEllipse:ToolFEllipseIcon.Picture.LoadFromResourceName(HInstance,'FELLIP2');
+           DrawShapeRectangle:ToolRectangleIcon.Picture.LoadFromResourceName(HInstance,'RECT2');
         DrawShapeFRectangle:ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT2');
              DrawShapeSpray:ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY2');
              DrawShapePaint:ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT2');
@@ -1727,6 +1770,8 @@ begin
    end;
 end;
 
+
+
 procedure TRMMainForm.PaletteExportQuickCClick(Sender: TObject);
 var
   pm : integer;
@@ -1941,7 +1986,7 @@ var
  ext : string;
  error : word;
 begin
-   ExportDialog.Filter := 'AmigaBASIC DATA|*.dat|XGF Binary|*.xgf';
+   ExportDialog.Filter := 'AmigaBASIC PUT DATA|*.dat|XGF Binary|*.xgf|Bob Binary|*.obj|VSprite Binary|*.vsp|AmigaBASIC Bob DATA|*.da1|AmigaBASIC VSprite DATA|*.da2';
    GetOpenSaveRegion(x,y,x2,y2);
    if ExportDialog.Execute then
    begin
@@ -1960,6 +2005,22 @@ begin
       else if ext='.XGF' then
       begin
         error:=WriteXGF(x,y,x2,y2,ABLan,ExportDialog.FileName);
+      end
+      else if ext='.OBJ' then
+      begin
+        error:=WriteAmigaBasicObject(x,y,x2,y2,ExportDialog.FileName,false);
+      end
+      else if ext='.VSP' then
+      begin
+        error:=WriteAmigaBasicObject(x,y,x2,y2,ExportDialog.FileName,true);
+      end
+      else if ext='.DA1' then
+      begin
+        error:=WriteAmigaBasicObjectData(x,y,x2,y2,ExportDialog.FileName,false);
+      end
+      else if ext='.DA2' then
+      begin
+        error:=WriteAmigaBasicObjectData(x,y,x2,y2,ExportDialog.FileName,true);
       end;
       if error<>0 then
       begin
