@@ -2,9 +2,13 @@
 Sprite editor for QuickBasic\C Turbo Pascal\C
 
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I am working on touching up the user interface. In a few days there should be something here.
+
 Apr 23 - 2021 - New Binary release Raster Master v1.0 beta R9 - new oval/ellipse tools - new AmigaBASIC export formats for Bobs and VSprites
+
 Mar 12 - 2021 - New Binary release Raster Master v1.0 beta R6 - copy/paste, palette open/save, xgf export format for all, palette export
+
 Mar 1 - 2021 - New Binary release Raster Master v1.0 Beta R4
+
 Feb 25 - 2021 -I forgot to post video for QuickBasic\QB64 https://youtu.be/rZPc7VJhbeE
 
 Feb 25 - 2021 -I also figured out the AmigaBasic Bob and sprite formats also. Check out the video.
