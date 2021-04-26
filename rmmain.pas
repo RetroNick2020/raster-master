@@ -40,6 +40,7 @@ type
     MenuItem1: TMenuItem;
     EditCopy: TMenuItem;
     EditPaste: TMenuItem;
+    EditColor: TMenuItem;
     ToolEllipseMenu: TMenuItem;
     ToolFEllipseMenu: TMenuItem;
     PaletteExportQuickC: TMenuItem;
@@ -148,6 +149,7 @@ type
     procedure FreeBASICDATAClick(Sender: TObject);
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
+    procedure PaletteEditColors(Sender: TObject);
     procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
     procedure PaletteExportTurboCClick(Sender: TObject);
@@ -254,7 +256,7 @@ type
        procedure ShowSelectAreaTools;
        procedure HideSelectAreaTools;
        procedure GetOpenSaveRegion(var x,y,x2,y2 : integer);  //if we are in select/clip area use those coords
-
+       procedure EditColors;
   public
 
   end;
@@ -363,12 +365,22 @@ end;
 
 procedure TRMMainForm.NewClick(Sender: TObject);
 begin
-  ClearClipAreaOutline;
+//  ClearClipAreaOutline;
+
   RMCoreBase.ClearBuf(0);
   RMCoreBase.SetCurColor(1);
+  RMDrawTools.SetDrawTool(DrawShapePencil);
+  UpdateToolSelectionIcons;
+
   UpdateColorBox;
   UpdateActualArea;
+  RMDrawTools.SetClipStatus(0);
+  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
+  UnFreezeScrollAndZoom;
+  Trackbar1.Position:=RMDrawTools.getZoomSize;
+  HorizScroll.Position:=0;
+  VirtScroll.Position:=0;
 end;
 
 procedure TRMMainForm.RMLogoClick(Sender: TObject);
@@ -818,75 +830,8 @@ end;
 
 procedure TRMMainForm.ColorBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
-var
-  PI : integer;
-  tc : TColor;
-  cr : TRMColorRec;
-  ci : integer;
-  pm : integer;
 begin
-   // ShowMessage('count='+inttostr(RMCoreBase.Palette.GetColorCount));
-   pm:=GetPaletteMode;
-   If (pm = PaletteModeVGA) OR (pm = PaletteModeVGA256) then
-  begin
-    if pm = PaletteModeVGA then RMVGAColorDialog.InitColorBox16
-    else RMVGAColorDialog.InitColorBox256;
-
-   // RMVGAColorDialog.Left:= ColorBox.Left;
-    if RMVGAColorDialog.ShowModal = mrOK then
-    begin
-       PI:=RMVGAColorDialog.GetPickedIndex;
-       RMCoreBase.SetCurColor(PI);
-       ColorPalette1.PickedIndex:=PI;
-
-       ColorBox.Brush.Color:=RMVGAColorDialog.GetPickedColor;
-       RMVGAColorDialog.PaletteToCore;
-       CoreToPalette;
-       UpdateActualArea;
-       UpdateZoomArea;
-    end;
-  end
-  else if (pm = PaletteModeEGA) then
-  begin
-     RMEGAColorDialog.InitColorBox;
-   //  RMEGAColorDialog.Left:= RMMainForm.Left+ColorBox.Left;
-     if RMEGAColorDialog.ShowModal = mrOK then
-     begin
-       PI:=RMEGAColorDialog.GetPickedIndex;
-       if (PI > -1) then
-       begin
-          ci:=RMCoreBase.GetCurColor;
-          ColorPalette1.Colors[ci]:=RMEGAColorDialog.GetPickedColor;
-          ColorBox.Brush.Color:=RMEGAColorDialog.GetPickedColor;
-          GetRGBEGA64(RMEGAColorDialog.GetPickedIndex, cr);
-          RMCoreBase.Palette.SetColor(ci,cr);
-          UpdateActualArea;
-          UpdateZoomArea;
-       end;
-     end;
-  end
-  else if (pm >= PaletteModeAmiga2) AND (pm <= PaletteModeAmiga32) then
-  begin
-    case pm of PaletteModeAmiga2:RMAmigaColorDialog.InitColorBox2;
-               PaletteModeAmiga4:RMAmigaColorDialog.InitColorBox4;
-               PaletteModeAmiga8:RMAmigaColorDialog.InitColorBox8;
-               PaletteModeAmiga16:RMAmigaColorDialog.InitColorBox16;
-               PaletteModeAmiga32:RMAmigaColorDialog.InitColorBox32
-    end;
-
-    if RMAmigaColorDialog.ShowModal = mrOK then
-    begin
-       PI:=RMAmigaColorDialog.GetPickedIndex;
-       RMCoreBase.SetCurColor(PI);
-       ColorPalette1.PickedIndex:=PI;
-
-       ColorBox.Brush.Color:=RMAmigaColorDialog.GetPickedColor;
-       RMAmigaColorDialog.PaletteToCore;
-       CoreToPalette;
-       UpdateActualArea;
-       UpdateZoomArea;
-   end;
- end;
+  EditColors;
 end;
 
 procedure TRMMainForm.FreezeScrollAndZoom;
@@ -1771,6 +1716,97 @@ begin
 end;
 
 
+Procedure TRMMainForm.EditColors;
+var
+  PI : integer;
+  tc : TColor;
+  cr : TRMColorRec;
+  ci : integer;
+  pm : integer;
+begin
+   // ShowMessage('count='+inttostr(RMCoreBase.Palette.GetColorCount));
+   pm:=GetPaletteMode;
+   If (pm = PaletteModeVGA) OR (pm = PaletteModeVGA256) then
+  begin
+    if pm = PaletteModeVGA then RMVGAColorDialog.InitColorBox16
+    else RMVGAColorDialog.InitColorBox256;
+
+   // RMVGAColorDialog.Left:= ColorBox.Left;
+    if RMVGAColorDialog.ShowModal = mrOK then
+    begin
+       PI:=RMVGAColorDialog.GetPickedIndex;
+       RMCoreBase.SetCurColor(PI);
+       ColorPalette1.PickedIndex:=PI;
+
+       ColorBox.Brush.Color:=RMVGAColorDialog.GetPickedColor;
+       RMVGAColorDialog.PaletteToCore;
+       CoreToPalette;
+       UpdateActualArea;
+       UpdateZoomArea;
+       if RMDrawTools.GetClipStatus = 1 then
+       begin
+         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+       end;
+    end;
+  end
+  else if (pm = PaletteModeEGA) then
+  begin
+     RMEGAColorDialog.InitColorBox;
+   //  RMEGAColorDialog.Left:= RMMainForm.Left+ColorBox.Left;
+     if RMEGAColorDialog.ShowModal = mrOK then
+     begin
+       PI:=RMEGAColorDialog.GetPickedIndex;
+       if (PI > -1) then
+       begin
+          ci:=RMCoreBase.GetCurColor;
+          ColorPalette1.Colors[ci]:=RMEGAColorDialog.GetPickedColor;
+          ColorBox.Brush.Color:=RMEGAColorDialog.GetPickedColor;
+          GetRGBEGA64(RMEGAColorDialog.GetPickedIndex, cr);
+          RMCoreBase.Palette.SetColor(ci,cr);
+          UpdateActualArea;
+          UpdateZoomArea;
+           if RMDrawTools.GetClipStatus = 1 then
+           begin
+              RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+           end;
+       end;
+     end;
+  end
+  else if (pm >= PaletteModeAmiga2) AND (pm <= PaletteModeAmiga32) then
+  begin
+    case pm of PaletteModeAmiga2:RMAmigaColorDialog.InitColorBox2;
+               PaletteModeAmiga4:RMAmigaColorDialog.InitColorBox4;
+               PaletteModeAmiga8:RMAmigaColorDialog.InitColorBox8;
+               PaletteModeAmiga16:RMAmigaColorDialog.InitColorBox16;
+               PaletteModeAmiga32:RMAmigaColorDialog.InitColorBox32
+    end;
+
+    if RMAmigaColorDialog.ShowModal = mrOK then
+    begin
+       PI:=RMAmigaColorDialog.GetPickedIndex;
+       RMCoreBase.SetCurColor(PI);
+       ColorPalette1.PickedIndex:=PI;
+
+       ColorBox.Brush.Color:=RMAmigaColorDialog.GetPickedColor;
+       RMAmigaColorDialog.PaletteToCore;
+       CoreToPalette;
+       UpdateActualArea;
+       UpdateZoomArea;
+       if RMDrawTools.GetClipStatus = 1 then
+       begin
+         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+       end;
+   end;
+ end;
+
+end;
+
+procedure TRMMainForm.PaletteEditColors(Sender: TObject);
+begin
+  EditColors;
+end;
+
+
 
 procedure TRMMainForm.PaletteExportQuickCClick(Sender: TObject);
 var
@@ -1982,29 +2018,36 @@ procedure TRMMainForm.AmigaBasicClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
  pm : integer;
- sourcemode : word;
+// sourcemode : word;
  ext : string;
  error : word;
+ validpm : boolean;
 begin
+ //       sourcemode:=Source32;   //PaletteModeAmiga32
+   pm:=GetPaletteMode;
+//   ShowMessage(intToStr(pm));
+   validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
+   if validpm = false then
+   begin
+      ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
+      exit;
+   end;
+
    ExportDialog.Filter := 'AmigaBASIC PUT DATA|*.dat|XGF Binary|*.xgf|Bob Binary|*.obj|VSprite Binary|*.vsp|AmigaBASIC Bob DATA|*.da1|AmigaBASIC VSprite DATA|*.da2';
    GetOpenSaveRegion(x,y,x2,y2);
    if ExportDialog.Execute then
    begin
-       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
-       sourcemode:=Source32;   //PaletteModeAmiga32
-       pm:=GetPaletteMode;
-       case pm of         PaletteModeAmiga2:sourcemode:=Source2;
-                          PaletteModeAmiga4:sourcemode:=Source4;
-                          PaletteModeAmiga8:sourcemode:=Source8;
-                          PaletteModeAmiga16:sourcemode:=Source16;
-       end;
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+
       if ext='.DAT' then
       begin
-        error:=WriteDat(x,y,x2,y2,SourceMode,ABLan,ExportDialog.FileName);
+       // error:=WriteDat(x,y,x2,y2,SourceMode,ABLan,ExportDialog.FileName);
+       error:=WriteAmigaBasicXGFData(x,y,x2,y2,ExportDialog.FileName);
       end
       else if ext='.XGF' then
       begin
-        error:=WriteXGF(x,y,x2,y2,ABLan,ExportDialog.FileName);
+       // error:=WriteXGF(x,y,x2,y2,ABLan,ExportDialog.FileName);
+        error:=WriteAmigaBasicXGF(x,y,x2,y2,ExportDialog.FileName);
       end
       else if ext='.OBJ' then
       begin

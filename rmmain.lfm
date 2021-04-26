@@ -1,8 +1,8 @@
 object RMMainForm: TRMMainForm
-  Left = 153
-  Height = 991
-  Top = 72
-  Width = 1629
+  Left = 101
+  Height = 820
+  Top = 108
+  Width = 1640
   Caption = 'Raster Master'
   ClientHeight = 0
   ClientWidth = 0
@@ -12,6 +12,7 @@ object RMMainForm: TRMMainForm
   OnCreate = FormCreate
   Position = poDefault
   LCLVersion = '2.0.10.0'
+  Scaled = False
   object ActualBox: TImage
     Left = 16
     Height = 256
@@ -63,7 +64,6 @@ object RMMainForm: TRMMainForm
     Top = 16
     Width = 224
     AutoSize = False
-    Caption = 'InfoBarLabel'
     ParentColor = False
     WordWrap = True
   end
@@ -428,6 +428,10 @@ object RMMainForm: TRMMainForm
           Caption = 'Quick C CHA\Palette Commands'
           OnClick = PaletteExportQuickCClick
         end
+      end
+      object EditColor: TMenuItem
+        Caption = 'Edit Colors'
+        OnClick = PaletteEditColors
       end
       object PaletteMono: TMenuItem
         Caption = 'Mono'

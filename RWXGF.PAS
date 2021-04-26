@@ -56,7 +56,8 @@ begin
   GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
 end;
 
-Function WriteXgfAmigaBasic(x,y,x2,y2 : word;filename:string):word;
+//this is no longer needed - RMAmigaRWXGF replaces this routine and adds more features
+Function _WriteXgfAmigaBasic(x,y,x2,y2 : word;filename:string):word;
 type
  //free takes a Word
  XGFHeadAB = Record
@@ -105,7 +106,7 @@ begin
  if Error <> 0 then
  begin
    close(F);
-   WriteXgfAmigaBasic:=Error;
+   _WriteXgfAmigaBasic:=Error;
    exit;
  end;
 
@@ -163,7 +164,7 @@ begin
    end; // end j
  end;  // end plane
  Close(F);
- WriteXgfAmigaBasic:=IOResult;
+ _WriteXgfAmigaBasic:=IOResult;
 {$I+}
 end;
 
@@ -417,11 +418,6 @@ begin
  else if LanType = FBLan then
  begin
    WriteXGF:=WriteXgfFB(x,y,x2,y2,filename);
-   exit;
- end
- else if LanType = ABLan then
- begin
-   WriteXGF:=WriteXgfAmigaBasic(x,y,x2,y2,filename);
    exit;
  end;
 
