@@ -141,8 +141,12 @@ type
     procedure Button2Click(Sender: TObject);
 
     procedure ColorBox1Change(Sender: TObject);
+    procedure ColorBoxMouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
+    procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
+      var AText: String);
+
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -169,7 +173,7 @@ type
     procedure QBasicDataClick(Sender: TObject);
     procedure NewClick(Sender: TObject);
     procedure RMLogoClick(Sender: TObject);
-    //procedure ToolEllipseMenuClick(Sender: TObject);
+
     procedure ToolFEllipseMenuClick(Sender: TObject);
     procedure ToolFlipHorizMenuClick(Sender: TObject);
     procedure ToolFlipVirtMenuClick(Sender: TObject);
@@ -187,7 +191,7 @@ type
     procedure PaletteCGA0Click(Sender: TObject);
     procedure PaletteCGA1Click(Sender: TObject);
     procedure SaveFileClick(Sender: TObject);
-    procedure MenuItem4Click(Sender: TObject);
+//    procedure MenuItem4Click(Sender: TObject);
     procedure PaletteVGAClick(Sender: TObject);
     procedure PaletteVGA256Click(Sender: TObject);
     procedure PaletteEGAClick(Sender: TObject);
@@ -605,7 +609,6 @@ begin
  RMDrawTools.SetDrawTool(DrawShapeEllipse);
  UpdateToolSelectionIcons;
  ToolEllipseMenu.Checked:=true;
-
 end;
 
 procedure TRMMainForm.ToolFEllipseMenuClick(Sender: TObject);
@@ -662,11 +665,11 @@ begin
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
-
   UpdateZoomArea;
+//  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   if RMDrawTools.GetClipStatus = 1 then
   begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
   end;
 end;
 
@@ -680,9 +683,10 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+//  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   if RMDrawTools.GetClipStatus = 1 then
   begin
-     RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+     RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
   end;
 end;
 
@@ -696,28 +700,33 @@ begin
   UpdateColorBox;
   UpdateActualArea;
   UpdateZoomArea;
+  //RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   if RMDrawTools.GetClipStatus = 1 then
   begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
   end;
 end;
 
-procedure TRMMainForm.PaletteAmiga32Click(Sender: TObject);
+
+procedure TRMMainForm.PaletteAmiga2Click(Sender: TObject);
 begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
- PaletteAmiga32.Checked:=true;
- SetPaletteMode(PaletteModeAmiga32);
+ PaletteAmiga2.Checked:=true;
+ SetPaletteMode(PaletteModeAmiga2);
  UpdatePalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
+// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  if RMDrawTools.GetClipStatus = 1 then
  begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
  end;
 end;
+
+
 
 procedure TRMMainForm.PaletteAmiga4Click(Sender: TObject);
 begin
@@ -729,10 +738,11 @@ begin
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
+// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  if RMDrawTools.GetClipStatus = 1 then
  begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
  end;
 end;
 
@@ -746,17 +756,50 @@ begin
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
+// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  if RMDrawTools.GetClipStatus = 1 then
  begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
  end;
 end;
 
-procedure TRMMainForm.MenuItem4Click(Sender: TObject);
+procedure TRMMainForm.PaletteAmiga16Click(Sender: TObject);
 begin
-
+  ClearSelectedPaletteMenu;
+  PaletteAmiga.Checked:=true;
+  PaletteAmiga16.Checked:=true;
+  SetPaletteMode(PaletteModeAmiga16);
+  UpdatePalette;
+  RMCoreBase.SetCurColor(1);
+  UpdateColorBox;
+  UpdateActualArea;
+//  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+  UpdateZoomArea;
+ if RMDrawTools.GetClipStatus = 1 then
+  begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
+  end;
 end;
+
+procedure TRMMainForm.PaletteAmiga32Click(Sender: TObject);
+begin
+ ClearSelectedPaletteMenu;
+ PaletteAmiga.Checked:=true;
+ PaletteAmiga32.Checked:=true;
+ SetPaletteMode(PaletteModeAmiga32);
+ UpdatePalette;
+ RMCoreBase.SetCurColor(1);
+ UpdateColorBox;
+ UpdateActualArea;
+// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ UpdateZoomArea;
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
+ end;
+end;
+
 
 procedure TRMMainForm.ClearSelectedPaletteMenu;
 begin
@@ -772,7 +815,6 @@ begin
   PaletteAmiga8.Checked:=false;
   PaletteAmiga16.Checked:=false;
   PaletteAmiga32.Checked:=false;
-
 end;
 
 procedure TRMMainForm.PaletteVGAClick(Sender: TObject);
@@ -784,10 +826,11 @@ begin
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
+ // RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
   if RMDrawTools.GetClipStatus = 1 then
   begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
   end;
 end;
 
@@ -800,10 +843,11 @@ begin
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
+ // RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
   if RMDrawTools.GetClipStatus = 1 then
   begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
   end;
 end;
 
@@ -816,10 +860,11 @@ begin
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
+ // RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
   if RMDrawTools.GetClipStatus = 1 then
   begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
   end;
 end;
 
@@ -859,18 +904,24 @@ procedure TRMMainForm.UpdateInfoBarXY;
 var
   XYStr   : string;
   ClipStr : string;
+  ColIndexStr : string;
   ca      : TClipAreaRec;
 begin
  XYStr:='Zoom X = '+IntToStr(ZoomX)+' Zoom Y = '+IntToStr(ZoomY)+#13#10+
-        'X = '+IntToStr(ZoomX+XOffset)+' Y = '+IntToStr(ZoomY + YOffset);
+        'X = '+IntToStr(ZoomX+XOffset)+' Y = '+IntToStr(ZoomY + YOffset)+#13#10;
+ ColIndexStr:='';
+ if (zoomX > 0) and (zoomy > 0) then
+ begin
+   ColIndexStr:='Color Index: '+IntToStr(RMCoreBase.GetPixel(xoffset+ZoomX,yoffset+ZoomY))
+ end;
  ClipStr:='';
  if RMDrawTools.GetClipStatus = 1 then
  begin
       RMDrawTools.GetClipAreaCoords(ca);
       ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
-               'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1);
+               'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
  end;
- InfoBarLabel.Caption:=XYStr+#13#10+ClipStr;
+ InfoBarLabel.Caption:=XYStr+ClipStr+ColIndexStr;
 end;
 
 procedure TRMMainForm.UpdateInfoBarDetail;
@@ -1083,17 +1134,33 @@ procedure TRMMainForm.ColorBox1Change(Sender: TObject);
 begin
 end;
 
+procedure TRMMainForm.ColorBoxMouseEnter(Sender: TObject);
+begin
+//  ColorBox.Hint:='Color Index: '+IntToStr(RMCoreBase.GetCurColor);
+ ColorBox.Hint:=ColIndexToHoverInfo(RMCoreBase.GetCurColor,PaletteMode);
+end;
+
+
+procedure TRMMainForm.ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
+  var AText: String);
+begin
+//  AText:='Color Index: '+IntToStr(ColorPalette1.MouseIndex);
+  if ColorPalette1.MouseIndex > -1 then
+  begin
+    AText:=ColIndexToHoverInfo(ColorPalette1.MouseIndex,PaletteMode);
+  end
+  else
+  begin
+    AText:='Color Index: '+IntToStr(ColorPalette1.MouseIndex);
+  end;
+end;
+
 procedure TRMMainForm.ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
   Shift: TShiftState);
 begin
   ColorBox.Brush.Color:= AColor;
   RMCoreBase.SetCurColor(ColorPalette1.PickedIndex);
 end;
-
-
-
-
-
 
 procedure TRMMainForm.ZoomBoxClick(Sender: TObject);
 var
@@ -1745,7 +1812,7 @@ begin
        UpdateZoomArea;
        if RMDrawTools.GetClipStatus = 1 then
        begin
-         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
        end;
     end;
   end
@@ -1767,7 +1834,7 @@ begin
           UpdateZoomArea;
            if RMDrawTools.GetClipStatus = 1 then
            begin
-              RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+              RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
            end;
        end;
      end;
@@ -1794,7 +1861,7 @@ begin
        UpdateZoomArea;
        if RMDrawTools.GetClipStatus = 1 then
        begin
-         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
+         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
        end;
    end;
  end;
@@ -2108,39 +2175,7 @@ begin
    end;
 end;
 
-procedure TRMMainForm.PaletteAmiga16Click(Sender: TObject);
-begin
-  ClearSelectedPaletteMenu;
-  PaletteAmiga.Checked:=true;
-  PaletteAmiga16.Checked:=true;
-  SetPaletteMode(PaletteModeAmiga16);
-  UpdatePalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
-  UpdateActualArea;
-  UpdateZoomArea;
-  if RMDrawTools.GetClipStatus = 1 then
-  begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
-end;
 
-procedure TRMMainForm.PaletteAmiga2Click(Sender: TObject);
-begin
- ClearSelectedPaletteMenu;
- PaletteAmiga.Checked:=true;
- PaletteAmiga2.Checked:=true;
- SetPaletteMode(PaletteModeAmiga2);
- UpdatePalette;
- RMCoreBase.SetCurColor(1);
- UpdateColorBox;
- UpdateActualArea;
- UpdateZoomArea;
- if RMDrawTools.GetClipStatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
- end;
-end;
 
 
 

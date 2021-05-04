@@ -56,7 +56,10 @@ object RMMainForm: TRMMainForm
     Top = 112
     Width = 60
     Brush.Color = clSkyBlue
+    ParentShowHint = False
     OnMouseDown = ColorBoxMouseDown
+    OnMouseEnter = ColorBoxMouseEnter
+    ShowHint = True
   end
   object InfoBarLabel: TLabel
     Left = 376
@@ -90,7 +93,10 @@ object RMMainForm: TRMMainForm
     SelectionColor = clWhite
     SelectionKind = pskThickInverted
     OnColorPick = ColorPalette1ColorPick
+    OnGetHintText = ColorPalette1GetHintText
     ParentColor = False
+    ParentShowHint = False
+    ShowHint = True
   end
   object Panel1: TPanel
     Left = 624

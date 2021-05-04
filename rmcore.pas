@@ -500,6 +500,7 @@ function EightToFourBit(EightBitValue : integer) : integer;
 function FourToEightBit(FourBitValue : integer) : integer;
 function CanLoadPaletteFile(PaletteMode : integer) : boolean;
 function isAmigaPaletteMode(pm : integer) : boolean;
+function ColIndexToHoverInfo(colIndex : integer; pm : integer) : string;
 
 implementation
 
@@ -523,6 +524,30 @@ function FourToEightBit(FourBitValue : integer) : integer;
 begin
 (*   FourToEightBit := FourBitValue SHL 4;*)  // not precise
   FourToEightBit := FourBitValue * 255 div 15
+end;
+
+function ColIndexToHoverInfo(colIndex : integer; pm : integer) : string;
+var
+  ColIndexStr : string;
+  cr : TRMColorRec;
+begin
+  ColIndexStr:='Color Index: '+IntToStr(colIndex);
+  if pm = PaletteModeEGA then
+  begin
+     GetRGBVGA(colIndex,cr);
+     ColIndexstr:=ColIndexStr+#13#10+'EGA Index: '+IntToStr(RGBToEGAIndex(cr.r,cr.g,cr.b));
+  end
+  else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
+  begin
+     RMCoreBase.Palette.GetColor(colindex,cr);
+     ColIndexstr:=ColIndexStr+#13#10+'R:'+IntToStr(EightToSixBit(cr.r))+' G:'+IntToStr(EightToSixBit(cr.g))+' B:'+IntToStr(EightToSixBit(cr.b));
+  end
+ else if isAmigaPaletteMode(pm) then
+  begin
+     RMCoreBase.Palette.GetColor(colindex,cr);
+     ColIndexstr:=ColIndexStr+#13#10+'R:'+IntToStr(EightToFourBit(cr.r))+' G:'+IntToStr(EightToFourBit(cr.g))+' B:'+IntToStr(EightToFourBit(cr.b));
+  end;
+  ColIndexToHoverInfo:=ColIndexStr;
 end;
 
 function ColorDistance(col1, col2: TColor): Double;

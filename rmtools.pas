@@ -179,8 +179,7 @@ end;
 
 procedure TRMDrawTools.DrawClipArea(Image : TCanvas;color : TColor; mode : integer);
 begin
-    DClip(Image,ClipArea.x,ClipArea.y,ClipArea.x2,ClipArea.y2,color,mode);
-
+  DClip(Image,ClipArea.x,ClipArea.y,ClipArea.x2,ClipArea.y2,color,mode);
 end;
 
 procedure TRMDrawTools.DClip(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : integer);
@@ -213,12 +212,11 @@ begin
       x2:=temp;
   end;
   if y > y2 then
-    begin
-        temp:=y;
-        y:=y2;
-        y2:=temp;
-    end;
-
+  begin
+     temp:=y;
+     y:=y2;
+     y2:=temp;
+  end;
 
   Image.Brush.Style:=bsClear;
   Image.Pen.Color:=clYellow;
