@@ -1,7 +1,7 @@
 object AboutDialog: TAboutDialog
-  Left = 233
+  Left = 1054
   Height = 313
-  Top = 229
+  Top = 278
   Width = 600
   BorderStyle = bsDialog
   Caption = 'About'

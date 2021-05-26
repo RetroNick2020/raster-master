@@ -39,7 +39,7 @@ end;
 
 Procedure CheckRight;
 begin
-if xx<255 then
+if xx< (RMCoreBase.GetWidth-1) then
 begin
 if RMCoreBase.getpixel(xx+1,yy) = ColTofill  then
 //IconImage[xx+1,yy] = ColTofill then
@@ -105,7 +105,7 @@ end;
 
 Procedure CheckDown;
 begin
-if yy<255 then
+if yy<(RMCoreBase.GetHeight-1) then
 begin
 //If IconImage[xx,yy+1]=ColTofill then
    If RMCoreBase.GetPixel(xx,yy+1)=ColTofill then

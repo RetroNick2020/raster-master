@@ -13,12 +13,6 @@ object RMMainForm: TRMMainForm
   Position = poDefault
   LCLVersion = '2.0.10.0'
   Scaled = False
-  object ActualBox: TImage
-    Left = 16
-    Height = 256
-    Top = 16
-    Width = 256
-  end
   object HorizScroll: TScrollBar
     Left = 368
     Height = 32
@@ -316,6 +310,21 @@ object RMMainForm: TRMMainForm
       Transparent = True
     end
   end
+  object Panel2: TPanel
+    Left = 32
+    Height = 281
+    Top = 40
+    Width = 288
+    ClientHeight = 281
+    ClientWidth = 288
+    TabOrder = 5
+    object ActualBox: TImage
+      Left = 16
+      Height = 256
+      Top = 8
+      Width = 256
+    end
+  end
   object MainMenu1: TMainMenu
     Left = 1584
     Top = 216
@@ -389,6 +398,37 @@ object RMMainForm: TRMMainForm
     end
     object MenuItem1: TMenuItem
       Caption = 'Edit'
+      object EditResizeTo: TMenuItem
+        Caption = 'Resize To'
+        object EditResizeTo8: TMenuItem
+          Caption = '8 X 8'
+          OnClick = EditResizeToNewSize
+        end
+        object EditResizeTo16: TMenuItem
+          Caption = '16 X 16'
+          OnClick = EditResizeToNewSize
+        end
+        object EditResizeTo32: TMenuItem
+          Caption = '32 X 32'
+          OnClick = EditResizeToNewSize
+        end
+        object EditResizeTo64: TMenuItem
+          Caption = '64 X 64'
+          OnClick = EditResizeToNewSize
+        end
+        object EditResizeTo128: TMenuItem
+          Caption = '128 X 128'
+          OnClick = EditResizeToNewSize
+        end
+        object EditResizeTo256: TMenuItem
+          Caption = '256 X 256'
+          OnClick = EditResizeToNewSize
+        end
+      end
+      object EditUndo: TMenuItem
+        Caption = 'Undo'
+        OnClick = ToolUndoIconClick
+      end
       object EditCopy: TMenuItem
         Caption = 'Copy'
         OnClick = EditCopyClick

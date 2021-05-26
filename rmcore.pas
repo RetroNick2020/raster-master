@@ -7,6 +7,10 @@ uses
   Classes, Graphics, SysUtils,GraphUtil,Math;
 
 
+//const
+//  MaxImagePixelWidth = 256;
+//  MaxImagePixelHeight = 256;
+
 Type
   TRMColorRec = Record
                    r : integer;
@@ -31,7 +35,8 @@ Type
                function GetRed(index : integer) : integer;
                function GetGreen(index : integer) : integer;
                function GetBlue(index : integer) : integer;
-               function FindColorMatch(r,g,b : integer) : integer;
+               function FindNearColorMatch(r,g,b : integer) : integer;
+               function FindExactColorMatch(r,g,b : integer) : integer;
 
                procedure DownToVGA;
                procedure DownToEGA;
@@ -63,6 +68,8 @@ Type
                   TempImageBuf  : TRMImageBuf;
                   UndoImageBuf  : TRMImageBuf;
                   CurColor      : integer; // current color
+                  ImgBufWidth         : integer;
+                  ImgBufHeight        : integer;
 
                  public
 
@@ -75,6 +82,11 @@ Type
                  procedure ClearBuf(Color : integer);
                  procedure CopyToUndoBuf;
                  procedure UnDo;
+                 procedure SetWidth(width : integer);
+                 procedure SetHeight(height : integer);
+
+                 function GetWidth : integer;
+                 function GetHeight : integer;
 
   end;
 
@@ -488,8 +500,8 @@ Type
 
 
 
-  var
-    RMCoreBase : TRMCoreBase;
+var
+  RMCoreBase : TRMCoreBase;
 
 procedure GetRGBEGA64(index : integer;var cr : TRMColorREc);
 procedure GetRGBVGA(index : integer;var cr : TRMColorREc);
@@ -638,13 +650,34 @@ begin
     end;
 end;
 
+function TRMPalette.FindExactColorMatch(r,g,b : integer) : integer;
+var
+  i: integer;
+begin
+  FindExactColorMatch:=-1;
+  for i:=0 to GetColorCount-1 do
+  begin
+     if (r=GetRed(i)) AND (g=GetGreen(i)) AND (b=GetBlue(i)) then
+     begin
+        FindExactColorMatch:=i;
+        exit;
+     end;
+  end;
+end;
 
-function TRMPalette.FindColorMatch(r,g,b : integer) : integer;
+function TRMPalette.FindNearColorMatch(r,g,b : integer) : integer;
 var
   c1,c2 : TColor;
   gap,tgap : double;
-  i,fcm : integer;
+  i,fcm,ec : integer;
 begin
+  ec:=FindExactColorMatch(r,g,b);
+  if ec > -1 then
+  begin
+    FindNearColorMatch:=ec;
+    exit;
+  end;
+
   c1:=RGBToColor(r,g,b);
   gap:=10000;
   fcm:=0;
@@ -658,7 +691,7 @@ begin
         fcm:=i;
      end;
   end;
-  FindColorMatch:=fcm;
+  FindNearColorMatch:=fcm;
 end;
 
 procedure TRMPalette.SetColor(index : integer;cr : TRMColorRec);
@@ -744,10 +777,32 @@ end;
 Constructor TRMCoreBase.create;
 begin
     Palette:=TRMPalette.Create;
+    SetWidth(256);
+    SetHeight(256);
     SetCurColor(1);
     ClearBuf(0);
     CopyToUndoBuf;
  end;
+
+procedure TRMCoreBase.SetWidth(width : integer);
+begin
+  ImgBufWidth:=width;
+end;
+
+procedure TRMCoreBase.SetHeight(height : integer);
+begin
+  ImgBufHeight:=height;
+end;
+
+function TRMCoreBase.GetWidth : integer;
+begin
+  GetWidth:=ImgBufWidth;
+end;
+
+function TRMCoreBase.GetHeight : integer;
+begin
+  GetHeight:=ImgBufHeight;
+end;
 
 procedure TRMCoreBase.SetCurColor(Color : integer);
 begin
@@ -774,22 +829,21 @@ end;
 
 procedure TRMCoreBase.PutPixel(x,y,Color : Integer);
 begin
-    if (x > 255) or (y > 255)  then exit;
-    ImageBuf.Pixel[x,y]:=Color;
+  if (x<0) or (x > (ImgBufWidth-1)) or (y<0) or (y > (ImgBufHeight-1))  then exit;
+  ImageBuf.Pixel[x,y]:=Color;
 end;
 
 procedure TRMCoreBase.PutPixel(x,y : Integer);
 begin
-    if (x<0) or (x > 255) or (y<0) or (y > 255)  then exit;
-    ImageBuf.Pixel[x,y]:=CurColor;
+  if (x<0) or (x > (ImgBufWidth-1)) or (y<0) or (y > (ImgBufHeight-1))  then exit;
+  ImageBuf.Pixel[x,y]:=CurColor;
 end;
 
 
 function TRMCoreBase.GetPixel(x,y : Integer) : Integer;
 begin
-    GetPixel:=ImageBuf.Pixel[x,y];
+  GetPixel:=ImageBuf.Pixel[x,y];
 end;
-
 
 procedure TRMCoreBase.CopyToUndoBuf;
 begin

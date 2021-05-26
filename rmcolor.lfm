@@ -1,7 +1,7 @@
 object RMEGAColorDialog: TRMEGAColorDialog
-  Left = 250
+  Left = 806
   Height = 256
-  Top = 218
+  Top = 640
   Width = 415
   BorderStyle = bsDialog
   Caption = 'EGA Palette'

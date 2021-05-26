@@ -47,6 +47,8 @@ Type
                 GridThickY : integer;
                 ZoomMode   : integer;
                 ZoomSize   : integer;
+                ZoomMaxX   : integer;
+                ZoomMaxY   : integer;
                 GridMode   : integer;
                 DrawTool : integer;
                 ClipArea : TClipAreaRec;
@@ -59,7 +61,7 @@ Type
              procedure ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode,shape,full : Integer);
              procedure DrawShape(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,shape,full : integer);
 
-             procedure ARectangle(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : Integer);
+             procedure _ARectangle(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : Integer);
              procedure PutPixel(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
              procedure SprayPaint(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
              procedure HLine(Image : TCanvas;x,x2,y : integer;color : TColor; mode : integer);
@@ -83,6 +85,12 @@ Type
              function GetMaxYOffset(ActualImageHeight,ZoomImageHeight : integer) : integer;
              function GetZoomX(x : integer) : integer;
              function GetZoomY(y : integer) : integer;
+
+             Procedure SetZoomMaxX(MaxX : integer);
+             Procedure SetZoomMaxY(MaxY : integer);
+             function GetZoomMaxX : integer;
+             function GetZoomMaxY : integer;
+
 
              procedure SetClipStatus(mode : integer);
              function  GetClipStatus : integer;
@@ -184,19 +192,8 @@ end;
 
 procedure TRMDrawTools.DClip(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : integer);
 var
-  CellWidthTotal,CellHeightTotal : integer;
   temp : integer;
 begin
-  if GridMode = 1 then
-  begin
-    CellWidthTotal:=CellWidth+GridThickY;
-    CellHeightTotal:=CellHeight+GridThickX;
-  end
-  else
-  begin
-    CellWidthTotal:=CellWidth;
-    CellHeightTotal:=CellHeight;
-  end;
   if mode = 1 then
   begin
       Image.Pen.Mode := pmXor;
@@ -220,37 +217,55 @@ begin
 
   Image.Brush.Style:=bsClear;
   Image.Pen.Color:=clYellow;
-  Image.Rectangle(x*CellWidthTotal-1,y*CellHeightTotal-1,(x2+1)*CellWidthTotal+2,(y2+1)*CellHeightTotal+2);
+  Image.Rectangle(x*CellWidth-2,y*CellHeight-2,(x2+1)*CellWidth+3,(y2+1)*CellHeight+3);
+  Image.Rectangle(x*CellWidth-3,y*CellHeight-3,(x2+1)*CellWidth+4,(y2+1)*CellHeight+4);
+end;
+
+Procedure TRMDrawTools.SetZoomMaxX(MaxX : integer);
+begin
+ ZoomMaxX:=GetCellsPerRow(MaxX);
+end;
+
+Procedure TRMDrawTools.SetZoomMaxY(MaxY : integer);
+begin
+ ZoomMaxY:=GetCellsPerCol(MaxY);
+end;
+
+function TRMDrawTools.GetZoomMaxX : integer;
+begin
+  GetZoomMaxX:=ZoomMaxX;
+end;
+
+function TRMDrawTools.GetZoomMaxY : integer;
+begin
+ GetZoomMaxY:=ZoomMaxY;
 end;
 
 procedure TRMDrawTools.PutPixel(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
 var
- padx,padx2,pady,pady2: integer;
- CellWidthTotal,CellHeightTotal : integer;
+ px,py,px2,py2 : integer;
 begin
-  if mode = 2 then    //just plot the pixel to the internal buffer - no need to draw ro zoom or actual area;
+  if mode = 2 then    //just plot the pixel to the internal buffer - no need to draw or zoom or actual area;
   begin
-      RMCoreBase.PutPixel(x,y);
-     exit;
+    RMCoreBase.PutPixel(x,y);
+    exit;
   end;
+
+  if (x<0) or (x > (RMCoreBase.GetWidth-1)) or (y<0) or (y > (RMCoreBase.GetHeight-1))  then exit;
 
   if GridMode = 1 then
   begin
-    CellWidthTotal:=CellWidth+GridThickY;
-    CellHeightTotal:=CellHeight+GridThickX;
-    padx:=GridThickY+CellWidthBorderRemove;
-    pady:=GridThickX+CellHeightBorderRemove;
-    padx2:=CellWidth+GridThickY-CellWidthBorderRemove;
-    pady2:=CellHeight+GridThickX-CellHeightBorderRemove;
+    px:=X*CellWidth+GridThickX+1;
+    py:=Y*CellHeight+GridThickY+1;
+    px2:=X*CellWidth+CellWidth-GridThickX;
+    py2:=Y*CellHeight+CellHeight-GridThickY;
   end
   else
   begin
-    CellWidthTotal:=CellWidth;
-    CellHeightTotal:=CellHeight;
-    padx:=0;
-    pady:=0;
-    padx2:=CellWidth;
-    pady2:=CellHeight;
+    px:=X*CellWidth;
+    py:=Y*CellHeight;
+    px2:=X*CellWidth+CellWidth;
+    py2:=Y*CellHeight+CellHeight;
   end;
 
   Image.Brush.Style := bsSolid;
@@ -266,41 +281,31 @@ begin
       Image.Pen.Mode := pmXor;
      // Image.Brush.mode :=pmXor;
       Image.Brush.Style := bsCross;
-
    end
   else
   begin
    Image.Pen.Mode := pmCopy;
    //Image.Brush.mode :=pmXor;
    Image.Brush.Color:=Color;
-   //Image2.Canvas.Brush.Style := bsClear;
    Image.Pen.Color := Color;
   end;
 
-
   If GetZoomMode = 1 then
   begin
-//    Image.Rectangle(X*(CellWidth+GridThickY)+GridThickY+CellWidthBorderRemove,
-//                    Y*(CellHeight+GridThickX)+GridThickX+CellHeightBorderRemove,
-//                    X*(CellWidth+GridThickY)+CellWidth+GridThickY-CellWidthBorderRemove,
-//                    Y*(CellHeight+GridThickX)+CellHeight+GridThickX-CellHeightBorderRemove);
-//
-     Image.Rectangle(X*(CellWidthTotal)+padx,
-                     Y*(CellHeightTotal)+pady,
-                     X*(CellWidthTotal)+padx2,
-                     Y*(CellHeightTotal)+pady2);
+    if  (x > ZoomMaxX-1)  or (y > ZoomMaxY-1)  then exit;
+    Image.Rectangle(px,py,px2,py2);
   end
   else
   begin
     if (mode = 1) AND (Color = clBlack) then
     begin
-         Image.Pixels[x,y]:=clWhite;
+      Image.Pixels[x,y]:=clWhite;
     end
     else
     begin
-     Image.Pixels[x,y]:=color;
+      Image.Pixels[x,y]:=color;
     end;
-   //RMCoreBase.PutPixel(x,y);
+    //RMCoreBase.PutPixel(x,y);
   end;
 end;
 
@@ -326,7 +331,7 @@ begin
 end;
 
 
-procedure TRMDrawTools.ARectangle(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode : Integer);
+procedure TRMDrawTools._ARectangle(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode : Integer);
 begin
   Image.Pen.Color := Color;
   if mode = 1 then
@@ -688,117 +693,16 @@ begin
    draw_ellipse(image,xc,yc,radius,radius,color,mode);
  end;
 end;
-(*
-Procedure TRMDrawTools.DCircle(Image : TCanvas;xc,yc,x2,y2:Integer;color : TColor; mode : integer;Full:integer);
-var
- radius : Integer;
- x,y,d : Integer;
- r1,r2:Integer;
- i : word;
- CBuf : Array[0..255,0..255] of byte;
-
-
-Function IsOn(x,y:integer) : Boolean;
-begin
- IsOn:=True;
- if (x < 0) or (x > 255) or (y < 0) or (y > 255) then
- begin
-    IsOn :=True;
-    exit;
- end
- else if Cbuf[x,y] = 0 then
- begin
-   IsOn :=False;
-   Cbuf[x,y] :=1;
-   exit;
- end;
-
-end;
-
-Procedure CircPoint(x,y,xc,yc: integer;Full:integer);
-var
- xxcp,xxcm,xycp,xycm,yxcp,yxcm,yycp,yycm : integer;
-i : integer;
-begin
-xxcp:=xc+x;
-xxcm:=xc-x;
-xycp:=xc+y;
-xycm:=xc-y;
-yxcp:=yc+x;
-yxcm:=yc-x;
-yycp:=yc+y;
-yycm:=yc-y;
-
-if full = 0 then
-begin
-  if IsOn(xxcp,yycp) = false then PutPixel(Image,xxcp,yycp,color,mode);
-  if IsOn(xxcm,yycp) = false then PutPixel(Image,xxcm,yycp,color,mode);
-  if IsOn(xxcp,yycm) = false then PutPixel(Image,xxcp,yycm,color,mode);
-  if IsOn(xxcm,yycm) = false then PutPixel(Image,xxcm,yycm,color,mode);
-  if IsOn(xycp,yxcp) = false then PutPixel(Image,xycp,yxcp,color,mode);
-  if IsOn(xycp,yxcm) = false then PutPixel(Image,xycp,yxcm,color,mode);
-  if IsOn(xycm,yxcp) = false then PutPixel(Image,xycm,yxcp,color,mode);
-  if IsOn(xycm,yxcm) = false then PutPixel(Image,xycm,yxcm,color,mode);
-end
-else
-begin
-  for i:=xxcm to xxcp do
-  begin
-    PutPixel(Image,i,yycp,color,mode);
-    PutPixel(Image,i,yycm,color,mode);
-  end;
-  for i:= xycm to xycp do
-  begin
-    PutPixel(Image,i,yxcp,color,mode);
-    PutPixel(Image,i,yxcm,color,mode);
-  end;
-end;
-end;
-
-
-
-begin
-
-  FillChar(CBuf,Sizeof(CBuf),0);
-  r1:=abs(xc-x2);
-  r2:=abs(yc-y2);
-  radius:=r2;
-  if r1>r2 then
-  begin
-    radius:=r1
-  end;
-  x:=0;
-  y:=radius;
-  d:=3-(2*radius);
-
-  while x<y do
-  begin
-    Circpoint(x,y,xc,yc,Full);
-    if d < 0 then
-    begin
-      d:=d+(4*x)+6;
-    end
-    else
-    begin
-      d:=d+4*(x-y)+10;
-      y:=y-1;
-    end;
-    x:=x+1
-   end;
-   if (x=y)  then CircPoint(x,y,xc,yc,Full);
-end;
-
-
- *)
-
-
 
 
 procedure TRMDrawTools.ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode,shape,full : Integer);
 begin
    if shape = DrawShapeRectangle then
    begin
-      ARectangle(Image,x,y,x2,y2,color,mode);
+      //ARectangle(Image,x,y,x2,y2,color,mode);
+    SetZoomMode(0);
+    Rect(Image,x,y,x2,y2,color,mode,0);
+    SetZoomMode(1);
    end
    else if shape = DrawShapeFRectangle then
    begin
@@ -918,44 +822,33 @@ end;
 
 function TRMDrawTools.GetCellsPerRow(ImageWidth : integer) : integer;
 begin
- If GridMode = 1 then
- begin
-   GetCellsPerRow:=ImageWidth div (CellWidth+GridThickY);
- end
- else
- begin
-    GetCellsPerRow:=ImageWidth div (CellWidth);
- end;
+   GetCellsPerRow:=(ImageWidth div CellWidth);
 end;
 
 function TRMDrawTools.GetCellsPerCol(ImageHeight : integer) : integer;
 begin
- If GridMode = 1 then
- begin
-   GetCellsPerCol:=ImageHeight div (CellHeight+GridThickX);
- end
- else
- begin
-   GetCellsPerCol:=ImageHeight div (CellHeight);
- end;
+   GetCellsPerCol:=(ImageHeight div CellHeight);
 end;
 
 //creates offsets for the scrollers based on Actual Image width and Zoom displayed area
 function TRMDrawTools.GetMaxXOffset(ActualImageWidth,ZoomImageWidth : integer) : integer;
-var
-  xoff : integer;
 begin
-GetMaxXOffset:=ActualImageWidth-GetCellsPerRow(ZoomImageWidth)-1;
+//GetMaxXOffset:=ActualImageWidth-GetCellsPerRow(ZoomImageWidth)-1;
+GetMaxXOffset:=ActualImageWidth-GetCellsPerRow(ZoomImageWidth);
+
+if GetMaxXoffset < 0 then GetMaxXOffset:=0;
+
 //xoff:=ActualImageWidth-GetCellsPerRow(ZoomImageWidth); //brackets matter
 //GetMaxXOffset:=xoff-1;
 //GetMaxXOffset:= 256 - ((690 div (20+1)) -1);
 end;
 
 function TRMDrawTools.GetMaxYOffset(ActualImageHeight,ZoomImageHeight : integer) : integer;
-var
-  yoff : integer;
 begin
-  GetMaxYOffset:=ActualImageHeight-GetCellsPerCol(ZoomImageHeight)-1;
+//  GetMaxYOffset:=ActualImageHeight-GetCellsPerCol(ZoomImageHeight)-1;
+ GetMaxYOffset:=ActualImageHeight-GetCellsPerCol(ZoomImageHeight);
+
+if GetMaxYoffset < 0 then GetMaxYOffset:=0;
   //yoff:=ActualImageHeight-GetCellsPerCol(ZoomImageHeight);
   //GetMaxYOffset:=yoff-1;
 end;
@@ -963,44 +856,19 @@ end;
 
 function TRMDrawTools.GetZoomX(x : integer) : integer;
 begin
-  GetZoomX:=x div (CellWidth+GridThickY);
+  GetZoomX:=x div CellWidth;
 end;
 
 function TRMDrawTools.GetZoomY(y : integer) : integer;
 begin
- GetZoomY:=y div (CellHeight+GridThickX);
+ GetZoomY:=y div CellHeight;
 end;
 
 
 procedure TRMDrawTools.DrawGrid(Image : TCanvas;x,y,gWidth,gHeight,mode : integer);
-var
- startx,starty,x2,y2 : integer;
 begin
-   x2:=gWidth;
-   y2:=gHeight;
-   Image.Brush.Color := clBlack;
+   Image.Brush.Color := $f0f0f0;
    Image.FillRect(0, 0, Image.Width, Image.Height);
-
-
-   if mode = 1 then Image.Pen.Mode := pmNotXor else Image.Pen.Mode := pmCopy;
-//   Image2.Canvas.Brush.Style := bsSolid;
-//   Image2.Canvas.Brush.Color := clblue;
-//   Image2.Canvas.FillRect(0,0,256,256);
-   Image.Brush.Color := clwhite;
-   startx:=x;
-   while startx < x2 do
-   begin
-//      Image2.Canvas.Rectangle(startx,y,startx+GridYThick,y2);
-      Image.FillRect(startx,y,startx+GridThickY,y2);
-      inc(startx,CellWidth+GridThickY);
-   end;
-   starty:=y;
-   while starty < y2 do
-   begin
-//      Image2.Canvas.Rectangle(startx,y,startx+GridYThick,y2);
-      Image.FillRect(x,starty,x2,starty+GridThickX);
-      inc(starty,CellHeight+GridThickX);
-   end;
 end;
 
 
@@ -1010,12 +878,33 @@ begin
 end;
 
 procedure TRMDrawTools.SetZoomSize(size : integer);
+var
+ XMulti : integer;
+ YMulti : integer;
+
 begin
+
   if size > 10 then size:=10;
   if size < 1 then size:=1;
   ZoomSize:=size;
-  SetCellWidth(size*10);
-  SetCellHeight(size*10);
+
+  XMulti:=10;
+  YMulti:=9;
+
+  if RMCoreBase.GetWidth = 8 then
+  begin
+   If ZoomSize < 7 then ZoomSize:=7;
+  end
+  else if RMCoreBase.GetWidth = 16 then
+  begin
+   If ZoomSize < 4 then ZoomSize:=4;
+  end
+  else if RMCoreBase.GetWidth = 32 then
+  begin
+   If ZoomSize < 2 then ZoomSize:=2;
+  end;
+  SetCellWidth(ZoomSize*XMulti);
+  SetCellHeight(ZoomSize*YMulti);
 end;
 
 function TRMDrawTools.GetZoomSize : integer;
@@ -1058,325 +947,13 @@ begin
   GetGridMode:=GridMode;
 end;
 
-(*
-To easily convert between one format to another, some simple formulae can be used for each of the red, green and blue values:
 
-// 6-bit VGA to 8-bit RGB:
-eight_bit_value = (six_bit_value * 255) / 63
-
-// 8-bit RGB to 6-bit VGA
-six_bit_value = (eight_bit_value * 63) / 255
-Performing the multiplication before the division removes the need to use floating point numbers and minimises any rounding errors.
-
-More efficient conversions can also be used when speed is more important than code readability:
-
-// 6-bit VGA to 8-bit RGB
-eight_bit_value = (six_bit_value << 2) | (six_bit_value >> 4)
-
-// 8-bit RGB to 6-bit VGA
-six_bit_value = eight_bit_value >> 2
-
-const clr:array[0..255] of colour=(
-(r:0;g:0;b:0),
-(r:0;g:170;b:0),
-(r:0;g:0;b:170),
-(r:0;g:170;b:170),
-(r:170;g:0;b:0),
-(r:170;g:170;b:0),
-(r:170;g:0;b:85),
-(r:170;g:170;b:170),
-(r:85;g:85;b:85),
-(r:85;g:255;b:85),
-(r:85;g:85;b:255),
-(r:85;g:255;b:255),
-(r:255;g:85;b:85),
-(r:255;g:255;b:85),
-(r:255;g:85;b:255),
-(r:255;g:255;b:255),
-(r:0;g:0;b:0),
-(r:20;g:20;b:20),
-(r:32;g:32;b:32),
-(r:44;g:44;b:44),
-(r:56;g:56;b:56),
-(r:68;g:68;b:68),
-(r:80;g:80;b:80),
-(r:97;g:97;b:97),
-(r:113;g:113;b:113),
-(r:129;g:129;b:129),
-(r:145;g:145;b:145),
-(r:161;g:161;b:161),
-(r:182;g:182;b:182),
-(r:202;g:202;b:202),
-(r:226;g:226;b:226),
-(r:255;g:255;b:255),
-(r:0;g:255;b:0),
-(r:64;g:255;b:0),
-(r:125;g:255;b:0),
-(r:190;g:255;b:0),
-(r:255;g:255;b:0),
-(r:255;g:190;b:0),
-(r:255;g:125;b:0),
-(r:255;g:64;b:0),
-(r:255;g:0;b:0),
-(r:255;g:0;b:64),
-(r:255;g:0;b:125),
-(r:255;g:0;b:190),
-(r:255;g:0;b:255),
-(r:190;g:0;b:255),
-(r:125;g:0;b:255),
-(r:64;g:0;b:255),
-(r:0;g:0;b:255),
-(r:0;g:64;b:255),
-(r:0;g:125;b:255),
-(r:0;g:190;b:255),
-(r:0;g:255;b:255),
-(r:0;g:255;b:190),
-(r:0;g:255;b:125),
-(r:0;g:255;b:64),
-(r:125;g:255;b:125),
-(r:157;g:255;b:125),
-(r:190;g:255;b:125),
-(r:222;g:255;b:125),
-(r:255;g:255;b:125),
-(r:255;g:222;b:125),
-(r:255;g:190;b:125),
-(r:255;g:157;b:125),
-(r:255;g:125;b:125),
-(r:255;g:125;b:157),
-(r:255;g:125;b:190),
-(r:255;g:125;b:222),
-(r:255;g:125;b:255),
-(r:222;g:125;b:255),
-(r:190;g:125;b:255),
-(r:157;g:125;b:255),
-(r:125;g:125;b:255),
-(r:125;g:157;b:255),
-(r:125;g:190;b:255),
-(r:125;g:222;b:255),
-(r:125;g:255;b:255),
-(r:125;g:255;b:222),
-(r:125;g:255;b:190),
-(r:125;g:255;b:157),
-(r:182;g:255;b:182),
-(r:198;g:255;b:182),
-(r:218;g:255;b:182),
-(r:234;g:255;b:182),
-(r:255;g:255;b:182),
-(r:255;g:234;b:182),
-(r:255;g:218;b:182),
-(r:255;g:198;b:182),
-(r:255;g:182;b:182),
-(r:255;g:182;b:198),
-(r:255;g:182;b:218),
-(r:255;g:182;b:234),
-(r:255;g:182;b:255),
-(r:234;g:182;b:255),
-(r:218;g:182;b:255),
-(r:198;g:182;b:255),
-(r:182;g:182;b:255),
-(r:182;g:198;b:255),
-(r:182;g:218;b:255),
-(r:182;g:234;b:255),
-(r:182;g:255;b:255),
-(r:182;g:255;b:234),
-(r:182;g:255;b:218),
-(r:182;g:255;b:198),
-(r:0;g:113;b:0),
-(r:28;g:113;b:0),
-(r:56;g:113;b:0),
-(r:85;g:113;b:0),
-(r:113;g:113;b:0),
-(r:113;g:85;b:0),
-(r:113;g:56;b:0),
-(r:113;g:28;b:0),
-(r:113;g:0;b:0),
-(r:113;g:0;b:28),
-(r:113;g:0;b:56),
-(r:113;g:0;b:85),
-(r:113;g:0;b:113),
-(r:85;g:0;b:113),
-(r:56;g:0;b:113),
-(r:28;g:0;b:113),
-(r:0;g:0;b:113),
-(r:0;g:28;b:113),
-(r:0;g:56;b:113),
-(r:0;g:85;b:113),
-(r:0;g:113;b:113),
-(r:0;g:113;b:85),
-(r:0;g:113;b:56),
-(r:0;g:113;b:28),
-(r:56;g:113;b:56),
-(r:68;g:113;b:56),
-(r:85;g:113;b:56),
-(r:97;g:113;b:56),
-(r:113;g:113;b:56),
-(r:113;g:97;b:56),
-(r:113;g:85;b:56),
-(r:113;g:68;b:56),
-(r:113;g:56;b:56),
-(r:113;g:56;b:68),
-(r:113;g:56;b:85),
-(r:113;g:56;b:97),
-(r:113;g:56;b:113),
-(r:97;g:56;b:113),
-(r:85;g:56;b:113),
-(r:68;g:56;b:113),
-(r:56;g:56;b:113),
-(r:56;g:68;b:113),
-(r:56;g:85;b:113),
-(r:56;g:97;b:113),
-(r:56;g:113;b:113),
-(r:56;g:113;b:97),
-(r:56;g:113;b:85),
-(r:56;g:113;b:68),
-(r:80;g:113;b:80),
-(r:89;g:113;b:80),
-(r:97;g:113;b:80),
-(r:105;g:113;b:80),
-(r:113;g:113;b:80),
-(r:113;g:105;b:80),
-(r:113;g:97;b:80),
-(r:113;g:89;b:80),
-(r:113;g:80;b:80),
-(r:113;g:80;b:89),
-(r:113;g:80;b:97),
-(r:113;g:80;b:105),
-(r:113;g:80;b:113),
-(r:105;g:80;b:113),
-(r:97;g:80;b:113),
-(r:89;g:80;b:113),
-(r:80;g:80;b:113),
-(r:80;g:89;b:113),
-(r:80;g:97;b:113),
-(r:80;g:105;b:113),
-(r:80;g:113;b:113),
-(r:80;g:113;b:105),
-(r:80;g:113;b:97),
-(r:80;g:113;b:89),
-(r:0;g:64;b:0),
-(r:16;g:64;b:0),
-(r:32;g:64;b:0),
-(r:48;g:64;b:0),
-(r:64;g:64;b:0),
-(r:64;g:48;b:0),
-(r:64;g:32;b:0),
-(r:64;g:16;b:0),
-(r:64;g:0;b:0),
-(r:64;g:0;b:16),
-(r:64;g:0;b:32),
-(r:64;g:0;b:48),
-(r:64;g:0;b:64),
-(r:48;g:0;b:64),
-(r:32;g:0;b:64),
-(r:16;g:0;b:64),
-(r:0;g:0;b:64),
-(r:0;g:16;b:64),
-(r:0;g:32;b:64),
-(r:0;g:48;b:64),
-(r:0;g:64;b:64),
-(r:0;g:64;b:48),
-(r:0;g:64;b:32),
-(r:0;g:64;b:16),
-(r:32;g:64;b:32),
-(r:40;g:64;b:32),
-(r:48;g:64;b:32),
-(r:56;g:64;b:32),
-(r:64;g:64;b:32),
-(r:64;g:56;b:32),
-(r:64;g:48;b:32),
-(r:64;g:40;b:32),
-(r:64;g:32;b:32),
-(r:64;g:32;b:40),
-(r:64;g:32;b:48),
-(r:64;g:32;b:56),
-(r:64;g:32;b:64),
-(r:56;g:32;b:64),
-(r:48;g:32;b:64),
-(r:40;g:32;b:64),
-(r:32;g:32;b:64),
-(r:32;g:40;b:64),
-(r:32;g:48;b:64),
-(r:32;g:56;b:64),
-(r:32;g:64;b:64),
-(r:32;g:64;b:56),
-(r:32;g:64;b:48),
-(r:32;g:64;b:40),
-(r:44;g:64;b:44),
-(r:48;g:64;b:44),
-(r:52;g:64;b:44),
-(r:60;g:64;b:44),
-(r:64;g:64;b:44),
-(r:64;g:60;b:44),
-(r:64;g:52;b:44),
-(r:64;g:48;b:44),
-(r:64;g:44;b:44),
-(r:64;g:44;b:48),
-(r:64;g:44;b:52),
-(r:64;g:44;b:60),
-(r:64;g:44;b:64),
-(r:60;g:44;b:64),
-(r:52;g:44;b:64),
-(r:48;g:44;b:64),
-(r:44;g:44;b:64),
-(r:44;g:48;b:64),
-(r:44;g:52;b:64),
-(r:44;g:60;b:64),
-(r:44;g:64;b:64),
-(r:44;g:64;b:60),
-(r:44;g:64;b:52),
-(r:44;g:64;b:48),
-(r:0;g:0;b:0),
-(r:0;g:0;b:0),
-(r:0;g:0;b:0),
-(r:0;g:0;b:0),
-(r:0;g:0;b:0),
-(r:0;g:0;b:0),
-(r:0;g:0;b:0),
-(r:0;g:0;b:0));
-
-*)
-
- (*
- r:0;g:0;b:0),
-(r:0;g:170;b:0),
-(r:0;g:0;b:170),
-(r:0;g:170;b:170),
-(r:170;g:0;b:0),
-(r:170;g:170;b:0),
-(r:170;g:0;b:85),
-(r:170;g:170;b:170),
-(r:85;g:85;b:85),
-(r:85;g:255;b:85),
-(r:85;g:85;b:255),
-(r:85;g:255;b:255),
-(r:255;g:85;b:85),
-(r:255;g:255;b:85),
-(r:255;g:85;b:255),
-(r:255;g:255;b:255),     *)
 
 procedure TRMDrawTools.AddEGAPalette(var CP : TColorPalette);
 var
   TC : TColor;
   i : integer;
 begin
-(*
-    RMCoreBase.Palette.AddColor(0,0,0);    //black
-    RMCoreBase.Palette.AddColor(0,0,170);   //blue
-    RMCoreBase.Palette.AddColor(0,170,0);   //green
-    RMCoreBase.Palette.AddColor(0,170,170);  //cyan?
-    RMCoreBase.Palette.AddColor(170,0,0);  //red
-    RMCoreBase.Palette.AddColor(170,0,170); //purple
-    RMCoreBase.Palette.AddColor(170,85,0); //brown
-    RMCoreBase.Palette.AddColor(170,170,170); //grey
-    RMCoreBase.Palette.AddColor(85,85,85);//dark grey
-    RMCoreBase.Palette.AddColor(85,85,255);  //light blue
-    RMCoreBase.Palette.AddColor(85,255,85);  //light green
-    RMCoreBase.Palette.AddColor(85,255,255);  //turqois
-    RMCoreBase.Palette.AddColor(255,85,85); //light red
-    RMCoreBase.Palette.AddColor(255,85,255);  //pink2
-    RMCoreBase.Palette.AddColor(255,255,85);  //yellow
-    RMCoreBase.Palette.AddColor(255,255,255);  //white
-  *)
     CP.ClearColors;
     for i:=0 to 15 do
     begin
@@ -1384,7 +961,6 @@ begin
                      VGADefault256[i].g,
                      VGADefault256[i].b);
       CP.AddColor(TC);
-
     end;
 end;
 
@@ -1432,9 +1008,6 @@ begin
       CP.AddColor(TC);
     end;
 end;
-
-
-
 
 
 procedure TRMDrawTools.AddVGAPalette(var CP : TColorPalette);
@@ -1647,7 +1220,7 @@ begin
      for i:=0 to pwidth-1 do
      begin
        tcol :=bmp.canvas.Pixels[i,j];
-       colindex:=RMCoreBase.Palette.FindColorMatch(Red(tcol),Green(tcol),blue(tcol));
+       colindex:=RMCoreBase.Palette.FindNearColorMatch(Red(tcol),Green(tcol),blue(tcol));
        RMCoreBase.PutPixel(x+i,y+j,colindex);
      end;
    end;

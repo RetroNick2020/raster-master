@@ -6,23 +6,9 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, ComCtrls, Menus, ColorBox, ActnList, StdActns, ColorPalette, Types,
+  StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, RMTools, RMCore,RMColor,RMColorVGA,RMAmigaColor,
-  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,XGF2SRC,bits,flood,RMAmigaRWXGF;
-
-
-
-const
-  MaxImagePixelWidth = 256;
-  MaxImagePixelHeight = 256;
-
- // CellWidthBorderRemove =2;
- // CellHeightBorderRemove =2;
-//  CellWidth = 20;
- // CellHeight = 20;
-//  GridYThick=1;
-//  GridXThick=1;
-
+  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,flood,RMAmigaRWXGF;
 
 
 
@@ -33,6 +19,7 @@ type
   TRMMainForm = class(TForm)
     Action1: TAction;
     ActionList1: TActionList;
+    ActualBox: TImage;
     FreePascalConst: TMenuItem;
     GWBASIC: TMenuItem;
     FreeBASICDATA: TMenuItem;
@@ -41,6 +28,15 @@ type
     EditCopy: TMenuItem;
     EditPaste: TMenuItem;
     EditColor: TMenuItem;
+    EditResizeTo128: TMenuItem;
+    EditResizeTo256: TMenuItem;
+    EditUndo: TMenuItem;
+    EditResizeTo: TMenuItem;
+    EditResizeTo8: TMenuItem;
+    EditResizeTo16: TMenuItem;
+    EditResizeTo32: TMenuItem;
+    EditResizeTo64: TMenuItem;
+    Panel2: TPanel;
     ToolEllipseMenu: TMenuItem;
     ToolFEllipseMenu: TMenuItem;
     PaletteExportQuickC: TMenuItem;
@@ -125,7 +121,6 @@ type
     OpenDialog1: TOpenDialog;
     SaveDialog1: TSaveDialog;
     ColorBox : TShape;
-    ActualBox: TImage;
     ToolPaintIcon: TImage;
     ToolGridIcon: TImage;
     ZoomBox: TImage;
@@ -149,11 +144,14 @@ type
 
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
+
     procedure FormCreate(Sender: TObject);
     procedure FreeBASICDATAClick(Sender: TObject);
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
+    procedure EditResizeToNewSize(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
+
     procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
     procedure PaletteExportTurboCClick(Sender: TObject);
@@ -226,7 +224,8 @@ type
     procedure TrackBar1Change(Sender: TObject);
   private
        FX,FY,FX2,FY2 : Integer;
-       ZoomX,ZoomY,ZoomX2,ZoomY2 : integer;
+       ZoomX,ZoomY : integer;
+       //ZoomX2,ZoomY2 : integer;
        ZoomSize : Integer;
        DrawMode : Boolean;
        DrawFirst : Boolean;
@@ -322,8 +321,6 @@ begin
 end;
 
 procedure TRMMainForm.FormCreate(Sender: TObject);
-Var
-  X,Y : Integer;
 begin
 ZoomSize:=RMDrawTools.GetZoomMode;
 DrawMode:=False;
@@ -335,12 +332,16 @@ ActualBox.Canvas.FillRect(0,0,256,256);
 ZoomBox.Canvas.Brush.Style := bsSolid;
 ZoomBox.Canvas.Brush.Color := clwhite;
 
+
+RMDrawTools.SetZoomMaxX(ZoomBox.Width);
+RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+
 RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
 LoadResourceIcons;
-
-MaxXOffset:=RMDrawTools.GetMaxXOffset(MaxImagePixelWidth,ZoomBox.Width);
+//check MaxImagePixel
+MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
 HorizScroll.Max:=MaxXOffset;
-MaxYOffset:=RMDrawTools.GetMaxYOffset(MaxImagePixelHeight,ZoomBox.Height);
+MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
 VirtScroll.Max:=MaxYOffset;
 
 XOffset:=0;
@@ -884,6 +885,7 @@ begin
    VirtScroll.Enabled:=false;
    HorizScroll.Enabled:=false;
    TrackBar1.Enabled:=false;
+   EditResizeTo.Enabled:=false;
 end;
 
 procedure TRMMainForm.UnFreezeScrollAndZoom;
@@ -891,6 +893,7 @@ begin
   VirtScroll.Enabled:=true;
   HorizScroll.Enabled:=true;
   TrackBar1.Enabled:=true;
+  EditResizeTo.Enabled:=true;
 end;
 
 
@@ -947,9 +950,10 @@ var
 begin
    zoommode:=RMDrawTools.GetZoomMode;
    RMDrawTools.SetZoomMode(0);
-   for i:=0 to MaxImagePixelWidth -1 do
+   //check MaxImagePixel
+   for i:=0 to RMCoreBase.GetWidth -1 do
    begin
-     for j:=0 to MaxImagePixelHeight-1 do
+     for j:=0 to RMCoreBase.GetHeight-1 do
      begin
         tc:=ColorPalette1.Colors[RMCoreBase.GetPixel(i,j)];
         RMDrawTools.PutPixel(ActualBox.Canvas,i,j,tc,0);
@@ -1109,9 +1113,10 @@ begin
        ToolGridMenu.Checked:=false;
 
      end;
-    MaxXOffset:=RMDrawTools.GetMaxXOffset(MaxImagePixelWidth,ZoomBox.Width);
+     //check MaxImagePixel
+    MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
     HorizScroll.Max:=MaxXOffset;
-    MaxYOffset:=RMDrawTools.GetMaxYOffset(MaxImagePixelHeight,ZoomBox.Height);
+    MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
     VirtScroll.Max:=MaxYOffset;
 
     UpdateActualArea;
@@ -1331,6 +1336,13 @@ begin
 
   if DT = DrawShapeClip then
   begin
+//    if fx2 > (_MaxImagePixelWidth-1) then fx2:=_MaxImagePixelWidth-1;
+//    if fy2 > (_MaxImagePixelHeight-1) then fy2:=_MaxImagePixelHeight-1;
+    if fx2 > (RMDrawTools.GetZoomMaxX)-1 then fx2:=RMDrawTools.GetZoomMaxX-1;
+
+    if fy2 > (RMDrawTools.GetZoomMaxY)-1 then fy2:=RMDrawTools.GetZoomMaxY-1;
+
+
     RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1,DT,1);
     RMDrawTools.SaveClipCoords(fx,fy,fx2,fy2);
     RMDrawTools.SetClipStatus(1); //on
@@ -1358,9 +1370,10 @@ begin
 
    RMDrawTools.SetZoomSize(ZoomSize);
    RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-   MaxXOffset:=RMDrawTools.GetMaxXOffset(MaxImagePixelWidth,ZoomBox.Width);
+   //check MaxImagePixel
+   MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
    HorizScroll.Max:=MaxXOffset;
-   MaxYOffset:=RMDrawTools.GetMaxYOffset(MaxImagePixelHeight,ZoomBox.Height);
+   MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
    VirtScroll.Max:=MaxYOffset;
    TrackBar1.Position:=RMDrawTools.GetZoomSize;
    UpdateZoomArea;
@@ -1391,10 +1404,16 @@ begin
   //Label4.Caption := 'Position = '+IntToStr(TrackBar1.Position);
   RMDrawTools.SetZoomSize(TrackBar1.Position);
   RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-  MaxXOffset:=RMDrawTools.GetMaxXOffset(MaxImagePixelWidth,ZoomBox.Width);
+  //check MaxImagePixel
+
+  RMDrawTools.SetZoomMaxX(ZoomBox.Width);
+  RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+
+  MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
   HorizScroll.Max:=MaxXOffset;
-  MaxYOffset:=RMDrawTools.GetMaxYOffset(MaxImagePixelHeight,ZoomBox.Height);
+  MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
   VirtScroll.Max:=MaxYOffset;
+  ZoomSize:=RMDrawTools.GetZoomSize;
   UpdateZoomArea;
 end;
 
@@ -1511,8 +1530,12 @@ var
 begin
    x:=0;
    y:=0;
-   x2:=255;
-   y2:=255;
+//   x2:=255;
+//   y2:=255;
+
+   x2:=RMCoreBase.GetWidth-1;
+   y2:=RMCoreBase.GetHeight-1;
+
    if RMDrawTools.GetClipStatus = 1 then
    begin
      RMDrawTools.GetClipAreaCoords(ca);
@@ -1782,6 +1805,68 @@ begin
    end;
 end;
 
+procedure TRMMainForm.EditResizeToNewSize(Sender: TObject);
+var
+ ImgWidth,ImgHeight : integer;
+begin
+  if (Sender As TMenuItem).Name = 'EditResizeTo8' then
+  begin
+    ImgWidth:=8;
+    ImgHeight:=8;
+  end
+  else if (Sender As TMenuItem).Name = 'EditResizeTo16' then
+  begin
+    ImgWidth:=16;
+    ImgHeight:=16;
+  end
+  else if (Sender As TMenuItem).Name = 'EditResizeTo32' then
+  begin
+    ImgWidth:=32;
+    ImgHeight:=32;
+  end
+  else if (Sender As TMenuItem).Name = 'EditResizeTo64' then
+  begin
+    ImgWidth:=64;
+    ImgHeight:=64;
+  end
+  else if (Sender As TMenuItem).Name = 'EditResizeTo128' then
+  begin
+    ImgWidth:=128;
+    ImgHeight:=128;
+  end
+  else if (Sender As TMenuItem).Name = 'EditResizeTo256' then
+  begin
+    ImgWidth:=256;
+    ImgHeight:=256;
+  end;
+  ActualBox.Width:=ImgWidth;
+  ActualBox.Height:=ImgHeight;
+  RMCoreBase.SetWidth(ImgWidth);
+  RMCoreBase.SetHeight(ImgHeight);
+
+
+  // ZoomBox.Canvas.Brush.Style := bsSolid;
+  // ZoomBox.Canvas.Brush.Color := clGray;
+  //  ZoomBox.Canvas.FillRect(0,0,ZoomBox.Width,ZoomBox.Height);
+
+
+  RMDrawTools.SetZoomSize(1);
+  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+  //check MaxImagePixel
+
+  RMDrawTools.SetZoomMaxX(ZoomBox.Width);
+  RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+
+  MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+  HorizScroll.Max:=MaxXOffset;
+  MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+  VirtScroll.Max:=MaxYOffset;
+  ZoomSize:=RMDrawTools.GetZoomSize;
+
+  UpdateActualArea;
+  UpdateZoomArea;
+end;
+
 
 Procedure TRMMainForm.EditColors;
 var
@@ -1865,15 +1950,12 @@ begin
        end;
    end;
  end;
-
 end;
 
 procedure TRMMainForm.PaletteEditColors(Sender: TObject);
 begin
   EditColors;
 end;
-
-
 
 procedure TRMMainForm.PaletteExportQuickCClick(Sender: TObject);
 var
@@ -1902,8 +1984,8 @@ var
 
        if error<>0 then
        begin
-          ShowMessage('Error Saving Palette file!');
-          exit;
+         ShowMessage('Error Saving Palette file!');
+         exit;
        end;
     end;
  end;
@@ -2303,6 +2385,7 @@ begin
    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
  end;
 end;
+
 
 
 
