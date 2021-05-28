@@ -1,5 +1,5 @@
 # raster-master
-Raster Master is a Sprite/Icon editor that generates Put image code for AmigaBASIC, QuickBasic, QB64, Quick C, Turbo Pascal, freepascalm Turbo C, Turbo Basic, Power Basic, FreeBASIC, GWBASIC, BASICA, PC-BASIC
+Raster Master is a Sprite/Icon editor that generates Put image code for AmigaBASIC, QuickBasic, QB64, Quick C, Turbo Pascal, freepascal, Turbo C, Turbo Basic, Power Basic, FreeBASIC, GWBASIC, BASICA, PC-BASIC
 
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I am working on touching up the user interface. In a few days there should be something here.
 
