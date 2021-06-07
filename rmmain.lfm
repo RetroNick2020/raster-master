@@ -1,12 +1,11 @@
 object RMMainForm: TRMMainForm
-  Left = 101
+  Left = 175
   Height = 820
-  Top = 108
+  Top = 119
   Width = 1640
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
-  DefaultMonitor = dmMainForm
+  ClientHeight = 795
+  ClientWidth = 1640
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -290,9 +289,9 @@ object RMMainForm: TRMMainForm
     end
   end
   object RMPanel: TPanel
-    Left = 32
+    Left = 1296
     Height = 136
-    Top = 594
+    Top = 640
     Width = 168
     ClientHeight = 136
     ClientWidth = 168
@@ -325,6 +324,20 @@ object RMMainForm: TRMMainForm
       Width = 256
     end
   end
+  object ListView1: TListView
+    Left = 32
+    Height = 432
+    Top = 344
+    Width = 288
+    Columns = <>
+    IconOptions.AutoArrange = True
+    LargeImages = ImageList1
+    LargeImagesWidth = 128
+    ReadOnly = True
+    TabOrder = 6
+    ViewStyle = vsIcon
+    OnDblClick = ListView1DblClick
+  end
   object MainMenu1: TMainMenu
     Left = 1584
     Top = 216
@@ -341,6 +354,10 @@ object RMMainForm: TRMMainForm
       object SaveFile: TMenuItem
         Caption = 'Save'
         OnClick = SaveFileClick
+      end
+      object SaveDelete: TMenuItem
+        Caption = 'Delete'
+        OnClick = SaveDeleteClick
       end
       object SaveFileAs: TMenuItem
         Caption = 'Save As'
@@ -424,6 +441,10 @@ object RMMainForm: TRMMainForm
           Caption = '256 X 256'
           OnClick = EditResizeToNewSize
         end
+      end
+      object EditClear: TMenuItem
+        Caption = 'Clear'
+        OnClick = EditClearClick
       end
       object EditUndo: TMenuItem
         Caption = 'Undo'
@@ -650,5 +671,9 @@ object RMMainForm: TRMMainForm
     Title = 'Export'
     Left = 1584
     Top = 536
+  end
+  object ImageList1: TImageList
+    Left = 1584
+    Top = 624
   end
 end

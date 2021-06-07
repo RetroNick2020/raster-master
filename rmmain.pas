@@ -8,8 +8,7 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, RMTools, RMCore,RMColor,RMColorVGA,RMAmigaColor,
-  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,flood,RMAmigaRWXGF;
-
+  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,flood,RMAmigaRWXGF,RMThumb;
 
 
 type
@@ -24,6 +23,8 @@ type
     GWBASIC: TMenuItem;
     FreeBASICDATA: TMenuItem;
     AmigaBasic: TMenuItem;
+    ImageList1: TImageList;
+    ListView1: TListView;
     MenuItem1: TMenuItem;
     EditCopy: TMenuItem;
     EditPaste: TMenuItem;
@@ -36,6 +37,8 @@ type
     EditResizeTo16: TMenuItem;
     EditResizeTo32: TMenuItem;
     EditResizeTo64: TMenuItem;
+    EditClear: TMenuItem;
+    SaveDelete: TMenuItem;
     Panel2: TPanel;
     ToolEllipseMenu: TMenuItem;
     ToolFEllipseMenu: TMenuItem;
@@ -133,15 +136,13 @@ type
     TrackBar1: TTrackBar;
     VirtScroll: TScrollBar;
     procedure AmigaBasicClick(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-
     procedure ColorBox1Change(Sender: TObject);
     procedure ColorBoxMouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
     procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
       var AText: String);
-
+    procedure EditClearClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
 
@@ -150,8 +151,9 @@ type
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
     procedure EditResizeToNewSize(Sender: TObject);
+    procedure ListView1DblClick(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
-
+    procedure SaveDeleteClick(Sender: TObject);
     procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
     procedure PaletteExportTurboCClick(Sender: TObject);
@@ -171,14 +173,12 @@ type
     procedure QBasicDataClick(Sender: TObject);
     procedure NewClick(Sender: TObject);
     procedure RMLogoClick(Sender: TObject);
-
     procedure ToolFEllipseMenuClick(Sender: TObject);
     procedure ToolFlipHorizMenuClick(Sender: TObject);
     procedure ToolFlipVirtMenuClick(Sender: TObject);
     procedure ToolGridMenuClick(Sender: TObject);
     procedure ToolCircleMenuClick(Sender: TObject);
     procedure ToolFRectangleMenuClick(Sender: TObject);
-
     procedure ToolLineMenuClick(Sender: TObject);
     procedure ToolMenuSelectAreaMenuClick(Sender: TObject);
     procedure ToolMenuSprayPaintClick(Sender: TObject);
@@ -189,7 +189,6 @@ type
     procedure PaletteCGA0Click(Sender: TObject);
     procedure PaletteCGA1Click(Sender: TObject);
     procedure SaveFileClick(Sender: TObject);
-//    procedure MenuItem4Click(Sender: TObject);
     procedure PaletteVGAClick(Sender: TObject);
     procedure PaletteVGA256Click(Sender: TObject);
     procedure PaletteEGAClick(Sender: TObject);
@@ -205,8 +204,6 @@ type
     procedure TurboPowerBasicDataClick(Sender: TObject);
     procedure TurboCCharClick(Sender: TObject);
     procedure TurboPascalConstClick(Sender: TObject);
-
-
     procedure ZoomBoxClick(Sender: TObject);
     procedure ZoomBoxMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -225,26 +222,24 @@ type
   private
        FX,FY,FX2,FY2 : Integer;
        ZoomX,ZoomY : integer;
-       //ZoomX2,ZoomY2 : integer;
        ZoomSize : Integer;
        DrawMode : Boolean;
        DrawFirst : Boolean;
        MaxXOffset : Integer;
        MaxYOffset : Integer;
-      // MaxXOffset2 : Integer;
        XOffset    : Integer;
        YOffset    : Integer;
-      // r1,r2 : integer;
-       palettemode : integer;
 
-       procedure SetPaletteMode(mode : integer);
-       function GetPaletteMode : integer;
+
+
        procedure UpdateZoomArea;
         procedure UpdateActualArea;
+       procedure LoadDefaultPalette;
        procedure UpdatePalette;
        procedure UpdateColorBox;
        procedure UpdateInfoBarXY;
        procedure UpdateInfoBarDetail;
+       procedure UpdateThumbview;
 
        procedure PaletteToCore;
        procedure CoreToPalette;
@@ -260,6 +255,8 @@ type
        procedure HideSelectAreaTools;
        procedure GetOpenSaveRegion(var x,y,x2,y2 : integer);  //if we are in select/clip area use those coords
        procedure EditColors;
+       procedure Clear;
+       procedure InitThumbView;
   public
 
   end;
@@ -310,16 +307,6 @@ begin
   end;
 end;
 
-procedure TRMMainForm.SetPaletteMode(mode : integer);
-begin
-   palettemode:=mode;
-end;
-
-function TRMMainForm.GetPaletteMode : integer;
-begin
-  getPaletteMode:=palettemode;
-end;
-
 procedure TRMMainForm.FormCreate(Sender: TObject);
 begin
 ZoomSize:=RMDrawTools.GetZoomMode;
@@ -348,8 +335,9 @@ XOffset:=0;
 YOffset:=0;
 Trackbar1.Position:=RMDrawTools.getZoomSize;
 
-SetPaletteMode(PaletteModeVGA);
-UpdatePalette;
+//SetPaletteMode(PaletteModeVGA);
+RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
+LoadDefaultPalette;
 
 ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
 ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor;
@@ -360,6 +348,7 @@ PaletteVGA.Checked:=true; // set vga palette
 HideSelectAreaTools;
 UpdateToolSelectionIcons;
 ToolPencilMenu.Checked:=true; //enable pencil tool in menu
+InitThumbView;
 end;
 
 procedure TRMMainForm.RMAboutDialogClick(Sender: TObject);
@@ -368,25 +357,7 @@ begin
  AboutDialog.ShowModal;
 end;
 
-procedure TRMMainForm.NewClick(Sender: TObject);
-begin
-//  ClearClipAreaOutline;
 
-  RMCoreBase.ClearBuf(0);
-  RMCoreBase.SetCurColor(1);
-  RMDrawTools.SetDrawTool(DrawShapePencil);
-  UpdateToolSelectionIcons;
-
-  UpdateColorBox;
-  UpdateActualArea;
-  RMDrawTools.SetClipStatus(0);
-  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-  UpdateZoomArea;
-  UnFreezeScrollAndZoom;
-  Trackbar1.Position:=RMDrawTools.getZoomSize;
-  HorizScroll.Position:=0;
-  VirtScroll.Position:=0;
-end;
 
 procedure TRMMainForm.RMLogoClick(Sender: TObject);
 begin
@@ -406,6 +377,7 @@ begin
   RMDrawTools.HFlip(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbview;
   RMDrawTools.SetClipStatus(clipstatus);
   if clipstatus = 1 then
   begin
@@ -424,6 +396,8 @@ begin
   RMDrawTools.VFlip(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbview;
+
   RMDrawTools.SetClipStatus(clipstatus);
   if clipstatus = 1 then
   begin
@@ -491,6 +465,8 @@ begin
   RMDrawTools.ScrollDown(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbview;
+
   RMDrawTools.SetClipStatus(clipstatus);
   if clipstatus = 1 then
   begin
@@ -509,6 +485,8 @@ begin
   RMDrawTools.ScrollLeft(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbview;
+
   RMDrawTools.SetClipStatus(clipstatus);
   if clipstatus = 1 then
   begin
@@ -527,6 +505,8 @@ begin
   RMDrawTools.ScrollRight(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbview;
+
   RMDrawTools.SetClipStatus(clipstatus);
   if clipstatus = 1 then
   begin
@@ -545,6 +525,8 @@ begin
   RMDrawTools.ScrollUp(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbview;
+
   RMDrawTools.SetClipStatus(clipstatus);
   if clipstatus = 1 then
   begin
@@ -561,6 +543,7 @@ begin
   ClearClipAreaOutline;
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbview;
   RMDrawTools.SetClipStatus(clipstatus);
   if clipstatus = 1 then
   begin
@@ -661,8 +644,11 @@ procedure TRMMainForm.PaletteMonoClick(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteMono.Checked:=true;
-  SetPaletteMode(PaletteModeMono);
-  UpdatePalette;
+//  SetPaletteMode(PaletteModeMono);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeMono);
+
+  LoadDefaultPalette;
+
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
@@ -678,8 +664,10 @@ procedure TRMMainForm.PaletteCGA0Click(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteCGA0.Checked:=true;
-  SetPaletteMode(PaletteModeCGA0);
-  UpdatePalette;
+//  SetPaletteMode(PaletteModeCGA0);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA0);
+
+  LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
@@ -695,8 +683,10 @@ procedure TRMMainForm.PaletteCGA1Click(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteCGA1.Checked:=true;
-  SetPaletteMode(PaletteModeCGA1);
-  UpdatePalette;
+//  SetPaletteMode(PaletteModeCGA1);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA1);
+
+  LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
@@ -714,8 +704,10 @@ begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
  PaletteAmiga2.Checked:=true;
- SetPaletteMode(PaletteModeAmiga2);
- UpdatePalette;
+ //SetPaletteMode(PaletteModeAmiga2);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga2);
+
+ LoadDefaultPalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
@@ -734,8 +726,10 @@ begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
  PaletteAmiga4.Checked:=true;
- SetPaletteMode(PaletteModeAmiga4);
- UpdatePalette;
+// SetPaletteMode(PaletteModeAmiga4);
+ RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga4);
+
+ LoadDefaultPalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
@@ -752,8 +746,10 @@ begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
  PaletteAmiga8.Checked:=true;
- SetPaletteMode(PaletteModeAmiga8);
- UpdatePalette;
+// SetPaletteMode(PaletteModeAmiga8);
+ RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga8);
+
+ LoadDefaultPalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
@@ -770,8 +766,10 @@ begin
   ClearSelectedPaletteMenu;
   PaletteAmiga.Checked:=true;
   PaletteAmiga16.Checked:=true;
-  SetPaletteMode(PaletteModeAmiga16);
-  UpdatePalette;
+//  SetPaletteMode(PaletteModeAmiga16);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga16);
+
+  LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
@@ -788,8 +786,10 @@ begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
  PaletteAmiga32.Checked:=true;
- SetPaletteMode(PaletteModeAmiga32);
- UpdatePalette;
+// SetPaletteMode(PaletteModeAmiga32);
+ RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga32);
+
+ LoadDefaultPalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
@@ -822,8 +822,10 @@ procedure TRMMainForm.PaletteVGAClick(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteVGA.Checked:=true;
-  SetPaletteMode(PaletteModeVGA);
-  UpdatePalette;
+//  SetPaletteMode(PaletteModeVGA);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
+
+  LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
@@ -839,8 +841,9 @@ procedure TRMMainForm.PaletteVGA256Click(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteVGA256.Checked:=true;
-  SetPaletteMode(PaletteModeVGA256);
-  UpdatePalette;
+//  SetPaletteMode(PaletteModeVGA256);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA256);
+  LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
@@ -856,8 +859,10 @@ procedure TRMMainForm.PaletteEGAClick(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteEGA.Checked:=true;
-  SetPaletteMode(PaletteModeEGA);
-  UpdatePalette;
+//  SetPaletteMode(PaletteModeEGA);
+  RMCoreBase.Palette.SetPaletteMode(PaletteModeEGA);
+
+  LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
@@ -990,6 +995,7 @@ begin
    begin
       RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.Brush.color,1);
    end;
+
 end;
 
 procedure TRMMainForm.UpdateColorBox;
@@ -998,11 +1004,13 @@ begin
   ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor;
 end;
 
-procedure TRMMainForm.UpdatePalette;
+procedure TRMMainForm.LoadDefaultPalette;
 var
 pm : integer;
 begin
-  pm:=GetPaletteMode;
+//  pm:=GetPaletteMode;
+ pm:=RMCoreBase.Palette.GetPaletteMode;
+
   if pm = PaletteModeVGA256 then
   begin
     RMDrawTools.AddVGAPalette256(ColorPalette1);
@@ -1093,6 +1101,105 @@ begin
    end;
 end;
 
+procedure TRMMainForm.UpdatePalette;
+var
+pm : integer;
+begin
+//  pm:=GetPaletteMode;
+ pm:=RMCoreBase.Palette.GetPaletteMode;
+
+  if pm = PaletteModeVGA256 then
+  begin
+//    RMDrawTools.AddVGAPalette256(ColorPalette1);
+    ColorPalette1.ColumnCount:=32;
+    ColorPalette1.ButtonHeight:=17;
+    ColorPalette1.ButtonWidth:=17;
+  //  PaletteToCore;
+  end
+  else if pm = PaletteModeVGA then
+  begin
+//    RMDrawTools.AddVGAPalette(ColorPalette1);       //Add to Visual Compononet Palette
+    ColorPalette1.ColumnCount:=8;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+ //   PaletteToCore;  //copy valaues from Component pallete to internal core palette
+  end
+  else if pm = PaletteModeEGA then
+  begin
+//   RMDrawTools.AddEGAPalette(ColorPalette1);
+   ColorPalette1.ColumnCount:=8;
+   ColorPalette1.ButtonHeight:=50;
+   ColorPalette1.ButtonWidth:=30;
+//   PaletteToCore;
+  end
+  else if pm = PaletteModeCGA0 then
+  begin
+//   RMDrawTools.AddCGAPalette0(ColorPalette1);
+   ColorPalette1.ColumnCount:=2;
+   ColorPalette1.ButtonHeight:=50;
+   ColorPalette1.ButtonWidth:=30;
+//   PaletteToCore;
+  end
+  else if pm = PaletteModeCGA1 then
+  begin
+//   RMDrawTools.AddCGAPalette1(ColorPalette1);
+   ColorPalette1.ColumnCount:=2;
+   ColorPalette1.ButtonHeight:=50;
+   ColorPalette1.ButtonWidth:=30;
+//   PaletteToCore;
+  end
+  else if pm = PaletteModeMono then
+  begin
+  // RMDrawTools.AddMonoPalette(ColorPalette1);
+   ColorPalette1.ColumnCount:=1;
+   ColorPalette1.ButtonHeight:=50;
+   ColorPalette1.ButtonWidth:=30;
+//   PaletteToCore;
+  end
+  else if pm = PaletteModeAmiga32 then
+   begin
+  //  RMDrawTools.AddAmigaPalette(ColorPalette1,32);
+    ColorPalette1.ColumnCount:=16;
+    ColorPalette1.ButtonHeight:=25;
+    ColorPalette1.ButtonWidth:=30;
+ //   PaletteToCore;
+   end
+   else if pm = PaletteModeAmiga16 then
+   begin
+//    RMDrawTools.AddAmigaPalette(ColorPalette1,16);
+    ColorPalette1.ColumnCount:=8;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+//    PaletteToCore;
+   end
+   else if pm = PaletteModeAmiga8 then
+    begin
+  //   RMDrawTools.AddAmigaPalette(ColorPalette1,8);
+     ColorPalette1.ColumnCount:=4;
+     ColorPalette1.ButtonHeight:=50;
+     ColorPalette1.ButtonWidth:=30;
+ //    PaletteToCore;
+    end
+   else if pm = PaletteModeAmiga4 then
+   begin
+//    RMDrawTools.AddAmigaPalette(ColorPalette1,4);
+    ColorPalette1.ColumnCount:=2;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+  //  PaletteToCore;
+   end
+   else if pm = PaletteModeAmiga2 then
+   begin
+ //   RMDrawTools.AddAmigaPalette(ColorPalette1,2);
+    ColorPalette1.ColumnCount:=1;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+ //   PaletteToCore;
+   end;
+end;
+
+
+
 
 Procedure TRMMainForm.UpdateGridDisplay;
 var
@@ -1130,10 +1237,6 @@ begin
     end;
 end;
 
-procedure TRMMainForm.Button2Click(Sender: TObject);
-begin
-  UpdateGridDisplay;
-end;
 
 procedure TRMMainForm.ColorBox1Change(Sender: TObject);
 begin
@@ -1142,7 +1245,7 @@ end;
 procedure TRMMainForm.ColorBoxMouseEnter(Sender: TObject);
 begin
 //  ColorBox.Hint:='Color Index: '+IntToStr(RMCoreBase.GetCurColor);
- ColorBox.Hint:=ColIndexToHoverInfo(RMCoreBase.GetCurColor,PaletteMode);
+ ColorBox.Hint:=ColIndexToHoverInfo(RMCoreBase.GetCurColor,RMCoreBase.Palette.GetPaletteMode);
 end;
 
 
@@ -1152,13 +1255,15 @@ begin
 //  AText:='Color Index: '+IntToStr(ColorPalette1.MouseIndex);
   if ColorPalette1.MouseIndex > -1 then
   begin
-    AText:=ColIndexToHoverInfo(ColorPalette1.MouseIndex,PaletteMode);
+    AText:=ColIndexToHoverInfo(ColorPalette1.MouseIndex,RMCoreBase.Palette.GetPaletteMode);
   end
   else
   begin
     AText:='Color Index: '+IntToStr(ColorPalette1.MouseIndex);
   end;
 end;
+
+
 
 procedure TRMMainForm.ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
   Shift: TShiftState);
@@ -1307,6 +1412,7 @@ begin
  begin
    DrawFirst:=FALSE;
    DrawMode:=False;
+   UpdateThumbView;
    exit;
  end
  else if  DT = DrawShapeClip then        //move event was not triggered so we don't have a clip area - user clicked really fast
@@ -1355,6 +1461,7 @@ begin
     RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,0,DT,1);
     RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,0,DT,1);
     RMDrawTools.DrawShape(ZoomBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,2,DT,1);
+    UpdateThumbView;
   end;
 end;
 
@@ -1389,15 +1496,11 @@ begin
    Close;
 end;
 
-
 procedure TRMMainForm.HorizScrollChange(Sender: TObject);
 begin
   XOffset:=HorizScroll.Position;
   updatezoomarea;
 end;
-
-
-
 
 procedure TRMMainForm.TrackBar1Change(Sender: TObject);
 begin
@@ -1416,7 +1519,6 @@ begin
   ZoomSize:=RMDrawTools.GetZoomSize;
   UpdateZoomArea;
 end;
-
 
 procedure TRMMainForm.ClearSelectedToolsMenu;
 begin
@@ -1530,9 +1632,6 @@ var
 begin
    x:=0;
    y:=0;
-//   x2:=255;
-//   y2:=255;
-
    x2:=RMCoreBase.GetWidth-1;
    y2:=RMCoreBase.GetHeight-1;
 
@@ -1589,7 +1688,9 @@ var
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    lp:=1;
-   pm:=GetPaletteMode;
+//   pm:=GetPaletteMode;
+    pm:=RMCoreBase.Palette.GetPaletteMode;
+
    if RMDrawTools.GetClipStatus = 1 then lp:=0;
    OpenDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|RM RAW Files|*.raw|All Files|*.*' ;
 
@@ -1624,6 +1725,7 @@ begin
       UpdateActualArea;
       UpdateColorBox;
       UpDateZoomArea;
+      UpdateThumbView;
       if RMDrawTools.GetClipStatus = 1 then
       begin
         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
@@ -1643,7 +1745,8 @@ begin
    if ExportDialog.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
 
       ColorFormat:=ColorSixBitFormat;
       if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
@@ -1679,7 +1782,8 @@ var
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -1714,7 +1818,8 @@ begin
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//    pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -1749,7 +1854,8 @@ begin
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -1784,7 +1890,8 @@ begin
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -1865,7 +1972,10 @@ begin
 
   UpdateActualArea;
   UpdateZoomArea;
+  UpdateThumbView;
 end;
+
+
 
 
 Procedure TRMMainForm.EditColors;
@@ -1877,9 +1987,10 @@ var
   pm : integer;
 begin
    // ShowMessage('count='+inttostr(RMCoreBase.Palette.GetColorCount));
-   pm:=GetPaletteMode;
+//   pm:=GetPaletteMode;
+   pm:=RMCoreBase.Palette.GetPaletteMode;
    If (pm = PaletteModeVGA) OR (pm = PaletteModeVGA256) then
-  begin
+   begin
     if pm = PaletteModeVGA then RMVGAColorDialog.InitColorBox16
     else RMVGAColorDialog.InitColorBox256;
 
@@ -1895,6 +2006,8 @@ begin
        CoreToPalette;
        UpdateActualArea;
        UpdateZoomArea;
+       UpdateThumbview;
+
        if RMDrawTools.GetClipStatus = 1 then
        begin
          RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
@@ -1957,6 +2070,7 @@ begin
   EditColors;
 end;
 
+
 procedure TRMMainForm.PaletteExportQuickCClick(Sender: TObject);
 var
   pm : integer;
@@ -1968,8 +2082,8 @@ var
     if ExportDialog.Execute then
     begin
        ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
-       pm:=GetPaletteMode;
-
+//       pm:=GetPaletteMode;
+       pm:=RMCoreBase.Palette.GetPaletteMode;
        ColorFormat:=ColorSixBitFormat;
        if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
@@ -2001,8 +2115,8 @@ procedure TRMMainForm.PaletteExportTurboCClick(Sender: TObject);
      if ExportDialog.Execute then
      begin
         ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
-        pm:=GetPaletteMode;
-
+//      pm:=GetPaletteMode;
+        pm:=RMCoreBase.Palette.GetPaletteMode;
         ColorFormat:=ColorSixBitFormat;
         if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
@@ -2037,7 +2151,8 @@ begin
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -2072,7 +2187,8 @@ begin
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -2107,7 +2223,8 @@ begin
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -2142,7 +2259,8 @@ begin
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       case pm of         PaletteModeMono:sourcemode:=Source2;
            PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
@@ -2173,7 +2291,8 @@ var
  validpm : boolean;
 begin
  //       sourcemode:=Source32;   //PaletteModeAmiga32
-   pm:=GetPaletteMode;
+//   pm:=GetPaletteMode;
+   pm:=RMCoreBase.Palette.GetPaletteMode;
 //   ShowMessage(intToStr(pm));
    validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
    if validpm = false then
@@ -2222,8 +2341,6 @@ begin
    end;
 end;
 
-
-
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var
  pm : integer;
@@ -2231,7 +2348,8 @@ begin
  OpenDialog1.Filter := 'RM Palette|*.pal|All Files|*.*';
  if OpenDialog1.Execute then
  begin
-     pm:=GetPaletteMode;
+//     pm:=GetPaletteMode;
+     pm:=RMCoreBase.Palette.GetPaletteMode;
      if ReadPAL(OpenDialog1.FileName,pm) <> 0 then
      begin
         ShowMessage('Error Opening PAL file!');
@@ -2241,6 +2359,7 @@ begin
      UpdateColorBox;
      UpDateZoomArea;
      UpdateActualArea;
+     UpdateThumbView;
  end;
 end;
 
@@ -2256,12 +2375,6 @@ begin
         end;
    end;
 end;
-
-
-
-
-
-
 
 procedure TRMMainForm.PaletteExportAmigaBasicClick(Sender: TObject);
 var
@@ -2303,8 +2416,8 @@ begin
    if ExportDialog.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
-      pm:=GetPaletteMode;
-
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       ColorFormat:=ColorSixBitFormat;
       if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
@@ -2339,7 +2452,8 @@ begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
 
       ColorFormat:=ColorSixBitFormat;
-      pm:=GetPaletteMode;
+//      pm:=GetPaletteMode;
+      pm:=RMCoreBase.Palette.GetPaletteMode;
       if (pm=PaletteModeEGA) then ColorFormat:=ColorIndexFormat;
 
       if ext='.CON' then
@@ -2387,7 +2501,184 @@ begin
 end;
 
 
+procedure TRMMainForm.ListView1DblClick(Sender: TObject);
+var
+  item : TListItem;
+begin
+ if (Listview1.SelCount > 0)  then
+ begin
+   item:=ListView1.LastSelected;
 
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
+   ImageThumbBase.CopyIndexImageToCore(Item.Index);
+   ImageThumbBase.SetCurrent(item.Index);
+
+   ActualBox.Width:=RMCoreBase.GetWidth;
+   ActualBox.Height:=RMCoreBase.GetHeight;
+
+   RMDrawTools.SetZoomSize(1);
+   RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+   RMDrawTools.SetZoomMaxX(ZoomBox.Width);
+   RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+
+   MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+   HorizScroll.Max:=MaxXOffset;
+   MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+   VirtScroll.Max:=MaxYOffset;
+   ZoomSize:=RMDrawTools.GetZoomSize;
+
+   CoreToPalette;
+   UpdateColorBox;
+   UpdatePalette;
+   UpdateActualArea;
+   UpdateZoomArea;
+   UpdateThumbView;
+
+ end;
+end;
+
+procedure TRMMainForm.InitThumbView;
+var
+  LItem: TListItem;
+begin
+  ImageThumbBase.AddImage;
+  ImageThumbBase.SetCurrent(0);
+
+  ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCount-1,imagelist1,1);
+  LItem:=ListView1.Items.Add;
+
+  LItem.ImageIndex :=ImageThumbBase.GetCount-1;
+  LItem.Caption:='Image '+IntToStr(ImageThumbBase.GetCount);
+end;
+
+procedure TRMMainForm.UpdateThumbView;
+begin
+  ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCurrent,imagelist1,4);
+  Listview1.Refresh;
+end;
+
+procedure TRMMainForm.SaveDeleteClick(Sender: TObject);
+var
+  item  : TListItem;
+  i,index : integer;
+  msg : string;
+begin
+ if ImageThumbBase.GetCount = 1 then
+ begin
+    Clear;
+     // display message to select clear as it is the only item
+ end
+ else if (Listview1.SelCount > 0)  then
+ begin
+   item:=ListView1.LastSelected;
+   index:=item.index;
+
+   if index > -1 then
+   begin
+      //msg:='Thumbase count= '+inttostr(ImageThumbBase.GetCount)+'listview count='+inttostr(listview1.Items.Count)+'imagelist count='+inttostr(imagelist1.Count);
+      //ShowMessage(msg);
+      listview1.Items.Delete(index);
+      imagelist1.Delete(index);
+
+      for i:=0 to listview1.Items.Count -1 do
+      begin
+        listview1.Items[i].Caption:='Image '+intToStr(i+1);
+        listview1.Items[i].ImageIndex:=i;
+      end;
+      ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+      ImageThumbBase.DeleteImage(index);
+      if ImageThumbBase.GetCurrent > (ImageThumbBase.GetCount-1) then
+      begin
+        ImageThumbBase.SetCurrent(ImageThumbBase.GetCount-1);
+      end;
+
+      ImageThumbBase.CopyIndexImageToCore(ImageThumbBase.GetCurrent);   //to future nick - do not delete this line - it is important
+      listview1.refresh;
+
+      ActualBox.Width:=RMCoreBase.GetWidth;
+      ActualBox.Height:=RMCoreBase.GetHeight;
+
+      RMDrawTools.SetZoomSize(1);
+      RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+      RMDrawTools.SetZoomMaxX(ZoomBox.Width);
+      RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+
+      MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+      HorizScroll.Max:=MaxXOffset;
+      MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+      VirtScroll.Max:=MaxYOffset;
+      ZoomSize:=RMDrawTools.GetZoomSize;
+
+      CoreToPalette;
+      UpdateColorBox;
+      UpdatePalette;
+      UpdateActualArea;
+      UpdateZoomArea;
+   end;
+ end;
+end;
+
+procedure TRMMainForm.NewClick(Sender: TObject);
+begin
+ if ImageThumbBase.GetCount >= MaxThumbImages then exit;
+
+
+ ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
+ //ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCurrent,imagelist1,4);
+
+ RMCoreBase.ClearBuf(0);
+ RMCoreBase.SetCurColor(1);
+ RMDrawTools.SetDrawTool(DrawShapePencil);
+ UpdateToolSelectionIcons;
+
+ UpdateColorBox;
+ UpdateActualArea;
+ RMDrawTools.SetClipStatus(0);
+ RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ UpdateZoomArea;
+ UnFreezeScrollAndZoom;
+ Trackbar1.Position:=RMDrawTools.getZoomSize;
+ HorizScroll.Position:=0;
+ VirtScroll.Position:=0;
+
+ ImageThumbBase.AddImage;
+// ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCount-1);
+ ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
+
+ with ListView1.Items.Add do
+ begin
+   ImageIndex :=ImageThumbBase.GetCount-1;
+   Caption:='Image '+IntToStr(ImageThumbBase.GetCount);
+ end;
+
+ ImageThumbBase.SetCurrent(ImageThumbBase.GetCount-1);
+ Listview1.Refresh;
+end;
+
+procedure TRMMainForm.Clear;
+begin
+ //  ClearClipAreaOutline;
+ RMCoreBase.ClearBuf(0);
+ RMCoreBase.SetCurColor(1);
+ RMDrawTools.SetDrawTool(DrawShapePencil);
+ UpdateToolSelectionIcons;
+
+ UpdateColorBox;
+ UpdateActualArea;
+ RMDrawTools.SetClipStatus(0);
+ RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ UpdateZoomArea;
+ UnFreezeScrollAndZoom;
+ Trackbar1.Position:=RMDrawTools.getZoomSize;
+ HorizScroll.Position:=0;
+ VirtScroll.Position:=0;
+ UpdateThumbView;
+end;
+
+procedure TRMMainForm.EditClearClick(Sender: TObject);
+begin
+ Clear;
+end;
 
 end.
 

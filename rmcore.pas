@@ -24,6 +24,8 @@ Type
                private
                    paletteBuf : TRMPaletteBuf;
                    ColorCount : integer;
+                  Palettemode : integer;
+
                public
                Constructor Create;
                procedure AddColor(r,g,b : integer);
@@ -31,7 +33,15 @@ Type
                procedure ClearColors;
                procedure GetColor(index : integer;var cr : TRMColorRec);
                procedure SetColor(index : integer; cr : TRMColorRec);
+
+               procedure GetPalette(var P : TRMPaletteBuf);
+               procedure SetPalette(P : TRMPaletteBuf);
+               procedure SetPaletteMode(mode : integer);
+               function GetPaletteMode : integer;
+
+
                function GetColorCount : integer;
+               procedure SetColorCount(count : integer);
                function GetRed(index : integer) : integer;
                function GetGreen(index : integer) : integer;
                function GetBlue(index : integer) : integer;
@@ -68,6 +78,7 @@ Type
                   TempImageBuf  : TRMImageBuf;
                   UndoImageBuf  : TRMImageBuf;
                   CurColor      : integer; // current color
+
                   ImgBufWidth         : integer;
                   ImgBufHeight        : integer;
 
@@ -77,8 +88,11 @@ Type
                  procedure PutPixel(x,y,Color : Integer);
                  procedure PutPixel(x,y : integer);
                  function GetPixel(x,y : Integer) : Integer;
+                 function GetPixelTColor(x,y : Integer) : TColor;
+
                  procedure SetCurColor(Color : integer);
                  function GetCurColor : integer;
+
                  procedure ClearBuf(Color : integer);
                  procedure CopyToUndoBuf;
                  procedure UnDo;
@@ -87,6 +101,10 @@ Type
 
                  function GetWidth : integer;
                  function GetHeight : integer;
+
+                 function GetImageBufPtr : pointer;
+                 function GetUndoImageBufPtr : pointer;
+
 
   end;
 
@@ -620,6 +638,17 @@ end;
 Constructor TRMPalette.create;
 begin
   ColorCount:=0;
+  SetPaletteMode(PaletteModeNone);
+end;
+
+procedure TRMPalette.GetPalette(var P : TRMPaletteBuf);
+begin
+  P:=PaletteBuf;
+end;
+
+procedure TRMPalette.SetPalette(P : TRMPaletteBuf);
+begin
+  PaletteBuf:=P;
 end;
 
 procedure TRMPalette.AddColor(r,g,b : integer);
@@ -703,6 +732,10 @@ procedure TRMPalette.ClearColors;
 begin
   ColorCount:=0;
 end;
+procedure TRMPalette.SetColorCount(count : integer);
+begin
+  ColorCount:=count;
+end;
 
 function TRMPalette.GetColorCount : integer;
 begin
@@ -732,6 +765,17 @@ begin
    GetColor(index,cr);
    getblue:=cr.b;
 end;
+
+procedure TRMPalette.SetPaletteMode(mode : integer);
+begin
+  PaletteMode:=mode;
+end;
+
+function TRMPalette.GetPaletteMode : integer;
+begin
+  GetPaletteMode:=PaletteMode;
+end;
+
 
 procedure TRMPalette.DownToVGA;
 begin
@@ -804,6 +848,17 @@ begin
   GetHeight:=ImgBufHeight;
 end;
 
+
+function TRMCoreBase.GetImageBufPtr : pointer;
+begin
+  GetImageBufPtr:=@ImageBuf;
+end;
+
+function TRMCoreBase.GetUndoImageBufPtr : pointer;
+begin
+    GetUndoImageBufPtr:=@UndoImageBuf;
+end;
+
 procedure TRMCoreBase.SetCurColor(Color : integer);
 begin
     CurColor:=Color;
@@ -839,10 +894,21 @@ begin
   ImageBuf.Pixel[x,y]:=CurColor;
 end;
 
-
 function TRMCoreBase.GetPixel(x,y : Integer) : Integer;
 begin
   GetPixel:=ImageBuf.Pixel[x,y];
+end;
+
+function TRMCoreBase.GetPixelTColor(x,y : integer) : TColor;
+var
+ r,g,b : integer;
+ colindex : integer;
+begin
+ colindex:=ImageBuf.Pixel[x,y];
+ r:=Palette.GetRed(colindex);
+ g:=Palette.GetGreen(colindex);
+ b:=Palette.GetBlue(colindex);
+ GetPixelTColor:=RGBToColor(r,g,b);
 end;
 
 procedure TRMCoreBase.CopyToUndoBuf;
@@ -856,6 +922,9 @@ begin
   ImageBuf:=UndoImageBuf;
   UndoImageBuf:=tempImageBuf;
 end;
+
+
+
 
 initialization
     RMCoreBase:=TRMCoreBase.Create;

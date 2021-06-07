@@ -1,7 +1,7 @@
 object RMAmigaColorDialog: TRMAmigaColorDialog
-  Left = -782
+  Left = 1269
   Height = 355
-  Top = 442
+  Top = 602
   Width = 510
   Caption = 'Amiga Palette'
   ClientHeight = 355
