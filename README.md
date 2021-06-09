@@ -3,6 +3,9 @@ Raster Master is a Sprite/Icon editor that generates Put image code for AmigaBAS
 
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I am working on touching up the user interface. In a few days there should be something here.
 
+Jun 9 - 2021 - New Binary release Raster Master v1.0 beta R13 - Lots of new features since Apr 23 R9 Release. Fixed width sprites 8x8,16x16,32x32,64x64,128x128, and 256x256.
+Multiple images can now be edited with a filstrip icon view. The color match algorythm now is able match a greater range of colors to the 16/256 color palette in use. this is used when copying/pasting from external apps like ms paint.
+
 Apr 23 - 2021 - New Binary release Raster Master v1.0 beta R9 - new oval/ellipse tools - new AmigaBASIC export formats for Bobs and VSprites
 
 Mar 12 - 2021 - New Binary release Raster Master v1.0 beta R6 - copy/paste, palette open/save, xgf export format for all, palette export
