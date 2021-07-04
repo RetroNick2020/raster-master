@@ -198,9 +198,8 @@
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="rmamigarwxgf.pas"/>
+        <Filename Value="wjavascriptarray.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RMAmigaRWXGF"/>
       </Unit11>
     </Units>
   </ProjectOptions>

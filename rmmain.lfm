@@ -371,6 +371,17 @@ object RMMainForm: TRMMainForm
       end
       object MenuItem9: TMenuItem
         Caption = 'Export'
+        object JavaScriptArray: TMenuItem
+          Caption = 'JavaScript Array'
+          object TransparentImage: TMenuItem
+            Caption = 'Transparent Image'
+            OnClick = javaScriptArrayClick
+          end
+          object NonTransparentImage: TMenuItem
+            Caption = 'Non Transparent Image'
+            OnClick = javaScriptArrayClick
+          end
+        end
         object QBasicData: TMenuItem
           Caption = 'QuickBasic\QB64 DATA'
           OnClick = QBasicDataClick

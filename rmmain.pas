@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, RMTools, RMCore,RMColor,RMColorVGA,RMAmigaColor,
-  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,flood,RMAmigaRWXGF,RMThumb;
+  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,flood,RMAmigaRWXGF,wjavascriptarray,RMThumb;
 
 
 type
@@ -38,6 +38,9 @@ type
     EditResizeTo32: TMenuItem;
     EditResizeTo64: TMenuItem;
     EditClear: TMenuItem;
+    JavaScriptArray: TMenuItem;
+    TransparentImage: TMenuItem;
+    NonTransparentImage: TMenuItem;
     SaveDelete: TMenuItem;
     Panel2: TPanel;
     ToolEllipseMenu: TMenuItem;
@@ -151,6 +154,7 @@ type
     procedure FreePascalConstClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
     procedure EditResizeToNewSize(Sender: TObject);
+    procedure javaScriptArrayClick(Sender: TObject);
     procedure ListView1DblClick(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
     procedure SaveDeleteClick(Sender: TObject);
@@ -1975,8 +1979,34 @@ begin
   UpdateThumbView;
 end;
 
+procedure TRMMainForm.javaScriptArrayClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+// pm : integer;
+// sourcemode : word;
+ ext : string;
+ error : word;
+ transparent : boolean;
+ begin
+   transparent:=true;
+   if (Sender As TMenuItem).Name = 'NonTransparentImage' then
+   begin
+     transparent:=false;
+   end;
 
-
+   ExportDialog.Filter := 'JavaScript Array|*.jsa';
+   GetOpenSaveRegion(x,y,x2,y2);
+   if ExportDialog.Execute then
+   begin
+      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+      error:=WriteJavaScriptArray(x,y,x2,y2,ExportDialog.FileName,transparent);
+      if (error<>0) then
+      begin
+         ShowMessage('Error Saving file!');
+         exit;
+      end;
+   end;
+end;
 
 Procedure TRMMainForm.EditColors;
 var
@@ -2494,6 +2524,7 @@ begin
 
  UpdateActualArea;
  UpdateZoomArea;
+ UpdateThumbView;
  if clipstatus = 1 then
  begin
    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
