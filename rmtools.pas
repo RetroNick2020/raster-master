@@ -179,10 +179,28 @@ end;
 
 procedure TRMDrawTools.SaveClipCoords(x,y,x2,y2 : integer);
 begin
-   ClipArea.x:=x;
-   ClipArea.y:=y;
-   ClipArea.x2:=x2;
-   ClipArea.y2:=y2;
+   if x > x2 then
+   begin
+     ClipArea.x2:=x;
+     ClipArea.x:=x2;
+   end
+   else
+   begin
+     ClipArea.x:=x;
+     ClipArea.x2:=x2;
+   end;
+
+
+   if y > y2 then
+   begin
+     ClipArea.y2:=y;
+     ClipArea.y:=y2;
+   end
+   else
+   begin
+     ClipArea.y:=y;
+     ClipArea.y2:=y2;
+   end;
 end;
 
 procedure TRMDrawTools.DrawClipArea(Image : TCanvas;color : TColor; mode : integer);
@@ -857,12 +875,15 @@ end;
 function TRMDrawTools.GetZoomX(x : integer) : integer;
 begin
   GetZoomX:=x div CellWidth;
+  If GetZoomX < 0 then GetZoomX:=0;
 end;
 
 function TRMDrawTools.GetZoomY(y : integer) : integer;
 begin
  GetZoomY:=y div CellHeight;
+ if GetZoomY < 0 then GetZoomY:=0;
 end;
+
 
 
 procedure TRMDrawTools.DrawGrid(Image : TCanvas;x,y,gWidth,gHeight,mode : integer);

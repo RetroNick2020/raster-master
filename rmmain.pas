@@ -922,7 +922,7 @@ begin
  XYStr:='Zoom X = '+IntToStr(ZoomX)+' Zoom Y = '+IntToStr(ZoomY)+#13#10+
         'X = '+IntToStr(ZoomX+XOffset)+' Y = '+IntToStr(ZoomY + YOffset)+#13#10;
  ColIndexStr:='';
- if (zoomX > 0) and (zoomy > 0) then
+ if (zoomX >= 0) and (zoomy >= 0) then
  begin
    ColIndexStr:='Color Index: '+IntToStr(RMCoreBase.GetPixel(xoffset+ZoomX,yoffset+ZoomY))
  end;
