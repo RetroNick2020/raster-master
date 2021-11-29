@@ -3,12 +3,15 @@
 
 Unit RMAmigaRWXGF;
  Interface
-   uses RMCore,RWXGF,SysUtils,FileUtil,Bits;
+   uses RMCore,RWXGF,SysUtils,LazFileUtils,Bits;
 
 Function WriteAmigaBasicObject(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 Function WriteAmigaBasicObjectData(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 Function WriteAmigaBasicXGF(x,y,x2,y2 : word;filename:string):word;
 Function WriteAmigaBasicXGFData(x,y,x2,y2 : word;filename:string):word;
+
+Function WriteAmigaPascalConst(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+
 Implementation
 
 type
@@ -48,8 +51,11 @@ type
  BufferRec = Record
                 f      : file;
                 fText  : Text;
-                datalist   : array[1..128] of Byte;
-                count  : integer;
+                buflist   : array[1..128] of Byte;
+                bufcount  : integer;
+
+                ArraySize : longword;
+                ByteWriteCount : longword;
  end;
 
  //Action 0 = init ncounter/buffer,Action 1 = write byte to buffer, action 2= flush buffer
@@ -72,24 +78,24 @@ procedure ObjectBitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action 
 begin
    if action = 0 then
    begin
-       buffer.Count:=0;
+       buffer.bufCount:=0;
    end
    else if action = 1 then
    begin
-       inc(Buffer.count);
-       buffer.datalist[Buffer.count]:=inByte;
-       if Buffer.count = 128 then
+       inc(Buffer.bufcount);
+       buffer.buflist[Buffer.bufcount]:=inByte;
+       if Buffer.bufcount = 128 then
        begin
-           Blockwrite(buffer.f,Buffer.datalist,128);
-           Buffer.count:=0;
+           Blockwrite(buffer.f,Buffer.buflist,128);
+           Buffer.bufcount:=0;
        end;
    end
    else if action = 2 then
    begin
-       if Buffer.count > 0 then
+       if Buffer.bufcount > 0 then
        begin
-           Blockwrite(buffer.f,Buffer.datalist,buffer.count);
-           Buffer.count:=0;
+           Blockwrite(buffer.f,Buffer.buflist,buffer.bufcount);
+           Buffer.bufcount:=0;
        end;
    end;
 end;
@@ -101,37 +107,37 @@ var
 begin
    if action = 0 then
    begin
-       buffer.Count:=0;
+       buffer.bufCount:=0;
    end
    else if action = 1 then
    begin
-       inc(buffer.count);
-       buffer.datalist[buffer.count]:=inbyte;
-       if buffer.count = 10 then                      //every 10 bytes write to data statement
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 10 then                      //every 10 bytes write to data statement
        begin
            //write the data statement
            write(buffer.ftext,'DATA ');
            for i:=1 to 10 do
            begin
-             write(buffer.ftext,'&H',HexStr(buffer.datalist[i],2));
+             write(buffer.ftext,'&H',HexStr(buffer.buflist[i],2));
              if i < 10 then write(buffer.ftext,',');
            end;
            writeln(buffer.ftext);
-           buffer.count:=0;
+           buffer.bufcount:=0;
        end;
    end
    else if action = 2 then  //write the remaining data
    begin
-     if buffer.count > 0 then
+     if buffer.bufcount > 0 then
      begin
        write(buffer.ftext,'DATA ');
-       for i:=1 to buffer.count do
+       for i:=1 to buffer.bufcount do
        begin
-         write(buffer.ftext,'&H',HexStr(buffer.datalist[i],2));
-         if i < buffer.count then write(buffer.ftext,',');
+         write(buffer.ftext,'&H',HexStr(buffer.buflist[i],2));
+         if i < buffer.bufcount then write(buffer.ftext,',');
        end;
        writeln(buffer.ftext);
-       buffer.count:=0;
+       buffer.bufcount:=0;
      end;
    end;
 end;
@@ -142,37 +148,37 @@ var
 begin
    if action = 0 then
    begin
-       buffer.Count:=0;
+       buffer.bufCount:=0;
    end
    else if action = 1 then
    begin
-       inc(buffer.count);
-       buffer.datalist[buffer.count]:=inbyte;
-       if buffer.count = 20 then                      //every 10 bytes write to data statement
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 20 then                      //every 10 bytes write to data statement
        begin
            //write the data statement
            write(buffer.ftext,'DATA ');
            for i:=0 to 9 do
            begin
-             write(buffer.ftext,'&H',HexStr(buffer.datalist[i*2+1],2),HexStr(buffer.datalist[i*2+2],2));
+             write(buffer.ftext,'&H',HexStr(buffer.buflist[i*2+1],2),HexStr(buffer.buflist[i*2+2],2));
              if i < 9 then write(buffer.ftext,',');
            end;
            writeln(buffer.ftext);
-           buffer.count:=0;
+           buffer.bufcount:=0;
        end;
    end
    else if action = 2 then  //write the remaining data
    begin
-     if buffer.count > 0 then
+     if buffer.bufcount > 0 then
      begin
        write(buffer.ftext,'DATA ');
-       for i:=0 to ((buffer.count+1) div 2)-1 do
+       for i:=0 to ((buffer.bufcount+1) div 2)-1 do
        begin
-         write(buffer.ftext,'&H',HexStr(buffer.datalist[i*2+1],2),HexStr(buffer.datalist[i*2+2],2));
-         if i < (((buffer.count+1) div 2)-1) then write(buffer.ftext,',');
+         write(buffer.ftext,'&H',HexStr(buffer.buflist[i*2+1],2),HexStr(buffer.buflist[i*2+2],2));
+         if i < (((buffer.bufcount+1) div 2)-1) then write(buffer.ftext,',');
        end;
        writeln(buffer.ftext);
-       buffer.count:=0;
+       buffer.bufcount:=0;
      end;
    end;
 end;
@@ -204,21 +210,20 @@ Procedure CreateBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWriterProc
 var
  lineBuf :linebuftype;
  counter : integer;
- j,i       : integer;
- width,height : word;
+ j,i     : integer;
+ width   : word;
  pixcolor : integer;
  plane    : integer;
  bitposition: integer;
  minBytesPerLine    : integer;
  BitPlaneCount : integer;
- ColorCount    : integer;
  bwcount : integer;
 begin
- ColorCount:=GetMaxColor+1;
+ //ColorCount:=GetMaxColor+1;
  BitPlaneCount:=GetBitPlaneCount;
 
  width:=x2-x+1;
- Height:=y2-y+1;
+// Height:=y2-y+1;
  minBytesPerLine:=((width+15) div 16)*2;
 
  For plane:=1 to BitPlaneCount do
@@ -515,6 +520,254 @@ begin
  Close(data.ftext);
 {$I+}
  WriteAmigaBasicXGFData:=IORESULT;
+end;
+
+Procedure spTOmp(Var singlePlane : LineBufType ;
+                 var multiplane : LineBufType;
+                 PixelWidth,BytesPerPlane,nPlanes : Word);
+
+var
+ BitPlane1 : Word;
+ BitPlane2 : Word;
+ BitPlane3 : Word;
+ BitPlane4 : Word;
+ BitPlane5 : Word;
+ pixelpos  : Word;
+ color     : Word;
+ xoffset   : Word;
+ x,j       : Word;
+begin
+
+ Fillchar(multiplane,sizeof(multiplane),0);
+
+ BitPlane1:=0;
+ BitPlane2:=bytesPerPlane;
+ BitPlane3:=BytesPerPlane*2;
+ BitPlane4:=BytesPerPlane*3;
+ BitPlane5:=BytesPerPlane*4;  //32 colors
+ xoffset:=0;
+ pixelpos:=0;
+ for x:=0 to bytesPerPlane-1 do
+ begin
+   for j:=0 to 7 do
+   begin
+      color:=SinglePlane[xoffset+j];
+      if (nPlanes > 4) AND biton(4,color) then setbit((7-j),1,multiplane[BitPlane5+pixelpos]);
+      if (nPlanes > 3) AND biton(3,color) then setbit((7-j),1,multiplane[BitPlane4+pixelpos]);
+      if (nPlanes > 2) AND biton(2,color) then setbit((7-j),1,multiplane[BitPlane3+pixelpos]);
+      if (nPlanes > 1) AND biton(1,color) then setbit((7-j),1,multiplane[BitPlane2+pixelpos]);
+      if (nPlanes > 0) AND biton(0,color) then setbit((7-j),1,multiplane[BitPlane1+pixelpos]);
+    end;
+   inc(pixelpos);
+   inc(xoffset,8);
+ end;
+end;
+
+
+// for vsprite - the bitplanes alternate between Bitplate 1, Bitplane 2 for each line of bitmap
+Procedure CreateSpriteBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWriterProc; var data :BufferRec);
+var
+ lineBuf,spritebuf :linebuftype;
+
+// counter : integer;
+ j,i     : integer;
+ width   : word;
+// pixcolor : integer;
+// plane    : integer;
+// bitposition: integer;
+ minBytesPerLine    : integer;
+// BitPlaneCount : integer;
+ bwcount : integer;
+ xpos : integer;
+begin
+ //BitPlaneCount:=GetBitPlaneCount;
+
+ width:=x2-x+1;
+// Height:=y2-y+1;
+ minBytesPerLine:=((width+15) div 16)*2;
+
+   For j:=y to y2 do
+   begin
+  //   counter:=0;
+     fillchar(linebuf,sizeof(linebuf),0);
+
+     xpos:=0;
+     for i:=x to x2 do
+     begin
+        linebuf[xpos]:=RMCoreBase.GetPixel(i,j);
+        inc(xpos);
+     end;
+
+     spTOmp(LineBuf,spritebuf,width,minBytesPerLine,2);
+
+     for bwcount:=0 to minBytesPerLine*2-1 do  // 2 plitplanes for 4 color sprites
+     begin
+       BitPlaneWriter(Spritebuf[bwcount],data,1);  //based on the bitplane writer this will be saved as binary or outputed as text data statements
+     end;
+   end; // end j
+
+end;
+
+
+
+procedure SpriteBitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
+var
+ i : integer;
+begin
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+       buffer.arraysize:=0;
+       buffer.ByteWriteCount:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 8 then                      //every 8 bytes write to 2 const lines
+       begin
+         //write the const value
+         write(buffer.ftext,'  ','$',HexStr(buffer.buflist[1],2),HexStr(buffer.buflist[2],2),
+                            HexStr(buffer.buflist[3],2),HexStr(buffer.buflist[4],2));
+
+         writeln(buffer.ftext,',');
+
+         write(buffer.ftext,'  ','$',HexStr(buffer.buflist[5],2),HexStr(buffer.buflist[6],2),
+                            HexStr(buffer.buflist[7],2),HexStr(buffer.buflist[8],2));
+         inc(buffer.ByteWriteCount,8);
+         if buffer.ByteWriteCount < (buffer.ArraySize*4) then writeln(buffer.ftext,',');
+         //writeln(buffer.ftext);
+         buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then  //write the remaining data
+   begin
+       if buffer.bufcount = 8 then                  //check if there is another line of sprite data
+       begin
+         //write the const value
+         write(buffer.ftext,'  ','$',HexStr(buffer.buflist[1],2),HexStr(buffer.buflist[2],2),
+                            HexStr(buffer.buflist[3],2),HexStr(buffer.buflist[4],2));
+
+         writeln(buffer.ftext,',');
+
+         write(buffer.ftext,'  ','$',HexStr(buffer.buflist[5],2),HexStr(buffer.buflist[6],2),
+                            HexStr(buffer.buflist[7],2),HexStr(buffer.buflist[8],2));
+         inc(buffer.ByteWriteCount,8);
+       end;
+       writeln(buffer.ftext,');');
+       buffer.bufcount:=0;
+  end;
+end;
+
+
+procedure BitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
+var
+ i : integer;
+begin
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+       buffer.arraysize:=0;
+       buffer.ByteWriteCount:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 20 then                      //every 20 bytes write to const line
+       begin
+           //write the const value
+           write(buffer.ftext,'  ');
+
+           for i:=1 to 20 do
+           begin
+             write(buffer.ftext,'$',HexStr(buffer.buflist[i],2));
+             inc(buffer.ByteWriteCount);
+             if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+           end;
+           writeln(buffer.ftext);
+           buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then  //write the remaining data
+   begin
+       for i:=1 to buffer.bufcount do
+       begin
+         write(buffer.ftext,'$',HexStr(buffer.buflist[i],2));
+         inc(buffer.ByteWriteCount);
+         if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+       end;
+       write(buffer.ftext,');');
+       writeln(buffer.ftext);
+       buffer.bufcount:=0;
+  end;
+end;
+
+
+
+
+Function WriteAmigaPascalConst(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+var
+  Width,height : Word;
+  data :BufferRec;
+  BPCount : word;
+  size : longword;
+  Imagename : string;
+  BWriter : BitPlaneWriterProc;
+  j       : integer;
+begin
+ if SaveAsSprite then
+ begin
+     BWriter:=@SpriteBitplaneWriterConstStatements;
+  //   BWriter:=@BitplaneWriterConstStatements;
+
+ end
+ else
+ begin
+   BWriter:=@BitplaneWriterConstStatements;
+ end;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ BPCount:=GetBitPlaneCount;
+
+ BWriter(0,data,0);  //init the data record
+
+ Assign(data.ftext,filename);
+{$I-}
+ Rewrite(data.ftext);
+
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
+ Size:=(((width+15) div 16)*2)*height*BPCount;
+
+ if SaveAsSprite then Size:=Size div 4;
+ data.ArraySize:=Size;
+
+ writeln(data.ftext,'(* Amiga Pascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' *)');
+ if SaveAsSprite then
+ begin
+     writeln(data.ftext,'(* VSprite Bitmap *)');
+     writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of longint = (');
+     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
+
+     (*
+     for j:=y to y2 do
+     begin
+       CreateBitPlanes(x,j,x2,j,BWriter,data);
+     end;
+     *)
+ end
+ else
+ begin
+   writeln(data.ftext,'(* BOB Bitmap *)');
+   writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+   CreateBitPlanes(x,y,x2,y2,BWriter,data);
+ end;
+
+ BWriter(0,data,2);  //flush it
+ Close(data.ftext);
+{$I+}
+ WriteAmigaPascalConst:=IORESULT;
 end;
 
 
