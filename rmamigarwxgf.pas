@@ -11,11 +11,11 @@ Function WriteAmigaBasicXGF(x,y,x2,y2 : word;filename:string):word;
 Function WriteAmigaBasicXGFData(x,y,x2,y2 : word;filename:string):word;
 
 Function WriteAmigaPascalConst(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
-
+Function WriteAmigaCWORD(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 Implementation
 
 type
- linebuftype = array[0..1023] of byte;
+ linebuftype = array[0..2047] of byte;
 
 
  //Amiga Basic BitMap header for PUT / GET Image functions
@@ -714,7 +714,7 @@ var
   size : longword;
   Imagename : string;
   BWriter : BitPlaneWriterProc;
-  j       : integer;
+
 begin
  if SaveAsSprite then
  begin
@@ -770,6 +770,109 @@ begin
  WriteAmigaPascalConst:=IORESULT;
 end;
 
+(*
+WORD chip bob_data1[2 * 2 * GEL_SIZE] =
+   {
+   /* plane 1 */
+   0xffff, 0x0003, 0xfff0, 0x0003, 0xfff0, 0x0003, 0xffff, 0x0003,
+   /* plane 2 */
+   0x3fff, 0xfffc, 0x3ff0, 0x0ffc, 0x3ff0, 0x0ffc, 0x3fff, 0xfffc
+   };
+ *)
+
+procedure BitplaneWriterCWORDStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
+var
+ i : integer;
+begin
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+       buffer.arraysize:=0;
+       buffer.ByteWriteCount:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 16 then                      //every 16 bytes write to line
+       begin
+           //write the const value
+           write(buffer.ftext,'  ');
+           for i:=0 to 7 do
+           begin
+             write(buffer.ftext,'0x',LowerCase(HexStr(buffer.buflist[i*2+1],2)),LowerCase(HexStr(buffer.buflist[i*2+2],2)));
+             inc(buffer.ByteWriteCount);
+             if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+           end;
+           writeln(buffer.ftext);
+           buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then  //write the remaining data
+   begin
+      if buffer.bufcount > 0 then
+      begin
+        if odd(buffer.bufcount) then inc(buffer.bufcount); // should not be odd but if it is
+        for i:=0 to (buffer.bufcount div 2) do
+        begin
+          write(buffer.ftext,'0x',LowerCase(HexStr(buffer.buflist[i*2+1],2)),LowerCase(HexStr(buffer.buflist[i*2+2],2)));
+          inc(buffer.ByteWriteCount);
+          if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+        end;
+      end;
+      writeln(buffer.ftext,'};');
+      buffer.bufcount:=0;
+   end;
+
+end;
+
+
+
+Function WriteAmigaCWORD(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+var
+  Width,height : Word;
+  data :BufferRec;
+  BPCount : word;
+  size : longword;
+  Imagename : string;
+  BWriter : BitPlaneWriterProc;
+
+begin
+ BWriter:=@BitplaneWriterCWORDStatements;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ BPCount:=GetBitPlaneCount;
+
+ BWriter(0,data,0);  //init the data record
+
+ Assign(data.ftext,filename);
+{$I-}
+ Rewrite(data.ftext);
+
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
+ Size:=((((width+15) div 16)*2)*height*BPCount) div 2;
+ data.ArraySize:=Size;
+
+ writeln(data.ftext,'/* Amiga C , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' */');
+ if SaveAsSprite then
+ begin
+     writeln(data.ftext,'/* VSprite Bitmap */');
+     writeln(data.ftext,' ','WORD chip ',Imagename, '[',size,']  = {');
+     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
+ end
+ else
+ begin
+   writeln(data.ftext,'/* BOB Bitmap */');
+   writeln(data.ftext,' ','WORD chip ',Imagename, '[',size,']  = {');
+   CreateBitPlanes(x,y,x2,y2,BWriter,data);
+ end;
+
+ BWriter(0,data,2);  //flush it
+ Close(data.ftext);
+{$I+}
+ WriteAmigaCWORD:=IORESULT;
+end;
 
 
 

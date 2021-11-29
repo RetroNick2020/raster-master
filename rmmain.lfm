@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
-  Left = 175
+  Left = 86
   Height = 820
-  Top = 119
+  Top = 143
   Width = 1640
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 795
+  ClientWidth = 1640
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -394,11 +394,20 @@ object RMMainForm: TRMMainForm
           Caption = 'Amiga Pascal'
           object PascalBOBBitmapConst: TMenuItem
             Caption = 'BOB Bitmap Const'
-            OnClick = AmigaPascalClisk
           end
           object PascalVSpriteBitmapConst: TMenuItem
             Caption = 'VSprite Bitmap Const'
-            OnClick = AmigaPascalClisk
+          end
+        end
+        object MenuItem3: TMenuItem
+          Caption = 'Amiga C'
+          object CBOBBitmapArray: TMenuItem
+            Caption = 'Bob Bitmap Array'
+            OnClick = AmigaCClick
+          end
+          object CVSpriteBitmapArray: TMenuItem
+            Caption = 'VSprite Bitmap Array'
+            OnClick = AmigaCClick
           end
         end
         object TurboPowerBasicData: TMenuItem

@@ -40,6 +40,9 @@ type
     EditClear: TMenuItem;
     JavaScriptArray: TMenuItem;
     MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    CBOBBitmapArray: TMenuItem;
+    CVSpriteBitmapArray: TMenuItem;
     PascalBOBBitmapConst: TMenuItem;
     PascalVSpriteBitmapConst: TMenuItem;
     TransparentImage: TMenuItem;
@@ -142,7 +145,8 @@ type
     TrackBar1: TTrackBar;
     VirtScroll: TScrollBar;
     procedure AmigaBasicClick(Sender: TObject);
-    procedure AmigaPascalClisk(Sender: TObject);
+    procedure AmigaCClick(Sender: TObject);
+    procedure AmigaPascalClick(Sender: TObject);
 //    procedure ColorBox1Change(Sender: TObject);
     procedure ColorBoxMouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
@@ -2384,7 +2388,56 @@ begin
    end;
 end;
 
-procedure TRMMainForm.AmigaPascalClisk(Sender: TObject);
+procedure TRMMainForm.AmigaCClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+// sourcemode : word;
+// ext : string;
+ error : word;
+ validpm : boolean;
+ VSprite : boolean;
+ spritewidth   : integer;
+begin
+   GetOpenSaveRegion(x,y,x2,y2);
+   spritewidth:=x2-x+1;
+
+   VSprite:=false;
+   if (Sender As TMenuItem).Name = 'CVSpriteBitmapArray' then
+   begin
+     VSprite:=true;
+   end;
+
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
+   if validpm = false then
+   begin
+      ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
+      exit;
+   end;
+
+   if (vsprite=true) and (spritewidth<>16) and (pm<>PaletteModeAmiga4) then
+   begin
+      ShowMessage('Sprite Width should be 16 pixels with Palette of 4 Colors');
+      exit;
+   end;
+
+   ExportDialog.Filter := 'Amiga C Array|*.c';
+   if ExportDialog.Execute then
+   begin
+//      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
+
+      error:=WriteAmigaCWORD(x,y,x2,y2,ExportDialog.FileName,VSprite);
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+
+end;
+
+procedure TRMMainForm.AmigaPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
  pm : integer;
