@@ -39,10 +39,16 @@ type
     EditResizeTo64: TMenuItem;
     EditClear: TMenuItem;
     JavaScriptArray: TMenuItem;
+    ACVSpriteColorArray: TMenuItem;
+    ACPaletteArray: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     CBOBBitmapArray: TMenuItem;
     CVSpriteBitmapArray: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    APVSpriteColorArray: TMenuItem;
+    APPaletteArray: TMenuItem;
     PascalBOBBitmapConst: TMenuItem;
     PascalVSpriteBitmapConst: TMenuItem;
     TransparentImage: TMenuItem;
@@ -146,7 +152,11 @@ type
     VirtScroll: TScrollBar;
     procedure AmigaBasicClick(Sender: TObject);
     procedure AmigaCClick(Sender: TObject);
+    procedure AmigaCPaletteClick(Sender: TObject);
     procedure AmigaPascalClick(Sender: TObject);
+    procedure AmigaPascalPaletteClick(Sender: TObject);
+
+
 //    procedure ColorBox1Change(Sender: TObject);
     procedure ColorBoxMouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
@@ -2437,6 +2447,29 @@ begin
 
 end;
 
+procedure TRMMainForm.AmigaCPaletteClick(Sender: TObject);
+var
+  error : word;
+begin
+   ExportDialog.Filter := 'Amiga C|*.c';
+   if ExportDialog.Execute then
+   begin
+     if (Sender As TMenuItem).Name = 'ACVSpriteColorArray' then
+     begin
+      error:=WriteVSpritePalArray(ExportDialog.FileName,ACLan);
+     end
+     else
+     begin
+      error:=WritePalConstants(ExportDialog.FileName,ACLan,ColorFourBitFormat);
+     end;
+     if error<>0 then
+     begin
+      ShowMessage('Error Saving file!');
+      exit;
+     end;
+   end;
+end;
+
 procedure TRMMainForm.AmigaPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -2485,6 +2518,34 @@ begin
    end;
 
 end;
+
+procedure TRMMainForm.AmigaPascalPaletteClick(Sender: TObject);
+var
+  error : word;
+begin
+   ExportDialog.Filter := 'Amiga Pascal|*.pas';
+   if ExportDialog.Execute then
+   begin
+     if (Sender As TMenuItem).Name = 'APVSpriteColorArray' then
+     begin
+      error:=WriteVSpritePalArray(ExportDialog.FileName,APLan);
+     end
+     else
+     begin
+      error:=WritePalConstants(ExportDialog.FileName,APLan,ColorFourBitFormat);
+     end;
+
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+     end;
+
+end;
+
+
+
 
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var

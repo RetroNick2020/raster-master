@@ -19,6 +19,7 @@ Function WritePAL(Filename : String) : Word;
 function WritePalData(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalConstants(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalStatements(filename : string; Lan,rgbFormat : integer) : word;
+function WriteVSpritePalArray(filename : string; Lan : integer) : word;
 
 implementation
 
@@ -58,6 +59,8 @@ function LanToStr(Lan: integer) : string;
 begin
   LanToStr:='';
   Case Lan of ABLan:LanToStr:='AmigaBASIC';
+              APLan:LanToStr:='Amiga Pascal';
+              ACLan:LanToStr:='Amiga C';
               PBLan:LanToStr:='TurboBASIC';
               TPLan:LanToStr:='Turbo Pascal';
               TCLan:LanToStr:='Turbo C';
@@ -96,23 +99,24 @@ end;
 function LineTrmToStr(Lan : integer) : string;
 begin
  LineTrmToStr:='';
- Case Lan of TPLan,TCLan,QCLan,FPLan:LineTrmToStr:=');';
+ Case Lan of TPLan,FPLan,APLan:LineTrmToStr:=');';
+             TCLan,QCLan,ACLan:LineTrmToStr:='};';
  end;
 end;
 
 function CommentBeginToStr(Lan : integer) : string;
 begin
  CommentBeginToStr:=#39;
- Case Lan of TPLan,FPLan:CommentBeginToStr:='(*';
-             TCLan,QCLan:CommentBeginToStr:='/*';
+ Case Lan of TPLan,FPLan,APLan:CommentBeginToStr:='(*';
+             TCLan,QCLan,ACLan:CommentBeginToStr:='/*';
  end;
 end;
 
 function CommentEndToStr(Lan : integer) : string;
 begin
  CommentEndToStr:='';
- Case Lan of TPLan,FPLan:CommentEndToStr:='*)';
-             TCLan,QCLan:CommentEndToStr:='*/';
+ Case Lan of TPLan,FPLan,APLan:CommentEndToStr:='*)';
+             TCLan,QCLan,ACLan:CommentEndToStr:='*/';
  end;
 end;
 
@@ -133,13 +137,12 @@ end;
 // write basic data statements just for basic compilers
 function WritePalData(filename : string; Lan,rgbFormat : integer) : word;
 var
- Error : word;
  NColors : integer;
  BFormat : string;
  F : Text;
  i : integer;
  r,g,b   : integer;
- cistr,rstr,gstr,bstr,pstr : string;
+ cistr,rstr,gstr,bstr : string;
  LineCounter : integer;
 begin
 {$I-}
@@ -148,7 +151,7 @@ begin
   LineCounter:=1000;
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
-  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Data, ',NColors,' Colors, Format=',BFormat);
+  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',NColors,' Colors, Format=',BFormat);
   For i:=0 to NColors-1 do
   begin
     r:=RMCoreBase.Palette.GetRed(i);
@@ -177,13 +180,12 @@ end;
 //for C/pascal languages
 function WritePalConstants(filename : string; Lan,rgbFormat : integer) : word;
 var
- Error : word;
  NColors : integer;
  BFormat : string;
  F : Text;
  i : integer;
  r,g,b   : integer;
- cistr,rstr,gstr,bstr,pstr : string;
+ cistr,rstr,gstr,bstr : string;
  palettenamestr : string;
  arraysize      : integer;
 begin
@@ -193,7 +195,7 @@ begin
 
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
-  WriteLn(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Data, ',NColors,' Colors, Format=',BFormat,' ',CommentEndToStr(Lan));
+  WriteLn(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',NColors,' Colors, Format=',BFormat,' ',CommentEndToStr(Lan));
 
   palettenamestr:=filenametoPalettename(filename);
   if rgbformat =ColorIndexFormat then
@@ -204,15 +206,18 @@ begin
   begin
     arraysize:=Ncolors*3-1;
   end;
-  If (Lan = TPlan) OR (Lan =FPLan)  then
+  If (Lan = TPlan) OR (Lan =FPLan) OR (Lan = APLan) then
   begin
-   Write(F,palettenamestr, ' : Array[0..',arraysize,'] of Byte = (');
+   Writeln(F,palettenamestr, ' : Array[0..',arraysize,'] of Byte = (');
   end
-  Else if (Lan = QCLan) or (Lan = TCLan) then
+  Else if (Lan = QCLan) or (Lan = TCLan)  then
   begin
-    Write(F,'char ',palettenamestr,'[',arraysize,'] = {');
+    Writeln(F,'char ',palettenamestr,'[',arraysize,'] = {');
+  end
+  Else if (Lan=ACLan) then
+  begin
+    Writeln(F,'UBYTE ',palettenamestr,'[',arraysize,'] = {');
   end;
-
 
   For i:=0 to NColors-1 do
   begin
@@ -228,20 +233,18 @@ begin
     end
     else
     begin
-//      WriteLn(F);
       rstr:=ColorValueToStr(r,rgbFormat);
       gstr:=ColorValueToStr(g,rgbFormat);
       bstr:=ColorValueToStr(b,rgbFormat);
-      Write(F,rstr,', ',gstr,', ',bstr);
+      Write(F,'  ',rstr,', ',gstr,', ',bstr);
       if (i<>NColors-1) then           //if its the last color we don't write a comma at end of line
       begin
          Write(F,',');
          Writeln(F);
-         Write(F,PadRight(' ',35));
       end;
     end;
   end;
-  writeln(F,');');
+  writeln(F,LineTrmToStr(Lan));
   Close(F);
   WritePalConstants:=IORESULT;
 {$I+}
@@ -254,7 +257,6 @@ end;
 // palette command statement all languages
 function WritePalStatements(filename : string; Lan,rgbFormat : integer) : word;
 var
- Error : word;
  NColors : integer;
  BFormat : string;
  F : Text;
@@ -400,6 +402,45 @@ begin
 
 end;
 end;
+
+
+function WriteVSpritePalArray(filename : string; Lan : integer) : word;
+var
+ Error : word;
+ F : Text;
+ palettenamestr : string;
+ TR1,TR2,TR3 : TRMColorRec;
+ color1,color2,color3 : word;
+begin
+{$I-}
+  Assign(F,filename);
+  Rewrite(F);
+
+  palettenamestr:=filenametoPalettename(filename);
+  RMCoreBase.Palette.GetColor(1,TR1);
+  RMCoreBase.Palette.GetColor(2,TR2);
+  RMCoreBase.Palette.GetColor(3,TR3);
+  Color1:=(EightToFourBit(TR1.r) SHL 8) + (EightToFourBit(TR1.g) SHL 4) + EightToFourBit(TR1.b);
+  Color2:=(EightToFourBit(TR2.r) SHL 8) + (EightToFourBit(TR2.g) SHL 4) + EightToFourBit(TR2.b);
+  Color3:=(EightToFourBit(TR3.r) SHL 8) + (EightToFourBit(TR3.g) SHL 4) + EightToFourBit(TR3.b);
+
+  If Lan = APlan then
+  begin
+    writeln(F,'(* VSprite Colors *)');
+    Writeln(F,'  ',palettenamestr, ' : Array[1..3] of WORD = ($',HexStr(Color1,4),',$',HexStr(Color2,4),',$',HexStr(Color3,4),');');
+  end
+  Else if Lan = ACLan then
+  begin
+    writeln(F,'/* VSprite Colors */');
+    Writeln(F,'  WORD ',palettenamestr,'[3] = {0x',LowerCase(HexStr(Color1,4)),',0x',lowerCase(HexStr(Color2,4)),',0x',LowerCase(HexStr(Color3,4)),'};');
+  end;
+
+  Close(F);
+  WriteVSpritePalArray:=IORESULT;
+{$I+}
+end;
+
+
 
 begin
 end.

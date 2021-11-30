@@ -569,26 +569,18 @@ Procedure CreateSpriteBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWrit
 var
  lineBuf,spritebuf :linebuftype;
 
-// counter : integer;
  j,i     : integer;
  width   : word;
-// pixcolor : integer;
-// plane    : integer;
-// bitposition: integer;
  minBytesPerLine    : integer;
-// BitPlaneCount : integer;
  bwcount : integer;
  xpos : integer;
 begin
- //BitPlaneCount:=GetBitPlaneCount;
 
  width:=x2-x+1;
-// Height:=y2-y+1;
  minBytesPerLine:=((width+15) div 16)*2;
 
    For j:=y to y2 do
    begin
-  //   counter:=0;
      fillchar(linebuf,sizeof(linebuf),0);
 
      xpos:=0;

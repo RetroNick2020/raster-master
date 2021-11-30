@@ -4,8 +4,8 @@ object RMMainForm: TRMMainForm
   Top = 143
   Width = 1640
   Caption = 'Raster Master'
-  ClientHeight = 795
-  ClientWidth = 1640
+  ClientHeight = 0
+  ClientWidth = 0
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -509,6 +509,28 @@ object RMMainForm: TRMMainForm
         object PaletteExportAmigaBasic: TMenuItem
           Caption = 'AmigaBasic DATA\Palette Commands'
           OnClick = PaletteExportAmigaBasicClick
+        end
+        object MenuItem5: TMenuItem
+          Caption = 'Amiga Pascal'
+          object APVSpriteColorArray: TMenuItem
+            Caption = 'VSprite Color Array'
+            OnClick = AmigaPascalPaletteClick
+          end
+          object APPaletteArray: TMenuItem
+            Caption = 'Palette Array'
+            OnClick = AmigaPascalPaletteClick
+          end
+        end
+        object MenuItem6: TMenuItem
+          Caption = 'Amiga C'
+          object ACVSpriteColorArray: TMenuItem
+            Caption = 'VSprite Color Array'
+            OnClick = AmigaCPaletteClick
+          end
+          object ACPaletteArray: TMenuItem
+            Caption = 'Palettte Array'
+            OnClick = AmigaCPaletteClick
+          end
         end
         object PaletteExportGWBasic: TMenuItem
           Caption = 'GWBASIC DATA\Palette Commands'

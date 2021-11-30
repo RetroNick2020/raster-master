@@ -15,6 +15,9 @@ Const
    FPLan   = 7;
    FBLan   = 8;
    ABLan   = 9; //AmigaBasic
+   APLan   = 10;
+   ACLan   = 11;
+
 
    Binary2   = 1;
    Binary4   = 2;
