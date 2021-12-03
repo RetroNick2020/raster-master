@@ -1,9 +1,9 @@
 {$mode TP}
 {$PACKRECORDS 1}
 
-Unit WPRF;
+Unit wprf;
  Interface
-      uses RMCore,RWXGF;
+      uses rmcore,rwxgf;
  Function WritePPR(x,y,x2,y2 : word; filename : string) : word;
  Function WriteSPR(x,y,x2,y2 : word; filename : string) : word;
 
