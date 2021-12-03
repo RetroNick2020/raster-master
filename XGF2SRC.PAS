@@ -1,8 +1,9 @@
 {$mode TP}
 {$PACKRECORDS 1}
-Unit XGF2SRC;
+Unit xgf2src;
 Interface
-      uses SysUtils,FileUtil,RWXGF;
+      uses SysUtils,FileUtil,rwxgf;
+
 Function XgfToSrc(XgfFile,SrcFile:string;myWidth,myHeight,nColors,myformat,myComp:Word):word;
 Procedure FilenameToImageName(Var filename,Imagename : string);
 
