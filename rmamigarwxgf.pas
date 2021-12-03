@@ -847,16 +847,17 @@ begin
  data.ArraySize:=Size;
 
  writeln(data.ftext,'/* Amiga C , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' */');
+ writeln(data.ftext,'/* rename __chip to chip if using SAS compiler. remove __chip if compiler does not support it */');
  if SaveAsSprite then
  begin
      writeln(data.ftext,'/* VSprite Bitmap */');
-     writeln(data.ftext,' ','WORD chip ',Imagename, '[',size,']  = {');
+     writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
      CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
  end
  else
  begin
    writeln(data.ftext,'/* BOB Bitmap */');
-   writeln(data.ftext,' ','WORD chip ',Imagename, '[',size,']  = {');
+   writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
    CreateBitPlanes(x,y,x2,y2,BWriter,data);
  end;
 

@@ -19,8 +19,7 @@ Function WritePAL(Filename : String) : Word;
 function WritePalData(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalConstants(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalStatements(filename : string; Lan,rgbFormat : integer) : word;
-function WriteVSpritePalArray(filename : string; Lan : integer) : word;
-
+function WriteRGBPackedPalArray(filename : string; Lan : integer; vsprite : boolean) : word;
 implementation
 
 type
@@ -404,39 +403,58 @@ end;
 end;
 
 
-function WriteVSpritePalArray(filename : string; Lan : integer) : word;
+function WriteRGBPackedPalArray(filename : string; Lan : integer; vsprite : boolean) : word;
 var
  Error : word;
  F : Text;
  palettenamestr : string;
- TR1,TR2,TR3 : TRMColorRec;
- color1,color2,color3 : word;
+ TR : TRMColorRec;
+ color : word;
+ startcol,endcol : word;
+ arsize : word;
+ i : word;
 begin
 {$I-}
   Assign(F,filename);
   Rewrite(F);
 
   palettenamestr:=filenametoPalettename(filename);
-  RMCoreBase.Palette.GetColor(1,TR1);
-  RMCoreBase.Palette.GetColor(2,TR2);
-  RMCoreBase.Palette.GetColor(3,TR3);
-  Color1:=(EightToFourBit(TR1.r) SHL 8) + (EightToFourBit(TR1.g) SHL 4) + EightToFourBit(TR1.b);
-  Color2:=(EightToFourBit(TR2.r) SHL 8) + (EightToFourBit(TR2.g) SHL 4) + EightToFourBit(TR2.b);
-  Color3:=(EightToFourBit(TR3.r) SHL 8) + (EightToFourBit(TR3.g) SHL 4) + EightToFourBit(TR3.b);
+
+  startcol:=0;
+  endcol:=GetMaxColor;
+  arsize:=endcol+1;
+  if vsprite then
+  begin
+    startcol:=1;
+    endcol:=3;
+    arsize:=3;
+  end;
 
   If Lan = APlan then
   begin
-    writeln(F,'(* VSprite Colors *)');
-    Writeln(F,'  ',palettenamestr, ' : Array[1..3] of WORD = ($',HexStr(Color1,4),',$',HexStr(Color2,4),',$',HexStr(Color3,4),');');
+    if vsprite then writeln(F,'(* VSprite Colors *)') else writeln(F,'(* LoadRGB4 Colors *)');
+    Writeln(F,'  ',palettenamestr, ' : Array[1..',arsize,'] of WORD = (');
   end
   Else if Lan = ACLan then
   begin
-    writeln(F,'/* VSprite Colors */');
-    Writeln(F,'  WORD ',palettenamestr,'[3] = {0x',LowerCase(HexStr(Color1,4)),',0x',lowerCase(HexStr(Color2,4)),',0x',LowerCase(HexStr(Color3,4)),'};');
+    if vsprite then writeln(F,'/* VSprite Colors */') else writeln(F,'/* LoadRGB4 Colors */');
+    Writeln(F,'  WORD ',palettenamestr,'[',arsize,'] = {');
   end;
 
+  for i:=startcol to endcol do
+  begin
+    RMCoreBase.Palette.GetColor(i,TR);
+    Color:=(EightToFourBit(TR.r) SHL 8) + (EightToFourBit(TR.g) SHL 4) + EightToFourBit(TR.b);
+
+    if  Lan=APLan then Write(F,'   $',HexStr(Color,4));
+    if  Lan=ACLAN then Write(F,'   0x',LowerCase(HexStr(Color,4)));
+    if i <> endcol then writeln(F,',')
+  end;
+  if Lan=APLan then writeln(F,');');
+  if Lan=ACLan then writeln(F,'};');
+
   Close(F);
-  WriteVSpritePalArray:=IORESULT;
+  WriteRGBPackedPalArray:=IORESULT;
 {$I+}
 end;
 

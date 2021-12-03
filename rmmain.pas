@@ -49,8 +49,18 @@ type
     MenuItem6: TMenuItem;
     APVSpriteColorArray: TMenuItem;
     APPaletteArray: TMenuItem;
-    PascalBOBBitmapConst: TMenuItem;
-    PascalVSpriteBitmapConst: TMenuItem;
+    APRGB4PaletteArray: TMenuItem;
+    ACRGB4PaletteArray: TMenuItem;
+    ABPutData: TMenuItem;
+    ABBobData: TMenuItem;
+    ABVSpriteData: TMenuItem;
+    ABPutFile: TMenuItem;
+    ABBobFile: TMenuItem;
+    ABVSpriteFile: TMenuItem;
+    ABPaletteData: TMenuItem;
+    ABPaletteCommands: TMenuItem;
+    PascalBOBBitmapArray: TMenuItem;
+    PascalVSpriteBitmapArray: TMenuItem;
     TransparentImage: TMenuItem;
     NonTransparentImage: TMenuItem;
     SaveDelete: TMenuItem;
@@ -2007,23 +2017,20 @@ end;
 procedure TRMMainForm.javaScriptArrayClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
- ext : string;
  error : word;
  transparent : boolean;
  begin
+   ExportDialog.Filter := 'JavaScript Transparent Image Array|*.js';
    transparent:=true;
    if (Sender As TMenuItem).Name = 'NonTransparentImage' then
    begin
-     transparent:=false;
+      transparent:=false;
+      ExportDialog.Filter := 'JavaScript Non Transparent Array|*.js';
    end;
 
-   ExportDialog.Filter := 'JavaScript Array|*.jsa';
    GetOpenSaveRegion(x,y,x2,y2);
    if ExportDialog.Execute then
    begin
-      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       error:=WriteJavaScriptArray(x,y,x2,y2,ExportDialog.FileName,transparent);
       if (error<>0) then
       begin
@@ -2342,15 +2349,12 @@ procedure TRMMainForm.AmigaBasicClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
  pm : integer;
-// sourcemode : word;
  ext : string;
  error : word;
  validpm : boolean;
 begin
- //       sourcemode:=Source32;   //PaletteModeAmiga32
-//   pm:=GetPaletteMode;
+
    pm:=RMCoreBase.Palette.GetPaletteMode;
-//   ShowMessage(intToStr(pm));
    validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
    if validpm = false then
    begin
@@ -2358,38 +2362,27 @@ begin
       exit;
    end;
 
-   ExportDialog.Filter := 'AmigaBASIC PUT DATA|*.dat|XGF Binary|*.xgf|Bob Binary|*.obj|VSprite Binary|*.vsp|AmigaBASIC Bob DATA|*.da1|AmigaBASIC VSprite DATA|*.da2';
+
+   Case (Sender As TMenuItem).Name of 'ABPutData' :ExportDialog.Filter := 'AmigaBASIC PUT DATA|*.bas';
+                                      'ABBobData' : ExportDialog.Filter := 'AmigaBASIC Bob Data|*.bas';
+                                      'ABVSpriteData' : ExportDialog.Filter := 'AmigaBASIC VSprite Data|*.bas';
+                                      'ABPutFile' : ExportDialog.Filter := 'AmigaBASIC Put File|*.xgf';
+                                      'ABBobFile' : ExportDialog.Filter := 'AmigaBASIC Bob File|*.obj';
+                                      'ABVSpriteFile' : ExportDialog.Filter := 'AmigaBASIC VSprite File|*.vsp';
+   End;
    GetOpenSaveRegion(x,y,x2,y2);
    if ExportDialog.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
 
-      if ext='.DAT' then
-      begin
-       // error:=WriteDat(x,y,x2,y2,SourceMode,ABLan,ExportDialog.FileName);
-       error:=WriteAmigaBasicXGFData(x,y,x2,y2,ExportDialog.FileName);
-      end
-      else if ext='.XGF' then
-      begin
-       // error:=WriteXGF(x,y,x2,y2,ABLan,ExportDialog.FileName);
-        error:=WriteAmigaBasicXGF(x,y,x2,y2,ExportDialog.FileName);
-      end
-      else if ext='.OBJ' then
-      begin
-        error:=WriteAmigaBasicObject(x,y,x2,y2,ExportDialog.FileName,false);
-      end
-      else if ext='.VSP' then
-      begin
-        error:=WriteAmigaBasicObject(x,y,x2,y2,ExportDialog.FileName,true);
-      end
-      else if ext='.DA1' then
-      begin
-        error:=WriteAmigaBasicObjectData(x,y,x2,y2,ExportDialog.FileName,false);
-      end
-      else if ext='.DA2' then
-      begin
-        error:=WriteAmigaBasicObjectData(x,y,x2,y2,ExportDialog.FileName,true);
-      end;
+      Case (Sender As TMenuItem).Name of 'ABPutData' : error:=WriteAmigaBasicXGFData(x,y,x2,y2,ExportDialog.FileName);
+                                         'ABBobData' : error:=WriteAmigaBasicObjectData(x,y,x2,y2,ExportDialog.FileName,false);
+                                         'ABVSpriteData' : error:=WriteAmigaBasicObjectData(x,y,x2,y2,ExportDialog.FileName,true);
+                                         'ABPutFile' :  error:=WriteAmigaBasicXGF(x,y,x2,y2,ExportDialog.FileName);
+                                         'ABBobFile' : error:=WriteAmigaBasicObject(x,y,x2,y2,ExportDialog.FileName,false);
+                                         'ABVSpriteFile' :  error:=WriteAmigaBasicObject(x,y,x2,y2,ExportDialog.FileName,true);
+      End;
+
       if error<>0 then
       begin
         ShowMessage('Error Saving file!');
@@ -2411,11 +2404,13 @@ var
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    spritewidth:=x2-x+1;
-
+   ExportDialog.Filter := 'Amiga C Bob Bitmap Array|*.c';
    VSprite:=false;
+
    if (Sender As TMenuItem).Name = 'CVSpriteBitmapArray' then
    begin
      VSprite:=true;
+     ExportDialog.Filter := 'Amiga C VSprite Bitmap Array|*.c';
    end;
 
    pm:=RMCoreBase.Palette.GetPaletteMode;
@@ -2432,11 +2427,8 @@ begin
       exit;
    end;
 
-   ExportDialog.Filter := 'Amiga C Array|*.c';
    if ExportDialog.Execute then
    begin
-//      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
-
       error:=WriteAmigaCWORD(x,y,x2,y2,ExportDialog.FileName,VSprite);
       if error<>0 then
       begin
@@ -2444,7 +2436,6 @@ begin
         exit;
       end;
    end;
-
 end;
 
 procedure TRMMainForm.AmigaCPaletteClick(Sender: TObject);
@@ -2456,7 +2447,11 @@ begin
    begin
      if (Sender As TMenuItem).Name = 'ACVSpriteColorArray' then
      begin
-      error:=WriteVSpritePalArray(ExportDialog.FileName,ACLan);
+      error:=WriteRGBPackedPalArray(ExportDialog.FileName,ACLan,true);
+     end
+     else if (Sender As TMenuItem).Name = 'ACRGB4PaletteArray' then
+     begin
+      error:=WriteRGBPackedPalArray(ExportDialog.FileName,ACLan,false);
      end
      else
      begin
@@ -2484,10 +2479,12 @@ begin
    GetOpenSaveRegion(x,y,x2,y2);
    spritewidth:=x2-x+1;
 
+   ExportDialog.Filter := 'Amiga Pascal Bob Bitmap Array|*.pas';
    VSprite:=false;
-   if (Sender As TMenuItem).Name = 'PascalVSpriteBitmapConst' then
+   if (Sender As TMenuItem).Name = 'PascalVSpriteBitmapArray' then
    begin
      VSprite:=true;
+     ExportDialog.Filter := 'Amiga Pascal VSprite Bitmap Array|*.pas';
    end;
 
    pm:=RMCoreBase.Palette.GetPaletteMode;
@@ -2504,11 +2501,8 @@ begin
       exit;
    end;
 
-   ExportDialog.Filter := 'Amiga Pascal Const|*.con';
    if ExportDialog.Execute then
    begin
-//      ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
-
       error:=WriteAmigaPascalConst(x,y,x2,y2,ExportDialog.FileName,VSprite);
       if error<>0 then
       begin
@@ -2528,13 +2522,16 @@ begin
    begin
      if (Sender As TMenuItem).Name = 'APVSpriteColorArray' then
      begin
-      error:=WriteVSpritePalArray(ExportDialog.FileName,APLan);
+      error:=WriteRGBPackedPalArray(ExportDialog.FileName,APLan,true);
+     end
+     else if (Sender As TMenuItem).Name = 'APRGB4PaletteArray' then
+     begin
+      error:=WriteRGBPackedPalArray(ExportDialog.FileName,APLan,false);
      end
      else
      begin
       error:=WritePalConstants(ExportDialog.FileName,APLan,ColorFourBitFormat);
      end;
-
       if error<>0 then
       begin
         ShowMessage('Error Saving file!');
@@ -2588,19 +2585,17 @@ var
  ext : string;
  error : word;
 begin
-   ExportDialog.Filter := 'AmigaBasic DATA|*.dat|AmigaBasic Palette Commands|*.bas' ;
-   if ExportDialog.Execute then
+   Case (Sender As TMenuItem).Name of 'ABPaletteData' : ExportDialog.Filter := 'AmigaBasic Palette Data|*.bas';
+                                      'ABPaletteCommands' : ExportDialog.Filter :='AmigaBasic Palette Commands|*.bas';
+   end;
+
+ if ExportDialog.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(ExportDialog.Filename));
       ColorFormat:=ColorOnePercentFormat;
+      Case (Sender As TMenuItem).Name of 'ABPaletteData'  : error:=WritePalData(ExportDialog.FileName,ABLan,ColorFormat);
+                                      'ABPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,ABLan,ColorFormat);
 
-      if ext='.DAT' then
-      begin
-         error:=WritePalData(ExportDialog.FileName,ABLan,ColorFormat);
-      end
-      else if ext='.BAS' then
-      begin
-        error:=WritePalStatements(ExportDialog.FileName,ABLan,ColorFormat);
       end;
 
       if error<>0 then

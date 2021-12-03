@@ -372,13 +372,13 @@ object RMMainForm: TRMMainForm
       object MenuItem9: TMenuItem
         Caption = 'Export'
         object JavaScriptArray: TMenuItem
-          Caption = 'JavaScript Array'
+          Caption = 'JavaScript'
           object TransparentImage: TMenuItem
-            Caption = 'Transparent Image'
+            Caption = 'Transparent Image Array'
             OnClick = javaScriptArrayClick
           end
           object NonTransparentImage: TMenuItem
-            Caption = 'Non Transparent Image'
+            Caption = 'Non Transparent Image Array'
             OnClick = javaScriptArrayClick
           end
         end
@@ -387,16 +387,41 @@ object RMMainForm: TRMMainForm
           OnClick = QBasicDataClick
         end
         object AmigaBasic: TMenuItem
-          Caption = 'AmigaBasic DATA'
-          OnClick = AmigaBasicClick
+          Caption = 'AmigaBasic'
+          object ABPutData: TMenuItem
+            Caption = 'Put Data Statements'
+            OnClick = AmigaBasicClick
+          end
+          object ABBobData: TMenuItem
+            Caption = 'Bob Data Statements'
+            OnClick = AmigaBasicClick
+          end
+          object ABVSpriteData: TMenuItem
+            Caption = 'VSprite Data Statements'
+            OnClick = AmigaBasicClick
+          end
+          object ABPutFile: TMenuItem
+            Caption = 'Put File'
+            OnClick = AmigaBasicClick
+          end
+          object ABBobFile: TMenuItem
+            Caption = 'Bob File'
+            OnClick = AmigaBasicClick
+          end
+          object ABVSpriteFile: TMenuItem
+            Caption = 'VSprite File'
+            OnClick = AmigaBasicClick
+          end
         end
         object MenuItem2: TMenuItem
           Caption = 'Amiga Pascal'
-          object PascalBOBBitmapConst: TMenuItem
-            Caption = 'BOB Bitmap Const'
+          object PascalBOBBitmapArray: TMenuItem
+            Caption = 'BOB Bitmap Array'
+            OnClick = AmigaPascalClick
           end
-          object PascalVSpriteBitmapConst: TMenuItem
-            Caption = 'VSprite Bitmap Const'
+          object PascalVSpriteBitmapArray: TMenuItem
+            Caption = 'VSprite Bitmap Array'
+            OnClick = AmigaPascalClick
           end
         end
         object MenuItem3: TMenuItem
@@ -507,8 +532,15 @@ object RMMainForm: TRMMainForm
           OnClick = PaletteExportQBasicClick
         end
         object PaletteExportAmigaBasic: TMenuItem
-          Caption = 'AmigaBasic DATA\Palette Commands'
-          OnClick = PaletteExportAmigaBasicClick
+          Caption = 'AmigaBasic'
+          object ABPaletteData: TMenuItem
+            Caption = 'Palette Data Statements'
+            OnClick = PaletteExportAmigaBasicClick
+          end
+          object ABPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportAmigaBasicClick
+          end
         end
         object MenuItem5: TMenuItem
           Caption = 'Amiga Pascal'
@@ -520,6 +552,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Palette Array'
             OnClick = AmigaPascalPaletteClick
           end
+          object APRGB4PaletteArray: TMenuItem
+            Caption = 'RGB4 Palette Array'
+            OnClick = AmigaPascalPaletteClick
+          end
         end
         object MenuItem6: TMenuItem
           Caption = 'Amiga C'
@@ -529,6 +565,10 @@ object RMMainForm: TRMMainForm
           end
           object ACPaletteArray: TMenuItem
             Caption = 'Palettte Array'
+            OnClick = AmigaCPaletteClick
+          end
+          object ACRGB4PaletteArray: TMenuItem
+            Caption = 'RGB4 Palette Array'
             OnClick = AmigaCPaletteClick
           end
         end
