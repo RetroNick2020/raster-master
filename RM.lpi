@@ -132,8 +132,9 @@
     </RequiredPackages>
     <Units Count="12">
       <Unit0>
-        <Filename Value="RM.lpr"/>
+        <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="RM"/>
       </Unit0>
       <Unit1>
         <Filename Value="rmmain.pas"/>
@@ -141,17 +142,14 @@
         <ComponentName Value="RMMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="RMMain"/>
       </Unit1>
       <Unit2>
         <Filename Value="rmcore.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RMCore"/>
       </Unit2>
       <Unit3>
         <Filename Value="rmtools.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RMTools"/>
       </Unit3>
       <Unit4>
         <Filename Value="rmcolor.pas"/>

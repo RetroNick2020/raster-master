@@ -1,4 +1,4 @@
-unit RMamigacolor;
+unit rmamigacolor;
 
 {$mode objfpc}{$H+}
 
@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  StdCtrls, ColorPalette,RMCore;
+  StdCtrls, colorpalette,rmcore;
 
 type
 

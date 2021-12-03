@@ -1,7 +1,7 @@
-Unit RMThumb;
+Unit rmthumb;
 
 Interface
-  uses RMCore,graphics,controls,types;
+  uses rmcore,graphics,controls,types;
 type
  ImageThumbRec = Record
              Pixel : array of array of integer;

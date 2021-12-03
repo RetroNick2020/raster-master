@@ -1,10 +1,10 @@
-unit RMTools;
+unit rmtools;
 
 {$mode objfpc}{$H+}
 
 interface
 uses
-  Classes, SysUtils,Graphics,Clipbrd,LCLIntf,LCLType,ColorPalette,RMCore,math;
+  Classes, SysUtils,Graphics,Clipbrd,LCLIntf,LCLType,colorpalette,rmcore,math;
 
 const
   CellWidthBorderRemove  =2;

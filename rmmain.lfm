@@ -1,8 +1,8 @@
 object RMMainForm: TRMMainForm
-  Left = 86
-  Height = 820
-  Top = 143
-  Width = 1640
+  Left = -9
+  Height = 1051
+  Top = -9
+  Width = 1920
   Caption = 'Raster Master'
   ClientHeight = 0
   ClientWidth = 0
@@ -652,7 +652,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolLineMenuClick
       end
       object ToolRectangleMenu: TMenuItem
-        Caption = 'Rectanle'
+        Caption = 'Rectangle'
         OnClick = ToolRectangleMenuClick
       end
       object ToolFRectangleMenu: TMenuItem

@@ -1,9 +1,9 @@
 {$mode TP}
 {$PACKRECORDS 1}
 
-Unit RWXgf;
+Unit rwxgf;
  Interface
-   uses RMCore,Bits;
+   uses rmcore,bits;
 
 Const
    TPLan   = 1;

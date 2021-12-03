@@ -1,4 +1,4 @@
-unit RMMain;
+unit rmmain;
 
 {$mode objfpc}{$H+}
 
@@ -7,8 +7,8 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
-  LResources,lclintf, RMTools, RMCore,RMColor,RMColorVGA,RMAmigaColor,
-  rmabout,RWPAL,RWRAW,RWPCX,RWBMP,RWXGF,WCON,flood,RMAmigaRWXGF,wjavascriptarray,RMThumb;
+  LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
+  rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb;
 
 
 type

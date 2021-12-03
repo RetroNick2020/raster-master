@@ -1,9 +1,9 @@
 {$mode objfpc}{$H+}
 {$PACKRECORDS 1}
 
-Unit RMAmigaRWXGF;
+Unit rmamigarwxgf;
  Interface
-   uses RMCore,RWXGF,SysUtils,LazFileUtils,Bits;
+   uses rmcore,rwxgf,SysUtils,LazFileUtils,bits;
 
 Function WriteAmigaBasicObject(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 Function WriteAmigaBasicObjectData(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
@@ -603,8 +603,6 @@ end;
 
 
 procedure SpriteBitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
-var
- i : integer;
 begin
    if action = 0 then
    begin

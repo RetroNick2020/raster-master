@@ -1,4 +1,4 @@
-unit RMCore;
+unit rmcore;
 
 {$mode objfpc}{$H+}
 

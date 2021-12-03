@@ -3,7 +3,7 @@
 
 Unit wjavascriptarray;
  Interface
-   uses RMCore,SysUtils,FileUtil,Bits;
+   uses SysUtils,FileUtil,rmcore,bits;
 
 Function WriteJavaScriptArray(x,y,x2,y2 : word;filename:string; transparent : boolean):word;
 Implementation

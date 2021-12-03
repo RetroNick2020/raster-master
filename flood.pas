@@ -1,10 +1,10 @@
-unit Flood;
+unit flood;
 {$mode objfpc}{$H+}
 //{$mode TP}
 
 interface
  uses
-  Classes, SysUtils,RMCore;
+  Classes, SysUtils,rmcore;
 
 Procedure Fill(xx,yy,NColor: Word);
 implementation
