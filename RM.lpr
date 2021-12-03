@@ -1,4 +1,4 @@
-program RM;
+program rm;
 
 {$mode objfpc}{$H+}
 
@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lazcolorpalette, RMMain, rmcore, rmtools, RMColor, RMColorVga, rmabout,
+  Forms, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor, rmcolorvga, rmabout,
   rmamigacolor, rwraw, rwpal, rmamigarwxgf
      { you can add units after this };
 
