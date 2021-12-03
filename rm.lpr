@@ -1,4 +1,4 @@
-program RM;
+program rm;
 
 {$mode objfpc}{$H+}
 
