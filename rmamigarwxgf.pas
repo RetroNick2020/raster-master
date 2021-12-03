@@ -183,14 +183,11 @@ begin
    end;
 end;
 
-
  //we emulator graph's getmaxcolor way of counting colors
 function GetMaxColor : integer;
 begin
   GetMaxColor:=RMCoreBase.Palette.GetColorCount-1;
 end;
-
-
 
 function GetBitPlaneCount : integer;
 var
@@ -522,8 +519,8 @@ begin
  WriteAmigaBasicXGFData:=IORESULT;
 end;
 
-Procedure spTOmp(Var singlePlane : LineBufType ;
-                 var multiplane : LineBufType;
+Procedure spTOmp(var singlePlane : LineBufType ;
+                 var multiplane  : LineBufType;
                  PixelWidth,BytesPerPlane,nPlanes : Word);
 
 var
@@ -537,7 +534,6 @@ var
  xoffset   : Word;
  x,j       : Word;
 begin
-
  Fillchar(multiplane,sizeof(multiplane),0);
 
  BitPlane1:=0;
@@ -568,7 +564,6 @@ end;
 Procedure CreateSpriteBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWriterProc; var data :BufferRec);
 var
  lineBuf,spritebuf :linebuftype;
-
  j,i     : integer;
  width   : word;
  minBytesPerLine    : integer;

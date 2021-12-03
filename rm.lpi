@@ -134,7 +134,6 @@
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RM"/>
       </Unit0>
       <Unit1>
         <Filename Value="rmmain.pas"/>

@@ -52,129 +52,12 @@ Function WriteXgf(x,y,x2,y2,LanType : word;filename:string):word;
 Implementation
 
 type
- linebuftype = array[0..1023] of byte;
+ linebuftype = array[0..2047] of byte;
 
 function GetMaxColor : integer;
 begin
   GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
 end;
-
-//this is no longer needed - RMAmigaRWXGF replaces this routine and adds more features
-Function _WriteXgfAmigaBasic(x,y,x2,y2 : word;filename:string):word;
-type
- //free takes a Word
- XGFHeadAB = Record
-              Width,Height : word;
-              BitPlanes    : word;
- end;
- linebufAB = array[0..1023] of Byte;
-var
- Header : XGFHeadAB;
- lineBuf:linebufAB;
- counter : integer;
- F         : File;
- Error     : Word;
- j,i       : integer;
- width,height : word;
- pixcolor : integer;
- plane    : integer;
- bitposition: integer;
- minBytesPerLine    : integer;
- BitPlaneCount : integer;
- ColorCount    : integer;
-begin
- ColorCount:=GetMaxColor+1;
- BitPlaneCount:=0;
- Case ColorCount of 2:BitplaneCount:=1;
-                    4:BitPlaneCount:=2;
-                    8:BitPlaneCount:=3;
-                    16:BitPlaneCount:=4;
-                    32:BitPlaneCount:=5;
-
- end;
-
- width:=x2-x+1;
- Height:=y2-y+1;
- Header.Width:=width SHL 8;
- Header.Height:=height SHL 8;
- Header.BitPlanes:=BitPlaneCount SHL 8;
-
- minBytesPerLine:=((width+15) div 16)*2;
-{$I+}
- Assign(F,filename);
- Rewrite(F,1);
- Blockwrite(F,Header,sizeof(Header));
-
- Error:=IOResult;
- if Error <> 0 then
- begin
-   close(F);
-   _WriteXgfAmigaBasic:=Error;
-   exit;
- end;
-
-
- For plane:=1 to BitPlaneCount do
- begin
-   For j:=y to y2 do
-   begin
-     counter:=0;
-     fillchar(linebuf,sizeof(linebuf),0);
-     bitposition:=0;
-     for i:=x to x2 do
-     begin
-        pixcolor:=RMCoreBase.GetPixel(i,j);
-        inc(bitposition);
-        if (pixcolor = 1) and (plane=1) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 2) and (plane=2) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 3) and ((plane=1) or (plane=2)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 4) and (plane=3) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 5) and ((plane=1) or (plane=3)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 6) and ((plane=2) or (plane=3)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 7) and ((plane=1) or (plane=2) or (plane=3))then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 8) and (plane=4) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 9) and ((plane=1) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 10) and ((plane=2) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 11) and ((plane=1) or (plane=2) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 12) and ((plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 13) and ((plane=1) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 14) and ((plane=2) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 15) and ((plane=1) or (plane=2) or (plane=3) or (plane=4)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 16) and (plane=5) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 17) and ((plane=1) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 18) and ((plane=2) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 19) and ((plane=1) or (plane=2) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 20) and ((plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 21) and ((plane=1) or (plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 22) and ((plane=2) or (plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 23) and ((plane=1) or (plane=2) or (plane=3) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 24) and ((plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 25) and ((plane=1) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 26) and ((plane=2) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 27) and ((plane=1) or (plane=2) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 28) and ((plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 29) and ((plane=1) or (plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 30) and ((plane=2) or (plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-        if (pixcolor = 31) and ((plane=1) or (plane=2) or (plane=3) or (plane=4) or (plane=5)) then setbit(8-bitposition,1,linebuf[counter]);
-
-        if bitposition=8 then
-        begin
-          bitposition:=0;
-          inc(counter);
-        end;
-     end;  //end i
-     blockwrite(F,linebuf,minBytesPerLine);
-   end; // end j
- end;  // end plane
- Close(F);
- _WriteXgfAmigaBasic:=IOResult;
-{$I+}
-end;
-
-
-
-
-
 
 Function WriteXgfFP(x,y,x2,y2 : word;filename:string):word;
 type
@@ -537,6 +420,45 @@ begin
 {$I+}
 end;
 
+Procedure spTOmp(var singlePlane : LineBufType ;
+                 var multiplane  : LineBufType;
+                 PixelWidth,BytesPerPlane,nPlanes : Word);
+
+var
+ BitPlane1 : Word;
+ BitPlane2 : Word;
+ BitPlane3 : Word;
+ BitPlane4 : Word;
+ BitPlane5 : Word;
+ pixelpos  : Word;
+ color     : Word;
+ xoffset   : Word;
+ x,j       : Word;
+begin
+ Fillchar(multiplane,sizeof(multiplane),0);
+
+ BitPlane1:=0;
+ BitPlane2:=bytesPerPlane;
+ BitPlane3:=BytesPerPlane*2;
+ BitPlane4:=BytesPerPlane*3;
+ BitPlane5:=BytesPerPlane*4;  //32 colors
+ xoffset:=0;
+ pixelpos:=0;
+ for x:=0 to bytesPerPlane-1 do
+ begin
+   for j:=0 to 7 do
+   begin
+      color:=SinglePlane[xoffset+j];
+      if (nPlanes > 4) AND biton(4,color) then setbit((7-j),1,multiplane[BitPlane5+pixelpos]);
+      if (nPlanes > 3) AND biton(3,color) then setbit((7-j),1,multiplane[BitPlane4+pixelpos]);
+      if (nPlanes > 2) AND biton(2,color) then setbit((7-j),1,multiplane[BitPlane3+pixelpos]);
+      if (nPlanes > 1) AND biton(1,color) then setbit((7-j),1,multiplane[BitPlane2+pixelpos]);
+      if (nPlanes > 0) AND biton(0,color) then setbit((7-j),1,multiplane[BitPlane1+pixelpos]);
+    end;
+   inc(pixelpos);
+   inc(xoffset,8);
+ end;
+end;
 
 
 
