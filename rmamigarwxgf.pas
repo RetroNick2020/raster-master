@@ -796,7 +796,7 @@ begin
              inc(buffer.ByteWriteCount);
              if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
            end;
-           writeln(buffer.ftext);
+           if buffer.ByteWriteCount < buffer.ArraySize then writeln(buffer.ftext);
            buffer.bufcount:=0;
        end;
    end
@@ -804,8 +804,9 @@ begin
    begin
       if buffer.bufcount > 0 then
       begin
-        if odd(buffer.bufcount) then inc(buffer.bufcount); // should not be odd but if it is
-        for i:=0 to (buffer.bufcount div 2) do
+        //if odd(buffer.bufcount) then inc(buffer.bufcount); // should not be odd but if it is
+        write(buffer.ftext,'  ');
+        for i:=0 to (buffer.bufcount div 2)-1 do
         begin
           write(buffer.ftext,'0x',LowerCase(HexStr(buffer.buflist[i*2+1],2)),LowerCase(HexStr(buffer.buflist[i*2+2],2)));
           inc(buffer.ByteWriteCount);
