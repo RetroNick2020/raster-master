@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = -9
+  Left = -61
   Height = 1051
-  Top = -9
+  Top = 46
   Width = 1920
   Caption = 'Raster Master'
   ClientHeight = 0
@@ -371,21 +371,6 @@ object RMMainForm: TRMMainForm
       end
       object MenuItem9: TMenuItem
         Caption = 'Export'
-        object JavaScriptArray: TMenuItem
-          Caption = 'JavaScript'
-          object TransparentImage: TMenuItem
-            Caption = 'Transparent Image Array'
-            OnClick = javaScriptArrayClick
-          end
-          object NonTransparentImage: TMenuItem
-            Caption = 'Non Transparent Image Array'
-            OnClick = javaScriptArrayClick
-          end
-        end
-        object QBasicData: TMenuItem
-          Caption = 'QuickBasic\QB64 DATA'
-          OnClick = QBasicDataClick
-        end
         object AmigaBasic: TMenuItem
           Caption = 'AmigaBasic'
           object ABPutData: TMenuItem
@@ -413,18 +398,7 @@ object RMMainForm: TRMMainForm
             OnClick = AmigaBasicClick
           end
         end
-        object MenuItem2: TMenuItem
-          Caption = 'Amiga Pascal'
-          object PascalBOBBitmapArray: TMenuItem
-            Caption = 'BOB Bitmap Array'
-            OnClick = AmigaPascalClick
-          end
-          object PascalVSpriteBitmapArray: TMenuItem
-            Caption = 'VSprite Bitmap Array'
-            OnClick = AmigaPascalClick
-          end
-        end
-        object MenuItem3: TMenuItem
+        object AmigaC: TMenuItem
           Caption = 'Amiga C'
           object CBOBBitmapArray: TMenuItem
             Caption = 'Bob Bitmap Array'
@@ -435,33 +409,115 @@ object RMMainForm: TRMMainForm
             OnClick = AmigaCClick
           end
         end
-        object TurboPowerBasicData: TMenuItem
-          Caption = 'Turbo/Power Basic DATA'
-          OnClick = TurboPowerBasicDataClick
+        object AmigaPascal: TMenuItem
+          Caption = 'Amiga Pascal'
+          object PascalBOBBitmapArray: TMenuItem
+            Caption = 'BOB Bitmap Array'
+            OnClick = AmigaPascalClick
+          end
+          object PascalVSpriteBitmapArray: TMenuItem
+            Caption = 'VSprite Bitmap Array'
+            OnClick = AmigaPascalClick
+          end
+        end
+        object FreeBASIC: TMenuItem
+          Caption = 'FreeBASIC'
+          object FBPutData: TMenuItem
+            Caption = 'Put Data Statements'
+            OnClick = FreeBASICClick
+          end
+          object FBPutFile: TMenuItem
+            Caption = 'Put File'
+            OnClick = FreeBASICClick
+          end
+        end
+        object FreePascal: TMenuItem
+          Caption = 'FreePascal'
+          object FPPutImageArray: TMenuItem
+            Caption = 'PutImage Array'
+            OnClick = FreePascalClick
+          end
+          object FPPutImageFile: TMenuItem
+            Caption = 'PutImage File'
+            OnClick = FreePascalClick
+          end
         end
         object GWBASIC: TMenuItem
-          Caption = 'GWBASIC DATA'
-          OnClick = GWBASICClick
+          Caption = 'GWBASIC'
+          object GWPutData: TMenuItem
+            Caption = 'Put Data Statements'
+            OnClick = GWBASICClick
+          end
+          object GWPutFile: TMenuItem
+            Caption = 'Put File'
+            OnClick = GWBASICClick
+          end
         end
-        object FreeBASICDATA: TMenuItem
-          Caption = 'FreeBASIC DATA'
-          OnClick = FreeBASICDATAClick
+        object JavaScript: TMenuItem
+          Caption = 'JavaScript'
+          object TransparentImage: TMenuItem
+            Caption = 'Transparent Image Array'
+            OnClick = javaScriptArrayClick
+          end
+          object NonTransparentImage: TMenuItem
+            Caption = 'Non Transparent Image Array'
+            OnClick = javaScriptArrayClick
+          end
         end
-        object TurboPascalConst: TMenuItem
-          Caption = 'Turbo Pascal Const'
-          OnClick = TurboPascalConstClick
+        object QuickBasic: TMenuItem
+          Caption = 'QuickBasic\QB64'
+          object QBPutData: TMenuItem
+            Caption = 'Put Data Statements'
+            OnClick = QBasicDataClick
+          end
+          object QBPutFile: TMenuItem
+            Caption = 'Put File'
+            OnClick = QBasicDataClick
+          end
         end
-        object FreePascalConst: TMenuItem
-          Caption = 'FreePascal Const'
-          OnClick = FreePascalConstClick
+        object QuickC: TMenuItem
+          Caption = 'Quick C'
+          object QCPutImageArray: TMenuItem
+            Caption = '_putimage array'
+            OnClick = QuickCClick
+          end
+          object QCPutImageFile: TMenuItem
+            Caption = '_putimage File'
+            OnClick = QuickCClick
+          end
         end
-        object TurboCChar: TMenuItem
-          Caption = 'Turbo C Char'
-          OnClick = TurboCCharClick
+        object TurboBasic: TMenuItem
+          Caption = 'Turbo/Power Basic'
+          object TBPutData: TMenuItem
+            Caption = 'Put Data Statements'
+            OnClick = TurboPowerBasicClick
+          end
+          object TBPutFile: TMenuItem
+            Caption = 'Put File'
+            OnClick = TurboPowerBasicClick
+          end
         end
-        object QuickCChar: TMenuItem
-          Caption = 'Quick C Char'
-          OnClick = QuickCCharClick
+        object TurboPascal: TMenuItem
+          Caption = 'Turbo Pascal'
+          object TPPutImageArray: TMenuItem
+            Caption = 'PutImage Array'
+            OnClick = TurboPascalClick
+          end
+          object TPPutImageFile: TMenuItem
+            Caption = 'PutImage File'
+            OnClick = TurboPascalClick
+          end
+        end
+        object TurboC: TMenuItem
+          Caption = 'Turbo C'
+          object TCPutImageArray: TMenuItem
+            Caption = 'putimage Array'
+            OnClick = TurboCClick
+          end
+          object TCPutImageFile: TMenuItem
+            Caption = 'putimage File'
+            OnClick = TurboCClick
+          end
         end
       end
       object MenuItem11: TMenuItem
@@ -527,10 +583,6 @@ object RMMainForm: TRMMainForm
       end
       object PaletteExport: TMenuItem
         Caption = 'Export'
-        object PaletteExportQBasic: TMenuItem
-          Caption = 'QuickBasic\QB64 DATA\Palette Commands'
-          OnClick = PaletteExportQBasicClick
-        end
         object PaletteExportAmigaBasic: TMenuItem
           Caption = 'AmigaBasic'
           object ABPaletteData: TMenuItem
@@ -540,21 +592,6 @@ object RMMainForm: TRMMainForm
           object ABPaletteCommands: TMenuItem
             Caption = 'Palette Commands'
             OnClick = PaletteExportAmigaBasicClick
-          end
-        end
-        object MenuItem5: TMenuItem
-          Caption = 'Amiga Pascal'
-          object APVSpriteColorArray: TMenuItem
-            Caption = 'VSprite Color Array'
-            OnClick = AmigaPascalPaletteClick
-          end
-          object APPaletteArray: TMenuItem
-            Caption = 'Palette Array'
-            OnClick = AmigaPascalPaletteClick
-          end
-          object APRGB4PaletteArray: TMenuItem
-            Caption = 'RGB4 Palette Array'
-            OnClick = AmigaPascalPaletteClick
           end
         end
         object MenuItem6: TMenuItem
@@ -572,21 +609,75 @@ object RMMainForm: TRMMainForm
             OnClick = AmigaCPaletteClick
           end
         end
+        object MenuItem5: TMenuItem
+          Caption = 'Amiga Pascal'
+          object APVSpriteColorArray: TMenuItem
+            Caption = 'VSprite Color Array'
+            OnClick = AmigaPascalPaletteClick
+          end
+          object APPaletteArray: TMenuItem
+            Caption = 'Palette Array'
+            OnClick = AmigaPascalPaletteClick
+          end
+          object APRGB4PaletteArray: TMenuItem
+            Caption = 'RGB4 Palette Array'
+            OnClick = AmigaPascalPaletteClick
+          end
+        end
         object PaletteExportGWBasic: TMenuItem
-          Caption = 'GWBASIC DATA\Palette Commands'
-          OnClick = PaletteExportGWBasicClick
+          Caption = 'GWBASIC'
+          object GWPaletteData: TMenuItem
+            Caption = 'Palette Data Statements'
+            OnClick = PaletteExportGWBasicClick
+          end
+          object GWPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportGWBasicClick
+          end
         end
-        object PaletteExportTurboPascal: TMenuItem
-          Caption = 'Turbo Pascal Const\Palette Commands'
-          OnClick = PaletteExportTurboPascalClick
-        end
-        object PaletteExportTurboC: TMenuItem
-          Caption = 'Turbo C CHA\Palette Commands'
-          OnClick = PaletteExportTurboCClick
+        object PaletteExportQBasic: TMenuItem
+          Caption = 'QuickBasic\QB64'
+          object QBPaletteData: TMenuItem
+            Caption = 'Palette Data Statements'
+            OnClick = PaletteExportQBasicClick
+          end
+          object QBPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportQBasicClick
+          end
         end
         object PaletteExportQuickC: TMenuItem
-          Caption = 'Quick C CHA\Palette Commands'
-          OnClick = PaletteExportQuickCClick
+          Caption = 'Quick C'
+          object QCPaletteArray: TMenuItem
+            Caption = 'Palettte Array'
+            OnClick = PaletteExportQuickCClick
+          end
+          object QCPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportQuickCClick
+          end
+        end
+        object PaletteExportTurboC: TMenuItem
+          Caption = 'Turbo C'
+          object TCPaletteArray: TMenuItem
+            Caption = 'Palettte Array'
+            OnClick = PaletteExportTurboCClick
+          end
+          object TCPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportTurboCClick
+          end
+        end
+        object PaletteExportTurboPascal: TMenuItem
+          Caption = 'Turbo Pascal'
+          object TPPaletteArray: TMenuItem
+            Caption = 'Palettte Array'
+            OnClick = PaletteExportTurboPascalClick
+          end
+          object TPPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportTurboPascalClick
+          end
         end
       end
       object EditColor: TMenuItem

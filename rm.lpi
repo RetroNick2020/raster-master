@@ -164,12 +164,10 @@
         <ComponentName Value="RMVgaColorDialog"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="RMColorVga"/>
       </Unit5>
       <Unit6>
         <Filename Value="flood.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Flood"/>
       </Unit6>
       <Unit7>
         <Filename Value="rmabout.pas"/>
@@ -184,7 +182,6 @@
         <ComponentName Value="RMAmigaColorDialog"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="RMamigacolor"/>
       </Unit8>
       <Unit9>
         <Filename Value="rwraw.pas"/>

@@ -15,6 +15,7 @@ uses
 
 begin
   RequireDerivedFormResource:=True;
+  Application.Title:='RM';
   Application.Initialize;
   Application.CreateForm(TRMMainForm, RMMainForm);
   Application.CreateForm(TRMEGAColorDialog, RMEGAColorDialog);
