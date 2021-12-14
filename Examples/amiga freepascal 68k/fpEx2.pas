@@ -1,6 +1,6 @@
 (* Ex2.pas Raster Master DrawImage demo for freepascal/Amiga 68k *)
 
-Program fpEx2;
+Program fpex2;
   uses agraphics,intuition,exec,AmigaDos;
 
 Const
