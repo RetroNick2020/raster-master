@@ -1,14 +1,38 @@
-(* Ex3.pas Bob Demo for Hisoft High Speed Pascal *)
+(* Ex4.pas Raster Master Bob and VSprite demo for Hisoft High Speed Pascal *)
 
-Program Ex3;
+Program Ex4;
   uses graphics,intuition,exec;
 
 Const
-  WTitle : string = 'RM Bob Demo - Use the arrow keys to move the Bob!'#0; 
-  STitle : string = 'Bob'#0; 
+  WTitle : string = 'RM Bob and VSprite Demo - Use the arrow keys to move the shapes!'#0; 
+  STitle : string = 'Bob and VSprite!'#0; 
 	
   GRev = 33; (* graphics.library *)
   IRev = 33; (* Intuition.library *)
+
+(* VSprite Colors *)
+  vspal :  Array[1..3] of WORD = (
+   $05F9,
+   $0C0C,
+   $0980);
+   
+  vsimg : array[0..15] of longint = (
+  $00800140,
+  $00800140,
+  $00800140,
+  $00800140,
+  $00800140,
+  $00800140,
+  $00800140,
+  $00800140,
+  $00800140,
+  $00800140,
+  $06B00770,
+  $06B00770,
+  $0EB80F78,
+  $1EBC1F7C,
+  $1EBC1F7C,
+  $1EBC1F7C);
 
 (* Amiga Pascal, Size= 256 Width= 32 Height= 32 Colors= 4 *)
 (* BOB Bitmap *)
@@ -36,12 +60,13 @@ var
   my_class   : long;
 
   bob_on : boolean;
+  vsprite_on : Boolean;
   close_me   : Boolean;
   x,y        : integer;
   x_direction : integer;
   y_direction : integer;
 
-  head,tail,my_vsprite : tVSprite;
+  head,tail,my_vsprite,my_vsprite2 : tVSprite;
   my_bob : tBob;        
   ginfo : tGelsInfo;
   nextline : array[0..7] of integer;
@@ -69,12 +94,20 @@ var
 begin
   (* Remove the Bob *)
   if (bob_on) then RemBob(@my_bob);
+
+  (* Remove the VSprite *)
+  if (vsprite_on) then RemVSprite(@my_vsprite2);
+
   (* Free the Allocated Memory *)
   if my_vsprite.ImageData<>NIL then FreeMem(my_vsprite.ImageData,sizeof(img)); 
-  if my_vsprite.BorderLine<>NIL then FreeMem(my_vsprite.BorderLine,4);
+  if my_vsprite.BorderLine<>NIL then FreeMem(my_vsprite.Borderline,4);
   if my_vsprite.CollMask<>NIL then FreeMem(my_vsprite.CollMask,4*32);
   if my_bob.SaveBuffer <>NIL then  FreeMem(my_bob.SaveBuffer,sizeof(img));
- 
+  
+  if my_vsprite2.ImageData<>NIL then FreeMem(my_vsprite2.ImageData,sizeof(vsImg)); 
+  if my_vsprite2.BorderLine<>NIL then FreeMem(my_vsprite2.BorderLine,2);
+  if my_vsprite2.CollMask<>NIL then FreeMem(my_vsprite2.CollMask,2*16);
+
   (* close window and screen *) 
   if my_window <> NIL then CloseWindow(my_window);
   if my_screen <> NIL then  error :=CloseScreen(my_screen);
@@ -84,6 +117,8 @@ end;
 
 begin
   InitLibs;
+  bob_on :=FALSE;
+  vsprite_on:=FALSE;
 
   WITH my_new_screen DO
   begin
@@ -178,8 +213,28 @@ begin
   (*  Add the Bob to the Bob list: *)
   
   AddBob(@my_bob, my_window^.RPort );
-
   bob_on :=TRUE;
+
+  my_vsprite2.Flags := VSPRITE;
+  my_vsprite2.X := x+40;
+  my_vsprite2.Y := y;
+  my_vsprite2.Height :=16;
+  my_vsprite2.Width := 1;
+  my_vsprite2.Depth := 2;
+
+  my_vsprite2.ImageData := AllocMem(sizeof(vsimg),MEMF_CHIP); 
+  CopyMem(@vsimg, my_vsprite2.ImageData, sizeof(vsimg));
+  
+  my_vsprite2.BorderLine := AllocMem(2,MEMF_CHIP); 
+  my_vsprite2.CollMask := AllocMem(2*16,MEMF_CHIP); 
+
+  my_vsprite2.SprColors := @vspal;
+  
+  InitMasks(@my_vsprite2);
+  AddVSprite(@my_vsprite2,my_window^.RPort );
+  
+  vsprite_on := TRUE;
+  
   close_me   := FALSE;
   
   while(close_me = FALSE) do
@@ -223,11 +278,19 @@ begin
     my_vsprite.X := x;
     my_vsprite.Y := y;
 
+    my_vsprite2.X := x+50;
+    my_vsprite2.Y := y;
+
     (* Sort the Gels list: *)
     SortGList( my_window^.RPort );
 
     (* Draw the Gels list: *)
     DrawGList( my_window^.RPort, @my_screen^.ViewPort );
+    
+    (* Set the Copper and redraw the display: *)
+    r:=MakeScreen(my_screen);
+    r:=RethinkDisplay;
+    
     (* Try commenting this command out to see if it makes a difference *)
     WaitTOF;
    end;
