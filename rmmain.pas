@@ -1836,6 +1836,7 @@ var
  error : word;
  begin
    GetOpenSaveRegion(x,y,x2,y2);
+   ExportDialog.FileName:='';
    Case (Sender As TMenuItem).Name of 'QBPutData' :ExportDialog.Filter := 'QuickBasic\QB64 Put Data Statements|*.bas';
                                       'QBPutFile' : ExportDialog.Filter := 'QuickBasic\QB64 Put File|*.xgf';
    End;
@@ -2473,7 +2474,7 @@ begin
 
    if ExportDialog.Execute then
    begin
-      error:=WriteAmigaPascalConst(x,y,x2,y2,ExportDialog.FileName,VSprite);
+      error:=WriteAmigaPascalWord(x,y,x2,y2,ExportDialog.FileName,VSprite);
       if error<>0 then
       begin
         ShowMessage('Error Saving file!');
