@@ -1,7 +1,7 @@
 Unit rmthumb;
 
 Interface
-  uses rmcore,graphics,controls,types;
+  uses rmcore,rmtools,graphics,controls,types;
 type
  ImageThumbRec = Record
              Pixel : array of array of integer;
@@ -17,6 +17,10 @@ type
                         Width       : Integer;
                         Height      : Integer;
                         CurColor    : Integer;
+                        DrawTool    : integer;
+                        ClipArea    : TClipAreaRec;
+                        GridArea    : TGridAreaRec;
+                        ScrollPos   : TScrollPosRec;
                       end;
 
 TImageThumb = Class
@@ -174,6 +178,12 @@ begin
   ImageProps[index].PaletteMode:=RMCoreBase.Palette.GetPaletteMode;
   ImageProps[index].ColorCount:= RMCoreBase.Palette.GetColorCount;
   ImageProps[index].CurColor:=RMCoreBase.GetCurColor;
+
+  ImageProps[index].DrawTool:=RMDrawTools.GetDrawTool;
+  RMDrawTools.GetClipAreaCoords(ImageProps[index].ClipArea);
+  RMDrawTools.GetGridArea(ImageProps[index].GridArea);
+  RMDrawTools.GetScrollPos(ImageProps[index].ScrollPos);
+
 end;
 
 procedure TImageThumb.CopyIndexImageToCore(index : integer);
@@ -199,6 +209,12 @@ begin
   RMCoreBase.Palette.SetPaletteMode(ImageProps[index].PaletteMode);
   RMCoreBase.Palette.SetColorCount(ImageProps[index].ColorCount);
   RMCoreBase.SetCurColor(ImageProps[index].CurColor);
+
+  RMDrawTools.SetDrawTool(ImageProps[index].DrawTool);
+  RMDrawTools.SetClipAreaCoords(ImageProps[index].ClipArea);
+  RMDrawTools.SetGridArea(ImageProps[index].GridArea);
+  RMDrawTools.SetScrollPos(ImageProps[index].ScrollPos);
+
 end;
 
 

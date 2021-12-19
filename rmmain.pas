@@ -192,8 +192,6 @@ type
     procedure AmigaPascalClick(Sender: TObject);
     procedure AmigaPascalPaletteClick(Sender: TObject);
 
-
-//    procedure ColorBox1Change(Sender: TObject);
     procedure ColorBoxMouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
@@ -291,9 +289,13 @@ type
 
 
        procedure UpdateZoomArea;
-        procedure UpdateActualArea;
+       procedure UpdateZoomScroller;
+       procedure UpdateActualArea;
        procedure LoadDefaultPalette;
        procedure UpdatePalette;
+       procedure UpdatePaletteMenu;
+       procedure UpdateToolFlipScrollMenu;
+
        procedure UpdateColorBox;
        procedure UpdateInfoBarXY;
        procedure UpdateInfoBarDetail;
@@ -315,6 +317,9 @@ type
        procedure EditColors;
        procedure Clear;
        procedure InitThumbView;
+       Procedure CopyScrollPositionToCore;
+       Procedure CopyScrollPositionFromCore;
+
   public
 
   end;
@@ -1066,6 +1071,11 @@ begin
 
 end;
 
+procedure TRMMainForm.updateZoomScroller;
+begin
+   Trackbar1.Position:=ZoomSize;
+end;
+
 procedure TRMMainForm.UpdateColorBox;
 begin
   ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
@@ -1266,8 +1276,89 @@ begin
    end;
 end;
 
+procedure TRMMainForm.UpdatePaletteMenu;
+var
+ pm : integer;
+begin
+  PaletteMono.Checked:=false;
+  PaletteCGA0.Checked:=false;
+  PaletteCGA1.Checked:=false;
+  PaletteEGA.Checked:=false;
+  PaletteVGA.Checked:=false;
+  PaletteVGA256.Checked:=false;
+  PaletteAmiga.Checked:=false;
+  PaletteAmiga2.Checked:=false;
+  PaletteAmiga4.Checked:=false;
+  PaletteAmiga8.Checked:=false;
+  PaletteAmiga16.Checked:=false;
+  PaletteAmiga32.Checked:=false;
 
+  pm:=RMCoreBase.Palette.GetPaletteMode;
+  if pm = PaletteModeVGA256 then
+  begin
+    PaletteVGA256.Checked:=true;
+  end
+  else if pm = PaletteModeVGA then
+  begin
+     PaletteVGA.Checked:=true;
+  end
+  else if pm = PaletteModeEGA then
+  begin
+     PaletteEGA.Checked:=true;
+  end
+  else if pm = PaletteModeCGA0 then
+  begin
+     PaletteCGA0.Checked:=true;
+  end
+  else if pm = PaletteModeCGA1 then
+  begin
+     PaletteCGA1.Checked:=true;
+  end
+  else if pm = PaletteModeMono then
+  begin
+     PaletteMono.Checked:=false;
+  end
+  else if pm = PaletteModeAmiga32 then
+   begin
+      PaletteAmiga.Checked:=true;
+      PaletteAmiga32.Checked:=true;
+   end
+   else if pm = PaletteModeAmiga16 then
+   begin
+      PaletteAmiga.Checked:=true;
+      PaletteAmiga16.Checked:=true;
+   end
+   else if pm = PaletteModeAmiga8 then
+   begin
+      PaletteAmiga.Checked:=true;
+      PaletteAmiga8.Checked:=true;
+    end
+   else if pm = PaletteModeAmiga4 then
+   begin
+      PaletteAmiga.Checked:=true;
+      PaletteAmiga4.Checked:=true;
+   end
+   else if pm = PaletteModeAmiga2 then
+   begin
+      PaletteAmiga.Checked:=true;
+      PaletteAmiga2.Checked:=true;
+   end;
+end;
 
+procedure TRMMainForm.UpdateToolFlipScrollMenu;
+begin
+
+ if RMDrawTools.GetClipStatus = 1  then
+ begin
+    ToolFlipMenu.Enabled:=true;
+    ToolScrollMenu.Enabled:=true;
+ end
+ else
+ begin
+   ToolFlipMenu.Enabled:=false;
+   ToolScrollMenu.Enabled:=false;
+ end;
+end;
 
 Procedure TRMMainForm.UpdateGridDisplay;
 var
@@ -2646,6 +2737,28 @@ begin
 end;
 
 
+
+
+
+Procedure TRMMainForm.CopyScrollPositionToCore;
+var
+ sp : TScrollPosRec;
+begin
+  sp.HorizPos:=HorizScroll.Position;
+  sp.VirtPos:=VirtScroll.Position;
+  RMDrawTools.SetScrollPos(sp);
+end;
+
+Procedure TRMMainForm.CopyScrollPositionFromCore;
+var
+ sp : TScrollPosRec;
+begin
+  RMDrawTools.GetScrollPos(sp);
+
+  HorizScroll.Position:=sp.HorizPos;
+  VirtScroll.Position:=sp.VirtPos;
+end;
+
 procedure TRMMainForm.ListView1DblClick(Sender: TObject);
 var
   item : TListItem;
@@ -2653,7 +2766,8 @@ begin
  if (Listview1.SelCount > 0)  then
  begin
    item:=ListView1.LastSelected;
-
+   //save  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
+   CopyScrollPositionToCore;
    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
    ImageThumbBase.CopyIndexImageToCore(Item.Index);
    ImageThumbBase.SetCurrent(item.Index);
@@ -2661,24 +2775,31 @@ begin
    ActualBox.Width:=RMCoreBase.GetWidth;
    ActualBox.Height:=RMCoreBase.GetHeight;
 
-   RMDrawTools.SetZoomSize(1);
+  // RMDrawTools.SetZoomSize(1);
    RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
    RMDrawTools.SetZoomMaxX(ZoomBox.Width);
    RMDrawTools.SetZoomMaxY(ZoomBox.Height);
 
+   //load  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
    MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
    HorizScroll.Max:=MaxXOffset;
    MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
    VirtScroll.Max:=MaxYOffset;
    ZoomSize:=RMDrawTools.GetZoomSize;
+   CopyScrollPositionFromCore;
 
    CoreToPalette;
    UpdateColorBox;
+   UpdateToolSelectionIcons;
    UpdatePalette;
+   UpdatePaletteMenu;
    UpdateActualArea;
    UpdateZoomArea;
+   UpdateZoomScroller;
    UpdateThumbView;
-
+   if RMDrawTools.GetDrawTool = DrawShapeClip then FreezeScrollAndZoom
+   else UnFreezeScrollAndZoom;
+   UpdateToolFlipScrollMenu;
  end;
 end;
 

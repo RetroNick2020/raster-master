@@ -32,6 +32,23 @@ Type
                     sized     : integer;
   end;
 
+  TScrollPosRec = Record
+                    HorizPos : integer;
+                    VirtPos  : integer;
+  end;
+
+  TGridAreaRec = Record
+                   CellWidth : integer;
+                   CellHeight : integer;
+                   GridThickX : integer;
+                   GridThickY : integer;
+                   ZoomMode   : integer;
+                   ZoomSize   : integer;
+                   ZoomMaxX   : integer;
+                   ZoomMaxY   : integer;
+                   GridMode   : integer;
+                end;
+
   TSprayPointsRec = Record
                       x,y : integer;
   end;
@@ -41,17 +58,12 @@ Type
     //if Sender is Zoom draws in Zoom TImage
     //if Sender is Actual it Draw in Actual TImage
              private
-                CellWidth : integer;
-                CellHeight : integer;
-                GridThickX : integer;
-                GridThickY : integer;
-                ZoomMode   : integer;
-                ZoomSize   : integer;
-                ZoomMaxX   : integer;
-                ZoomMaxY   : integer;
-                GridMode   : integer;
-                DrawTool : integer;
-                ClipArea : TClipAreaRec;
+
+                DrawTool  : integer;
+                GridArea  : TGridAreaRec;
+                ClipArea  : TClipAreaRec;
+                ScrollPos : TScrollPosRec;
+
                 SprayPoints : array[1..MaxSprayPoints] of TSprayPointsRec;
              public
 
@@ -97,6 +109,13 @@ Type
              procedure  SetClipSizedStatus(mode : integer);
              function  GetClipSizedStatus : integer;
              procedure  GetClipAreaCoords(var ca : TClipAreaRec);
+             procedure  SetClipAreaCoords(var ca : TClipAreaRec);
+
+             procedure  GetScrollPos(var sp : TScrollPosRec);
+             procedure  SetScrollPos(var sp : TScrollPosRec);
+
+             procedure  GetGridArea(var ga : TGridAreaRec);
+             procedure  SetGridArea(var ga : TGridAreaRec);
 
              procedure SaveClipCoords(x,y,x2,y2 : integer);
              procedure DrawClipArea(Image : TCanvas;color : TColor; mode : integer);
@@ -177,6 +196,33 @@ begin
    ca:=ClipArea;
 end;
 
+procedure  TRMDrawTools.SetClipAreaCoords(var ca : TClipAreaRec);
+begin
+   ClipArea:=ca;
+end;
+
+procedure  TRMDrawTools.GetGridArea(var ga : TGridAreaRec);
+begin
+ ga:=GridArea;
+end;
+
+procedure  TRMDrawTools.SetGridArea(var ga : TGridAreaRec);
+begin
+  GridArea:=ga;
+end;
+
+procedure  TRMDrawTools.GetScrollPos(var sp : TScrollPosRec);
+begin
+  sp:=ScrollPos;
+end;
+
+procedure  TRMDrawTools.SetScrollPos(var sp : TScrollPosRec);
+begin
+   ScrollPos:=sp;
+end;
+
+
+
 procedure TRMDrawTools.SaveClipCoords(x,y,x2,y2 : integer);
 begin
    if x > x2 then
@@ -235,28 +281,28 @@ begin
 
   Image.Brush.Style:=bsClear;
   Image.Pen.Color:=clYellow;
-  Image.Rectangle(x*CellWidth-2,y*CellHeight-2,(x2+1)*CellWidth+3,(y2+1)*CellHeight+3);
-  Image.Rectangle(x*CellWidth-3,y*CellHeight-3,(x2+1)*CellWidth+4,(y2+1)*CellHeight+4);
+  Image.Rectangle(x*GridArea.CellWidth-2,y*GridArea.CellHeight-2,(x2+1)*GridArea.CellWidth+3,(y2+1)*GridArea.CellHeight+3);
+  Image.Rectangle(x*GridArea.CellWidth-3,y*GridArea.CellHeight-3,(x2+1)*GridArea.CellWidth+4,(y2+1)*GridArea.CellHeight+4);
 end;
 
 Procedure TRMDrawTools.SetZoomMaxX(MaxX : integer);
 begin
- ZoomMaxX:=GetCellsPerRow(MaxX);
+ GridArea.ZoomMaxX:=GetCellsPerRow(MaxX);
 end;
 
 Procedure TRMDrawTools.SetZoomMaxY(MaxY : integer);
 begin
- ZoomMaxY:=GetCellsPerCol(MaxY);
+ GridArea.ZoomMaxY:=GetCellsPerCol(MaxY);
 end;
 
 function TRMDrawTools.GetZoomMaxX : integer;
 begin
-  GetZoomMaxX:=ZoomMaxX;
+  GetZoomMaxX:=GridArea.ZoomMaxX;
 end;
 
 function TRMDrawTools.GetZoomMaxY : integer;
 begin
- GetZoomMaxY:=ZoomMaxY;
+ GetZoomMaxY:=GridArea.ZoomMaxY;
 end;
 
 procedure TRMDrawTools.PutPixel(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
@@ -271,19 +317,19 @@ begin
 
   if (x<0) or (x > (RMCoreBase.GetWidth-1)) or (y<0) or (y > (RMCoreBase.GetHeight-1))  then exit;
 
-  if GridMode = 1 then
+  if GridArea.GridMode = 1 then
   begin
-    px:=X*CellWidth+GridThickX+1;
-    py:=Y*CellHeight+GridThickY+1;
-    px2:=X*CellWidth+CellWidth-GridThickX;
-    py2:=Y*CellHeight+CellHeight-GridThickY;
+    px:=X*GridArea.CellWidth+GridArea.GridThickX+1;
+    py:=Y*GridArea.CellHeight+GridArea.GridThickY+1;
+    px2:=X*GridArea.CellWidth+GridArea.CellWidth-GridArea.GridThickX;
+    py2:=Y*GridArea.CellHeight+GridArea.CellHeight-GridArea.GridThickY;
   end
   else
   begin
-    px:=X*CellWidth;
-    py:=Y*CellHeight;
-    px2:=X*CellWidth+CellWidth;
-    py2:=Y*CellHeight+CellHeight;
+    px:=X*GridArea.CellWidth;
+    py:=Y*GridArea.CellHeight;
+    px2:=X*GridArea.CellWidth+GridArea.CellWidth;
+    py2:=Y*GridArea.CellHeight+GridArea.CellHeight;
   end;
 
   Image.Brush.Style := bsSolid;
@@ -310,7 +356,7 @@ begin
 
   If GetZoomMode = 1 then
   begin
-    if  (x > ZoomMaxX-1)  or (y > ZoomMaxY-1)  then exit;
+    if  (x > GridArea.ZoomMaxX-1)  or (y > GridArea.ZoomMaxY-1)  then exit;
     Image.Rectangle(px,py,px2,py2);
   end
   else
@@ -820,32 +866,32 @@ end;
 
 procedure TRMDrawTools.SetGridThickX(amount : integer);
 begin
-  GridThickX:=amount;
+  GridArea.GridThickX:=amount;
 end;
 
 procedure TRMDrawTools.SetGridThickY(amount : integer);
 begin
-  GridThickY:=amount;
+  GridArea.GridThickY:=amount;
 end;
 
 procedure TRMDrawTools.SetCellWidth(cWidth : integer);
 begin
-  CellWidth:=cWidth;
+  GridArea.CellWidth:=cWidth;
 end;
 
 procedure TRMDrawTools.SetCellHeight(cHeight : integer);
 begin
-  CellHeight:=cHeight;
+  GridArea.CellHeight:=cHeight;
 end;
 
 function TRMDrawTools.GetCellsPerRow(ImageWidth : integer) : integer;
 begin
-   GetCellsPerRow:=(ImageWidth div CellWidth);
+   GetCellsPerRow:=(ImageWidth div GridArea.CellWidth);
 end;
 
 function TRMDrawTools.GetCellsPerCol(ImageHeight : integer) : integer;
 begin
-   GetCellsPerCol:=(ImageHeight div CellHeight);
+   GetCellsPerCol:=(ImageHeight div GridArea.CellHeight);
 end;
 
 //creates offsets for the scrollers based on Actual Image width and Zoom displayed area
@@ -874,13 +920,13 @@ end;
 
 function TRMDrawTools.GetZoomX(x : integer) : integer;
 begin
-  GetZoomX:=x div CellWidth;
+  GetZoomX:=x div GridArea.CellWidth;
   If GetZoomX < 0 then GetZoomX:=0;
 end;
 
 function TRMDrawTools.GetZoomY(y : integer) : integer;
 begin
- GetZoomY:=y div CellHeight;
+ GetZoomY:=y div GridArea.CellHeight;
  if GetZoomY < 0 then GetZoomY:=0;
 end;
 
@@ -895,7 +941,7 @@ end;
 
 procedure TRMDrawTools.SetZoomMode(mode : integer);
 begin
-  ZoomMode:=mode;
+  GridArea.ZoomMode:=mode;
 end;
 
 procedure TRMDrawTools.SetZoomSize(size : integer);
@@ -907,35 +953,35 @@ begin
 
   if size > 10 then size:=10;
   if size < 1 then size:=1;
-  ZoomSize:=size;
+  GridArea.ZoomSize:=size;
 
   XMulti:=10;
   YMulti:=9;
 
   if RMCoreBase.GetWidth = 8 then
   begin
-   If ZoomSize < 7 then ZoomSize:=7;
+   If GridArea.ZoomSize < 7 then GridArea.ZoomSize:=7;
   end
   else if RMCoreBase.GetWidth = 16 then
   begin
-   If ZoomSize < 4 then ZoomSize:=4;
+   If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
   end
   else if RMCoreBase.GetWidth = 32 then
   begin
-   If ZoomSize < 2 then ZoomSize:=2;
+   If GridArea.ZoomSize < 2 then GridArea.ZoomSize:=2;
   end;
-  SetCellWidth(ZoomSize*XMulti);
-  SetCellHeight(ZoomSize*YMulti);
+  SetCellWidth(GridArea.ZoomSize*XMulti);
+  SetCellHeight(GridArea.ZoomSize*YMulti);
 end;
 
 function TRMDrawTools.GetZoomSize : integer;
 begin
-  GetZoomSize:=ZoomSize;
+  GetZoomSize:=GridArea.ZoomSize;
 end;
 
 function  TRMDrawTools.GetZoomMode : integer;
 begin
-  GetZoomMode:=ZoomMode;
+  GetZoomMode:=GridArea.ZoomMode;
 end;
 
 procedure TRMDrawTools.SetDrawTool(Tool : integer);
@@ -950,7 +996,7 @@ end;
 
 procedure TRMDrawTools.SetGridMode(mode:integer);
 begin
-  GridMode:=mode;
+  GridArea.GridMode:=mode;
   if mode = 0 then
   begin
     SetGridThickY(0);
@@ -965,7 +1011,7 @@ end;
 
 function TRMDrawTools.GetGridMode : integer;
 begin
-  GetGridMode:=GridMode;
+  GetGridMode:=GridArea.GridMode;
 end;
 
 

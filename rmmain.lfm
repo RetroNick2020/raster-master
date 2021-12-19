@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = -61
+  Left = -9
   Height = 1051
-  Top = 46
+  Top = -9
   Width = 1920
   Caption = 'Raster Master'
   ClientHeight = 1026
