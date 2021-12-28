@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
   Left = -9
   Height = 1051
-  Top = -9
+  Top = 0
   Width = 1920
   Caption = 'Raster Master'
-  ClientHeight = 1026
-  ClientWidth = 1920
+  ClientHeight = 0
+  ClientWidth = 0
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate

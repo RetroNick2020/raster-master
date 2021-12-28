@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
-  rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb;
+  rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,wmodex,rwgif;
 
 
 type
@@ -1807,7 +1807,7 @@ var
  x,y,x2,y2 : integer;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   SaveDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|RM RAW Files|*.raw|All Files|*.*';
+   SaveDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
@@ -1823,6 +1823,13 @@ begin
         if WriteBMP(x,y,x2,y2,SaveDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Saving BMP file!');
+        end;
+      end
+      else if ext = '.GIF' then
+      begin
+        if WGIF(x,y,x2,y2,SaveDialog1.FileName) <> 0 then
+        begin
+          ShowMessage('Error Saving GIF file!');
         end;
       end
       else if ext = '.RAW' then
@@ -1848,7 +1855,7 @@ begin
     pm:=RMCoreBase.Palette.GetPaletteMode;
 
    if RMDrawTools.GetClipStatus = 1 then lp:=0;
-   OpenDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|RM RAW Files|*.raw|All Files|*.*' ;
+   OpenDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
 
    if OpenDialog1.Execute then
    begin
@@ -1866,6 +1873,14 @@ begin
         if ReadBMP(x,y,x2,y2,lp,pm,OpenDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Opening BMP file!');
+          exit;
+        end;
+      end
+      else if ext = '.GIF' then
+      begin
+        if RGIF(x,y,x2,y2,lp,pm,OpenDialog1.FileName) <> 0 then
+        begin
+          ShowMessage('Error Opening GIF file!');
           exit;
         end;
       end
