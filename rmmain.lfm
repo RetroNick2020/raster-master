@@ -1,8 +1,8 @@
 object RMMainForm: TRMMainForm
-  Left = -9
-  Height = 1051
-  Top = 0
-  Width = 1920
+  Left = 157
+  Height = 798
+  Top = 115
+  Width = 1658
   Caption = 'Raster Master'
   ClientHeight = 0
   ClientWidth = 0
@@ -333,6 +333,7 @@ object RMMainForm: TRMMainForm
     IconOptions.AutoArrange = True
     LargeImages = ImageList1
     LargeImagesWidth = 128
+    PopupMenu = ExportPropsMenu
     ReadOnly = True
     TabOrder = 6
     ViewStyle = vsIcon
@@ -351,13 +352,29 @@ object RMMainForm: TRMMainForm
         Caption = 'Open'
         OnClick = OpenFileClick
       end
+      object OpenProjectFile: TMenuItem
+        Caption = 'Open Project'
+        OnClick = OpenProjectFileClick
+      end
+      object InsertProjectFile: TMenuItem
+        Caption = 'Insert Project'
+        OnClick = OpenProjectFileClick
+      end
       object SaveFile: TMenuItem
         Caption = 'Save'
         OnClick = SaveFileClick
       end
+      object SaveProjectFile: TMenuItem
+        Caption = 'Save Project'
+        OnClick = SaveProjectFileClick
+      end
       object SaveDelete: TMenuItem
         Caption = 'Delete'
         OnClick = SaveDeleteClick
+      end
+      object DeleteAll: TMenuItem
+        Caption = 'Delete All'
+        OnClick = DeleteAllClick
       end
       object SaveFileAs: TMenuItem
         Caption = 'Save As'
@@ -506,6 +523,14 @@ object RMMainForm: TRMMainForm
           object TPPutImageFile: TMenuItem
             Caption = 'PutImage File'
             OnClick = TurboPascalClick
+          end
+          object TPPutImageRESArrays: TMenuItem
+            Caption = 'RES Text Include File'
+            OnClick = RESIncludeClick
+          end
+          object TPPutImageRESFile: TMenuItem
+            Caption = 'RES Binary File'
+            Visible = False
           end
         end
         object TurboC: TMenuItem
@@ -859,5 +884,13 @@ object RMMainForm: TRMMainForm
   object ImageList1: TImageList
     Left = 1584
     Top = 624
+  end
+  object ExportPropsMenu: TPopupMenu
+    Left = 1585
+    Top = 149
+    object Properties: TMenuItem
+      Caption = 'Properties'
+      OnClick = PropertiesClick
+    end
   end
 end

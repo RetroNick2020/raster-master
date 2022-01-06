@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
-  rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,wmodex,rwgif;
+  rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
+  wmodex,rwgif,rwxgf2,rmexportprops,rres;
 
 
 type
@@ -41,6 +42,14 @@ type
     JavaScript: TMenuItem;
     ACVSpriteColorArray: TMenuItem;
     ACPaletteArray: TMenuItem;
+    ExportPropsMenu: TPopupMenu;
+    Properties: TMenuItem;
+    TPPutImageRESArrays: TMenuItem;
+    TPPutImageRESFile: TMenuItem;
+    DeleteAll: TMenuItem;
+    OpenProjectFile: TMenuItem;
+    SaveProjectFile: TMenuItem;
+    InsertProjectFile: TMenuItem;
     QCPaletteArray: TMenuItem;
     QCPaletteCommands: TMenuItem;
     TCPaletteArray: TMenuItem;
@@ -201,6 +210,7 @@ type
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
 
+
     procedure FormCreate(Sender: TObject);
     procedure FreeBASICClick(Sender: TObject);
     procedure FreePascalClick(Sender: TObject);
@@ -208,8 +218,13 @@ type
     procedure EditResizeToNewSize(Sender: TObject);
     procedure javaScriptArrayClick(Sender: TObject);
     procedure ListView1DblClick(Sender: TObject);
+    procedure DeleteAllClick(Sender: TObject);
+    procedure OpenProjectFileClick(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
+    procedure PropertiesClick(Sender: TObject);
+    procedure RESIncludeClick(Sender: TObject);
     procedure SaveDeleteClick(Sender: TObject);
+    procedure SaveProjectFileClick(Sender: TObject);
     procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
     procedure PaletteExportTurboCClick(Sender: TObject);
@@ -2245,6 +2260,34 @@ begin
   EditColors;
 end;
 
+procedure TRMMainForm.PropertiesClick(Sender: TObject);
+var
+  EO : ImageExportFormatRec;
+  index : integer;
+begin
+  index:=ListView1.ItemIndex;
+  if index = -1 then index:=0;
+ // ShowMessage(IntToStr(index));
+  ImageThumbBase.GetExportOptions(index,EO);
+  ImageExportForm.InitComboBoxes;
+  ImageExportForm.SetExportProps(EO);
+  if ImageExportForm.ShowModal = mrOK then
+  begin
+     ImageExportForm.GetExportProps(EO);
+     ImageThumbBase.SetExportOptions(index,EO)
+  end;
+end;
+
+procedure TRMMainForm.RESIncludeClick(Sender: TObject);
+begin
+ ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+ ExportDialog.Filter := 'RES Include|*.inc';
+ if ExportDialog.Execute then
+ begin
+     RESInclude(ExportDialog.FileName);
+ end;
+end;
+
 
 procedure TRMMainForm.PaletteExportQuickCClick(Sender: TObject);
 var
@@ -2755,6 +2798,7 @@ end;
 
 
 
+
 Procedure TRMMainForm.CopyScrollPositionToCore;
 var
  sp : TScrollPosRec;
@@ -2816,6 +2860,125 @@ begin
    else UnFreezeScrollAndZoom;
    UpdateToolFlipScrollMenu;
  end;
+end;
+
+procedure TRMMainForm.DeleteAllClick(Sender: TObject);
+var
+  ImgWidth,ImgHeight : integer;
+begin
+
+ ImgWidth:=256;
+ ImgHeight:=256;
+ ActualBox.Width:=ImgWidth;
+ ActualBox.Height:=ImgHeight;
+ RMCoreBase.SetWidth(ImgWidth);
+ RMCoreBase.SetHeight(ImgHeight);
+
+ RMCoreBase.ClearBuf(0);
+ RMCoreBase.SetCurColor(1);
+ RMDrawTools.SetDrawTool(DrawShapePencil);
+ UpdateToolSelectionIcons;
+
+ UpdateColorBox;
+ UpdateActualArea;
+ RMDrawTools.SetClipStatus(0);
+ RMDrawTools.SetZoomSize(2);
+ RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ UpdateZoomArea;
+ UnFreezeScrollAndZoom;
+ Trackbar1.Position:=RMDrawTools.getZoomSize;
+ HorizScroll.Position:=0;
+ VirtScroll.Position:=0;
+
+ ImageThumbBase.SetCount(1);
+ ImageThumbBase.SetCurrent(0);
+
+ ImageList1.Clear;
+
+ ListView1.Items.Clear;
+ ListView1.Items.Add;
+
+ ImageThumbBase.CopyCoreToIndexImage(0);
+ ImageThumbBase.MakeThumbImageFromCore(0,imagelist1,1);   //ads an image to image list with option 1 3rd paremeter
+
+ ListView1.Items[0].Caption:='Image '+IntToStr(1);
+ ListView1.Items[0].ImageIndex :=0;
+
+end;
+
+procedure TRMMainForm.OpenProjectFileClick(Sender: TObject);
+var
+  InsertMode : boolean;
+  amount : integer;
+  i : integer;
+begin
+   InsertMode:=FALSE;
+   if (Sender As TMenuItem).Name = 'InsertProjectFile' then insertMode:=TRUE;
+   OpenDialog1.Filter := 'Raster Master Project|*.rmp';
+   if NOT OpenDialog1.Execute then exit;
+
+   CopyScrollPositionToCore;
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+   ImageThumbBase.OpenProject(OpenDialog1.Filename,InsertMode);
+   ImageThumbBase.UpdateAllThumbImages(imagelist1);
+
+   amount:=ImageThumbBase.GetCount-ListView1.Items.Count;
+   if amount < 0 then
+   begin
+     for i:=1 to abs(amount) do
+     begin
+       listview1.Items.Delete(0);
+     end;
+   end
+   else if amount > 0 then
+   begin
+   //add amount to
+     for i:=1 to amount do
+     begin
+       ListView1.Items.Add;
+     end;
+   end;
+
+   For i:=0 to ListView1.Items.Count-1 do
+   begin
+     Listview1.Items[i].Caption:='Image '+IntToStr(i+1);
+     Listview1.Items[i].ImageIndex:=i;
+   end;
+
+   if insertmode = false then
+   begin
+      ImageThumbBase.SetCurrent(0);
+      ImageThumbBase.CopyIndexImageToCore(0);  //update view with this image
+
+      ActualBox.Width:=RMCoreBase.GetWidth;
+      ActualBox.Height:=RMCoreBase.GetHeight;
+
+      // RMDrawTools.SetZoomSize(1);
+      RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+      RMDrawTools.SetZoomMaxX(ZoomBox.Width);
+      RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+
+      //load  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
+      MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+      HorizScroll.Max:=MaxXOffset;
+      MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+      VirtScroll.Max:=MaxYOffset;
+      ZoomSize:=RMDrawTools.GetZoomSize;
+      CopyScrollPositionFromCore;
+
+      CoreToPalette;
+      UpdateColorBox;
+      UpdateToolSelectionIcons;
+      UpdatePalette;
+      UpdatePaletteMenu;
+      UpdateActualArea;
+      UpdateZoomArea;
+      UpdateZoomScroller;
+      UpdateThumbView;
+      if RMDrawTools.GetDrawTool = DrawShapeClip then FreezeScrollAndZoom
+      else UnFreezeScrollAndZoom;
+      UpdateToolFlipScrollMenu;
+    end;
 end;
 
 procedure TRMMainForm.InitThumbView;
@@ -2894,6 +3057,15 @@ begin
       UpdateZoomArea;
    end;
  end;
+end;
+
+procedure TRMMainForm.SaveProjectFileClick(Sender: TObject);
+begin
+   SaveDialog1.Filter := 'Raster Master Project|*.rmp';
+   if SaveDialog1.Execute then
+   begin
+      ImageThumbBase.SaveProject(SaveDialog1.Filename);
+   end;
 end;
 
 procedure TRMMainForm.NewClick(Sender: TObject);

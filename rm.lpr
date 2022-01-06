@@ -8,7 +8,7 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor, rmcolorvga, rmabout,
-  rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif
+  rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif, rmexportprops
      { you can add units after this };
 
 {$R *.res}
@@ -22,6 +22,7 @@ begin
   Application.CreateForm(TRMVgaColorDialog, RMVgaColorDialog);
   Application.CreateForm(TAboutDialog, AboutDialog);
   Application.CreateForm(TRMAmigaColorDialog, RMAmigaColorDialog);
+  Application.CreateForm(TImageExportForm, ImageExportForm);
   Application.Run;
 end.
 

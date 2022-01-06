@@ -1,0 +1,106 @@
+object ImageExportForm: TImageExportForm
+  Left = 74
+  Height = 368
+  Top = 408
+  Width = 418
+  BorderStyle = bsDialog
+  Caption = 'Export Properties'
+  ClientHeight = 368
+  ClientWidth = 418
+  DesignTimePPI = 120
+  LCLVersion = '2.0.10.0'
+  object EditName: TEdit
+    Left = 104
+    Height = 28
+    Top = 32
+    Width = 264
+    MaxLength = 20
+    TabOrder = 0
+  end
+  object imageName: TLabel
+    Left = 53
+    Height = 20
+    Top = 32
+    Width = 40
+    Caption = 'Name'
+    ParentColor = False
+  end
+  object ImageType: TLabel
+    Left = 16
+    Height = 20
+    Top = 128
+    Width = 77
+    Caption = 'Image Type'
+    ParentColor = False
+  end
+  object ComboImage: TComboBox
+    Left = 104
+    Height = 28
+    Top = 128
+    Width = 264
+    ItemHeight = 20
+    Style = csDropDownList
+    TabOrder = 2
+  end
+  object MaskType: TLabel
+    Left = 24
+    Height = 20
+    Top = 176
+    Width = 69
+    Caption = 'Mask Type'
+    ParentColor = False
+  end
+  object ComboMask: TComboBox
+    Left = 104
+    Height = 28
+    Top = 176
+    Width = 264
+    ItemHeight = 20
+    Style = csDropDownList
+    TabOrder = 3
+  end
+  object PaletteType: TLabel
+    Left = 13
+    Height = 20
+    Top = 224
+    Width = 80
+    Caption = 'Palette Type'
+    ParentColor = False
+  end
+  object ComboPalette: TComboBox
+    Left = 104
+    Height = 28
+    Top = 224
+    Width = 264
+    ItemHeight = 20
+    Style = csDropDownList
+    TabOrder = 4
+  end
+  object Button1: TButton
+    Left = 304
+    Height = 31
+    Top = 312
+    Width = 94
+    Caption = 'OK'
+    OnClick = Button1Click
+    TabOrder = 5
+  end
+  object CompilerType: TLabel
+    Left = 32
+    Height = 20
+    Top = 80
+    Width = 61
+    Caption = 'Compiler'
+    ParentColor = False
+  end
+  object ComboCompiler: TComboBox
+    Left = 104
+    Height = 28
+    Top = 80
+    Width = 264
+    ItemHeight = 20
+    OnChange = ComboCompilerChange
+    Style = csDropDownList
+    TabOrder = 1
+  end
+end

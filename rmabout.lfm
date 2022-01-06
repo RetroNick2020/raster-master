@@ -1,12 +1,12 @@
 object AboutDialog: TAboutDialog
-  Left = 1054
+  Left = -1185
   Height = 313
-  Top = 278
+  Top = 131
   Width = 600
   BorderStyle = bsDialog
   Caption = 'About'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 313
+  ClientWidth = 600
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
   object ProgramNameLabel: TLabel
