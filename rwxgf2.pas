@@ -4,7 +4,7 @@
 
 Unit rwxgf2;
  Interface
-   uses SysUtils,LazFileUtils,rmcore,rmthumb,bits;
+   uses SysUtils,LazFileUtils,rmcore,rmthumb,rres,bits;
 
 Const
    NoLan   = 0;
@@ -53,8 +53,9 @@ Const
 
 
 
-Function WriteXgf2(x,y,x2,y2,LanType : word;filename:string):word;
+//Function WriteXgf2(x,y,x2,y2,LanType : word;filename:string):word;
 Function RESInclude(filename:string):word;
+Function RESBinary(filename:string):word;
 
 
 Implementation
@@ -166,33 +167,6 @@ function GetPixel(x,y : integer) : integer;
 begin
  GetPixel:=XGetPixel(x,y);
 end;
-
-procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
-begin
-   if action = 0 then
-   begin
-       buffer.bufCount:=0;
-   end
-   else if action = 1 then
-   begin
-       inc(Buffer.bufcount);
-       buffer.buflist[Buffer.bufcount]:=inByte;
-       if Buffer.bufcount = 128 then
-       begin
-           Blockwrite(buffer.f,Buffer.buflist,128);
-           Buffer.bufcount:=0;
-       end;
-   end
-   else if action = 2 then
-   begin
-       if Buffer.bufcount > 0 then
-       begin
-           Blockwrite(buffer.f,Buffer.buflist,buffer.bufcount);
-           Buffer.bufcount:=0;
-       end;
-   end;
-end;
-
 
 Procedure spTOmp(var singlePlane : LineBufType ;
                  var multiplane  : LineBufType;
@@ -471,6 +445,32 @@ begin
  BitplaneWriter(0,data,2);  //flush it
 end;
 
+procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
+begin
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(Buffer.bufcount);
+       buffer.buflist[Buffer.bufcount]:=inByte;
+       if Buffer.bufcount = 128 then
+       begin
+           Blockwrite(buffer.f,Buffer.buflist,128);
+           Buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then
+   begin
+       if Buffer.bufcount > 0 then
+       begin
+           Blockwrite(buffer.f,Buffer.buflist,buffer.bufcount);
+           Buffer.bufcount:=0;
+       end;
+   end;
+end;
+
 procedure BitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
@@ -608,6 +608,112 @@ begin
  {$I+}
  RESInclude:=IOResult;
 end;
+
+
+Function RESBinary(filename:string):word;
+var
+ data    : BufferRec;
+ EO      : ImageExportFormatRec;
+ RR      : resrec;
+ RH      : resheadrec;
+ i       : integer;
+ count   : integer;
+ width   : integer;
+ height  : integer;
+ nColors : integer;
+ Size    : LongInt;
+
+ HeaderSize  : LongInt;
+ OffsetCount : LongInt;
+ ExportCount : Integer;
+ SLen        : integer;
+ Error       : integer;
+begin
+ ExportCount:=ImageThumbBase.GetExportCount;
+ if ExportCount = 0 then exit;
+
+ SetThumbActive;   // we are getting pixel data from core object ThumbBase
+ assign(data.f,filename);
+{$I-}
+ rewrite(data.f,1);
+{$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin                2
+    RESBinary:=Error;
+    exit;
+ end;
+ count:=ImageThumbBase.GetCount;
+ HeaderSize:=sizeof(RH)+Exportcount*sizeof(resrec);
+ OffsetCount:=HeaderSize;
+
+ //write the signature and record count
+ RH.sig:='RES';
+ RH.ver:=1;
+ RH.resitemcount:=Exportcount;
+ {$I-}
+ Blockwrite(data.f,RH,sizeof(RH));
+ {$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin
+  RESBinary:=Error;
+  exit;
+ end;
+
+ //write the header with all the correct offsets where the image is going to be located
+ for i:=0 to count-1 do
+ begin
+   width:=ImageThumbBase.GetWidth(i);
+   height:=ImageThumbBase.GetHeight(i);
+   nColors:=ImageThumbBase.GetMaxColor(i)+1;
+   Size:=GetXImageSize(width,height,nColors);
+   ImageThumbBase.GetExportOptions(i,EO);
+
+   //copy name field
+   fillchar(RR.rid,sizeof(RR.rid),32);
+   slen:=Length(EO.Name);
+   if slen > 20 then slen:=20;
+   Move(EO.Name[1],RR.rid,slen);
+
+   //calc size/offset
+   if EO.Image > 0  then
+   begin
+     RR.size:=Size;
+     RR.offset:=OffsetCount;
+     RR.rt:=EO.Lan*100+EO.Image; //language id * 100 + Image Type to generate resource type
+
+     inc(OffsetCount,Size);
+     {$I-}
+     Blockwrite(data.f,RR,sizeof(RR));
+     {$I+}
+     Error:=IORESULT;
+     if Error<>0 then
+     begin
+       RESBinary:=Error;
+       exit;
+     end;
+   end;
+ end;
+
+ //convert and dump image
+ for i:=0 to count-1 do
+ begin
+   width:=ImageThumbBase.GetWidth(i);
+   height:=ImageThumbBase.GetHeight(i);
+   ImageThumbBase.GetExportOptions(i,EO);
+   SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
+   BitPlaneWriterFile(0,data,0);
+   if (EO.Lan=TPLan) and (EO.Image = 1) then CreateBitPlanesPC(@BitPlaneWriterFile,data,0,0,width-1,height-1,EO.Lan);
+ end;
+
+ {$I-}
+ close(data.f);
+ {$I+}
+ RESBinary:=IOResult;
+end;
+
+
 
 
 begin

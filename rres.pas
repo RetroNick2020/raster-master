@@ -8,16 +8,22 @@ Interface
 const
  MaxResItems = 255;
 type
- resrec = Record
+ resheadrec = Packed Record
+                   sig : array[1..3] of char;
+                   ver : byte;
+                   resitemcount : integer;
+              end;
+
+ resrec = Packed Record
              rt     : integer;
-             rid    : array[1..12] of char;
+             rid    : array[1..20] of char;
              offset : longint;
              size   : longint;
           end;
 
  resIndex = array[1..MaxResItems] of resrec;
 
- RFILE = Record
+ RFILE = Packed Record
             ResFile  : File;
             ResList  : ^resIndex;
             ResItems : integer;

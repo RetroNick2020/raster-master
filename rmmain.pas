@@ -44,8 +44,8 @@ type
     ACPaletteArray: TMenuItem;
     ExportPropsMenu: TPopupMenu;
     Properties: TMenuItem;
-    TPPutImageRESArrays: TMenuItem;
-    TPPutImageRESFile: TMenuItem;
+    ExportRESInclude: TMenuItem;
+    ExportRESBinary: TMenuItem;
     DeleteAll: TMenuItem;
     OpenProjectFile: TMenuItem;
     SaveProjectFile: TMenuItem;
@@ -222,7 +222,7 @@ type
     procedure OpenProjectFileClick(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
     procedure PropertiesClick(Sender: TObject);
-    procedure RESIncludeClick(Sender: TObject);
+    procedure RESExportClick(Sender: TObject);
     procedure SaveDeleteClick(Sender: TObject);
     procedure SaveProjectFileClick(Sender: TObject);
     procedure ToolEllipseMenuClick(Sender: TObject);
@@ -2192,6 +2192,7 @@ begin
        ColorBox.Brush.Color:=RMVGAColorDialog.GetPickedColor;
        RMVGAColorDialog.PaletteToCore;
        CoreToPalette;
+
        UpdateActualArea;
        UpdateZoomArea;
        UpdateThumbview;
@@ -2253,6 +2254,7 @@ begin
        end;
    end;
  end;
+
 end;
 
 procedure TRMMainForm.PaletteEditColors(Sender: TObject);
@@ -2278,13 +2280,27 @@ begin
   end;
 end;
 
-procedure TRMMainForm.RESIncludeClick(Sender: TObject);
+procedure TRMMainForm.RESExportClick(Sender: TObject);
+var
+  Error : word;
 begin
+ //update the current thumb image
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
- ExportDialog.Filter := 'RES Include|*.inc';
+
+ Case (Sender As TMenuItem).Name of 'ExportRESInclude' : ExportDialog.Filter := 'RES Include|*.inc';
+                                     'ExportRESBinary' : ExportDialog.Filter := 'RES Binary|*.res';
+ end;
+
  if ExportDialog.Execute then
  begin
-     RESInclude(ExportDialog.FileName);
+    Case (Sender As TMenuItem).Name of 'ExportRESInclude' : error:=RESInclude(ExportDialog.FileName);
+                                        'ExportRESBinary' : error:=RESBinary(ExportDialog.FileName);
+    end;
+    if error<>0 then
+    begin
+      ShowMessage('Error Exporting!');
+      exit;
+    end;
  end;
 end;
 
@@ -3061,6 +3077,7 @@ end;
 
 procedure TRMMainForm.SaveProjectFileClick(Sender: TObject);
 begin
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
    SaveDialog1.Filter := 'Raster Master Project|*.rmp';
    if SaveDialog1.Execute then
    begin
@@ -3071,7 +3088,6 @@ end;
 procedure TRMMainForm.NewClick(Sender: TObject);
 begin
  if ImageThumbBase.GetCount >= MaxThumbImages then exit;
-
 
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
  //ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCurrent,imagelist1,4);

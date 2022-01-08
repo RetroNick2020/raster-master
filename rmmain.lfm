@@ -524,13 +524,13 @@ object RMMainForm: TRMMainForm
             Caption = 'PutImage File'
             OnClick = TurboPascalClick
           end
-          object TPPutImageRESArrays: TMenuItem
+          object ExportRESInclude: TMenuItem
             Caption = 'RES Text Include File'
-            OnClick = RESIncludeClick
+            OnClick = RESExportClick
           end
-          object TPPutImageRESFile: TMenuItem
+          object ExportRESBinary: TMenuItem
             Caption = 'RES Binary File'
-            Visible = False
+            OnClick = RESExportClick
           end
         end
         object TurboC: TMenuItem

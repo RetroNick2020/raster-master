@@ -66,6 +66,9 @@ type
              procedure AddImage;  //adds image to end of list
              function GetCount : integer;
              procedure SetCount(count : integer);
+
+             function GetExportCount : integer;
+
              function GetPixelTColor(index,x,y : integer) : TColor;
              //emulate BGI functions needed elseware
              function GetPixel(index,x,y : integer) : integer;
@@ -195,6 +198,19 @@ begin
   ImageCount:=count;
 end;
 
+function TImageThumb.GetExportCount : integer;
+var
+ i : integer;
+ Exportcount : integer;
+begin
+ ExportCount:=0;
+ for i:=0 to GetCount-1 do
+ begin
+   if ImageMain[i].Props.ExportFormat.Image > 0 then inc(ExportCount);
+ end;
+ GetExportCount:=ExportCount;
+end;
+
 procedure TImageThumb.CopyCoreToIndexImage(index : integer);
 var
  width,height :integer;
@@ -241,6 +257,7 @@ begin
         UndoImageBufPtr^.Pixel[i,j]:=ImageMain[index].UndoImage.Pixel[i,j];
      end;
   end;
+
   RMCoreBase.Palette.SetPalette(ImageMain[index].Props.Palette);
   RMCoreBase.Palette.SetPaletteMode(ImageMain[index].Props.PaletteMode);
   RMCoreBase.Palette.SetColorCount(ImageMain[index].Props.ColorCount);
