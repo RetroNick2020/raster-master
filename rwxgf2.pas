@@ -639,7 +639,7 @@ begin
 {$I+}
  Error:=IORESULT;
  if Error<>0 then
- begin                2
+ begin
     RESBinary:=Error;
     exit;
  end;
