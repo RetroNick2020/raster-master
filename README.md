@@ -3,6 +3,14 @@ Raster Master is a Sprite/Icon editor that generates Put image code for AmigaBAS
 
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I am working on touching up the user interface. In a few days there should be something here.
 
+Jan 8 - 2022 - R25/R26 brings big features like saving all you images to a project file. This file is portable and is not just a directory on your hard drive. you can copy the project to another computer or share it with someone else to make edit changes.
+The RES Export option for Text and Binary are completed for Turbo Pascal. I chose Turbo Pascal mainly for the testing options. All 
+other compiler/targets will follow. 
+
+The RES text export just like the Export to Array options but with all you images in one text file that can be included. this saves lots of time when working with multiple files. The RES binary allows you to do the same thing except with more options on how to utilize in your own programs. You can read the contents the RES file on demand saving on runtime memory. 
+
+You can also attach the RES file to your EXE. With turbo pascal you can use the Binobj utility to link your RES file to your exe - see video. There is also another way of attaching your RES to your exe with the DOS copy command and using some turbo pascal function to find your RES data. This gives the options on loading images on demand and also saving on memory because even though the images are attached to the EXE they are not actually loaded in DOS memory.
+
 Jun 9 - 2021 - New Binary release Raster Master v1.0 beta R13 - Lots of new features since Apr 23 R9 Release. Fixed width sprites 8x8,16x16,32x32,64x64,128x128, and 256x256.
 Multiple images can now be edited with a filmstrip icon view. The color match algorythm now is able match a greater range of colors to the 16/256 color palette in use. this is used when copying/pasting from external apps like ms paint.
 
