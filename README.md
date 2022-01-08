@@ -1,4 +1,5 @@
 # raster-master
+![](https://github.com/nickshardware/raster-master/wiki/images/rm26.png)
 Raster Master is a Sprite/Icon editor that generates Put image code for AmigaBASIC, QuickBasic, QB64, Quick C, Turbo Pascal, freepascal, Turbo C, Turbo Basic, Power Basic, FreeBASIC, GWBASIC, BASICA, and PC-BASIC. Recently Javascript putimagedata was added to the export options. My interest in Amiga coding also expanded to incluse Pascal and C instead of Just AmigaBASIC. I have added support for Hisoft and freepascal 68k and well as vbcc. I
 
 Why did this program return from the dead?
