@@ -9,7 +9,7 @@ other compiler/targets will follow.
 
 The RES text export just like the Export to Array options but with all you images in one text file that can be included. this saves lots of time when working with multiple files. The RES binary allows you to do the same thing except with more options on how to utilize in your own programs. You can read the contents the RES file on demand saving on runtime memory. 
 
-You can also attach the RES file to your EXE. With turbo pascal you can use the Binobj utility to link your RES file to your exe - see video. There is also another way of attaching your RES to your exe with the DOS copy command and using some turbo pascal function to find your RES data. This gives the options on loading images on demand and also saving on memory because even though the images are attached to the EXE they are not actually loaded in DOS memory.
+You can also attach the RES file to your EXE. With turbo pascal you can use the Binobj utility to link your RES file to your exe - see video https://youtu.be/_0k_uOKYMPU  There is also another way of attaching your RES to your exe with the DOS copy command and using some turbo pascal function to find your RES data. This gives the options on loading images on demand and also saving on memory because even though the images are attached to the EXE they are not actually loaded in DOS memory.
 
 Jun 9 - 2021 - New Binary release Raster Master v1.0 beta R13 - Lots of new features since Apr 23 R9 Release. Fixed width sprites 8x8,16x16,32x32,64x64,128x128, and 256x256.
 Multiple images can now be edited with a filmstrip icon view. The color match algorythm now is able match a greater range of colors to the 16/256 color palette in use. this is used when copying/pasting from external apps like ms paint.
