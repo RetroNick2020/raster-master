@@ -74,6 +74,8 @@ type
              function GetPixel(index,x,y : integer) : integer;
              function GetMaxColor(index : integer) : integer;
 
+             procedure GetColor(index : integer;colorIndex : integer; var cr : TRMColorRec);
+
              function GetWidth(index : integer) : integer;
              function GetHeight(index : integer) : integer;
 
@@ -290,6 +292,13 @@ end;
 function TImageThumb.GetMaxColor(index : integer) : integer;
 begin
   GetMaxColor:=ImageMain[index].Props.ColorCount-1;
+end;
+
+procedure TImageThumb.GetColor(index : integer;colorIndex : integer; var cr : TRMColorRec);
+begin
+  cr.r:=ImageMain[index].Props.Palette[colorIndex].r;
+  cr.g:=ImageMain[index].Props.Palette[colorIndex].g;
+  cr.b:=ImageMain[index].Props.Palette[colorIndex].b;
 end;
 
 function TImageThumb.GetWidth(index : integer) : integer;

@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
-  Left = 157
-  Height = 798
-  Top = 115
-  Width = 1658
+  Left = -9
+  Height = 1051
+  Top = -9
+  Width = 1920
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 1026
+  ClientWidth = 1920
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -413,6 +413,10 @@ object RMMainForm: TRMMainForm
           object ABVSpriteFile: TMenuItem
             Caption = 'VSprite File'
             OnClick = AmigaBasicClick
+          end
+          object AmigaExportRESInclude: TMenuItem
+            Caption = 'RES Text Include File'
+            OnClick = RESExportClick
           end
         end
         object AmigaC: TMenuItem

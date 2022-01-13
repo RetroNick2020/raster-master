@@ -4,7 +4,7 @@
 
 Unit rwxgf2;
  Interface
-   uses SysUtils,LazFileUtils,rmcore,rmthumb,rres,bits;
+   uses SysUtils,LazFileUtils,rmcore,rmthumb,rmxgfcore,bits;
 
 Const
    NoLan   = 0;
@@ -51,12 +51,23 @@ Const
 
    PALSource = 18;
 
+type
+ BufferRec = Record
+                f      : file;
+                fText  : Text;
+                buflist   : array[1..128] of Byte;
+                bufcount  : integer;
 
+                ArraySize : longword;
+                ByteWriteCount : longword;
+ end;
 
 //Function WriteXgf2(x,y,x2,y2,LanType : word;filename:string):word;
-Function RESInclude(filename:string):word;
-Function RESBinary(filename:string):word;
 
+
+ procedure WriteXgfToBuffer(x,y,x2,y2,LanType : word;var data : BufferRec);
+ Function WriteTPArray(var data :BufferRec;x,y,x2,y2,LanType : word; imagename:string):word;
+ function GetXImageSize(width,height,ncolors : integer) : longint;
 
 Implementation
 
@@ -68,105 +79,17 @@ type
               Height : Word;
             End;
 
- BufferRec = Record
-                f      : file;
-                fText  : Text;
-                buflist   : array[1..128] of Byte;
-                bufcount  : integer;
 
-                ArraySize : longword;
-                ByteWriteCount : longword;
- end;
 
  //Action 0 = init ncounter/buffer,Action 1 = write byte to buffer, action 2= flush buffer
  BitPlaneWriterProc = Procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
 
- GetMaxColorProc = function : integer;
- GetPixelProc    = function(x,y : integer) : integer;
 
 const
  BorlandColorMap : ColorMap = (0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15);
 // MSColorMap: ColorMap = (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
 
-var
- XThumbIndex  : integer;
- XGetPixel    : GetPixelProc;
- XGetMaxColor : GetMaxColorProc;
 
-procedure SetThumbIndex(index : integer);
-begin
- XThumbIndex:=index;
-end;
-
-function GetThumbIndex : integer;
-begin
- GetThumbIndex:=XThumbIndex;
-end;
-
-function CoreGetMaxColor : integer;
-begin
-  CoreGetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
-end;
-
-function ThumbGetMaxColor : integer;
-var
- index : integer;
-begin
-  index:=GetThumbIndex;
-  ThumbGetMaxColor:=ImageThumbBase.GetMaxColor(index);
-end;
-
-function  GetMaxColor : integer;
-begin
-  GetMaxColor:=XGetMaxColor();
-end;
-
-function CoreGetPixel(x,y : integer) : integer;
-begin
-  CoreGetPixel:=RMCoreBase.getPixel(x,y);
-end;
-
-function ThumbGetPixel(x,y : integer) : integer;
-var
-  index : integer;
-begin
-  index:=GetThumbIndex;
-  ThumbGetPixel:=ImageThumbBase.GetPixel(index,x,y);
-end;
-
-
-procedure SetMaxColorProc(MC : GetMaxColorProc);
-begin
-  XGetMaxColor:=MC;
-end;
-
-procedure SetGetPixelProc(GP : GetPixelProc);
-begin
-  XGetPixel:=GP;
-end;
-
-Procedure SetCoreActive;
-begin
- SetMaxColorProc(@CoreGetMaxColor);
- SetGetPixelProc(@CoreGetPixel);
-end;
-
-Procedure SetThumbActive;
-begin
- SetMaxColorProc(@ThumbGetMaxColor);
- SetGetPixelProc(@ThumbGetPixel);
- SetThumbIndex(0);
-end;
-
-Procedure InitXGFProcs;
-begin
- SetCoreActive;
-end;
-
-function GetPixel(x,y : integer) : integer;
-begin
- GetPixel:=XGetPixel(x,y);
-end;
 
 Procedure spTOmp(var singlePlane : LineBufType ;
                  var multiplane  : LineBufType;
@@ -517,6 +440,7 @@ begin
 {$I+}
 end;
 
+
 Function WriteTPArray(var data :BufferRec;x,y,x2,y2,LanType : word; imagename:string):word;
 var
   Width,Height : Word;
@@ -559,7 +483,11 @@ begin
  WriteXgf2:=IOResult;
 end;
 
-
+procedure WriteXgfToBuffer(x,y,x2,y2,LanType : word;var data : BufferRec);
+begin
+  BitPlaneWriterFile(0,data,0);
+  CreateBitPlanesPC(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
+end;
 
 //write a single file
 Function WriteXgfArray2(x,y,x2,y2,LanType : word;filename:string):word;
@@ -581,141 +509,9 @@ begin
 end;
 
 
-Function RESInclude(filename:string):word;
-var
- data    : BufferRec;
- EO      : ImageExportFormatRec;
- i       : integer;
- count   : integer;
- width   : integer;
- height  : integer;
-begin
- SetThumbActive;   // we are getting pixel data from core object ThumbBase
- assign(data.fText,filename);
-{$I-}
- rewrite(data.fText);
-
- count:=ImageThumbBase.GetCount;
- for i:=0 to count-1 do
- begin
-   width:=ImageThumbBase.GetWidth(i);
-   height:=ImageThumbBase.GetHeight(i);
-   ImageThumbBase.GetExportOptions(i,EO);
-   SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
-   if (EO.Lan=TPLan) and (EO.Image = 1) then WriteTPArray(data,0,0,width-1,height-1,EO.Lan,EO.Name);
- end;
- close(data.fText);
- {$I+}
- RESInclude:=IOResult;
-end;
-
-
-Function RESBinary(filename:string):word;
-var
- data    : BufferRec;
- EO      : ImageExportFormatRec;
- RR      : resrec;
- RH      : resheadrec;
- i       : integer;
- count   : integer;
- width   : integer;
- height  : integer;
- nColors : integer;
- Size    : LongInt;
-
- HeaderSize  : LongInt;
- OffsetCount : LongInt;
- ExportCount : Integer;
- SLen        : integer;
- Error       : integer;
-begin
- ExportCount:=ImageThumbBase.GetExportCount;
- if ExportCount = 0 then exit;
-
- SetThumbActive;   // we are getting pixel data from core object ThumbBase
- assign(data.f,filename);
-{$I-}
- rewrite(data.f,1);
-{$I+}
- Error:=IORESULT;
- if Error<>0 then
- begin
-    RESBinary:=Error;
-    exit;
- end;
- count:=ImageThumbBase.GetCount;
- HeaderSize:=sizeof(RH)+Exportcount*sizeof(resrec);
- OffsetCount:=HeaderSize;
-
- //write the signature and record count
- RH.sig:='RES';
- RH.ver:=1;
- RH.resitemcount:=Exportcount;
- {$I-}
- Blockwrite(data.f,RH,sizeof(RH));
- {$I+}
- Error:=IORESULT;
- if Error<>0 then
- begin
-  RESBinary:=Error;
-  exit;
- end;
-
- //write the header with all the correct offsets where the image is going to be located
- for i:=0 to count-1 do
- begin
-   width:=ImageThumbBase.GetWidth(i);
-   height:=ImageThumbBase.GetHeight(i);
-   nColors:=ImageThumbBase.GetMaxColor(i)+1;
-   Size:=GetXImageSize(width,height,nColors);
-   ImageThumbBase.GetExportOptions(i,EO);
-
-   //copy name field
-   fillchar(RR.rid,sizeof(RR.rid),32);
-   slen:=Length(EO.Name);
-   if slen > 20 then slen:=20;
-   Move(EO.Name[1],RR.rid,slen);
-
-   //calc size/offset
-   if EO.Image > 0  then
-   begin
-     RR.size:=Size;
-     RR.offset:=OffsetCount;
-     RR.rt:=EO.Lan*100+EO.Image; //language id * 100 + Image Type to generate resource type
-
-     inc(OffsetCount,Size);
-     {$I-}
-     Blockwrite(data.f,RR,sizeof(RR));
-     {$I+}
-     Error:=IORESULT;
-     if Error<>0 then
-     begin
-       RESBinary:=Error;
-       exit;
-     end;
-   end;
- end;
-
- //convert and dump image
- for i:=0 to count-1 do
- begin
-   width:=ImageThumbBase.GetWidth(i);
-   height:=ImageThumbBase.GetHeight(i);
-   ImageThumbBase.GetExportOptions(i,EO);
-   SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
-   BitPlaneWriterFile(0,data,0);
-   if (EO.Lan=TPLan) and (EO.Image = 1) then CreateBitPlanesPC(@BitPlaneWriterFile,data,0,0,width-1,height-1,EO.Lan);
- end;
-
- {$I-}
- close(data.f);
- {$I+}
- RESBinary:=IOResult;
-end;
-
 
 
 
 begin
-  InitXGFProcs;
+
 end.

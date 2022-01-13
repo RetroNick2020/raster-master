@@ -3,7 +3,10 @@
 Unit rres;
 
 Interface
+   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf;
 
+Function RESInclude(filename:string):word;
+Function RESBinary(filename:string):word;
 
 const
  MaxResItems = 255;
@@ -164,23 +167,170 @@ begin
 {$I+}
 end;
 *)
+
+
+function GetRESImageSize(width,height,nColors,Lan,ImageType : integer) : longint;
+var
+ size : longint;
 begin
-(*
-  writeln(memavail);
-  res_open(myres,'c:\mm\gfx\marble.res');
-  setvga256;
-  res_read(myres,mypal,1);
-  SetPaletteList(mypal,256);
+ size:=0;
+ Case Lan of TPLan:size:=GetXImageSize(width,height,ncolors);
+             ABLan:begin
+                     Case ImageType of 1:size:=GetABXImageSize(width,height,nColors);
+                                       2:size:=0;
+                                       3:size:=0;
+                     end;
+                  end;
+end;
+GetRESImageSize:=size;
+end;
+
+Function RESInclude(filename:string):word;
+var
+ data    : BufferRec;
+ EO      : ImageExportFormatRec;
+ i       : integer;
+ count   : integer;
+ width   : integer;
+ height  : integer;
+begin
+ SetThumbActive;   // we are getting pixel data from core object ThumbBase
+ assign(data.fText,filename);
+{$I-}
+ rewrite(data.fText);
+
+ count:=ImageThumbBase.GetCount;
+ for i:=0 to count-1 do
+ begin
+   width:=ImageThumbBase.GetWidth(i);
+   height:=ImageThumbBase.GetHeight(i);
+   ImageThumbBase.GetExportOptions(i,EO);
+   SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
+   if (EO.Lan=TPLan) and (EO.Image = 1) then WriteTPArray(data,0,0,width-1,height-1,EO.Lan,EO.Name);
+   if (EO.LAN=2) and (EO.Image = 1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,width-1,data,EO.Name);
+   if (EO.LAN=2) and (EO.Image = 2) then WriteAmigaBasicObjectDataBuffer(0,0,width-1,width-1,data,EO.Name,false);
+   if (EO.LAN=2) and (EO.Image = 3) then WriteAmigaBasicObjectDataBuffer(0,0,width-1,width-1,data,EO.Name,true);
+
+ end;
+ close(data.fText);
+ {$I+}
+ RESInclude:=IOResult;
+end;
 
 
-  res_dis_xgf(myres,1,0,2,0);
-  res_dis_xgf(myres,110,0,3,0);
-  res_dis_xgf(myres,10,80,8,0);
+Function RESBinary(filename:string):word;
+var
+ data    : BufferRec;
+ EO      : ImageExportFormatRec;
+ RR      : resrec;
+ RH      : resheadrec;
+ i       : integer;
+ count   : integer;
+ width   : integer;
+ height  : integer;
+ nColors : integer;
+ Size    : LongInt;
+
+ HeaderSize  : LongInt;
+ OffsetCount : LongInt;
+ ExportCount : Integer;
+ SLen        : integer;
+ Error       : integer;
+begin
+ ExportCount:=ImageThumbBase.GetExportCount;
+ if ExportCount = 0 then exit;
+
+ SetThumbActive;   // we are getting pixel data from core object ThumbBase
+ assign(data.f,filename);
+{$I-}
+ rewrite(data.f,1);
+{$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin
+    RESBinary:=Error;
+    exit;
+ end;
+ count:=ImageThumbBase.GetCount;
+ HeaderSize:=sizeof(RH)+Exportcount*sizeof(resrec);
+ OffsetCount:=HeaderSize;
+
+ //write the signature and record count
+ RH.sig:='RES';
+ RH.ver:=1;
+ RH.resitemcount:=Exportcount;
+ {$I-}
+ Blockwrite(data.f,RH,sizeof(RH));
+ {$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin
+  RESBinary:=Error;
+  exit;
+ end;
+
+ //write the header with all the correct offsets where the image is going to be located
+ for i:=0 to count-1 do
+ begin
+   ImageThumbBase.GetExportOptions(i,EO);
+
+   width:=ImageThumbBase.GetWidth(i);
+   height:=ImageThumbBase.GetHeight(i);
+   nColors:=ImageThumbBase.GetMaxColor(i)+1;
+   Size:=GetRESImageSize(width,height,nColors,EO.Lan,EO.Image);
+
+   //copy name field
+   fillchar(RR.rid,sizeof(RR.rid),32);
+   slen:=Length(EO.Name);
+   if slen > 20 then slen:=20;
+   Move(EO.Name[1],RR.rid,slen);
+
+   //calc size/offset
+   if EO.Image > 0  then
+   begin
+     RR.size:=Size;
+     RR.offset:=OffsetCount;
+     RR.rt:=EO.Lan*100+EO.Image; //language id * 100 + Image Type to generate resource type
+
+     inc(OffsetCount,Size);
+     {$I-}
+     Blockwrite(data.f,RR,sizeof(RR));
+     {$I+}
+     Error:=IORESULT;
+     if Error<>0 then
+     begin
+       RESBinary:=Error;
+       exit;
+     end;
+   end;
+ end;
+
+ //convert and dump image
+ for i:=0 to count-1 do
+ begin
+   width:=ImageThumbBase.GetWidth(i);
+   height:=ImageThumbBase.GetHeight(i);
+   ImageThumbBase.GetExportOptions(i,EO);
+   SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
+ //  BitPlaneWriterFile(0,data,0);
+   if (EO.Lan=TPLan) and (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,data);
+   if (EO.Lan=2) and (EO.Image = 1) then WriteAmigaBasicXGFBuffer(0,0,width-1,height-1,data);
+ end;
+
+ {$I-}
+ close(data.f);
+ {$I+}
+ RESBinary:=IOResult;
+end;
 
 
-  repeat until keypressed;
-  closegraph;
-  res_close(myres);
-  writeln(memavail);
-*)
+
+
+
+
+
+
+
+
+begin
 end.

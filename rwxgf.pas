@@ -420,48 +420,6 @@ begin
 {$I+}
 end;
 
-Procedure spTOmp(var singlePlane : LineBufType ;
-                 var multiplane  : LineBufType;
-                 PixelWidth,BytesPerPlane,nPlanes : Word);
-
-var
- BitPlane1 : Word;
- BitPlane2 : Word;
- BitPlane3 : Word;
- BitPlane4 : Word;
- BitPlane5 : Word;
- pixelpos  : Word;
- color     : Word;
- xoffset   : Word;
- x,j       : Word;
-begin
- Fillchar(multiplane,sizeof(multiplane),0);
-
- BitPlane1:=0;
- BitPlane2:=bytesPerPlane;
- BitPlane3:=BytesPerPlane*2;
- BitPlane4:=BytesPerPlane*3;
- BitPlane5:=BytesPerPlane*4;  //32 colors
- xoffset:=0;
- pixelpos:=0;
- for x:=0 to bytesPerPlane-1 do
- begin
-   for j:=0 to 7 do
-   begin
-      color:=SinglePlane[xoffset+j];
-      if (nPlanes > 4) AND biton(4,color) then setbit((7-j),1,multiplane[BitPlane5+pixelpos]);
-      if (nPlanes > 3) AND biton(3,color) then setbit((7-j),1,multiplane[BitPlane4+pixelpos]);
-      if (nPlanes > 2) AND biton(2,color) then setbit((7-j),1,multiplane[BitPlane3+pixelpos]);
-      if (nPlanes > 1) AND biton(1,color) then setbit((7-j),1,multiplane[BitPlane2+pixelpos]);
-      if (nPlanes > 0) AND biton(0,color) then setbit((7-j),1,multiplane[BitPlane1+pixelpos]);
-    end;
-   inc(pixelpos);
-   inc(xoffset,8);
- end;
-end;
-
-
-
 
 begin
 end.
