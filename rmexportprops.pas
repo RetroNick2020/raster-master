@@ -73,7 +73,7 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-//                           ComboImage.Items.Add('putimage');
+                           ComboImage.Items.Add('putimage');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -83,7 +83,7 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-  //                         ComboImage.Items.Add('_putimage');
+                           ComboImage.Items.Add('_putimage');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -93,7 +93,7 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-  //                         ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Put Image');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -104,7 +104,7 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-    //                       ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Put Image');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -114,7 +114,7 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-      //                     ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Put Image');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -124,7 +124,7 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-        //                   ComboImage.Items.Add('putimage');
+                           ComboImage.Items.Add('putimage');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -134,7 +134,7 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-          //                 ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Put Image');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -147,7 +147,6 @@ begin
                            ComboImage.Items.Add('Put Image');
                            ComboImage.Items.Add('Bob Image');
                            ComboImage.Items.Add('VSprite Image');
-
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -158,7 +157,8 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
- //                          ComboImage.Items.Add('putimage');
+                           ComboImage.Items.Add('Bob Image');
+                           ComboImage.Items.Add('VSprite Image');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
@@ -168,12 +168,24 @@ begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
-                     //      ComboImage.Items.Add('putimage');
+                           ComboImage.Items.Add('Bob Image');
+                           ComboImage.Items.Add('VSprite Image');
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
+                   QPLan:begin
+                            ComboImage.Items.Clear;
+                            ComboPalette.Items.Clear;
+                            ComboImage.Items.Add('None');
+                            ComboImage.Items.Add('putimage');
+                            ComboPalette.Items.Add('None');
+                           // ComboPalette.Items.Add('RGB Palette');
+                            ComboImage.ItemIndex:=EO.Image;
+                            ComboPalette.ItemIndex:=EO.Palette;
+                          end;
+
 
 
   end;
@@ -220,6 +232,7 @@ begin
    ComboCompiler.Items.Add('AmigaBASIC');
    ComboCompiler.Items.Add('Amiga Pascal');
    ComboCompiler.Items.Add('Amiga C');
+   ComboCompiler.Items.Add('Quick Pascal');
 
    ComboCompiler.ItemIndex:=0;
 

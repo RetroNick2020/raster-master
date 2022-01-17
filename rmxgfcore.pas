@@ -111,8 +111,6 @@ begin
   XGetColor:=GC;
 end;
 
-
-
 Procedure SetCoreActive;
 begin
  SetMaxColorProc(@CoreGetMaxColor);

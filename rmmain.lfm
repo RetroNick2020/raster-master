@@ -388,6 +388,14 @@ object RMMainForm: TRMMainForm
       end
       object MenuItem9: TMenuItem
         Caption = 'Export'
+        object ExportRESInclude: TMenuItem
+          Caption = 'RES Text Include File'
+          OnClick = RESExportClick
+        end
+        object ExportRESBinary: TMenuItem
+          Caption = 'RES Binary File'
+          OnClick = RESExportClick
+        end
         object AmigaBasic: TMenuItem
           Caption = 'AmigaBasic'
           object ABPutData: TMenuItem
@@ -413,10 +421,6 @@ object RMMainForm: TRMMainForm
           object ABVSpriteFile: TMenuItem
             Caption = 'VSprite File'
             OnClick = AmigaBasicClick
-          end
-          object AmigaExportRESInclude: TMenuItem
-            Caption = 'RES Text Include File'
-            OnClick = RESExportClick
           end
         end
         object AmigaC: TMenuItem
@@ -507,6 +511,17 @@ object RMMainForm: TRMMainForm
             OnClick = QuickCClick
           end
         end
+        object QuickPascal: TMenuItem
+          Caption = 'Quick Pascal'
+          object QPPutImageArray: TMenuItem
+            Caption = 'PutImage Array'
+            OnClick = QuickPascalClick
+          end
+          object QPPutImageFile: TMenuItem
+            Caption = 'PutImage File'
+            OnClick = QuickPascalClick
+          end
+        end
         object TurboBasic: TMenuItem
           Caption = 'Turbo/Power Basic'
           object TBPutData: TMenuItem
@@ -527,14 +542,6 @@ object RMMainForm: TRMMainForm
           object TPPutImageFile: TMenuItem
             Caption = 'PutImage File'
             OnClick = TurboPascalClick
-          end
-          object ExportRESInclude: TMenuItem
-            Caption = 'RES Text Include File'
-            OnClick = RESExportClick
-          end
-          object ExportRESBinary: TMenuItem
-            Caption = 'RES Binary File'
-            OnClick = RESExportClick
           end
         end
         object TurboC: TMenuItem

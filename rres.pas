@@ -174,13 +174,17 @@ var
  size : longint;
 begin
  size:=0;
- Case Lan of TPLan:size:=GetXImageSize(width,height,ncolors);
+ Case Lan of TPLan,TCLan,QCLan,QPLan,QBLan,GWLan,PBLan:size:=GetXImageSize(width,height,ncolors);
+             FPLan:size:=GetXImageSizeFP(width,height);
+             FBLan:size:=GetXImageSizeFB(width,height);
+
              ABLan:begin
                      Case ImageType of 1:size:=GetABXImageSize(width,height,nColors);
-                                       2:size:=0;
-                                       3:size:=0;
+                                       2:size:=GetBobDataSize(width,height,nColors,false); //bob
+                                       3:size:=GetBobDataSize(width,height,nColors,true);  //vsprite
                      end;
-                  end;
+                   end;
+             APLan,ACLan:size:=GetAmigaBitMapSize(width,height,ncolors);
 end;
 GetRESImageSize:=size;
 end;
@@ -195,6 +199,8 @@ var
  height  : integer;
 begin
  SetThumbActive;   // we are getting pixel data from core object ThumbBase
+ SetGWStartLineNumber(1000); // this is only used for exporting GWBASIC/PCBASIC code
+
  assign(data.fText,filename);
 {$I-}
  rewrite(data.fText);
@@ -206,10 +212,30 @@ begin
    height:=ImageThumbBase.GetHeight(i);
    ImageThumbBase.GetExportOptions(i,EO);
    SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
-   if (EO.Lan=TPLan) and (EO.Image = 1) then WriteTPArray(data,0,0,width-1,height-1,EO.Lan,EO.Name);
-   if (EO.LAN=2) and (EO.Image = 1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,width-1,data,EO.Name);
-   if (EO.LAN=2) and (EO.Image = 2) then WriteAmigaBasicObjectDataBuffer(0,0,width-1,width-1,data,EO.Name,false);
-   if (EO.LAN=2) and (EO.Image = 3) then WriteAmigaBasicObjectDataBuffer(0,0,width-1,width-1,data,EO.Name,true);
+   if (EO.Lan=TPLan) and (EO.Image = 1) then WriteTPCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+   if (EO.Lan=TCLan) and (EO.Image = 1) then WriteTCCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+
+   if (EO.Lan=FPLan) and (EO.Image = 1) then WriteFPCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+
+   if (EO.Lan=FBLan) and (EO.Image = 1) then WriteFBCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+
+   if (EO.Lan=QBLan) and (EO.Image = 1) then WriteQBCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+   if (EO.Lan=GWLan) and (EO.Image = 1) then WriteGWCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+
+   if (EO.Lan=QCLan) and (EO.Image = 1) then WriteQCCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+   if (EO.Lan=QPLan) and (EO.Image = 1) then WriteQPCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+
+   if (EO.Lan=PBLan) and (EO.Image = 1) then WritePBCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+
+   if (EO.LAN=ABLan) and (EO.Image = 1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,width-1,data,EO.Name);        // put
+   if (EO.LAN=ABLan) and (EO.Image = 2) then WriteAmigaBasicBobDataBuffer(0,0,width-1,width-1,data,EO.Name,false); //bob
+   if (EO.LAN=ABLan) and (EO.Image = 3) then WriteAmigaBasicBobDataBuffer(0,0,width-1,width-1,data,EO.Name,true); // vsprite
+
+   if (EO.LAN=ACLan) and (EO.Image = 1) then WriteAmigaCBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,false);        // bob
+   if (EO.LAN=ACLan) and (EO.Image = 2) then WriteAmigaCBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,true);  //vsprite
+
+   if (EO.LAN=APLan) and (EO.Image = 1) then WriteAmigaPascalBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,false);        // bob
+   if (EO.LAN=APLan) and (EO.Image = 2) then WriteAmigaPascalBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,true);  //vsprite
 
  end;
  close(data.fText);
@@ -312,18 +338,33 @@ begin
    height:=ImageThumbBase.GetHeight(i);
    ImageThumbBase.GetExportOptions(i,EO);
    SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
- //  BitPlaneWriterFile(0,data,0);
-   if (EO.Lan=TPLan) and (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,data);
-   if (EO.Lan=2) and (EO.Image = 1) then WriteAmigaBasicXGFBuffer(0,0,width-1,height-1,data);
- end;
+
+   Case EO.Lan of TPLan,TCLan,QCLan,QPLan,QBLan,GWLan,PBLan:
+                                    begin
+                                      if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,data);
+                                    end;
+                              FPLan: WriteXGFToBufferFP(0,0,width-1,height-1,data);
+                              FBLan: WriteXGFToBufferFB(0,0,width-1,height-1,data);
+                              ABLan:begin
+                                      if (EO.Image = 1) then WriteAmigaBasicXGFBuffer(0,0,width-1,height-1,data);
+                                      if (EO.Image = 2) then WriteAmigaBasicBobBuffer(0,0,width-1,height-1,data,false); //bob
+                                      if (EO.Image = 3) then WriteAmigaBasicBobBuffer(0,0,width-1,height-1,data,true);  //sprite
+                                    end;
+                        ACLan,APLan:begin
+                                       if (EO.Image = 1) then WriteAmigaBobBuffer(0,0,width-1,height-1,data,false);
+                                       if (EO.Image = 2) then WriteAmigaBobBuffer(0,0,width-1,height-1,data,true);
+                                    end;
+
+   end;
+
 
  {$I-}
  close(data.f);
  {$I+}
  RESBinary:=IOResult;
+ end;
+
 end;
-
-
 
 
 

@@ -7,12 +7,14 @@ Unit rmamigarwxgf;
 
 
 function GetABXImageSize(width,height,ncolors : integer) : longint;
+function GetBobDataSize(width,height,nColors: integer;vsprite : boolean) : longint;
+function GetAmigaBitMapSize(width,height,ncolors : integer) : longint;
 
-Function WriteAmigaBasicObjectBuffer(x,y,x2,y2 : word;var data : bufferRec;SaveAsSprite : Boolean):word;
-Function WriteAmigaBasicObjectDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobBuffer(x,y,x2,y2 : word;var data : bufferRec;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string;SaveAsSprite : Boolean):word;
 
-Function WriteAmigaBasicObjectFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
-Function WriteAmigaBasicObjectDataFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobDataFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 
 Function WriteAmigaBasicXGFBuffer(x,y,x2,y2 : word;var data : bufferRec):word;
 Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string):word;
@@ -21,11 +23,15 @@ Function WriteAmigaBasicXGFFile(x,y,x2,y2 : word;filename:string):word;
 Function WriteAmigaBasicXGFDataFile(x,y,x2,y2 : word;filename:string):word;
 
 
-Function WriteAmigaPascalCodeWORD(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
-Function WriteAmigaCCodeWORD(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaPascalBobCodeToFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaCBobCodeToFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 
 Function WriteAmigaBobBuffer(x,y,x2,y2 : word;var data : bufferRec;SaveAsSprite : Boolean):word;
 Function WriteAmigaBobFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+
+Function WriteAmigaCBobCodeToBuffer(x,y,x2,y2 : word;imagename:string;var data : BufferRec; SaveAsSprite : Boolean):word;
+Function WriteAmigaPascalBobCodeToBuffer(x,y,x2,y2 : word;imagename:string;var data : BufferRec; SaveAsSprite : Boolean):word;
+
 
 Implementation
 
@@ -67,7 +73,7 @@ type
 
  //Action 0 = init ncounter/buffer,Action 1 = write byte to buffer, action 2= flush buffer
  //Erorr returns file write error
- BitPlaneWriterProc = procedure(inByte : Byte; var Buffer : BufferRec; action : integer;var Error : word);
+ BitPlaneWriterProc = procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
 
  Function LongToLE(myLongWord : LongWord) : LongWord;
  var
@@ -111,18 +117,22 @@ begin
 end;
 
 //image size for Bobs and VSprite
-function GetObjectDataSize(width,height,bitplanes : word;vsprite : boolean) : longint;
+function GetBobDataSize(width,height,nColors : integer;vsprite : boolean) : longint;
+var
+ bitplanes : integer;
 begin
- GetObjectDataSize:=(((width+15) div 16)*2)*height*bitplanes+sizeof(ABBobHeader);
- if vsprite then inc(GetObjectDataSize,sizeof(ABSpritePalette));
+ bitplanes:=nColorsToBitplanes(nColors);
+ GetBobDataSize:=(((width+15) div 16)*2)*height*bitplanes+sizeof(ABBobHeader);
+ if vsprite then inc(GetBobDataSize,sizeof(ABSpritePalette));
 end;
 
-procedure ObjectBitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer;var Error : word);
+procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 begin
 {$I-}
    if action = 0 then
    begin
        buffer.bufCount:=0;
+       buffer.error:=0;
    end
    else if action = 1 then
    begin
@@ -143,11 +153,11 @@ begin
        end;
    end;
 {$I+}
-   Error:=IORESULT;
+   buffer.Error:=IORESULT;
 end;
 
 
-procedure ObjectBitplaneWriterDataStatements(inByte : Byte; var Buffer : BufferRec;action : integer;var Error : word);
+procedure ObjectBitplaneWriterDataStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
 begin
@@ -155,6 +165,7 @@ begin
    if action = 0 then
    begin
        buffer.bufCount:=0;
+       buffer.Error:=0;
    end
    else if action = 1 then
    begin
@@ -188,10 +199,10 @@ begin
      end;
    end;
 {$I+}
-   Error:=IORESULT;
+   buffer.Error:=IORESULT;
 end;
 
-procedure XGFBitplaneWriterDataStatements(inByte : Byte; var Buffer : BufferRec;action : integer;var Error : word);
+procedure XGFBitplaneWriterDataStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
 begin
@@ -199,6 +210,7 @@ begin
    if action = 0 then
    begin
        buffer.bufCount:=0;
+       buffer.Error:=0;
    end
    else if action = 1 then
    begin
@@ -232,16 +244,9 @@ begin
      end;
    end;
    {$I+}
-   Error:=IORESULT;
+   buffer.Error:=IORESULT;
 end;
 
-(*
- //we emulator graph's getmaxcolor way of counting colors
-function GetMaxColor : integer;
-begin
-  GetMaxColor:=RMCoreBase.Palette.GetColorCount-1;
-end;
-*)
 
 function GetBitPlaneCount : integer;
 var
@@ -257,7 +262,7 @@ begin
  end;
 end;
 
-function CreateBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWriterProc; var data :BufferRec;var Error : word) : word;
+function CreateBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWriterProc; var data :BufferRec) : word;
 var
  lineBuf :linebuftype;
  counter : integer;
@@ -330,10 +335,10 @@ begin
      end;  //end i
      for bwcount:=0 to minBytesPerLine-1 do
      begin
-       BitPlaneWriter(linebuf[bwcount],data,1,Error);  //based on the bitplane writer this will be saved as binary or outputed as text data statements
-       if Error<>0 then
+       BitPlaneWriter(linebuf[bwcount],data,1);  //based on the bitplane writer this will be saved as binary or outputed as text data statements
+       if data.Error<>0 then
        begin
-          CreateBitPlanes:=Error;
+          CreateBitPlanes:=data.Error;
           exit;
        end;
      end;
@@ -433,7 +438,7 @@ end;
 
 
 // for vsprite - the bitplanes alternate between Bitplate 1, Bitplane 2 for each line of bitmap
-Procedure CreateSpriteBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWriterProc; var data :BufferRec;var Error : word);
+Procedure CreateSpriteBitPlanes(x,y,x2,y2 : word; BitPlaneWriter  : BitPlaneWriterProc; var data :BufferRec);
 var
  lineBuf,spritebuf :linebuftype;
  j,i     : integer;
@@ -459,14 +464,14 @@ begin
 
    for bwcount:=0 to minBytesPerLine*2-1 do  // 2 plitplanes for 4 color sprites
    begin
-     BitPlaneWriter(Spritebuf[bwcount],data,1,Error);  //based on the bitplane writer this will be saved as binary or outputed as text data statements
+     BitPlaneWriter(Spritebuf[bwcount],data,1);  //based on the bitplane writer this will be saved as binary or outputed as text data statements
    end;
  end; // end j
 end;
 
 
 
-procedure SpriteBitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer;var Error : word);
+procedure SpriteBitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
 begin
 {$I-}
    if action = 0 then
@@ -474,6 +479,7 @@ begin
        buffer.bufCount:=0;
        buffer.arraysize:=0;
        buffer.ByteWriteCount:=0;
+       buffer.Error:=0;;
    end
    else if action = 1 then
    begin
@@ -513,11 +519,11 @@ begin
        buffer.bufcount:=0;
   end;
  {$I+}
-  Error:=IORESULT;
+  buffer.Error:=IORESULT;
 end;
 
 
-procedure BitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer;var Error : word);
+procedure BitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
 begin
@@ -527,6 +533,7 @@ begin
        buffer.bufCount:=0;
        buffer.arraysize:=0;
        buffer.ByteWriteCount:=0;
+       buffer.Error:=0;
    end
    else if action = 1 then
    begin
@@ -560,7 +567,7 @@ begin
        buffer.bufcount:=0;
   end;
   {$I+}
-  Error:=IORESULT;
+  buffer.Error:=IORESULT;
  end;
 
 
@@ -574,7 +581,7 @@ var
   size : longword;
   Imagename : string;
   BWriter : BitPlaneWriterProc;
-  Error : word;
+
 begin
  if SaveAsSprite then
  begin
@@ -591,7 +598,7 @@ begin
  height:=y2-y+1;
  BPCount:=GetBitPlaneCount;
 
- BWriter(0,data,0,Error);  //init the data record
+ BWriter(0,data,0);  //init the data record
 
  Assign(data.ftext,filename);
 {$I-}
@@ -608,7 +615,7 @@ begin
  begin
      writeln(data.ftext,'(* VSprite Bitmap *)');
      writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of longint = (');
-     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data,Error);
+     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
 
      (*
      for j:=y to y2 do
@@ -621,14 +628,14 @@ begin
  begin
    writeln(data.ftext,'(* BOB Bitmap *)');
    writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
-   CreateBitPlanes(x,y,x2,y2,BWriter,data,error);
+   CreateBitPlanes(x,y,x2,y2,BWriter,data);
  end;
 
- BWriter(0,data,2,error);  //flush it
+ BWriter(0,data,2);  //flush it
  Close(data.ftext);
 {$I+}
- if Error<>0 then
-   WriteAmigaPascalConst:=Error
+ if data.Error<>0 then
+   WriteAmigaPascalConst:=data.Error
  else
    WriteAmigaPascalConst:=IORESULT;
 end;
@@ -643,7 +650,7 @@ WORD chip bob_data1[2 * 2 * GEL_SIZE] =
    };
  *)
 
-procedure BitplaneWriterCWORDStatements(inByte : Byte; var Buffer : BufferRec;action : integer;var Error : word);
+procedure BitplaneWriterCWORDStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
 begin
@@ -653,6 +660,7 @@ begin
        buffer.bufCount:=0;
        buffer.arraysize:=0;
        buffer.ByteWriteCount:=0;
+       buffer.Error:=0;
    end
    else if action = 1 then
    begin
@@ -689,72 +697,20 @@ begin
       buffer.bufcount:=0;
    end;
    {$I+}
-   Error:=IORESULT;
+   buffer.Error:=IORESULT;
 end;
 
-
-
-Function WriteAmigaCCodeWORD(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
-var
-  Width,height : Word;
-  data :BufferRec;
-  BPCount : word;
-  size : longword;
-  Imagename : string;
-  BWriter : BitPlaneWriterProc;
-  Error : word;
-begin
- BWriter:=@BitplaneWriterCWORDStatements;
-
- width:=x2-x+1;
- height:=y2-y+1;
- BPCount:=GetBitPlaneCount;
-
- BWriter(0,data,0,Error);  //init the data record
-
- Assign(data.ftext,filename);
-{$I-}
- Rewrite(data.ftext);
-
- Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
- Size:=((((width+15) div 16)*2)*height*BPCount) div 2;
- data.ArraySize:=Size;
-
- writeln(data.ftext,'/* Amiga C , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' */');
- writeln(data.ftext,'/* rename __chip to chip if using SAS compiler. remove __chip if compiler does not support it */');
- if SaveAsSprite then
- begin
-     writeln(data.ftext,'/* VSprite Bitmap */');
-     writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
-     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data,Error);
- end
- else
- begin
-   writeln(data.ftext,'/* BOB Bitmap */');
-   writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
-   CreateBitPlanes(x,y,x2,y2,BWriter,data,Error);
- end;
-
- BWriter(0,data,2,Error);  //flush it
- Close(data.ftext);
-{$I+}
- if Error<>0 then
-   WriteAmigaCCodeWORD:=Error
- else
-   WriteAmigaCCodeWORD:=IORESULT;
-end;
-
-
-
-procedure BitplaneWriterPascalWORDStatements(inByte : Byte; var Buffer : BufferRec;action : integer;Var Error : Word);
+procedure BitplaneWriterPascalWORDStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
 begin
+{$I-}
    if action = 0 then
    begin
        buffer.bufCount:=0;
        buffer.arraysize:=0;
        buffer.ByteWriteCount:=0;
+       buffer.Error:=0;
    end
    else if action = 1 then
    begin
@@ -790,82 +746,34 @@ begin
       writeln(buffer.ftext,');');
       buffer.bufcount:=0;
    end;
+   {$I+}
+   buffer.Error:=IORESULT;
 end;
 
 
 
-Function WriteAmigaPascalCodeWORD(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
-var
-  Width,height : Word;
-  data :BufferRec;
-  BPCount : word;
-  size : longword;
-  Imagename : string;
-  BWriter : BitPlaneWriterProc;
-  Error : Word;
-begin
- BWriter:=@BitplaneWriterPascalWORDStatements;
-
- width:=x2-x+1;
- height:=y2-y+1;
- BPCount:=GetBitPlaneCount;
-
- BWriter(0,data,0,Error);  //init the data record
-
- Assign(data.ftext,filename);
-{$I-}
- Rewrite(data.ftext);
-
- Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
- Size:=((((width+15) div 16)*2)*height*BPCount) div 2;
- data.ArraySize:=Size;
-
- writeln(data.ftext,'(* Amiga Pascal , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' *)');
- if SaveAsSprite then
- begin
-     writeln(data.ftext,'(* VSprite Bitmap *)');
-     writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of WORD = (');
-     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data,Error);
- end
- else
- begin
-   writeln(data.ftext,'(* BOB Bitmap *)');
-   writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of WORD = (');
-   CreateBitPlanes(x,y,x2,y2,BWriter,data,Error);
- end;
-
- BWriter(0,data,2,Error);  //flush it
- Close(data.ftext);
-{$I+}
- if Error<>0 then
-   WriteAmigaPascalCodeWORD:=Error
- else
-   WriteAmigaPascalCodeWORD:=IORESULT;
-end;
-
-Function WriteAmigaBasicObjectBuffer(x,y,x2,y2 : word;var data : bufferRec;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobBuffer(x,y,x2,y2 : word;var data : bufferRec;SaveAsSprite : Boolean):word;
 var
   Header : ABBobHeader;
   SPal   : ABSpritePalette;
   Width : Word;
   TempBuf : array[1..26] of Byte;
   i,BPCount : word;
-  Error : word;
 begin
  CreateHeader(Header, x,y,x2,y2,SaveAsSprite);
 
  Move(Header,TempBuf,sizeof(TempBuf));
- ObjectBitplaneWriterFile(0,data,0,Error);  //init the data record
+ BitplaneWriterFile(0,data,0);  //init the data record
 
  For i:=1 to SizeOf(TempBuf) do
  begin
-   ObjectBitplaneWriterFile(tempBuf[i],data,1,Error);
+   BitplaneWriterFile(tempBuf[i],data,1);
  end;
 
- CreateBitPlanes(x,y,x2,y2,@ObjectBitplaneWriterFile,data,Error);
- if Error <> 0 then
+ CreateBitPlanes(x,y,x2,y2,@BitplaneWriterFile,data);
+ if data.Error <> 0 then
  begin
-   WriteAmigaBasicObjectBuffer:=Error;
+   WriteAmigaBasicBobBuffer:=data.Error;
    exit;
  end;
 
@@ -878,73 +786,59 @@ begin
     Move(SPal,TempBuf,sizeof(SPal));
     For i:=1 to SizeOf(SPal) do
     begin
-      ObjectBitplaneWriterFile(tempBuf[i],data,1,Error);
+      BitplaneWriterFile(tempBuf[i],data,1);
     end;
  end;
- ObjectBitplaneWriterFile(0,data,2,Error);  //flush it
- WriteAmigaBasicObjectBuffer:=Error;
+ BitplaneWriterFile(0,data,2);  //flush it
+ WriteAmigaBasicBobBuffer:=data.Error;
 end;
 
 
-Function WriteAmigaBasicObjectFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 var
  data  : BufferRec;
- Error : word;
 begin
 SetCoreActive;  //pull data from RMCore
 Assign(data.f,filename);
 {$I-}
 Rewrite(data.f,1);
-
-Error:=WriteAmigaBasicObjectBuffer(x,y,x2,y2,data,SaveAsSprite);
-
-
-{$I+}
-Error:=IORESULT;
-if error <> 0 then
+WriteAmigaBasicBobBuffer(x,y,x2,y2,data,SaveAsSprite);
+if data.error <> 0 then
 begin
-   WriteAmigaBasicObjectFile:=Error;
-   exit;
-end;
-
-Error:=WriteAmigaBasicObjectBuffer(x,y,x2,y2,data,SaveAsSprite);
-
-if error <> 0 then
-begin
-   WriteAmigaBasicObjectFile:=Error;
+   WriteAmigaBasicBobFile:=data.Error;
    exit;
 end;
 
 Close(data.f);
 {$I+}
-WriteAmigaBasicObjectFile:=IORESULT;
-
+WriteAmigaBasicBobFile:=IORESULT;
 end;
 
-Function WriteAmigaBasicObjectDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string;SaveAsSprite : Boolean):word;
 var
   Header : ABBobHeader;
   SPal   : ABSpritePalette;
   Width,height : Word;
   TempBuf : array[1..26] of Byte;
-  i,BPCount : word;
+  i : word;
   DataNameStr : string;
   isVSprite : Boolean;
-  Error    : word;
+  nColors   : integer;
 begin
  width:=x2-x+1;
  height:=y2-y+1;
- BPCount:=GetBitPlaneCount;
+ nColors:=GetMaxColor+1;
+
  isVSprite:=false;
- if (SaveAsSprite=true) AND (width = 16) AND (BPCount=2) then isVSprite:=true;
+ if (SaveAsSprite=true) AND (width = 16) AND (nColors=4) then isVSprite:=true;
 
  CreateHeader(Header, x,y,x2,y2,SaveAsSprite);
  Move(Header,TempBuf,sizeof(TempBuf));
 
- ObjectBitplaneWriterDataStatements(0,data,0,Error);  //init the data record
- if Error<>0 then
+ ObjectBitplaneWriterDataStatements(0,data,0);  //init the data record
+ if data.Error<>0 then
  begin
-    WriteAmigaBasicObjectDataBuffer:=Error;
+    WriteAmigaBasicBobDataBuffer:=data.Error;
     exit;
  end;
 
@@ -953,18 +847,18 @@ begin
  else
    DataNameStr:='Bob';
 
- writeln(data.ftext,#39,' AmigaBASIC ',DataNameStr,' Size= ', GetObjectDataSize(width,height,BPCount,isVSprite),' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1);
+ writeln(data.ftext,#39,' AmigaBASIC ',DataNameStr,' Size= ', GetBobDataSize(width,height,nColors,isVSprite),' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1);
 
  writeln(data.ftext,#39,' ',Imagename);
  For i:=1 to SizeOf(TempBuf) do
  begin
-   ObjectBitplaneWriterDataStatements(tempBuf[i],data,1,Error);
+   ObjectBitplaneWriterDataStatements(tempBuf[i],data,1);
  end;
 
- CreateBitPlanes(x,y,x2,y2,@ObjectBitplaneWriterDataStatements,data,error);
- if Error<>0 then
+ CreateBitPlanes(x,y,x2,y2,@ObjectBitplaneWriterDataStatements,data);
+ if data.Error<>0 then
  begin
-    WriteAmigaBasicObjectDataBuffer:=Error;
+    WriteAmigaBasicBobDataBuffer:=data.Error;
     exit;
  end;
 
@@ -975,14 +869,14 @@ begin
     Move(SPal,TempBuf,sizeof(SPal));
     For i:=1 to SizeOf(SPal) do
     begin
-      ObjectBitplaneWriterDataStatements(tempBuf[i],data,1,Error);
+      ObjectBitplaneWriterDataStatements(tempBuf[i],data,1);
     end;
  end;
- ObjectBitplaneWriterDataStatements(0,data,2,Error);  //flush it
- WriteAmigaBasicObjectDataBuffer:=Error;
+ ObjectBitplaneWriterDataStatements(0,data,2);  //flush it
+ WriteAmigaBasicBobDataBuffer:=data.Error;
 end;
 
-Function WriteAmigaBasicObjectDataFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+Function WriteAmigaBasicBobDataFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 var
   data :BufferRec;
   ImageName : string;
@@ -994,18 +888,16 @@ begin
  Assign(data.ftext,filename);
  {$I-}
  Rewrite(data.ftext);
- Error:=WriteAmigaBasicObjectDataBuffer(x,y,x2,y2,data,imagename,SaveAsSprite);
+ Error:=WriteAmigaBasicBobDataBuffer(x,y,x2,y2,data,imagename,SaveAsSprite);
  if Error<>0 then
  begin
-    WriteAmigaBasicObjectDataFile:=Error;
+    WriteAmigaBasicBobDataFile:=Error;
     exit;
  end;
  Close(data.ftext);
  {$I+}
- WriteAmigaBasicObjectDataFile:=IORESULT;
+ WriteAmigaBasicBobDataFile:=IORESULT;
 end;
-
-
 
 Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string):word;
 var
@@ -1014,7 +906,6 @@ var
   TempBuf : array[1..6] of Byte;
   i,BPCount : word;
   size : longword;
-  Error : word;
 begin
  width:=x2-x+1;
  height:=y2-y+1;
@@ -1025,10 +916,10 @@ begin
  Header.BitPlanes:=WordToLE(BPCount);
 
  Move(Header,TempBuf,sizeof(TempBuf));
- XGFBitplaneWriterDataStatements(0,data,0,Error);  //init the data record
- if Error<>0 then
+ XGFBitplaneWriterDataStatements(0,data,0);  //init the data record
+ if data.Error<>0 then
  begin
-    WriteAmigaBasicXGFDataBuffer:=Error;
+    WriteAmigaBasicXGFDataBuffer:=data.Error;
     exit;
  end;
 
@@ -1039,15 +930,14 @@ begin
 
  For i:=1 to SizeOf(TempBuf) do
  begin
-   XGFBitplaneWriterDataStatements(tempBuf[i],data,1,Error);
+   XGFBitplaneWriterDataStatements(tempBuf[i],data,1);
  end;
 
- CreateBitPlanes(x,y,x2,y2,@XGFBitplaneWriterDataStatements,data,Error);
- XGFBitplaneWriterDataStatements(0,data,2,Error);  //flush it
+ CreateBitPlanes(x,y,x2,y2,@XGFBitplaneWriterDataStatements,data);
+ XGFBitplaneWriterDataStatements(0,data,2);  //flush it
 
- WriteAmigaBasicXGFdataBuffer:=Error;
+ WriteAmigaBasicXGFdataBuffer:=data.Error;
 end;
-
 
 Function WriteAmigaBasicXGFDataFile(x,y,x2,y2 : word;filename:string):word;
 var
@@ -1080,7 +970,6 @@ var
   Width,height : Word;
   TempBuf : array[1..6] of Byte;
   i,BPCount : word;
-  Error : word;
 begin
  width:=x2-x+1;
  height:=y2-y+1;
@@ -1091,21 +980,26 @@ begin
  Header.BitPlanes:=WordToLE(BPCount);
 
  Move(Header,TempBuf,sizeof(TempBuf));
- ObjectBitplaneWriterFile(0,data,0,Error);  //init the data record
- if Error<>0 then
+ BitplaneWriterFile(0,data,0);  //init the data record
+ if data.Error<>0 then
  begin
-   WriteAmigaBasicXGFBuffer:=Error;
+   WriteAmigaBasicXGFBuffer:=data.Error;
    exit;
  end;
 
  For i:=1 to SizeOf(TempBuf) do
  begin
-   ObjectBitplaneWriterFile(tempBuf[i],data,1,Error);
+   BitplaneWriterFile(tempBuf[i],data,1);
  end;
 
  {$I-}
- CreateBitPlanes(x,y,x2,y2,@ObjectBitplaneWriterFile,data,Error);
- ObjectBitplaneWriterFile(0,data,2,Error);  //flush it
+ CreateBitPlanes(x,y,x2,y2,@BitplaneWriterFile,data);
+ if data.Error<>0 then
+ begin
+   WriteAmigaBasicXGFBuffer:=data.error;
+   exit;
+ end;
+ BitplaneWriterFile(0,data,2);  //flush it
  {$I+}
  WriteAmigaBasicXGFBuffer:=IORESULT;
 end;
@@ -1132,14 +1026,153 @@ end;
 
 Function WriteAmigaBobBuffer(x,y,x2,y2 : word;var data : bufferRec;SaveAsSprite : Boolean):word;
 begin
-//add code
+ if SaveAsSprite then
+   CreateSpriteBitPlanes(x,y,x2,y2,@BitplaneWriterFile,data)
+ else
+  CreateBitPlanes(x,y,x2,y2,@BitplaneWriterFile,data);
+
+ WriteAmigaBobBuffer:=data.Error;
 end;
 
 Function WriteAmigaBobFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+var
+ data  : BufferRec;
 begin
-//add code
+SetCoreActive;  //pull data from RMCore
+Assign(data.f,filename);
+{$I-}
+Rewrite(data.f,1);
+WriteAmigaBobBuffer(x,y,x2,y2,data,SaveAsSprite);
+if data.error <> 0 then
+begin
+   WriteAmigaBobFile:=data.Error;
+   exit;
 end;
 
+Close(data.f);
+{$I+}
+WriteAmigaBobFile:=IORESULT;
+end;
+
+Function WriteAmigaPascalBobCodeToBuffer(x,y,x2,y2 : word;imagename:string;var data : BufferRec; SaveAsSprite : Boolean):word;
+var
+  Width,height : Word;
+  BPCount : word;
+  size : longword;
+  BWriter : BitPlaneWriterProc;
+begin
+ BWriter:=@BitplaneWriterPascalWORDStatements;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ BPCount:=GetBitPlaneCount;
+
+ BWriter(0,data,0);  //init the data record
+
+ Size:=((((width+15) div 16)*2)*height*BPCount) div 2;
+ data.ArraySize:=Size;
+
+ writeln(data.ftext,'(* Amiga Pascal , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' *)');
+ if SaveAsSprite then
+ begin
+     writeln(data.ftext,'(* VSprite Bitmap *)');
+     writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of WORD = (');
+     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
+ end
+ else
+ begin
+   writeln(data.ftext,'(* BOB Bitmap *)');
+   writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of WORD = (');
+   CreateBitPlanes(x,y,x2,y2,BWriter,data);
+ end;
+
+ BWriter(0,data,2);  //flush it
+
+ WriteAmigaPascalBobCodeToBuffer:=data.Error;
+end;
+
+Function WriteAmigaPascalBobCodeToFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+var
+  data :BufferRec;
+imagename : string;
+begin
+ SetCoreActive;   // we are getting data from core object RMCoreBase
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
+
+ Assign(data.ftext,filename);
+{$I-}
+ Rewrite(data.ftext);
+ WriteAmigaPascalBobCodeToBuffer(x,y,x2,y2,imagename,data,saveassprite);
+
+ Close(data.ftext);
+{$I+}
+ if data.Error<>0 then
+   WriteAmigaPascalBobCodeToFile:=data.Error
+ else
+   WriteAmigaPascalBobCodeToFile:=IORESULT;
+
+end;
+
+
+Function WriteAmigaCBobCodeToBuffer(x,y,x2,y2 : word;imagename:string;var data : BufferRec; SaveAsSprite : Boolean):word;
+var
+  Width,height : Word;
+  BPCount : word;
+  size : longword;
+  BWriter : BitPlaneWriterProc;
+begin
+ BWriter:=@BitplaneWriterCWORDStatements;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ BPCount:=GetBitPlaneCount;
+
+ BWriter(0,data,0);  //init the data record
+
+ Size:=((((width+15) div 16)*2)*height*BPCount) div 2;
+ data.ArraySize:=Size;
+
+ writeln(data.ftext,'/* Amiga C , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' */');
+ writeln(data.ftext,'/* rename __chip to chip if using SAS compiler. remove __chip if compiler does not support it */');
+ if SaveAsSprite then
+ begin
+   writeln(data.ftext,'/* VSprite Bitmap */');
+   writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
+   CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
+ end
+ else
+ begin
+   writeln(data.ftext,'/* BOB Bitmap */');
+   writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
+   CreateBitPlanes(x,y,x2,y2,BWriter,data);
+ end;
+
+ BWriter(0,data,2);  //flush it
+
+ WriteAmigaCBobCodeToBuffer:=data.Error;
+end;
+
+
+
+
+Function WriteAmigaCBobCodeToFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
+var
+  data :BufferRec;
+  Imagename : string;
+begin
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
+
+ Assign(data.ftext,filename);
+{$I-}
+ Rewrite(data.ftext);
+ WriteAmigaPascalBobCodeToBuffer(x,y,x2,y2,imagename,data,saveassprite);
+ Close(data.ftext);
+{$I+}
+ if data.Error<>0 then
+   WriteAmigaCBobCodeToFile:=data.Error
+ else
+   WriteAmigaCBobCodeToFile:=IORESULT;
+end;
 
 begin
 end.

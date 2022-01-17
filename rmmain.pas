@@ -43,10 +43,12 @@ type
     ACVSpriteColorArray: TMenuItem;
     ACPaletteArray: TMenuItem;
     ExportPropsMenu: TPopupMenu;
-    AmigaExportRESInclude: TMenuItem;
-    Properties: TMenuItem;
     ExportRESInclude: TMenuItem;
     ExportRESBinary: TMenuItem;
+    QPPutImageArray: TMenuItem;
+    QPPutImageFile: TMenuItem;
+    QuickPascal: TMenuItem;
+    Properties: TMenuItem;
     DeleteAll: TMenuItem;
     OpenProjectFile: TMenuItem;
     SaveProjectFile: TMenuItem;
@@ -223,6 +225,8 @@ type
     procedure OpenProjectFileClick(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
     procedure PropertiesClick(Sender: TObject);
+    procedure QuickPascalClick(Sender: TObject);
+
     procedure RESExportClick(Sender: TObject);
     procedure SaveDeleteClick(Sender: TObject);
     procedure SaveProjectFileClick(Sender: TObject);
@@ -2281,6 +2285,32 @@ begin
   end;
 end;
 
+procedure TRMMainForm.QuickPascalClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ error : word;
+begin
+  GetOpenSaveRegion(x,y,x2,y2);
+  Case (Sender As TMenuItem).Name of 'QPPutImageArray' :ExportDialog.Filter := 'Quick Pascal PutImage Array|*.pas';
+                                        'QPPutImageFile' : ExportDialog.Filter := 'Quick Pascal PutImage File|*.xgf';
+  End;
+  if ExportDialog.Execute then
+   begin
+      Case (Sender As TMenuItem).Name of 'QPPutImageArray' : error:=WriteXgfToCode(x,y,x2,y2,QPLan,ExportDialog.FileName);
+                                          'QPPutImageFile' : error:=WriteXGFToFile(x,y,x2,y2,QPLan,ExportDialog.FileName);
+
+      End;
+
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
+
+
 procedure TRMMainForm.RESExportClick(Sender: TObject);
 var
   Error : word;
@@ -2288,13 +2318,13 @@ begin
  //update the current thumb image
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
 
- Case (Sender As TMenuItem).Name of 'ExportRESInclude','AmigaExportRESInclude' : ExportDialog.Filter := 'RES Include|*.inc';
+ Case (Sender As TMenuItem).Name of 'ExportRESInclude' : ExportDialog.Filter := 'RES Include|*.inc';
                                      'ExportRESBinary' : ExportDialog.Filter := 'RES Binary|*.res';
  end;
 
  if ExportDialog.Execute then
  begin
-    Case (Sender As TMenuItem).Name of 'ExportRESInclude','AmigaExportRESInclude' : error:=RESInclude(ExportDialog.FileName);
+    Case (Sender As TMenuItem).Name of 'ExportRESInclude' : error:=RESInclude(ExportDialog.FileName);
                                         'ExportRESBinary' : error:=RESBinary(ExportDialog.FileName);
     end;
     if error<>0 then
@@ -2520,11 +2550,11 @@ begin
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'ABPutData' : error:=WriteAmigaBasicXGFDataFile(x,y,x2,y2,ExportDialog.FileName);
-                                         'ABBobData' : error:=WriteAmigaBasicObjectDataFile(x,y,x2,y2,ExportDialog.FileName,false);
-                                         'ABVSpriteData' : error:=WriteAmigaBasicObjectDataFile(x,y,x2,y2,ExportDialog.FileName,true);
+                                         'ABBobData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,false);
+                                         'ABVSpriteData' : error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,true);
                                          'ABPutFile' :  error:=WriteAmigaBasicXGFFile(x,y,x2,y2,ExportDialog.FileName);
-                                         'ABBobFile' : error:=WriteAmigaBasicObjectFile(x,y,x2,y2,ExportDialog.FileName,false);
-                                         'ABVSpriteFile' :  error:=WriteAmigaBasicObjectFile(x,y,x2,y2,ExportDialog.FileName,true);
+                                         'ABBobFile' : error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,false);
+                                         'ABVSpriteFile' :  error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,true);
       End;
 
       if error<>0 then
@@ -2571,7 +2601,7 @@ begin
 
    if ExportDialog.Execute then
    begin
-      error:=WriteAmigaCCodeWORD(x,y,x2,y2,ExportDialog.FileName,VSprite);
+      error:=WriteAmigaCBobCodeToFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
       if error<>0 then
       begin
         ShowMessage('Error Saving file!');
@@ -2640,7 +2670,7 @@ begin
 
    if ExportDialog.Execute then
    begin
-      error:=WriteAmigaPascalCodeWord(x,y,x2,y2,ExportDialog.FileName,VSprite);
+      error:=WriteAmigaPascalBobCodeToFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
       if error<>0 then
       begin
         ShowMessage('Error Saving file!');

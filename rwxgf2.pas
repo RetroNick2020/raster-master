@@ -19,6 +19,7 @@ Const
    ABLan   = 9; //AmigaBasic
    APLan   = 10;
    ACLan   = 11;
+   QPLan   = 12; //Quick Pascal
 
    NoExportFormat = 0;
    TPPutImageExportFormat = 1;
@@ -55,6 +56,7 @@ type
  BufferRec = Record
                 f      : file;
                 fText  : Text;
+                Error  : word;
                 buflist   : array[1..128] of Byte;
                 bufcount  : integer;
 
@@ -62,25 +64,53 @@ type
                 ByteWriteCount : longword;
  end;
 
-//Function WriteXgf2(x,y,x2,y2,LanType : word;filename:string):word;
 
+ Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
+ Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
 
- procedure WriteXgfToBuffer(x,y,x2,y2,LanType : word;var data : BufferRec);
- Function WriteTPArray(var data :BufferRec;x,y,x2,y2,LanType : word; imagename:string):word;
+ procedure WriteXgfToBuffer(x,y,x2,y2,LanType : word;var data : BufferRec);  // to binary file
+ procedure WriteXgfToBufferFP(x,y,x2,y2 : word;var data : BufferRec);
+ procedure WriteXgfToBufferFB(x,y,x2,y2 : word;var data : BufferRec);
+
+ Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;//to text file
+ Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+
+ Function WriteFPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+
+ Function WriteQBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+ Function WriteGWCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+
+ Function WriteQCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+ Function WriteQPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+
+ Function WriteFBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+ Function WritePBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+
  function GetXImageSize(width,height,ncolors : integer) : longint;
+ function GetXImageSizeFB(width,height : integer) : longint;
+ function GetXImageSizeFP(width,height : integer) : longint;
+
+ procedure SetGWStartLineNumber(start : integer);
 
 Implementation
 
 type
  linebuftype = array[0..2047] of byte;
  ColorMap    = Array[0..15] of Byte;
- XgfHead = Record
+ XgfHead = Packed Record
               Width  : Word;
               Height : Word;
             End;
 
+ //free pascal graph - each pixel takes a Word
+ XGFHeadFP = Packed Record
+              Width,Height : LongInt;
+              reserved     : LongInt;
+ end;
 
-
+ XGFHeadFB = Packed Record
+              Width,Height : word;
+ end;
  //Action 0 = init ncounter/buffer,Action 1 = write byte to buffer, action 2= flush buffer
  BitPlaneWriterProc = Procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
 
@@ -89,7 +119,8 @@ const
  BorlandColorMap : ColorMap = (0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15);
 // MSColorMap: ColorMap = (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
 
-
+var
+ GWBasicLineNumber : integer;
 
 Procedure spTOmp(var singlePlane : LineBufType ;
                  var multiplane  : LineBufType;
@@ -131,7 +162,6 @@ begin
  end;
 end;
 
-
 Procedure spToPacked(var SinglePlane  : LineBufType ;
                      var PackedPlane  : LineBufType;
                          BytesPerLine : word);
@@ -148,16 +178,8 @@ begin
   end;
 end;
 
-
-
-
 Function WriteXgfFP(x,y,x2,y2 : word;filename:string):word;
 type
- //free pascal graph - each pixel takes a Word
- XGFHeadFP = Record
-              Width,Height : LongInt;
-              reserved     : LongInt;
- end;
  linebufFP = array[0..1023] of Word;
 var
  Header : XGFHeadFP;
@@ -174,7 +196,7 @@ begin
  Assign(F,filename);
  Rewrite(F,1);
  Blockwrite(F,Header,sizeof(Header));
-
+{$I-}
  Error:=IOResult;
  if Error <> 0 then
  begin
@@ -182,6 +204,7 @@ begin
    WriteXgfFP:=Error;
    exit;
  end;
+
 
  For j:=y to y2 do
  begin
@@ -195,17 +218,15 @@ begin
  end;
 
  Close(F);
+ {$I+}
  WriteXgfFP:=IOResult;
-{$I+}
 end;
 
 
 Function WriteXgfFB(x,y,x2,y2 : word;filename:string):word;
 type
  //free takes a Word
- XGFHeadFB = Record
-              Width,Height : word;
- end;
+
  linebufFB = array[0..1023] of Byte;
 var
  Header : XGFHeadFB;
@@ -280,6 +301,16 @@ begin
   end;
 end;
 
+function GetXImageSizeFP(width,height : integer) : longint;
+begin
+  //all FP simulated Graph modes up 256 colors take word per pixel
+  GetXImageSizeFP:=sizeof(XGFHeadFP)+(width*2)*height;
+end;
+
+function GetXImageSizeFB(width,height : integer) : longint;
+begin
+  GetXImageSizeFB:=sizeof(XGFHeadFB)+width*height;
+end;
 
 // depensing on the compiler the width/height is different
 Procedure FixHead(var head : XgfHead;width,height, LanType : word);
@@ -295,7 +326,7 @@ begin
                                 head.Width:=width;
                                 head.Height:=height;
                               end;
-                      QBLan,QCLan: begin
+                      GWLan,QBLan,QCLan,QPLan: begin
                                      If NumColors=4 then head.Width:=width*2
                                      else If NumColors=256 then head.Width:=width SHL 3
                                      else head.Width:=width;
@@ -304,42 +335,57 @@ begin
   end;
 end;
 
-Procedure CreateBitPlanesPC(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
-Var
- sourcelinebuf : Linebuftype;
- destlinebuf   : Linebuftype;
- myHead     : XgfHead;
+
+Procedure WriteXGFBufferFP(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2 : word);
+var
+ myHead     : XgfHeadFP;
  mywidth    : word;
  myheight   : word;
- BPL        : Word;  //bytes per line for one bitplane
- BTW        : word; //bytes to write to buffer
- i,j,n      : Word;
- NumColors  : Word;
- tempBuf    : array[1..4] of byte;
+ i,j,n      : word;
+ tempBuf    : array[1..12] of byte;
+ PixelCol   : word;
+ wordbuf    : array[1..2] of byte;
 begin
- if LanType = FPLan then
- begin
-//   WriteXgfToBPW:=WriteXgfToBPWFP(BitPlaneWriter,data,x,y,x2,y2,Lantype);
-   exit;
- end
- else if LanType = FBLan then
- begin
-//   WriteXgfToBPW:=WriteXgfToBPWFB(BitPlaneWriter,data,x,y,x2,y2,Lantype);
-   exit;
- end;
-
  myWidth:=x2-x+1;
  myHeight:=y2-y+1;
- numColors:=GetMaxColor+1;
- BPL:=GetBPLSize(myWidth,numColors);
- BTW:=BPL;
- if NumColors = 16 then BTW:=BPL*4;
+ myHead.Width:=myWidth;
+ myHead.Height:=myHeight;
+ myHead.reserved:=0;
 
- //patch correct widht height for language/compiler - Micrsoft and Borland did some wierd things to a simple bitmap format
- FixHead(myHead,myWidth,myHeight,LanType);
  Move(myHead,tempBuf,sizeof(tempBuf));
+ for n:=1 to 12 do
+ begin
+    BitplaneWriter(tempBuf[n],data,1);
+ end;
 
- //BitplaneWriter(0,data,0);  //init the data record
+ for j:=0 to myheight-1 do
+ begin
+   for i:=0 to myWidth-1 do
+   begin
+     pixelCol:=GetPixel(x+i,y+j);
+     move(PixelCol,wordbuf,sizeof(wordbuf));
+     BitplaneWriter(wordbuf[1],data,1);
+     BitplaneWriter(wordbuf[2],data,1);
+   end;
+ end;
+ BitplaneWriter(0,data,2);  //flush it
+end;
+
+Procedure WriteXGFBufferFB(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2 : word);
+var
+ myHead     : XgfHeadFB;
+ mywidth    : word;
+ myheight   : word;
+ i,j,n      : word;
+ tempBuf    : array[1..4] of byte;
+ PixelCol   : byte;
+begin
+ myWidth:=x2-x+1;
+ myHeight:=y2-y+1;
+ myHead.Width:=myWidth;
+ myHead.Height:=myHeight;
+
+ Move(myHead,tempBuf,sizeof(tempBuf));
  for n:=1 to 4 do
  begin
     BitplaneWriter(tempBuf[n],data,1);
@@ -349,12 +395,52 @@ begin
  begin
    for i:=0 to myWidth-1 do
    begin
+     pixelCol:=GetPixel(x+i,y+j);
+     BitplaneWriter(pixelCol,data,1);
+   end;
+ end;
+ BitplaneWriter(0,data,2);  //flush it
+end;
+
+Procedure WriteXGFBuffer(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
+Var
+ sourcelinebuf : Linebuftype;
+ destlinebuf   : Linebuftype;
+ Head     : XgfHead;
+ width    : word;
+ height   : word;
+ BPL        : Word;  //bytes per line for one bitplane
+ BTW        : word; //bytes to write to buffer
+ i,j,n      : Word;
+ nColors  : Word;
+ tempBuf    : array[1..4] of byte;
+begin
+ width:=x2-x+1;
+ Height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ BPL:=GetBPLSize(Width,nColors);
+ BTW:=BPL;
+ if nColors = 16 then BTW:=BPL*4;
+
+ //patch correct widht height for language/compiler - Microsoft and Borland did some wierd things to a simple bitmap format
+ FixHead(Head,Width,Height,LanType);
+ Move(Head,tempBuf,sizeof(tempBuf));
+
+ for n:=1 to 4 do
+ begin
+    BitplaneWriter(tempBuf[n],data,1);
+ end;
+
+ for j:=0 to height-1 do
+ begin
+   for i:=0 to Width-1 do
+   begin
        sourceLineBuf[i]:=GetPixel(x+i,y+j);
    end;
-   case numColors of 2:spTOmp(sourcelinebuf,destlinebuf,BPL,1);
+   case nColors of 2:spTOmp(sourcelinebuf,destlinebuf,BPL,1);
                      4:spToPacked(sourcelinebuf,destlinebuf,BPL);
                     16:begin
-                         If (LanType=TPLan) OR (LanType=TCLan) OR (LanType=PBLan) then RemapToBorland(sourcelinebuf,myWidth);
+                         If (LanType=TPLan) OR (LanType=TCLan) OR (LanType=PBLan) then RemapToBorland(sourcelinebuf,Width);
                          spTOmp(sourcelinebuf,destlinebuf,BPL,4);
                        end;
                    256:destlinebuf:=sourcelinebuf;
@@ -370,9 +456,11 @@ end;
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 begin
-   if action = 0 then
+{$I-}
+  if action = 0 then
    begin
        buffer.bufCount:=0;
+       buffer.error:=0;
    end
    else if action = 1 then
    begin
@@ -392,9 +480,11 @@ begin
            Buffer.bufcount:=0;
        end;
    end;
+{$I+}
+ buffer.Error:=IORESULT;
 end;
 
-procedure BitplaneWriterConstStatements(inByte : Byte; var Buffer : BufferRec;action : integer);
+procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
 begin
@@ -404,6 +494,7 @@ begin
        buffer.bufCount:=0;
        buffer.arraysize:=0;
        buffer.ByteWriteCount:=0;
+       buffer.error:=0;
    end
    else if action = 1 then
    begin
@@ -438,17 +529,169 @@ begin
        buffer.bufcount:=0;
   end;
 {$I+}
+  buffer.Error:=IORESULT;
+end;
+
+procedure BitplaneWriterCCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+var
+ i : integer;
+begin
+ {$I-}
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+       buffer.arraysize:=0;
+       buffer.ByteWriteCount:=0;
+       buffer.error:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 20 then                      //every 20 bytes write to const line
+       begin
+           //write the const value
+           write(buffer.ftext,'  ');
+
+           for i:=1 to 20 do
+           begin
+             write(buffer.ftext,'0x',LowerCase(HexStr(buffer.buflist[i],2)));
+             inc(buffer.ByteWriteCount);
+             if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+           end;
+           if buffer.ByteWriteCount < buffer.ArraySize then writeln(buffer.ftext);
+           buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then  //write the remaining data
+   begin
+       if buffer.bufcount > 0 then write(buffer.ftext,'  ');
+       for i:=1 to buffer.bufcount do
+       begin
+         write(buffer.ftext,'0x',LowerCase(HexStr(buffer.buflist[i],2)));
+         inc(buffer.ByteWriteCount);
+         if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+       end;
+       write(buffer.ftext,'};');
+       writeln(buffer.ftext);
+       buffer.bufcount:=0;
+  end;
+{$I+}
+  buffer.Error:=IORESULT;
+end;
+
+procedure SetGWStartLineNumber(start : integer);
+begin
+ GWBasicLineNumber :=start;
+end;
+
+function GetGWNextLineNumber : string;
+begin
+ GetGWNextLineNumber:=IntToStr(GWBasicLineNumber);
+ inc(GWBasicLineNumber,10);
+end;
+
+procedure BitplaneWriterGWBasicCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+var
+ i : integer;
+begin
+{$I-}
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+       buffer.error:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 20 then                      //every 10 bytes write to data statement
+       begin
+           //write the data statement
+           write(buffer.ftext,GetGWNextLineNumber,' DATA ');
+           for i:=0 to 9 do
+           begin
+             write(buffer.ftext,'&H',HexStr(buffer.buflist[i*2+2],2),HexStr(buffer.buflist[i*2+1],2));
+             if i < 9 then write(buffer.ftext,',');
+           end;
+           writeln(buffer.ftext);
+           buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then  //write the remaining data
+   begin
+     if buffer.bufcount > 0 then
+     begin
+       write(buffer.ftext,GetGWNextLineNumber,' DATA ');
+       for i:=0 to ((buffer.bufcount+1) div 2)-1 do
+       begin
+         write(buffer.ftext,'&H',HexStr(buffer.buflist[i*2+2],2),HexStr(buffer.buflist[i*2+1],2));
+         if i < (((buffer.bufcount+1) div 2)-1) then write(buffer.ftext,',');
+       end;
+       writeln(buffer.ftext);
+       buffer.bufcount:=0;
+     end;
+   end;
+   {$I+}
+   buffer.Error:=IORESULT;
 end;
 
 
-Function WriteTPArray(var data :BufferRec;x,y,x2,y2,LanType : word; imagename:string):word;
+
+// word size data statements - byte strean is converted to words
+procedure BitplaneWriterBasicCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+var
+ i : integer;
+begin
+{$I-}
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+       buffer.error:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 20 then                      //every 10 bytes write to data statement
+       begin
+           //write the data statement
+           write(buffer.ftext,'DATA ');
+           for i:=0 to 9 do
+           begin
+             write(buffer.ftext,'&H',HexStr(buffer.buflist[i*2+2],2),HexStr(buffer.buflist[i*2+1],2));
+             if i < 9 then write(buffer.ftext,',');
+           end;
+           writeln(buffer.ftext);
+           buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then  //write the remaining data
+   begin
+     if buffer.bufcount > 0 then
+     begin
+       write(buffer.ftext,'DATA ');
+       for i:=0 to ((buffer.bufcount+1) div 2)-1 do
+       begin
+         write(buffer.ftext,'&H',HexStr(buffer.buflist[i*2+2],2),HexStr(buffer.buflist[i*2+1],2));
+         if i < (((buffer.bufcount+1) div 2)-1) then write(buffer.ftext,',');
+       end;
+       writeln(buffer.ftext);
+       buffer.bufcount:=0;
+     end;
+   end;
+   {$I+}
+   buffer.Error:=IORESULT;
+end;
+
+Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
 var
   Width,Height : Word;
-  Size      : longword;
+  Size      : longint;
   nColors   : integer;
   BWriter   : BitPlaneWriterProc;
 begin
- BWriter:=@BitplaneWriterConstStatements;
+ BWriter:=@BitplaneWriterPascalCode;
 
  width:=x2-x+1;
  height:=y2-y+1;
@@ -461,36 +704,262 @@ begin
  writeln(data.ftext,'(* Turbo Pascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
  writeln(data.ftext,'(* PutImage Bitmap *)');
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
- CreateBitPlanesPC(BWriter,data,x,y,x2,y2,LanType);
+ WriteXGFBuffer(BWriter,data,x,y,x2,y2,TPLan);
  writeln(data.ftext);
 
 {$I+}
- WriteTPArray:=IORESULT;
+ WriteTPCodeToBuffer:=IORESULT;
 end;
 
 
-//write a single binary file
-Function WriteXgf2(x,y,x2,y2,LanType : word;filename:string):word;
+Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
 var
- data      : BufferRec;
+  Width,Height : Word;
+  Size      : longint;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
 begin
- Assign(data.f,filename);
+ BWriter:=@BitplaneWriterCCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSize(width,height,nColors);
 {$I-}
- Rewrite(data.f,1);
- CreateBitPlanesPC(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
- Close(data.f);
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'/* Turbo C, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+ writeln(data.ftext,'/* putimage Bitmap */');
+ writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
+ WriteXGFBuffer(BWriter,data,x,y,x2,y2,TCLan);
+ writeln(data.ftext);
+
 {$I+}
- WriteXgf2:=IOResult;
+ WriteTCCodeToBuffer:=IORESULT;
+end;
+
+Function WriteQCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longint;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+begin
+ BWriter:=@BitplaneWriterCCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSize(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'/* QuickC, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+ writeln(data.ftext,'/* putimage Bitmap */');
+ writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
+ WriteXGFBuffer(BWriter,data,x,y,x2,y2,QCLan);
+ writeln(data.ftext);
+
+{$I+}
+ WriteQCCodeToBuffer:=IORESULT;
+end;
+
+
+Function WriteQPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longint;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+begin
+ BWriter:=@BitplaneWriterPascalCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSize(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'(* QuickPascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,'(* PutImage Bitmap *)');
+ writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WriteXGFBuffer(BWriter,data,x,y,x2,y2,QPLan);
+ writeln(data.ftext);
+
+{$I+}
+ WriteQPCodeToBuffer:=IORESULT;
+end;
+
+Function WriteFPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longint;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+
+begin
+ BWriter:=@BitplaneWriterPascalCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSizeFP(width,height);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'(* FreePascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,'(* PutImage Bitmap *)');
+ writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WriteXGFBufferFP(BWriter,data,x,y,x2,y2);
+ writeln(data.ftext);
+
+{$I+}
+ WriteFPCodeToBuffer:=IORESULT;
+end;
+
+
+Function WriteQBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longword;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+
+begin
+ BWriter:=@BitplaneWriterBasicCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSize(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'REM QuickBASIC\QB64, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,'REM Put Bitmap ');
+ writeln(data.ftext,'REM ',Imagename);
+ WriteXGFBuffer(BWriter,data,x,y,x2,y2,QBLan);
+ writeln(data.ftext);
+
+{$I+}
+ WriteQBCodeToBuffer:=IORESULT;
+end;
+
+Function WritePBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longword;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+
+begin
+ BWriter:=@BitplaneWriterBasicCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSize(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'REM Turbo\Power Basic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,'REM Put Bitmap ');
+ writeln(data.ftext,'REM ',Imagename);
+ WriteXGFBuffer(BWriter,data,x,y,x2,y2,PBLan);
+ writeln(data.ftext);
+
+{$I+}
+ WritePBCodeToBuffer:=IORESULT;
+end;
+
+Function WriteGWCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longword;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+begin
+ BWriter:=@BitplaneWriterGWBasicCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSize(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,GetGWNextLineNumber,' REM GWBASIC\PCBASIC, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,GetGWNextLineNumber,' REM Put Bitmap ');
+ writeln(data.ftext,GetGWNextLineNumber,' REM ',Imagename);
+ WriteXGFBuffer(BWriter,data,x,y,x2,y2,GWLan);
+ writeln(data.ftext);
+
+{$I+}
+ WriteGWCodeToBuffer:=IORESULT;
+end;
+
+
+
+
+Function WriteFBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longword;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+
+begin
+ BWriter:=@BitplaneWriterBasicCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSizeFB(width,height);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'REM Freebasic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,'REM Put Bitmap ');
+ writeln(data.ftext,'REM ',Imagename);
+ WriteXGFBufferFB(BWriter,data,x,y,x2,y2);
+ writeln(data.ftext);
+
+{$I+}
+ WriteFBCodeToBuffer:=IORESULT;
 end;
 
 procedure WriteXgfToBuffer(x,y,x2,y2,LanType : word;var data : BufferRec);
 begin
   BitPlaneWriterFile(0,data,0);
-  CreateBitPlanesPC(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
+  WriteXGFBuffer(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
 end;
 
+procedure WriteXgfToBufferFB(x,y,x2,y2: word;var data : BufferRec);
+begin
+  BitPlaneWriterFile(0,data,0);
+  WriteXGFBufferFB(@BitPlaneWriterFile,data,x,y,x2,y2);
+end;
+
+procedure WriteXgfToBufferFP(x,y,x2,y2 : word;var data : BufferRec);
+begin
+  BitPlaneWriterFile(0,data,0);
+  WriteXGFBufferFP(@BitPlaneWriterFile,data,x,y,x2,y2);
+end;
+
+
+
+
 //write a single file
-Function WriteXgfArray2(x,y,x2,y2,LanType : word;filename:string):word;
+Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
 var
  data      : BufferRec;
  imagename : String;
@@ -501,13 +970,34 @@ begin
  rewrite(data.fText);
 
  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
- case LanType of TPLan: WriteTPArray(data,x,y,x2,y2,LanType,imagename);
+ case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imagename);
+                 TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                 QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
+                 GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                 QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imagename);
+                 QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imagename);
  end;
  close(data.fText);
  {$I+}
- WriteXgfArray2:=IOResult;
+ WriteXgfToCode:=IOResult;
 end;
 
+//write a single binary file
+Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
+var
+ data      : BufferRec;
+begin
+SetCoreActive;   // we are getting data from core object RMCoreBase
+Assign(data.f,filename);
+{$I-}
+ Rewrite(data.f,1);
+ WriteXGFBuffer(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
+ Close(data.f);
+{$I+}
+ WriteXgfToFile:=IOResult;
+end;
 
 
 
