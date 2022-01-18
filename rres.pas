@@ -212,30 +212,26 @@ begin
    height:=ImageThumbBase.GetHeight(i);
    ImageThumbBase.GetExportOptions(i,EO);
    SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
-   if (EO.Lan=TPLan) and (EO.Image = 1) then WriteTPCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
-   if (EO.Lan=TCLan) and (EO.Image = 1) then WriteTCCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
 
-   if (EO.Lan=FPLan) and (EO.Image = 1) then WriteFPCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+   case EO.Lan of TPLan,TCLan,FPLan,FBLan,QBLan,GWLan,QCLan,QPLan,PBLan:
+        begin
+          if EO.Image = 1 then WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,0,EO.Name);
+          if (EO.Image = 1) and (EO.Mask=1) then WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,1,EO.Name+'Mask');
+        end;
+   end;
 
-   if (EO.Lan=FBLan) and (EO.Image = 1) then WriteFBCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+   if (EO.LAN=ABLan) and (EO.Image = 1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,height-1,0,data,EO.Name);        // put
+   if (EO.LAN=ABLan) and (EO.Image = 1) and (EO.Mask=1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,height-1,1,data,EO.Name+'Mask');        // mask
 
-   if (EO.Lan=QBLan) and (EO.Image = 1) then WriteQBCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
-   if (EO.Lan=GWLan) and (EO.Image = 1) then WriteGWCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
 
-   if (EO.Lan=QCLan) and (EO.Image = 1) then WriteQCCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
-   if (EO.Lan=QPLan) and (EO.Image = 1) then WriteQPCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+   if (EO.LAN=ABLan) and (EO.Image = 2) then WriteAmigaBasicBobDataBuffer(0,0,width-1,height-1,data,EO.Name,false); //bob
+   if (EO.LAN=ABLan) and (EO.Image = 3) then WriteAmigaBasicBobDataBuffer(0,0,width-1,height-1,data,EO.Name,true); // vsprite
 
-   if (EO.Lan=PBLan) and (EO.Image = 1) then WritePBCodeToBuffer(data,0,0,width-1,height-1,EO.Name); //put
+   if (EO.LAN=ACLan) and (EO.Image = 1) then WriteAmigaCBobCodeToBuffer(0,0,width-1,height-1,EO.Name,data,false);        // bob
+   if (EO.LAN=ACLan) and (EO.Image = 2) then WriteAmigaCBobCodeToBuffer(0,0,width-1,height-1,EO.Name,data,true);  //vsprite
 
-   if (EO.LAN=ABLan) and (EO.Image = 1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,width-1,data,EO.Name);        // put
-   if (EO.LAN=ABLan) and (EO.Image = 2) then WriteAmigaBasicBobDataBuffer(0,0,width-1,width-1,data,EO.Name,false); //bob
-   if (EO.LAN=ABLan) and (EO.Image = 3) then WriteAmigaBasicBobDataBuffer(0,0,width-1,width-1,data,EO.Name,true); // vsprite
-
-   if (EO.LAN=ACLan) and (EO.Image = 1) then WriteAmigaCBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,false);        // bob
-   if (EO.LAN=ACLan) and (EO.Image = 2) then WriteAmigaCBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,true);  //vsprite
-
-   if (EO.LAN=APLan) and (EO.Image = 1) then WriteAmigaPascalBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,false);        // bob
-   if (EO.LAN=APLan) and (EO.Image = 2) then WriteAmigaPascalBobCodeToBuffer(0,0,width-1,width-1,EO.Name,data,true);  //vsprite
+   if (EO.LAN=APLan) and (EO.Image = 1) then WriteAmigaPascalBobCodeToBuffer(0,0,height-1,width-1,EO.Name,data,false);        // bob
+   if (EO.LAN=APLan) and (EO.Image = 2) then WriteAmigaPascalBobCodeToBuffer(0,0,height-1,width-1,EO.Name,data,true);  //vsprite
 
  end;
  close(data.fText);
@@ -262,8 +258,9 @@ var
  ExportCount : Integer;
  SLen        : integer;
  Error       : integer;
+ MaskName    : string;
 begin
- ExportCount:=ImageThumbBase.GetExportCount;
+ ExportCount:=ImageThumbBase.GetExportImageCount+ImageThumbBase.GetExportMaskCount;
  if ExportCount = 0 then exit;
 
  SetThumbActive;   // we are getting pixel data from core object ThumbBase
@@ -321,6 +318,21 @@ begin
      inc(OffsetCount,Size);
      {$I-}
      Blockwrite(data.f,RR,sizeof(RR));
+
+     //if there is a mask image we write the info also - size is the same, offset and name will be different
+     if EO.Mask = 1 then
+     begin
+       MaskName:=EO.Name+'Mask';
+       slen:=Length(MaskName);
+       if slen > 20 then slen:=20;
+       Move(MaskName[1],RR.rid,slen);
+
+       RR.offset:=OffsetCount;
+       inc(OffsetCount,Size);
+       Blockwrite(data.f,RR,sizeof(RR));
+     end;
+
+
      {$I+}
      Error:=IORESULT;
      if Error<>0 then
@@ -341,10 +353,17 @@ begin
 
    Case EO.Lan of TPLan,TCLan,QCLan,QPLan,QBLan,GWLan,PBLan:
                                     begin
-                                      if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,data);
+                                      if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
+                                      if (EO.Image = 1) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
                                     end;
-                              FPLan: WriteXGFToBufferFP(0,0,width-1,height-1,data);
-                              FBLan: WriteXGFToBufferFB(0,0,width-1,height-1,data);
+                              FPLan: begin
+                                       if (EO.Image = 1) then WriteXGFToBufferFP(0,0,width-1,height-1,0,data);
+                                       if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFP(0,0,width-1,height-1,1,data);
+                                     end;
+                              FBLan: begin
+                                        if (EO.Image = 1) then WriteXGFToBufferFB(0,0,width-1,height-1,0,data);
+                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFB(0,0,width-1,height-1,1,data);
+                                     end;
                               ABLan:begin
                                       if (EO.Image = 1) then WriteAmigaBasicXGFBuffer(0,0,width-1,height-1,data);
                                       if (EO.Image = 2) then WriteAmigaBasicBobBuffer(0,0,width-1,height-1,data,false); //bob
@@ -356,14 +375,11 @@ begin
                                     end;
 
    end;
-
-
+ end;
  {$I-}
  close(data.f);
  {$I+}
  RESBinary:=IOResult;
- end;
-
 end;
 
 

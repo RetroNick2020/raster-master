@@ -28,12 +28,26 @@ function GetPixel(x,y : integer) : integer;
 function  GetMaxColor : integer;
 procedure GetColor(index : integer;var cr : TRMColorRec);
 
+procedure SetMaskMode(mode : integer);
+function GetMaskMode : integer;
+
 implementation
 var
  XThumbIndex  : integer;
  XGetPixel    : GetPixelProc;
  XGetMaxColor : GetMaxColorProc;
  XGetColor    : GetColorProc;
+ XMaskMode    : integer;
+
+procedure SetMaskMode(mode : integer);
+begin
+ XMaskMode:=mode;
+end;
+
+function GetMaskMode : integer;
+begin
+ GetMaskMode:=XMaskMode;
+end;
 
 procedure SetThumbIndex(index : integer);
 begin
@@ -113,6 +127,7 @@ end;
 
 Procedure SetCoreActive;
 begin
+ SetMaskMode(0);
  SetMaxColorProc(@CoreGetMaxColor);
  SetGetPixelProc(@CoreGetPixel);
  SetGetColorProc(@CoreGetColor);
@@ -120,6 +135,7 @@ end;
 
 Procedure SetThumbActive;
 begin
+ SetMaskMode(0);
  SetMaxColorProc(@ThumbGetMaxColor);
  SetGetPixelProc(@ThumbGetPixel);
  SetGetColorProc(@ThumbGetColor);
@@ -132,8 +148,15 @@ begin
 end;
 
 function GetPixel(x,y : integer) : integer;
+var
+ pixColor : integer;
 begin
- GetPixel:=XGetPixel(x,y);
+ pixColor:=XGetPixel(x,y);
+ if XMaskMode = 1 then
+ begin
+    if pixColor = 0 then pixColor:=GetMaxColor else pixColor:=0;  // in 16 color mode any pixel color 0 become 15 (white) and any other color becomes 0
+ end;
+ GetPixel:=pixColor;
 end;
 
 begin

@@ -68,9 +68,11 @@ type
  Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
  Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
 
- procedure WriteXgfToBuffer(x,y,x2,y2,LanType : word;var data : BufferRec);  // to binary file
- procedure WriteXgfToBufferFP(x,y,x2,y2 : word;var data : BufferRec);
- procedure WriteXgfToBufferFB(x,y,x2,y2 : word;var data : BufferRec);
+ procedure WriteXgfToBuffer(x,y,x2,y2,LanType,Mask : word;var data : BufferRec);  // to binary file
+ procedure WriteXgfToBufferFP(x,y,x2,y2,Mask : word;var data : BufferRec);
+ procedure WriteXgfToBufferFB(x,y,x2,y2,Mask : word;var data : BufferRec);
+
+ function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 
  Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;//to text file
  Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
@@ -937,25 +939,39 @@ begin
  WriteFBCodeToBuffer:=IORESULT;
 end;
 
-procedure WriteXgfToBuffer(x,y,x2,y2,LanType : word;var data : BufferRec);
+procedure WriteXgfToBuffer(x,y,x2,y2,LanType,Mask : word;var data : BufferRec);
+var
+ omask : integer;
 begin
+  omask:=GetMaskMode;
+  SetMaskMode(Mask);
+
   BitPlaneWriterFile(0,data,0);
   WriteXGFBuffer(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
+  SetMaskMode(oMask);
 end;
 
-procedure WriteXgfToBufferFB(x,y,x2,y2: word;var data : BufferRec);
+procedure WriteXgfToBufferFB(x,y,x2,y2,Mask: word;var data : BufferRec);
+var
+ omask : integer;
 begin
+  omask:=GetMaskMode;
+  SetMaskMode(Mask);
   BitPlaneWriterFile(0,data,0);
   WriteXGFBufferFB(@BitPlaneWriterFile,data,x,y,x2,y2);
+  SetMaskMode(oMask);
 end;
 
-procedure WriteXgfToBufferFP(x,y,x2,y2 : word;var data : BufferRec);
+procedure WriteXgfToBufferFP(x,y,x2,y2,Mask : word;var data : BufferRec);
+var
+ omask : integer;
 begin
+  omask:=GetMaskMode;
+  SetMaskMode(Mask);
   BitPlaneWriterFile(0,data,0);
   WriteXGFBufferFP(@BitPlaneWriterFile,data,x,y,x2,y2);
+  SetMaskMode(oMask);
 end;
-
-
 
 
 //write a single file
@@ -978,6 +994,12 @@ begin
 
                  QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imagename);
                  QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                 PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                 FBLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename);
+                 FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imagename);
+
  end;
  close(data.fText);
  {$I+}
@@ -1000,6 +1022,29 @@ Assign(data.f,filename);
 end;
 
 
+function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
+var
+ omask : integer;
+begin
+  omask:=GetMaskMode;
+  SetMaskMode(Mask);
+  case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imagename);
+                  TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                  QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
+                  GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                  QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imagename);
+                  QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                  PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                  FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imagename);
+                  FBLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename)
+  end;
+  SetMaskMode(omask);
+  WriteXGFCodeToBuffer:=data.Error;
+end;
 
 
 begin

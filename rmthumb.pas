@@ -67,7 +67,8 @@ type
              function GetCount : integer;
              procedure SetCount(count : integer);
 
-             function GetExportCount : integer;
+             function GetExportImageCount : integer;
+             function GetExportMaskCount : integer;
 
              function GetPixelTColor(index,x,y : integer) : TColor;
              //emulate BGI functions needed elseware
@@ -200,7 +201,7 @@ begin
   ImageCount:=count;
 end;
 
-function TImageThumb.GetExportCount : integer;
+function TImageThumb.GetExportImageCount : integer;
 var
  i : integer;
  Exportcount : integer;
@@ -210,8 +211,22 @@ begin
  begin
    if ImageMain[i].Props.ExportFormat.Image > 0 then inc(ExportCount);
  end;
- GetExportCount:=ExportCount;
+ GetExportImageCount:=ExportCount;
 end;
+
+function TImageThumb.GetExportMaskCount : integer;
+var
+ i : integer;
+ Exportcount : integer;
+begin
+ ExportCount:=0;
+ for i:=0 to GetCount-1 do
+ begin
+   if (ImageMain[i].Props.ExportFormat.Image=1) and (ImageMain[i].Props.ExportFormat.Mask=1) then inc(ExportCount);
+ end;
+ GetExportMaskCount:=ExportCount;
+end;
+
 
 procedure TImageThumb.CopyCoreToIndexImage(index : integer);
 var

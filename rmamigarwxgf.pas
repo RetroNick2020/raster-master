@@ -17,7 +17,10 @@ Function WriteAmigaBasicBobFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : 
 Function WriteAmigaBasicBobDataFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
 
 Function WriteAmigaBasicXGFBuffer(x,y,x2,y2 : word;var data : bufferRec):word;
-Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string):word;
+
+Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2,mask : word;var data : bufferRec;imagename:string):word;
+
+//Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string):word;
 
 Function WriteAmigaBasicXGFFile(x,y,x2,y2 : word;filename:string):word;
 Function WriteAmigaBasicXGFDataFile(x,y,x2,y2 : word;filename:string):word;
@@ -899,14 +902,18 @@ begin
  WriteAmigaBasicBobDataFile:=IORESULT;
 end;
 
-Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2 : word;var data : bufferRec;imagename:string):word;
+Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2,mask : word;var data : bufferRec;imagename:string):word;
 var
   Header :  ABBitMapHeader;
   Width,height : Word;
   TempBuf : array[1..6] of Byte;
   i,BPCount : word;
   size : longword;
+  omask : integer;
 begin
+ omask:=GetMaskMode;
+ SetMaskMode(Mask);
+
  width:=x2-x+1;
  height:=y2-y+1;
  BPCount:=GetBitPlaneCount;
@@ -920,6 +927,7 @@ begin
  if data.Error<>0 then
  begin
     WriteAmigaBasicXGFDataBuffer:=data.Error;
+    SetMaskMode(omask);
     exit;
  end;
 
@@ -936,6 +944,7 @@ begin
  CreateBitPlanes(x,y,x2,y2,@XGFBitplaneWriterDataStatements,data);
  XGFBitplaneWriterDataStatements(0,data,2);  //flush it
 
+ SetMaskMode(omask);
  WriteAmigaBasicXGFdataBuffer:=data.Error;
 end;
 
@@ -951,7 +960,7 @@ begin
  Assign(data.ftext,filename);
 {$I-}
  Rewrite(data.ftext);
- Error:=WriteAmigaBasicXGFDataBuffer(x,y,x2,y2,data,Imagename);
+ Error:=WriteAmigaBasicXGFDataBuffer(x,y,x2,y2,0,data,Imagename);
  if Error<>0 then
  begin
    WriteAmigaBasicXGFDataFile:=Error;

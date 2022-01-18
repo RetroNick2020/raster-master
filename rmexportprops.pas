@@ -61,101 +61,160 @@ begin
                          end;
                    TPLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
+
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('putimage');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
                    TCLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('putimage');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                           end;
                    QCLan:begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
+                           ComboMask.Items.Clear;
+
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('_putimage');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
-                          // ComboPalette.Items.Add('RGB Palette');
+                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                           end;
                    QBLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                           end;
 
                    PBLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
                    GWLan:begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
                    FPLan:begin
                            ComboImage.Items.Clear;
                            ComboPalette.Items.Clear;
+                           ComboMask.Items.Clear;
+
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('putimage');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
                    FBLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
                    ABLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
                            ComboImage.Items.Add('Bob Image');
                            ComboImage.Items.Add('VSprite Image');
+
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+
                            ComboPalette.Items.Add('None');
                           // ComboPalette.Items.Add('RGB Palette');
                            ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
 
                    APLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
+
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Bob Image');
                            ComboImage.Items.Add('VSprite Image');
@@ -166,6 +225,7 @@ begin
                          end;
                    ACLan:begin
                            ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
                            ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Bob Image');
@@ -178,11 +238,18 @@ begin
                    QPLan:begin
                             ComboImage.Items.Clear;
                             ComboPalette.Items.Clear;
+                            ComboMask.Items.Clear;
+
                             ComboImage.Items.Add('None');
                             ComboImage.Items.Add('putimage');
+
+                            ComboMask.Items.Add('None');
+                            ComboMask.Items.Add('Inverted');
+
                             ComboPalette.Items.Add('None');
                            // ComboPalette.Items.Add('RGB Palette');
                             ComboImage.ItemIndex:=EO.Image;
+                            ComboMask.ItemIndex:=EO.Mask;
                             ComboPalette.ItemIndex:=EO.Palette;
                           end;
 
