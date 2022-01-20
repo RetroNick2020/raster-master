@@ -93,6 +93,7 @@ type
  function GetXImageSizeFP(width,height : integer) : longint;
 
  procedure SetGWStartLineNumber(start : integer);
+ function GetGWNextLineNumber : string;
 
 Implementation
 
@@ -843,9 +844,9 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'REM QuickBASIC\QB64, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,'REM Put Bitmap ');
- writeln(data.ftext,'REM ',Imagename);
+ writeln(data.ftext,' QuickBASIC\QB64, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,' Put Bitmap ');
+ writeln(data.ftext,#39,' ',Imagename);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,QBLan);
  writeln(data.ftext);
 
@@ -871,9 +872,9 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'REM Turbo\Power Basic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,'REM Put Bitmap ');
- writeln(data.ftext,'REM ',Imagename);
+ writeln(data.ftext,#39,' Turbo\Power Basic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,#39,' Put Bitmap ');
+ writeln(data.ftext,#39,' ',Imagename);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,PBLan);
  writeln(data.ftext);
 
@@ -898,9 +899,9 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,GetGWNextLineNumber,' REM GWBASIC\PCBASIC, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,GetGWNextLineNumber,' REM Put Bitmap ');
- writeln(data.ftext,GetGWNextLineNumber,' REM ',Imagename);
+ writeln(data.ftext,GetGWNextLineNumber,' ',#39,' GWBASIC\PCBASIC, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,GetGWNextLineNumber,' ',#39,' Put Bitmap ');
+ writeln(data.ftext,GetGWNextLineNumber,' ',#39,' ',Imagename);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,GWLan);
  writeln(data.ftext);
 
@@ -929,9 +930,9 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'REM Freebasic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,'REM Put Bitmap ');
- writeln(data.ftext,'REM ',Imagename);
+ writeln(data.ftext,#39,' Freebasic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,#39,' Put Bitmap ');
+ writeln(data.ftext,#39,' ',Imagename);
  WriteXGFBufferFB(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
 

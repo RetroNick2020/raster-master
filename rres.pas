@@ -3,7 +3,7 @@
 Unit rres;
 
 Interface
-   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf;
+   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal;
 
 Function RESInclude(filename:string):word;
 Function RESBinary(filename:string):word;
@@ -189,6 +189,25 @@ end;
 GetRESImageSize:=size;
 end;
 
+function GetRESPaletteSize(nColors,Lan,rgbFormat : integer) : longint;
+var
+ size : longint;
+begin
+  size:=0;
+  if rgbFormat = ColorIndexFormat then Size:=nColors
+    else Size:=nColors*3;
+  GetRESPaletteSize:=Size;
+end;
+
+Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
+begin
+  //we don't want GWLan  - it has line number already
+  if (Lan=ABLan) or (Lan=QBLan) or (Lan=PBLan) or (Lan=FBLan) then
+   begin
+     Writeln(data.fText,LabelName,'Label:');
+   end;
+end;
+
 Function RESInclude(filename:string):word;
 var
  data    : BufferRec;
@@ -213,19 +232,48 @@ begin
    ImageThumbBase.GetExportOptions(i,EO);
    SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
 
+   if (EO.Lan>0) and (EO.Palette > 0) then
+   begin
+     WriteBasicLabel(data,EO.Lan,EO.Name+'Pal');
+     WritePalToArrayBuffer(data,EO.Name+'Pal',EO.Lan,EO.Palette);
+   end;
+
    case EO.Lan of TPLan,TCLan,FPLan,FBLan,QBLan,GWLan,QCLan,QPLan,PBLan:
         begin
-          if EO.Image = 1 then WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,0,EO.Name);
-          if (EO.Image = 1) and (EO.Mask=1) then WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,1,EO.Name+'Mask');
+          if EO.Image = 1 then
+          begin
+            WriteBasicLabel(data,EO.Lan,EO.Name);
+            WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,0,EO.Name);
+          end;
+          if (EO.Image = 1) and (EO.Mask=1) then
+          begin
+            WriteBasicLabel(data,EO.Lan,EO.Name+'Mask');
+            WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,1,EO.Name+'Mask');
+          end;
         end;
    end;
 
-   if (EO.LAN=ABLan) and (EO.Image = 1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,height-1,0,data,EO.Name);        // put
-   if (EO.LAN=ABLan) and (EO.Image = 1) and (EO.Mask=1) then WriteAmigaBasicXGFDataBuffer(0,0,width-1,height-1,1,data,EO.Name+'Mask');        // mask
+   if (EO.LAN=ABLan) and (EO.Image = 1) then
+   begin
+     WriteBasicLabel(data,EO.Lan,EO.Name);
+     WriteAmigaBasicXGFDataBuffer(0,0,width-1,height-1,0,data,EO.Name);        // put
+   end;
+   if (EO.LAN=ABLan) and (EO.Image = 1) and (EO.Mask=1) then
+   begin
+     WriteBasicLabel(data,EO.Lan,EO.Name+'Mask');
+     WriteAmigaBasicXGFDataBuffer(0,0,width-1,height-1,1,data,EO.Name+'Mask');        // mask
+   end;
 
-
-   if (EO.LAN=ABLan) and (EO.Image = 2) then WriteAmigaBasicBobDataBuffer(0,0,width-1,height-1,data,EO.Name,false); //bob
-   if (EO.LAN=ABLan) and (EO.Image = 3) then WriteAmigaBasicBobDataBuffer(0,0,width-1,height-1,data,EO.Name,true); // vsprite
+   if (EO.LAN=ABLan) and (EO.Image = 2) then
+   begin
+     WriteBasicLabel(data,EO.Lan,EO.Name);
+     WriteAmigaBasicBobDataBuffer(0,0,width-1,height-1,data,EO.Name,false); //bob
+   end;
+   if (EO.LAN=ABLan) and (EO.Image = 3) then
+   begin
+     WriteBasicLabel(data,EO.Lan,EO.Name);
+     WriteAmigaBasicBobDataBuffer(0,0,width-1,height-1,data,EO.Name,true); // vsprite
+   end;
 
    if (EO.LAN=ACLan) and (EO.Image = 1) then WriteAmigaCBobCodeToBuffer(0,0,width-1,height-1,EO.Name,data,false);        // bob
    if (EO.LAN=ACLan) and (EO.Image = 2) then WriteAmigaCBobCodeToBuffer(0,0,width-1,height-1,EO.Name,data,true);  //vsprite
@@ -252,6 +300,7 @@ var
  height  : integer;
  nColors : integer;
  Size    : LongInt;
+ PalSize : Longint;
 
  HeaderSize  : LongInt;
  OffsetCount : LongInt;
@@ -259,8 +308,9 @@ var
  SLen        : integer;
  Error       : integer;
  MaskName    : string;
+ PalName     : string;
 begin
- ExportCount:=ImageThumbBase.GetExportImageCount+ImageThumbBase.GetExportMaskCount;
+ ExportCount:=ImageThumbBase.GetExportImageCount+ImageThumbBase.GetExportMaskCount+ImageThumbBase.GetExportPaletteCount;
  if ExportCount = 0 then exit;
 
  SetThumbActive;   // we are getting pixel data from core object ThumbBase
@@ -302,6 +352,34 @@ begin
    nColors:=ImageThumbBase.GetMaxColor(i)+1;
    Size:=GetRESImageSize(width,height,nColors,EO.Lan,EO.Image);
 
+
+   //write the palette first - if there is a palette
+   if EO.Palette > 0 then
+   begin
+     PalSize:=GetRESPaletteSize(nColors,EO.Lan,EO.Palette);
+
+     PalName:=EO.Name+'Pal';
+     fillchar(RR.rid,sizeof(RR.rid),32);
+     slen:=Length(PalName);
+     if slen > 20 then slen:=20;
+     Move(PalName[1],RR.rid,slen);
+
+     RR.size:=PalSize;
+     RR.offset:=OffsetCount;
+     RR.rt:=EO.Palette; // id's less than 100 are palettes
+
+     inc(OffsetCount,PalSize);
+     {$I-}
+     Blockwrite(data.f,RR,sizeof(RR));
+     {$I+}
+     Error:=IORESULT;
+     if Error<>0 then
+     begin
+       RESBinary:=Error;
+       exit;
+     end;
+   end;
+
    //copy name field
    fillchar(RR.rid,sizeof(RR.rid),32);
    slen:=Length(EO.Name);
@@ -341,6 +419,7 @@ begin
        exit;
      end;
    end;
+
  end;
 
  //convert and dump image
@@ -350,6 +429,8 @@ begin
    height:=ImageThumbBase.GetHeight(i);
    ImageThumbBase.GetExportOptions(i,EO);
    SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
+
+   if EO.Palette > 0 then WritePalToBuffer(data,EO.Palette);
 
    Case EO.Lan of TPLan,TCLan,QCLan,QPLan,QBLan,GWLan,PBLan:
                                     begin

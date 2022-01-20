@@ -5,8 +5,8 @@ object ImageExportForm: TImageExportForm
   Width = 418
   BorderStyle = bsDialog
   Caption = 'Export Properties'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 368
+  ClientWidth = 418
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
   object EditName: TEdit
@@ -73,6 +73,7 @@ object ImageExportForm: TImageExportForm
     Top = 224
     Width = 264
     ItemHeight = 20
+    OnChange = ComboPaletteChange
     Style = csDropDownList
     TabOrder = 4
   end

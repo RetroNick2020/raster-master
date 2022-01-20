@@ -524,10 +524,16 @@ var
 procedure GetRGBEGA64(index : integer;var cr : TRMColorREc);
 procedure GetRGBVGA(index : integer;var cr : TRMColorREc);
 function RGBToEGAIndex(r,g,b : integer) : integer;
+function RGBToEGAIndex2(r,g,b : integer) : integer;
+
 function EightToSixBit(EightBitValue : integer) : integer;
 function SixToEightBit(SixBitValue : integer) : integer;
 function EightToFourBit(EightBitValue : integer) : integer;
 function FourToEightBit(FourBitValue : integer) : integer;
+function TwoToEightBit(TwoBitValue : integer) : integer;
+function EightToTwoBit(EightBitValue : integer) : integer;
+
+
 function CanLoadPaletteFile(PaletteMode : integer) : boolean;
 function isAmigaPaletteMode(pm : integer) : boolean;
 function ColIndexToHoverInfo(colIndex : integer; pm : integer) : string;
@@ -554,6 +560,19 @@ function FourToEightBit(FourBitValue : integer) : integer;
 begin
 (*   FourToEightBit := FourBitValue SHL 4;*)  // not precise
   FourToEightBit := FourBitValue * 255 div 15
+end;
+
+
+function EightToTwoBit(EightBitValue : integer) : integer;
+begin
+(*  EightToTwoBit:=EightBitValue SHR 6;*)   //not precise
+  EightToTwoBit:=round((double(EightBitValue) * 3) / 255)
+end;
+
+function TwoToEightBit(TwoBitValue : integer) : integer;
+begin
+(*   TwoToEightBit := TwoBitValue SHL 6;*)  // not precise
+  TwoToEightBit := TwoBitValue * 255 div 3;
 end;
 
 function ColIndexToHoverInfo(colIndex : integer; pm : integer) : string;
@@ -622,7 +641,27 @@ begin
        exit;
     end;
   end;
-  RGBToEGAIndex:=-1;
+  RGBToEGAIndex:=RGBToEGAIndex2(r,g,b);     // not precise but we come up with a number
+end;
+
+function RGBToEGAIndex2(r,g,b : integer) : integer;
+var
+ r2,b2,g2 : integer;
+ i : integer;
+begin
+ r2:=EightToTwoBit(r);
+ g2:=EightToTwoBit(g);
+ b2:=EightToTwoBit(b);
+
+  for i:=0 to 63 do
+  begin
+    if (EightToTwoBit(EGADefault64[i].r) = r2) AND(EightToTwoBit(EGADefault64[i].g) = g2) AND (EightToTwoBit(EGADefault64[i].b) = b2) then
+    begin
+       RGBToEGAIndex2:=i;
+       exit;
+    end;
+  end;
+  RGBToEGAIndex2:=(r2 shl 4) + (g2 shl 2) + b2;
 end;
 
 procedure GetRGBEGA64(index : integer;var cr : TRMColorREc);

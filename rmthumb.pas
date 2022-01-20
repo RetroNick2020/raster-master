@@ -67,6 +67,7 @@ type
              function GetCount : integer;
              procedure SetCount(count : integer);
 
+             function GetExportPaletteCount : integer;
              function GetExportImageCount : integer;
              function GetExportMaskCount : integer;
 
@@ -76,6 +77,7 @@ type
              function GetMaxColor(index : integer) : integer;
 
              procedure GetColor(index : integer;colorIndex : integer; var cr : TRMColorRec);
+             procedure SetColor(index : integer;colorIndex : integer; var cr : TRMColorRec);
 
              function GetWidth(index : integer) : integer;
              function GetHeight(index : integer) : integer;
@@ -201,6 +203,19 @@ begin
   ImageCount:=count;
 end;
 
+function TImageThumb.GetExportPaletteCount : integer;
+var
+ i : integer;
+ Exportcount : integer;
+begin
+ ExportCount:=0;
+ for i:=0 to GetCount-1 do
+ begin
+   if ImageMain[i].Props.ExportFormat.Palette > 0 then inc(ExportCount);
+ end;
+ GetExportPaletteCount:=ExportCount;
+end;
+
 function TImageThumb.GetExportImageCount : integer;
 var
  i : integer;
@@ -314,6 +329,13 @@ begin
   cr.r:=ImageMain[index].Props.Palette[colorIndex].r;
   cr.g:=ImageMain[index].Props.Palette[colorIndex].g;
   cr.b:=ImageMain[index].Props.Palette[colorIndex].b;
+end;
+
+procedure TImageThumb.SetColor(index : integer;colorIndex : integer; var cr : TRMColorRec);
+begin
+  ImageMain[index].Props.Palette[colorIndex].r:=cr.r;
+  ImageMain[index].Props.Palette[colorIndex].g:=cr.g;
+  ImageMain[index].Props.Palette[colorIndex].b:=cr.b;
 end;
 
 function TImageThumb.GetWidth(index : integer) : integer;

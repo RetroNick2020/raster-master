@@ -4,7 +4,7 @@ unit rwpal;
 
 interface
 uses
-  SysUtils,FileUtil,StrUtils,RMCore,rwXGF;
+  SysUtils,FileUtil,StrUtils,RMCore,rmxgfcore,rwxgf2;
 
 Const
   ColorIndexFormat = 1;
@@ -16,19 +16,29 @@ Const
 
 Function ReadPAL(Filename : String;pm : integer) : Word;
 Function WritePAL(Filename : String) : Word;
+
+
 function WritePalData(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalConstants(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalStatements(filename : string; Lan,rgbFormat : integer) : word;
 function WriteRGBPackedPalArray(filename : string; Lan : integer; vsprite : boolean) : word;
+
+procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
+procedure WritePalToBuffer(var data : BufferRec; rgbFormat : integer);
+
+function WritePalToArrayFile(filename : string; Lan,rgbFormat : integer) : word;
+function WritePalToFile(filename : string; rgbFormat : integer) : word;
+
+
 implementation
 
 type
   PalType = Array[0..255,0..2] of Byte;
 
-function GetMaxColor : integer;
 
+function GetPalSize(ncolors,rgbFormat : integer) : integer;
 begin
-  GetMaxColor:=RMCoreBase.Palette.GetColorCount -1;
+  if rgbFormat = ColorIndexFormat then GetPalSize:=nColors else GetPalSize:=nColors*3;
 end;
 
 function ColorFormatToStr(rgbFormat: integer) : string;
@@ -60,12 +70,15 @@ begin
   Case Lan of ABLan:LanToStr:='AmigaBASIC';
               APLan:LanToStr:='Amiga Pascal';
               ACLan:LanToStr:='Amiga C';
-              PBLan:LanToStr:='TurboBASIC';
+              PBLan:LanToStr:='Power/Turbo BASIC';
               TPLan:LanToStr:='Turbo Pascal';
               TCLan:LanToStr:='Turbo C';
-              GWLan:LanToStr:='GWBASIC';
+              GWLan:LanToStr:='GWBASIC/PC-BASIC';
               QBLan:LanToStr:='QuickBASIC';
               QCLan:LanToStr:='QuickC';
+              QPLan:LanToStr:='QuickPascal';
+              FBLan:LanToStr:='Freebasic';
+              FPLan:LanToStr:='Freepascal';
 
   end;
 end;
@@ -98,7 +111,7 @@ end;
 function LineTrmToStr(Lan : integer) : string;
 begin
  LineTrmToStr:='';
- Case Lan of TPLan,FPLan,APLan:LineTrmToStr:=');';
+ Case Lan of QPLan,TPLan,FPLan,APLan:LineTrmToStr:=');';
              TCLan,QCLan,ACLan:LineTrmToStr:='};';
  end;
 end;
@@ -106,7 +119,7 @@ end;
 function CommentBeginToStr(Lan : integer) : string;
 begin
  CommentBeginToStr:=#39;
- Case Lan of TPLan,FPLan,APLan:CommentBeginToStr:='(*';
+ Case Lan of QPLan,TPLan,FPLan,APLan:CommentBeginToStr:='(*';
              TCLan,QCLan,ACLan:CommentBeginToStr:='/*';
  end;
 end;
@@ -119,12 +132,12 @@ begin
  end;
 end;
 
-function LineCountToStr(linenum,Lan : integer) : string;
+function LineCountToStr(Lan : integer) : string;
 begin
  LineCountToStr:='';
  if (lan=GWLan) then
  begin
-   LineCountToStr:=IntToStr(linenum)+' ';
+   LineCountToStr:=GetGWNextLineNumber+' ';
  end;
 end;
 
@@ -142,34 +155,40 @@ var
  i : integer;
  r,g,b   : integer;
  cistr,rstr,gstr,bstr : string;
- LineCounter : integer;
+ CR : TRMColorRec;
 begin
-{$I-}
+ SetCoreActive;
+ SetGWStartLineNumber(1000);
+ {$I-}
   Assign(F,filename);
   Rewrite(F);
-  LineCounter:=1000;
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
-  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',NColors,' Colors, Format=',BFormat);
+  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, 'Format= ',BFormat);
   For i:=0 to NColors-1 do
   begin
+    (*
     r:=RMCoreBase.Palette.GetRed(i);
     g:=RMCoreBase.Palette.GetGreen(i);
     b:=RMCoreBase.Palette.GetBlue(i);
-
+*)
+    GetColor(i,CR);
+    r:=CR.r;
+    g:=CR.g;
+    b:=CR.b;
     if rgbFormat = ColorIndexFormat then
     begin
       cistr:=ColorValueToStr(RGBToEGAIndex(r,g,b),rgbFormat);
-      WriteLn(F,LineCountToStr(LineCounter,Lan),'DATA ',cistr); //linecounttostr is blank unless js GWLan
+      WriteLn(F,LineCountToStr(Lan),'DATA ',cistr); //linecounttostr is blank unless js GWLan
     end
     else
     begin
       rstr:=ColorValueToStr(r,rgbFormat);
       gstr:=ColorValueToStr(g,rgbFormat);
       bstr:=ColorValueToStr(b,rgbFormat);
-      WriteLn(F,LineCountToStr(LineCounter,Lan),'DATA ',rstr,', ',gstr,', ',bstr);    //linecounttostr is blank unless js GWLan
+      WriteLn(F,LineCountToStr(Lan),'DATA ',rstr,', ',gstr,', ',bstr);    //linecounttostr is blank unless js GWLan
     end;
-    inc(LineCounter,10);
+//    inc(LineCounter,10);
   end;
   Close(F);
   WritePalData:=IORESULT;
@@ -187,14 +206,17 @@ var
  cistr,rstr,gstr,bstr : string;
  palettenamestr : string;
  arraysize      : integer;
+ CR : TRMColorRec;
+
 begin
+ SetCoreActive;
 {$I-}
   Assign(F,filename);
   Rewrite(F);
 
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
-  WriteLn(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',NColors,' Colors, Format=',BFormat,' ',CommentEndToStr(Lan));
+  WriteLn(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat,' ',CommentEndToStr(Lan));
 
   palettenamestr:=filenametoPalettename(filename);
   if rgbformat =ColorIndexFormat then
@@ -207,7 +229,7 @@ begin
   end;
   If (Lan = TPlan) OR (Lan =FPLan) OR (Lan = APLan) then
   begin
-   Writeln(F,palettenamestr, ' : Array[0..',arraysize,'] of Byte = (');
+   Writeln(F,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
   end
   Else if (Lan = QCLan) or (Lan = TCLan)  then
   begin
@@ -220,9 +242,14 @@ begin
 
   For i:=0 to NColors-1 do
   begin
-    r:=RMCoreBase.Palette.GetRed(i);
+(*    r:=RMCoreBase.Palette.GetRed(i);
     g:=RMCoreBase.Palette.GetGreen(i);
     b:=RMCoreBase.Palette.GetBlue(i);
+  *)
+    GetColor(i,CR);
+    r:=CR.r;
+    g:=CR.g;
+    b:=CR.b;
 
     if rgbFormat = ColorIndexFormat then
     begin
@@ -264,8 +291,12 @@ var
  cistr,rstr,gstr,bstr :string;
  pcmdstr : string;
  LineTrmStr : string;
- LineCounter : integer;
+// LineCounter : integer;
+ CR : TRMColorRec;
+
 begin
+SetCoreActive;
+SetGWStartLineNumber(1000);
 {$I-}
   Assign(F,filename);
   Rewrite(F);
@@ -274,32 +305,37 @@ begin
   BFormat:=ColorFormatToStr(rgbFormat);
   pcmdstr:=PaletteCmdToStr(Lan,rgbFormat);
   LineTrmStr:=LineTrmToStr(Lan);
-  LineCounter:=1000;
-  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Commands, ',NColors,' Colors, Format=',BFormat,' ',CommentEndToStr(Lan));
+//  LineCounter:=1000;
+  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Commands, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat,' ',CommentEndToStr(Lan));
   For i:=0 to NColors-1 do
   begin
-    r:=RMCoreBase.Palette.GetRed(i);
+(*    r:=RMCoreBase.Palette.GetRed(i);
     g:=RMCoreBase.Palette.GetGreen(i);
     b:=RMCoreBase.Palette.GetBlue(i);
+*)
+    GetColor(i,CR);
+    r:=CR.r;
+    g:=CR.g;
+    b:=CR.b;
 
     if (Lan=QBLan) and (rgbFormat = ColorSixBitFormat) then
     begin
       cistr:=IntToStr(EightToSixBit(r)+(EightToSixBit(g)*256)+(EightToSixBit(b)*65536));
-      WriteLn(F,LineCountToStr(LineCounter,Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);
+      WriteLn(F,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);
     end
     else if rgbFormat = ColorIndexFormat then
     begin
       cistr:=ColorValueToStr(RGBToEGAIndex(r,g,b),rgbFormat);
-      WriteLn(F,LineCountToStr(LineCounter,Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);
+      WriteLn(F,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);
     end
     else
     begin
       rstr:=ColorValueToStr(r,rgbFormat);
       gstr:=ColorValueToStr(g,rgbFormat);
       bstr:=ColorValueToStr(b,rgbFormat);
-      WriteLn(F,LineCountToStr(LineCounter,Lan),pcmdstr,' ',i,', ',rstr,', ',gstr,', ',bstr,LineTrmStr);
+      WriteLn(F,LineCountToStr(Lan),pcmdstr,' ',i,', ',rstr,', ',gstr,', ',bstr,LineTrmStr);
     end;
-    inc(LineCounter,10);
+//    inc(LineCounter,10);
   end;
   Close(F);
   WritePalStatements:=IORESULT;
@@ -313,17 +349,20 @@ Var
  Colors : Word;
  Error : Word;
  i : integer;
+ CR : TRMColorRec;
 
 begin
+SetCoreActive;
 {$I-}
  Colors:=GetMaxColor+1;
  //GrabPaletteList(myPal,Colors);
 
  For i:=0 to 255 do
 begin
-  myPal[i,0]:=RMCoreBase.Palette.GetRed(i);
-  myPal[i,1]:=RMCoreBase.Palette.GetGreen(i);
-  myPal[i,2]:=RMCoreBase.Palette.GetBlue(i);
+  GetColor(i,CR);
+  myPal[i,0]:=CR.r;;
+  myPal[i,1]:=CR.g;
+  myPal[i,2]:=CR.g;
 end;
 
  Assign(F,FileName);
@@ -345,6 +384,7 @@ Var
   cr : TRMColorRec;
   i : integer;
 begin
+ SetCoreActive;
  Colors:=GetMaxCOlor+1;
  Assign(F,FileName);
  Reset(F,1);
@@ -374,7 +414,8 @@ begin
        cr.b:=mypal[i,2];
        if RGBToEGAIndex(cr.r,cr.g,cr.b) > -1 then    //if this returns an index to EGA color we can accept it
        begin
-        RMCoreBase.Palette.SetColor(i,cr);
+//        RMCoreBase.Palette.SetColor(i,cr);
+          SetColor(i,cr);
        end;
      end;
    end
@@ -385,7 +426,9 @@ begin
       cr.r:=FourToEightBit(EightToFourBit(mypal[i,0]));
       cr.g:=FourToEightBit(EightToFourBit(mypal[i,1]));
       cr.b:=FourToEightBit(EightToFourBit(mypal[i,2]));
-      RMCoreBase.Palette.SetColor(i,cr);
+//      RMCoreBase.Palette.SetColor(i,cr);
+      SetColor(i,cr);
+
      end;
    end
    else    //most liekly vga or vga256 - no modifications needed
@@ -395,7 +438,9 @@ begin
        cr.r:=mypal[i,0];
        cr.g:=mypal[i,1];
        cr.b:=mypal[i,2];
-       RMCoreBase.Palette.SetColor(i,cr);
+//       RMCoreBase.Palette.SetColor(i,cr);
+       SetColor(i,cr);
+
      end;
    end;
 
@@ -405,7 +450,7 @@ end;
 
 function WriteRGBPackedPalArray(filename : string; Lan : integer; vsprite : boolean) : word;
 var
- Error : word;
+
  F : Text;
  palettenamestr : string;
  TR : TRMColorRec;
@@ -414,6 +459,7 @@ var
  arsize : word;
  i : word;
 begin
+SetCoreActive;
 {$I-}
   Assign(F,filename);
   Rewrite(F);
@@ -459,6 +505,257 @@ begin
 end;
 
 
+function WritePalCPascalStatementsBuffer(var data : BufferRec; imagename : string; Lan,rgbFormat : integer) : word;
+var
+ NColors : integer;
+ BFormat : string;
+// F : Text;
+ i : integer;
+ r,g,b   : integer;
+ cistr,rstr,gstr,bstr :string;
+ pcmdstr : string;
+ LineTrmStr : string;
+// LineCounter : integer;
+ CR : TRMColorRec;
+begin
+  NColors:=GetMaxColor+1;
+  BFormat:=ColorFormatToStr(rgbFormat);
+  pcmdstr:=PaletteCmdToStr(Lan,rgbFormat);
+  LineTrmStr:=LineTrmToStr(Lan);
+//  LineCounter:=1000;
+  Writeln(data.fText,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Commands, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, ' Format=',BFormat,' ',CommentEndToStr(Lan));
+  For i:=0 to NColors-1 do
+  begin
+(*    r:=RMCoreBase.Palette.GetRed(i);
+    g:=RMCoreBase.Palette.GetGreen(i);
+    b:=RMCoreBase.Palette.GetBlue(i);
+*)
+    GetColor(i,CR);
+    r:=CR.r;
+    g:=CR.g;
+    b:=CR.b;
+
+    if (Lan=QBLan) and (rgbFormat = ColorSixBitFormat) then
+    begin
+      cistr:=IntToStr(EightToSixBit(r)+(EightToSixBit(g)*256)+(EightToSixBit(b)*65536));
+      WriteLn(data.fText,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);
+    end
+    else if rgbFormat = ColorIndexFormat then
+    begin
+      cistr:=ColorValueToStr(RGBToEGAIndex(r,g,b),rgbFormat);
+      WriteLn(data.fText,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);
+    end
+    else
+    begin
+      rstr:=ColorValueToStr(r,rgbFormat);
+      gstr:=ColorValueToStr(g,rgbFormat);
+      bstr:=ColorValueToStr(b,rgbFormat);
+      WriteLn(data.fText,LineCountToStr(Lan),pcmdstr,' ',i,', ',rstr,', ',gstr,', ',bstr,LineTrmStr);
+    end;
+//    inc(LineCounter,10);
+  end;
+
+{$I+}
+end;
+
+function WritePalBasicBuffer(var data : BufferRec; imagename : string; Lan,rgbFormat : integer) : word;
+var
+ NColors : integer;
+ BFormat : string;
+ //F : Text;
+ i : integer;
+ r,g,b   : integer;
+ cistr,rstr,gstr,bstr : string;
+ //LineCounter : integer;
+ CR : TRMColorRec;
+begin
+
+//  LineCounter:=1000;
+  NColors:=GetMaxColor+1;
+  BFormat:=ColorFormatToStr(rgbFormat);
+
+  Writeln(data.fText,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat);
+  For i:=0 to NColors-1 do
+  begin
+    (*
+    r:=RMCoreBase.Palette.GetRed(i);
+    g:=RMCoreBase.Palette.GetGreen(i);
+    b:=RMCoreBase.Palette.GetBlue(i);
+*)
+    GetColor(i,CR);
+    r:=CR.r;
+    g:=CR.g;
+    b:=CR.b;
+    if rgbFormat = ColorIndexFormat then
+    begin
+      cistr:=ColorValueToStr(RGBToEGAIndex(r,g,b),rgbFormat);
+      WriteLn(data.fText,LineCountToStr(Lan),'DATA ',cistr); //linecounttostr is blank unless is GWLan
+    end
+    else
+    begin
+      rstr:=ColorValueToStr(r,rgbFormat);
+      gstr:=ColorValueToStr(g,rgbFormat);
+      bstr:=ColorValueToStr(b,rgbFormat);
+      WriteLn(data.fText,LineCountToStr(Lan),'DATA ',rstr,', ',gstr,', ',bstr);    //linecounttostr is blank unless js GWLan
+    end;
+//    inc(LineCounter,10);
+  end;
+end;
+
+
+
+//for C/pascal languages
+Procedure WritePalCPascalBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
+var
+ NColors : integer;
+ BFormat : string;
+// F : Text;
+ i : integer;
+ r,g,b   : integer;
+ cistr,rstr,gstr,bstr : string;
+ palettenamestr : string;
+ arraysize      : integer;
+ CR : TRMColorRec;
+
+begin
+  NColors:=GetMaxColor+1;
+  BFormat:=ColorFormatToStr(rgbFormat);
+  WriteLn(data.fText,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, ' Format= ',BFormat,' ',CommentEndToStr(Lan));
+
+  palettenamestr:=imagename;
+  if rgbformat =ColorIndexFormat then
+  begin
+    arraysize:=NColors-1;
+  end
+  else
+  begin
+    arraysize:=Ncolors*3-1;
+  end;
+  If (Lan = TPlan) OR (Lan =FPLan) OR (Lan = APLan) then
+  begin
+   Writeln(data.fText,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
+  end
+  Else if (Lan = QCLan) or (Lan = TCLan)  then
+  begin
+    Writeln(data.fText,'char ',palettenamestr,'[',arraysize,'] = {');
+  end
+  Else if (Lan=ACLan) then
+  begin
+    Writeln(data.fText,'UBYTE ',palettenamestr,'[',arraysize,'] = {');
+  end;
+
+  For i:=0 to NColors-1 do
+  begin
+(*    r:=RMCoreBase.Palette.GetRed(i);
+    g:=RMCoreBase.Palette.GetGreen(i);
+    b:=RMCoreBase.Palette.GetBlue(i);
+  *)
+    GetColor(i,CR);
+    r:=CR.r;
+    g:=CR.g;
+    b:=CR.b;
+
+    if rgbFormat = ColorIndexFormat then
+    begin
+      cistr:=ColorValueToStr(RGBToEGAIndex(r,g,b),rgbFormat);
+      Write(data.fText,cistr);
+      if (i<>NColors-1) then Write(data.fText,',')
+    end
+    else
+    begin
+      rstr:=ColorValueToStr(r,rgbFormat);
+      gstr:=ColorValueToStr(g,rgbFormat);
+      bstr:=ColorValueToStr(b,rgbFormat);
+      Write(data.fText,'  ',rstr,', ',gstr,', ',bstr);
+      if (i<>NColors-1) then           //if its the last color we don't write a comma at end of line
+      begin
+         Write(data.fText,',');
+         Writeln(data.fText);
+      end;
+    end;
+  end;
+  writeln(data.fText,LineTrmToStr(Lan));
+end;
+
+
+
+
+
+//write c/pascal constants and basic data statements
+procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
+begin
+   case Lan of ABLan,QBLan,PBLan,GWLAN,FBLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
+               TPLan,QPLan,APLan,FPLan,TCLan,QCLan,ACLan:WritePalCPascalBuffer(data,imagename,Lan,rgbFormat);
+   end;
+end;
+
+//write from RES called function
+Procedure WritePalToBuffer(var data : BufferRec; rgbFormat : integer);
+var
+  nColors : integer;
+  CR : TRMColorRec;
+  i  : integer;
+  ColorBuf : array[0..767] of byte;
+  ColorBufEGA : array[0..15] of byte;
+begin
+  nColors:=GetMaxColor+1;
+  for i:=0 to nColors-1 do
+  begin
+    GetColor(i,CR);
+    case rgbFormat of  ColorIndexFormat: begin
+                                           ColorBufEGA[i]:=RGBToEGAIndex(CR.r,CR.g,CR.b);
+                                         end;
+        ColorOnePercentFormat,ColorFourBitFormat: begin
+                                           ColorBuf[i*3]:= EightToFourBit(cr.r);
+                                           ColorBuf[i*3+1]:= EightToFourBit(cr.g);
+                                           ColorBuf[i*3+2]:= EightToFourBit(cr.b);
+                                         end;
+                      ColorSixBitFormat: begin
+                                           ColorBuf[i*3]:= EightToSixBit(cr.r);
+                                           ColorBuf[i*3+1]:= EightToSixBit(cr.g);
+                                           ColorBuf[i*3+2]:= EightToSixBit(cr.b);
+                                         end;
+                    ColorEightBitFormat: begin
+                                           ColorBuf[i*3]:= cr.r;
+                                           ColorBuf[i*3+1]:= cr.g;
+                                           ColorBuf[i*3+2]:= cr.b;
+                                         end;
+   end;
+ end;
+ if rgbFormat = ColorIndexFormat then BlockWrite(data.f,ColorBufEGA,ncolors)
+   else Blockwrite(data.f,ColorBuf,nColors*3);
+
+end;
+
+function WritePalToArrayFile(filename : string; Lan,rgbFormat : integer) : word;
+var
+ data : BufferRec;
+ imagename : string;
+begin
+ SetCoreActive;
+{$I-}
+  Assign(data.fText,filename);
+  Rewrite(data.fText);
+  WritePalToArrayBuffer(data,imagename,Lan,rgbformat);
+
+  Close(data.fText);
+{$I+}
+  WritePalToArrayFile:=IORESULT;
+end;
+
+function WritePalToFile(filename : string; rgbFormat : integer) : word;
+var
+ data : BufferRec;
+begin
+ SetCoreActive;
+ Assign(data.f,FileName);
+{$I-}
+ Rewrite(data.f,1);
+ WritePalToBuffer(data,rgbformat);
+ Close(data.f);
+{$I+}
+ WritePalToFile:=IORESULT;
+end;
 
 begin
 end.
