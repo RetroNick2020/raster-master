@@ -1,4 +1,4 @@
-unit RMColor;
+unit rmcolor;
 
 {$mode objfpc}{$H+}
 
@@ -96,7 +96,7 @@ var
 begin
   for i:=0 to 63 do
   begin
-      GetRGBEGA64(i,cr);
+      GetDefaultRGBEGA64(i,cr);
       TC:=RGBToColor(cr.r,cr.g,cr.b);
       ColorPalette1.AddColor(TC);
   end;

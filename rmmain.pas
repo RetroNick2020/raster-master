@@ -9,7 +9,7 @@ uses
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
   rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres;
+  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng;
 
 
 type
@@ -1827,9 +1827,10 @@ var
  x,y,x2,y2 : integer;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   SaveDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
+   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
+
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
       if ext = '.PCX' then
       begin
@@ -1844,6 +1845,13 @@ begin
         begin
           ShowMessage('Error Saving BMP file!');
         end;
+      end
+      else if ext = '.PNG' then
+      begin
+        if SavePNG(x,y,x2,y2,SaveDialog1.FileName) <> 0 then
+         begin
+           ShowMessage('Error Saving PNG file!');
+         end;
       end
       else if ext = '.GIF' then
       begin
@@ -1871,11 +1879,10 @@ var
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    lp:=1;
-//   pm:=GetPaletteMode;
-    pm:=RMCoreBase.Palette.GetPaletteMode;
+   pm:=RMCoreBase.Palette.GetPaletteMode;
 
    if RMDrawTools.GetClipStatus = 1 then lp:=0;
-   OpenDialog1.Filter := 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
+   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
 
    if OpenDialog1.Execute then
    begin
@@ -1901,6 +1908,14 @@ begin
         if RGIF(x,y,x2,y2,lp,pm,OpenDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Opening GIF file!');
+          exit;
+        end;
+      end
+      else if ext = '.PNG' then
+      begin
+        if ReadPNG(x,y,x2,y2,OpenDialog1.FileName,(lp=1)) <> 0 then
+        begin
+          ShowMessage('Error Opening PNG file!');
           exit;
         end;
       end
@@ -2220,7 +2235,7 @@ begin
           ci:=RMCoreBase.GetCurColor;
           ColorPalette1.Colors[ci]:=RMEGAColorDialog.GetPickedColor;
           ColorBox.Brush.Color:=RMEGAColorDialog.GetPickedColor;
-          GetRGBEGA64(RMEGAColorDialog.GetPickedIndex, cr);
+          GetDefaultRGBEGA64(RMEGAColorDialog.GetPickedIndex, cr);
           RMCoreBase.Palette.SetColor(ci,cr);
           UpdateActualArea;
           UpdateZoomArea;

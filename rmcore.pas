@@ -521,8 +521,8 @@ Type
 var
   RMCoreBase : TRMCoreBase;
 
-procedure GetRGBEGA64(index : integer;var cr : TRMColorREc);
-procedure GetRGBVGA(index : integer;var cr : TRMColorREc);
+procedure GetDefaultRGBEGA64(index : integer;var cr : TRMColorREc);
+procedure GetDefaultRGBVGA(index : integer;var cr : TRMColorREc);
 function RGBToEGAIndex(r,g,b : integer) : integer;
 function RGBToEGAIndex2(r,g,b : integer) : integer;
 
@@ -583,8 +583,9 @@ begin
   ColIndexStr:='Color Index: '+IntToStr(colIndex);
   if pm = PaletteModeEGA then
   begin
-     GetRGBVGA(colIndex,cr);
-     ColIndexstr:=ColIndexStr+#13#10+'EGA Index: '+IntToStr(RGBToEGAIndex(cr.r,cr.g,cr.b));
+//     GetRGBVGA(colIndex,cr);
+     RMCoreBase.Palette.GetColor(colindex,cr);
+     ColIndexstr:=ColIndexStr+#13#10+'EGA Index: '+IntToStr(RGBToEGAIndex(cr.r,cr.g,cr.b)) + #13#10+'R:'+IntToStr(cr.r)+' G:'+IntToStr(cr.g)+' B:'+IntToStr(cr.b);
   end
   else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
   begin
@@ -661,15 +662,16 @@ begin
        exit;
     end;
   end;
+ // RGBToEGAIndex2:=2;
   RGBToEGAIndex2:=(r2 shl 4) + (g2 shl 2) + b2;
 end;
 
-procedure GetRGBEGA64(index : integer;var cr : TRMColorREc);
+procedure GetDefaultRGBEGA64(index : integer;var cr : TRMColorREc);
 begin
   cr:=EGADefault64[index];
 end;
 
-procedure GetRGBVGA(index : integer;var cr : TRMColorREc);
+procedure GetDefaultRGBVGA(index : integer;var cr : TRMColorREc);
 begin
   cr:=VGADefault256[index];
 end;
