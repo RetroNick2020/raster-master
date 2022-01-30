@@ -22,9 +22,14 @@ Type
 
   TRMPalette = class(TObject)
                private
-                   paletteBuf : TRMPaletteBuf;
+                   PaletteBuf : TRMPaletteBuf;
                    ColorCount : integer;
                   Palettemode : integer;
+
+                  CBPaletteBuf : TRMPaletteBuf;  //clipboard palette - use for copy and paste palette
+                  CBColorCount : integer;
+                 CBPalettemode : integer;
+
 
                public
                Constructor Create;
@@ -39,6 +44,14 @@ Type
                procedure SetPaletteMode(mode : integer);
                function GetPaletteMode : integer;
 
+               procedure GetCBPalette(var P : TRMPaletteBuf);  //get cliboard palette
+               procedure SetCBPalette(P : TRMPaletteBuf);
+               procedure SetCBPaletteMode(mode : integer);
+               function GetCBPaletteMode : integer;
+
+               procedure GetCBColor(index : integer;var cr : TRMColorRec);
+               procedure SetCBColor(index : integer; cr : TRMColorRec);
+
 
                function GetColorCount : integer;
                procedure SetColorCount(count : integer);
@@ -47,6 +60,9 @@ Type
                function GetBlue(index : integer) : integer;
                function FindNearColorMatch(r,g,b : integer) : integer;
                function FindExactColorMatch(r,g,b : integer) : integer;
+
+               procedure CopyPaletteToCB;
+               procedure PasteFromCBToPalette;
 
                procedure DownToVGA;
                procedure DownToEGA;
@@ -533,12 +549,26 @@ function FourToEightBit(FourBitValue : integer) : integer;
 function TwoToEightBit(TwoBitValue : integer) : integer;
 function EightToTwoBit(EightBitValue : integer) : integer;
 
+function ColorsInPalette(pm : integer) : integer;
 
 function CanLoadPaletteFile(PaletteMode : integer) : boolean;
 function isAmigaPaletteMode(pm : integer) : boolean;
 function ColIndexToHoverInfo(colIndex : integer; pm : integer) : string;
 
+
 implementation
+
+function ColorsInPalette(pm : integer) : integer;
+begin
+  ColorsInPalette:=0;
+  Case pm of  PaletteModeMono, PaletteModeAmiga2:ColorsInPalette:=2;
+              PaletteModeCGA0,PaletteModeCGA1,PaletteModeAmiga4:ColorsInPalette:=4;
+              PaletteModeEGA,PaletteModeVGA,PaletteModeAmiga16:ColorsInPalette:=16;
+              PaletteModeVGA256:ColorsInPalette:=256;
+              PaletteModeAmiga8:ColorsInPalette:=8;
+              PaletteModeAmiga32:ColorsInPalette:=32;
+  end;
+end;
 
 function EightToSixBit(EightBitValue : integer) : integer;
 begin
@@ -680,6 +710,7 @@ Constructor TRMPalette.create;
 begin
   ColorCount:=0;
   SetPaletteMode(PaletteModeNone);
+  SetCBPaletteMode(PaletteModeNone);
 end;
 
 procedure TRMPalette.GetPalette(var P : TRMPaletteBuf);
@@ -691,6 +722,18 @@ procedure TRMPalette.SetPalette(P : TRMPaletteBuf);
 begin
   PaletteBuf:=P;
 end;
+
+procedure TRMPalette.GetCBPalette(var P : TRMPaletteBuf);
+begin
+  P:=CBPaletteBuf;
+end;
+
+procedure TRMPalette.SetCBPalette(P : TRMPaletteBuf);
+begin
+  CBPaletteBuf:=P;
+end;
+
+
 
 procedure TRMPalette.AddColor(r,g,b : integer);
 begin
@@ -719,6 +762,19 @@ begin
       cr:=palettebuf[index];
     end;
 end;
+
+procedure TRMPalette.GetCBColor(index : integer;var cr : TRMColorRec);
+begin
+    if index > ColorCount then
+    begin
+       cr:=VGADefault256[index];
+    end
+    else
+    begin
+      cr:=CBpalettebuf[index];
+    end;
+end;
+
 
 function TRMPalette.FindExactColorMatch(r,g,b : integer) : integer;
 var
@@ -769,6 +825,13 @@ begin
   palettebuf[index]:=cr;
 end;
 
+procedure TRMPalette.SetCBColor(index : integer;cr : TRMColorRec);
+begin
+  CBpalettebuf[index]:=cr;
+end;
+
+
+
 procedure TRMPalette.ClearColors;
 begin
   ColorCount:=0;
@@ -812,9 +875,98 @@ begin
   PaletteMode:=mode;
 end;
 
+procedure TRMPalette.SetCBPaletteMode(mode : integer);
+begin
+  CBPaletteMode:=mode;
+end;
+
+
 function TRMPalette.GetPaletteMode : integer;
 begin
   GetPaletteMode:=PaletteMode;
+end;
+
+function TRMPalette.GetCBPaletteMode : integer;
+begin
+  GetCBPaletteMode:=CBPaletteMode;
+end;
+
+
+procedure TRMPalette.CopyPaletteToCB;
+var
+  pm : integer;
+  Palette :   TRMPaletteBuf;
+
+begin
+  //we can copy all palettes to cliboard including mono and CGA. We Cannot paste to mono and CGA, we can paste mono and CGA to to other modes
+  pm:=GetPaletteMode;
+  GetPalette(Palette);
+  SetCBPalette(Palette);
+  SetCBPaletteMode(pm);
+end;
+
+procedure TRMPalette.PasteFromCBToPalette;
+var
+  CBpm,pm : integer;
+  cbpmColors,pmColors,convertColors : integer;
+  Palette :   TRMPaletteBuf;
+  EGAIndex : integer;
+   CR :TRMColorRec;
+   i : integer;
+begin
+  CBpm:=GetCBPaletteMode;
+  if CBpm = PaletteModeNone then exit;  //nothing in Palette cliboard
+  pm:=GetPaletteMode; //get current palette mode
+  if (pm=PaletteModeMono) or (pm=PaletteModeCGA0) or (pm=PaletteModeCGA1) then exit; //we can't change the palette in these modes;
+
+  if pm=CBpm then //clipboard and current palette are the same type - this is easy , takes care ega to ega, vga to vga, and vga256 to vga256 and all amiga palettes
+  begin
+     GetCBPalette(Palette);
+     SetPalette(Palette);
+     exit;
+  end;
+
+  //only convert colors that are required, if our clibaord palette is 256 and current palette is 16 colors than we only need to copy the first 16 colors
+  cbpmColors:=ColorsinPalette(CBpm);
+  pmColors:=ColorsInPalette(pm);
+  if pmColors < cbpmcolors then convertColors:=pmColors else convertColors:=cbpmColors;
+
+  if pm = PaletteModeEGA then  //our current palette mode is EGA but out source is something else - we need to convert
+  begin
+     for i:=0 to convertColors-1 do
+     begin
+       GetCBColor(i,cr);
+       EGAIndex:=RGBToEGAIndex(cr.r,cr.g,cr.b);  //if we can't find a match than leave current color as is
+       if (EGAIndex >=0) and (EGAIndex < 64) then
+       begin
+         cr:=EGADefault64[EGAIndex];
+         SetColor(i,cr);
+      end;
+    end;
+  end
+  else if isAmigaPaletteMode(pm) then
+  begin
+    for i:=0 to convertColors-1 do
+    begin
+      GetCBColor(i,cr);
+      cr.r:=FourToEightBit(EightToFourBit(cr.r));  //we lose some quality converting to amiga palette but we can easily match up
+      cr.g:=FourToEightBit(EightToFourBit(cr.g));
+      cr.b:=FourToEightBit(EightToFourBit(cr.b));
+      SetColor(i,cr);
+    end;
+  end
+  else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
+  begin
+    for i:=0 to convertColors-1 do
+    begin
+      GetCBColor(i,cr);
+      cr.r:=SixToEightBit(EightToSixBit(cr.r));   // probably don't need to do this but in the future we might have a real 8 bit color mode
+      cr.g:=SixToEightBit(EightToSixBit(cr.g));
+      cr.b:=SixToEightBit(EightToSixBit(cr.b));
+      SetColor(i,cr);
+   end;
+  end;
+
 end;
 
 

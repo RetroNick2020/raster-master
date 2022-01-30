@@ -4,8 +4,8 @@ object RMMainForm: TRMMainForm
   Top = 0
   Width = 1920
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 1026
+  ClientWidth = 1920
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -609,6 +609,14 @@ object RMMainForm: TRMMainForm
     end
     object MenuItem4: TMenuItem
       Caption = 'Palette'
+      object PaletteCopy: TMenuItem
+        Caption = 'Copy'
+        OnClick = PaletteCopyClick
+      end
+      object PalettePaste: TMenuItem
+        Caption = 'Paste'
+        OnClick = PalettePasteClick
+      end
       object PaletteOpen: TMenuItem
         Caption = 'Open'
         OnClick = PaletteOpenClick

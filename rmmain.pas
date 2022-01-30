@@ -45,6 +45,8 @@ type
     ExportPropsMenu: TPopupMenu;
     ExportRESInclude: TMenuItem;
     ExportRESBinary: TMenuItem;
+    PaletteCopy: TMenuItem;
+    PalettePaste: TMenuItem;
     QPPutImageArray: TMenuItem;
     QPPutImageFile: TMenuItem;
     QuickPascal: TMenuItem;
@@ -222,7 +224,9 @@ type
     procedure javaScriptArrayClick(Sender: TObject);
     procedure ListView1DblClick(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
+    procedure PalettePasteClick(Sender: TObject);
     procedure OpenProjectFileClick(Sender: TObject);
+    procedure PaletteCopyClick(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
     procedure PropertiesClick(Sender: TObject);
     procedure QuickPascalClick(Sender: TObject);
@@ -952,14 +956,12 @@ procedure TRMMainForm.PaletteEGAClick(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteEGA.Checked:=true;
-//  SetPaletteMode(PaletteModeEGA);
   RMCoreBase.Palette.SetPaletteMode(PaletteModeEGA);
 
   LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
- // RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
   UpdateThumbview;
   if RMDrawTools.GetClipStatus = 1 then
@@ -2211,7 +2213,7 @@ begin
 
        ColorBox.Brush.Color:=RMVGAColorDialog.GetPickedColor;
        RMVGAColorDialog.PaletteToCore;
-       CoreToPalette;
+       CoreToPalette;       //onscreen palette - not copying back to dialog
 
        UpdateActualArea;
        UpdateZoomArea;
@@ -2968,6 +2970,17 @@ begin
 
 end;
 
+procedure TRMMainForm.PalettePasteClick(Sender: TObject);
+begin
+  RMCoreBase.Palette.PasteFromCBToPalette;
+  CoreToPalette;
+  UpdatePalette;
+  UpdateColorBox;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
+end;
+
 procedure TRMMainForm.OpenProjectFileClick(Sender: TObject);
 var
   InsertMode : boolean;
@@ -3041,6 +3054,11 @@ begin
       else UnFreezeScrollAndZoom;
       UpdateToolFlipScrollMenu;
     end;
+end;
+
+procedure TRMMainForm.PaletteCopyClick(Sender: TObject);
+begin
+  RMCoreBase.Palette.CopyPaletteToCB;
 end;
 
 procedure TRMMainForm.InitThumbView;
@@ -3141,11 +3159,13 @@ begin
  RMCoreBase.ClearBuf(0);
  RMCoreBase.SetCurColor(1);
  RMDrawTools.SetDrawTool(DrawShapePencil);
+ RMDrawTools.SetClipStatus(0);
+ HideSelectAreaTools;
  UpdateToolSelectionIcons;
 
  UpdateColorBox;
  UpdateActualArea;
- RMDrawTools.SetClipStatus(0);
+
  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  UnFreezeScrollAndZoom;
