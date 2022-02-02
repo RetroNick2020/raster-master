@@ -844,8 +844,8 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,' QuickBASIC\QB64, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,' Put Bitmap ');
+ writeln(data.ftext,#39,' QuickBASIC\QB64, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,#39,' Put Bitmap ');
  writeln(data.ftext,#39,' ',Imagename);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,QBLan);
  writeln(data.ftext);

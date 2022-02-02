@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,lclintf;
 
 Const
-  ProgramName ='Raster Master v1.0 Beta R33';
+  ProgramName ='Raster Master v1.0 Beta R34';
   ProgramLicense = 'Released under MIT License';
 
 type
@@ -22,8 +22,8 @@ type
     Shape1: TShape;
     Shape2: TShape;
     StaticText1: TStaticText;
-   procedure InitName;
 
+   procedure InitName;
    procedure StaticText1Click(Sender: TObject);
   private
 
