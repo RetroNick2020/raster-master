@@ -64,6 +64,8 @@ type
                 ByteWriteCount : longword;
  end;
 
+ //Action 0 = init ncounter/buffer,Action 1 = write byte to buffer, action 2= flush buffer
+ BitPlaneWriterProc = Procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
 
  Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
  Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
@@ -95,6 +97,10 @@ type
  procedure SetGWStartLineNumber(start : integer);
  function GetGWNextLineNumber : string;
 
+procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
+procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+procedure BitplaneWriterCCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+
 Implementation
 
 type
@@ -114,8 +120,7 @@ type
  XGFHeadFB = Packed Record
               Width,Height : word;
  end;
- //Action 0 = init ncounter/buffer,Action 1 = write byte to buffer, action 2= flush buffer
- BitPlaneWriterProc = Procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
+
 
 
 const
@@ -486,6 +491,7 @@ begin
 {$I+}
  buffer.Error:=IORESULT;
 end;
+
 
 procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);
 var

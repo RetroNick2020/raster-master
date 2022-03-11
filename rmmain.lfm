@@ -4,8 +4,8 @@ object RMMainForm: TRMMainForm
   Top = 0
   Width = 1920
   Caption = 'Raster Master'
-  ClientHeight = 1026
-  ClientWidth = 1920
+  ClientHeight = 0
+  ClientWidth = 0
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -543,6 +543,22 @@ object RMMainForm: TRMMainForm
             Caption = 'PutImage File'
             OnClick = TurboPascalClick
           end
+          object TPDOSLBMArray: TMenuItem
+            Caption = 'DOS Xlib LBM Array'
+            OnClick = TurboPascalClick
+          end
+          object TPDOSLBMFile: TMenuItem
+            Caption = 'DOS Xlib LBM File'
+            OnClick = TurboPascalClick
+          end
+          object TPDOSPBMArray: TMenuItem
+            Caption = 'DOS Xlib PBM Array'
+            OnClick = TurboPascalClick
+          end
+          object TPDOSPBMFile: TMenuItem
+            Caption = 'DOS Xlib PBM File'
+            OnClick = TurboPascalClick
+          end
         end
         object TurboC: TMenuItem
           Caption = 'Turbo C'
@@ -552,6 +568,22 @@ object RMMainForm: TRMMainForm
           end
           object TCPutImageFile: TMenuItem
             Caption = 'putimage File'
+            OnClick = TurboCClick
+          end
+          object TCDOSLBMArray: TMenuItem
+            Caption = 'DOS Xlib LBM Array'
+            OnClick = TurboCClick
+          end
+          object TCDOSLBMFile: TMenuItem
+            Caption = 'DOS Xlib LBM File'
+            OnClick = TurboCClick
+          end
+          object TCDOSPBMArray: TMenuItem
+            Caption = 'DOS Xlib PBM Array'
+            OnClick = TurboCClick
+          end
+          object TCDOSPBMFile: TMenuItem
+            Caption = 'DOS Xlib PBM File'
             OnClick = TurboCClick
           end
         end

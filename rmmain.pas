@@ -45,6 +45,14 @@ type
     ExportPropsMenu: TPopupMenu;
     ExportRESInclude: TMenuItem;
     ExportRESBinary: TMenuItem;
+    TCDOSLBMArray: TMenuItem;
+    TCDOSLBMFile: TMenuItem;
+    TCDOSPBMArray: TMenuItem;
+    TCDOSPBMFile: TMenuItem;
+    TPDOSLBMArray: TMenuItem;
+    TPDOSLBMFile: TMenuItem;
+    TPDOSPBMArray: TMenuItem;
+    TPDOSPBMFile: TMenuItem;
     PaletteCopy: TMenuItem;
     PalettePaste: TMenuItem;
     QPPutImageArray: TMenuItem;
@@ -2015,6 +2023,13 @@ begin
   GetOpenSaveRegion(x,y,x2,y2);
   Case (Sender As TMenuItem).Name of 'TPPutImageArray' :ExportDialog.Filter := 'Turbo Pascal PutImage Array|*.pas';
                                         'TPPutImageFile' : ExportDialog.Filter := 'Turbo Pascal PutImage File|*.xgf';
+                                        'TPDOSLBMArray' : ExportDialog.Filter := 'Turbo Pascal DOS Xlib LBM Array|*.pas';
+                                        'TPDOSLBMFile' : ExportDialog.Filter := 'Turbo Pascal DOS Xlib LBM File|*.lbm';
+                                        'TPDOSPBMArray' : ExportDialog.Filter := 'Turbo Pascal DOS Xlib PBM Array|*.pas';
+                                        'TPDOSPBMFile' : ExportDialog.Filter := 'Turbo Pascal DOS Xlib PBM File|*.pbm';
+
+
+
   End;
   if ExportDialog.Execute then
    begin
@@ -2027,6 +2042,10 @@ begin
 
       Case (Sender As TMenuItem).Name of 'TPPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,TPLan,ExportDialog.FileName);
                                           'TPPutImageFile' : error:=WriteXGF(x,y,x2,y2,TPLan,ExportDialog.FileName);
+                                          'TPDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
+                                          'TPDOSLBMFile'  : error:=WriteLBMToFile(x,y,x2,y2,ExportDialog.FileName);
+                                          'TPDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
+                                          'TPDOSPBMFile'  : error:=WritePBMToFile(x,y,x2,y2,ExportDialog.FileName);
 
       End;
 
@@ -2452,6 +2471,11 @@ begin
    GetOpenSaveRegion(x,y,x2,y2);
    Case (Sender As TMenuItem).Name of 'TCPutImageArray' :ExportDialog.Filter := 'Turbo C putimage Array|*.c';
                                        'TCPutImageFile' : ExportDialog.Filter := 'Turbo C putimage File|*.xgf';
+                                       'TCDOSLBMFile' : ExportDialog.Filter := 'Turbo C DOS Xlib LBM File|*.lbm';
+                                       'TCDOSPBMFile' : ExportDialog.Filter := 'Turbo C DOS Xlib PBM File|*.pbm';
+                                       'TCDOSLBMArray' : ExportDialog.Filter := 'Turbo C DOS Xlib LBM Array|*.c';
+                                       'TCDOSPBMArray' : ExportDialog.Filter := 'Turbo C DOS Xlib PBM Array|*.c';
+
    End;
    if ExportDialog.Execute then
    begin
@@ -2464,6 +2488,11 @@ begin
 
       Case (Sender As TMenuItem).Name of 'TCPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,TCLan,ExportDialog.FileName);
                                           'TCPutImageFile' : error:=WriteXGF(x,y,x2,y2,TCLan,ExportDialog.FileName);
+                                          'TCDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
+                                          'TCDOSLBMFile' : error:=WriteLBMToFile(x,y,x2,y2,ExportDialog.FileName);
+                                          'TCDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
+                                          'TCDOSPBMFile' : error:=WritePBMToFile(x,y,x2,y2,ExportDialog.FileName);
+
       End;
 
       if error<>0 then
@@ -3153,6 +3182,7 @@ procedure TRMMainForm.NewClick(Sender: TObject);
 begin
  if ImageThumbBase.GetCount >= MaxThumbImages then exit;
 
+ CopyScrollPositionToCore;
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
  //ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCurrent,imagelist1,4);
 
