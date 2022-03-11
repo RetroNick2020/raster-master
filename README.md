@@ -18,6 +18,29 @@ Why did this program return from the dead?
 
 What's happened lately?
 
+Feb 13 - 2022 - We are at R35 currently. I have added PNG support and copy/paste palette options as well as fix some bugs in the most recent releases. There are probably not going to be any new releases for a few weeks. I am currently in the process of creating the map editor. Every feature now takes longer to create as i need to integrate with everything else. All the images now need to be accessible from the map editor and export format need to include the new map information. It's just going to be alot of work. Once the map editor portion is completed it will allow for the creation of simple 2D rpg and puzzle games really quickly. Raster Master will simplifiy the following tasts.
+
+1. Image Editing - Even though the amount of drawing tools in Raster Master is small,  I don't expect anyone to be only using my program to create/edit their images. I have made sure you can get the best results from copying and pasting images from other programs as well as importing PNG files. More importing features will follow. I think i can do full sprite sheet importing and take every image and place it in own thumnail view.
+
+2. Map Editing - There are great number of tools for Map editing, the only problem is that they don't work well with DOS languages. I have spent a good a amount of time looking at using Tiled.  I haven't been able to come up with a good solution that allows the data to be made easily useable in GWBASIC/QBASIC/QB64, Pascal, and C. You can export in all kinds of formats and even your own format. The main problem for me that it's reached a point that is too complex to integrate into DOS programming languages. i can probably do a CSV import but I would need to set bunch of limitations of what features can be used in Tiled and that just seems wrong.
+
+The most reasonable solution is just to add a Map Editor. It will export data to all languages that are currently supported in Raster
+Master. The Map editor work in a similar way as currently displaying images. I will relaease code that will just allow you to call simple routune/function/procedure. I am thinking something like
+
+DrawMap(MapData,x,y,HTileStart,VTileStart,HTiles, VTiles)
+-MapData will be an array to the map data
+-x,y pixel co-rodinates of where to start drawing tiles
+-HTileStart/VTileStart - MapData array starting index. which rows and columns of tiles we will draw. we will be able to scrolling by just chnging the start paremters
+-HTiles/VTiles - the number columns and rows of tiles to draw
+
+3. Exporting / Packaging  - This is a really hard problem to solve but i think i have managed to reach my goal. My number one requirement was that all data should be in your source code or can be easily linked to your exe file. This is currently true with the RES Export options and will remain true with the Map data.
+
+4. Sound - this is something I have very little knowledge but I hope to add something like sfxr into Raster Master just like the map Editor. I put this as the end of my list because I won't get to this for a long time.
+
+That's it for now - hit me up with a comment or an email. Sometimes it just feels good to know that there are real users instead of the  downloads/clone stats github shows me.
+
+
+
 Jan 8 - 2022 - R25/R26 brings big features like saving all you images to a project file. This file is portable and is not just a directory on your hard drive. you can copy the project to another computer or share it with someone else to make edit changes.
 The RES Export option for Text and Binary are completed for Turbo Pascal. I chose Turbo Pascal mainly for the testing options. All 
 other compiler/targets will follow. 
