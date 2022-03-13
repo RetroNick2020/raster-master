@@ -67,6 +67,8 @@ begin
 
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('putimage');
+                           ComboImage.Items.Add('Xlib LBM');
+                           ComboImage.Items.Add('Xlib PBM');
 
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
@@ -83,6 +85,8 @@ begin
          //                  ComboPalette.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('putimage');
+                           ComboImage.Items.Add('Xlib LBM');
+                           ComboImage.Items.Add('Xlib PBM');
 
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');

@@ -11,6 +11,10 @@ interface
 
  function WriteTPLBMCodeToBuffer(var data : BufferRec;x,y,x2,y2 : word; imagename:string):word;
  function WriteTPPBMCodeToBuffer(var data : BufferRec;x,y,x2,y2 : word; imagename:string):word;
+ Function WriteTCLBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+ Function WriteTCPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+
+
 
  Function WriteLBMToCode(x,y,x2,y2,LanType : word;filename:string):word;
  Function WriteLBMToFile(x,y,x2,y2 : word;filename:string):word;
@@ -22,10 +26,15 @@ interface
  function BPLModeX(width : integer) : integer;
  Procedure SinglePlaneToModeXPlane(var sp,mp : linebuftype; width : integer);
 
-
+ function GetLBMPBMImageSize(width,height : integer) : longint;
 
 
 implementation
+
+function GetLBMPBMImageSize(width,height : integer) : longint;
+begin
+ GetLBMPBMImageSize:=width*height+2;
+end;
 
 Procedure WriteLBMBuffer(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2 : word);
 var
@@ -139,6 +148,7 @@ begin
 {$I+}
  WriteTPLBMCodeToBuffer:=IORESULT;
 end;
+
 
 Function WriteTCPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
 var

@@ -26,6 +26,9 @@ Const
    ABPutExportFormat = 1;
    ABBOBExportFormat = 2;
    ABVSpriteExportFormat = 3;
+   XLibLBMExportFormat = 4;
+   XLibPBMExportFormat = 5;
+
 
 
    Binary2   = 1;

@@ -3,7 +3,7 @@
 Unit rres;
 
 Interface
-   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal;
+   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex;
 
 Function RESInclude(filename:string):word;
 Function RESBinary(filename:string):word;
@@ -174,7 +174,13 @@ var
  size : longint;
 begin
  size:=0;
- Case Lan of TPLan,TCLan,QCLan,QPLan,QBLan,GWLan,PBLan:size:=GetXImageSize(width,height,ncolors);
+ Case Lan of TPLan,TCLan:begin
+                           Case ImageType of 1:size:=GetXImageSize(width,height,ncolors);
+                                             2,3:size:=GetLBMPBMImageSize(width,height); // Xlib LBM/PBM
+
+                           end;
+                         end;
+             QCLan,QPLan,QBLan,GWLan,PBLan:size:=GetXImageSize(width,height,ncolors);
              FPLan:size:=GetXImageSizeFP(width,height);
              FBLan:size:=GetXImageSizeFB(width,height);
 
@@ -185,7 +191,8 @@ begin
                      end;
                    end;
              APLan,ACLan:size:=GetAmigaBitMapSize(width,height,ncolors);
-end;
+ end;
+
 GetRESImageSize:=size;
 end;
 
@@ -240,18 +247,40 @@ begin
 
    case EO.Lan of TPLan,TCLan,FPLan,FBLan,QBLan,GWLan,QCLan,QPLan,PBLan:
         begin
-          if EO.Image = 1 then
+          if EO.Image = 1 then   //put image format
           begin
             WriteBasicLabel(data,EO.Lan,EO.Name);
             WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,0,EO.Name);
           end;
-          if (EO.Image = 1) and (EO.Mask=1) then
+          if (EO.Image = 1) and (EO.Mask=1) then    //put image mask
           begin
             WriteBasicLabel(data,EO.Lan,EO.Name+'Mask');
             WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,1,EO.Name+'Mask');
           end;
         end;
    end;
+
+   if (EO.LAN=TPLan) AND (EO.Image = 2) then  // XLib LBM
+   begin
+     WriteTPLBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+   end;
+
+   if (EO.LAN=TPLan) AND (EO.Image = 3) then // XLib PBM
+   begin
+     WriteTPPBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+   end;
+
+   if (EO.LAN=TCLan) AND (EO.Image = 2) then  // XLib LBM
+   begin
+     WriteTCLBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+   end;
+
+   if (EO.LAN=TCLan) AND (EO.Image = 3) then // XLib PBM
+   begin
+     WriteTCPBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+   end;
+
+
 
    if (EO.LAN=ABLan) and (EO.Image = 1) then
    begin
@@ -432,11 +461,17 @@ begin
 
    if EO.Palette > 0 then WritePalToBuffer(data,EO.Palette);
 
-   Case EO.Lan of TPLan,TCLan,QCLan,QPLan,QBLan,GWLan,PBLan:
+   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan:
                                     begin
                                       if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                       if (EO.Image = 1) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
                                     end;
+                        TPLan,TCLan: begin
+                                       if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
+                                       if (EO.Image = 1) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
+                                       if (EO.Image = 2) then WriteLBMToBuffer(0,0,width-1,height-1,data);   //xlib lbm
+                                       if (EO.Image = 3) then WritePBMToBuffer(0,0,width-1,height-1,data);   //xlib pbm
+                                     end;
                               FPLan: begin
                                        if (EO.Image = 1) then WriteXGFToBufferFP(0,0,width-1,height-1,0,data);
                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFP(0,0,width-1,height-1,1,data);
