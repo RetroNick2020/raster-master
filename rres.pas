@@ -234,8 +234,8 @@ begin
  count:=ImageThumbBase.GetCount;
  for i:=0 to count-1 do
  begin
-   width:=ImageThumbBase.GetWidth(i);
-   height:=ImageThumbBase.GetHeight(i);
+   width:=ImageThumbBase.GetExportWidth(i);
+   height:=ImageThumbBase.GetExportHeight(i);
    ImageThumbBase.GetExportOptions(i,EO);
    SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
 
@@ -376,8 +376,8 @@ begin
  begin
    ImageThumbBase.GetExportOptions(i,EO);
 
-   width:=ImageThumbBase.GetWidth(i);
-   height:=ImageThumbBase.GetHeight(i);
+   width:=ImageThumbBase.GetExportWidth(i);
+   height:=ImageThumbBase.GetExportHeight(i);
    nColors:=ImageThumbBase.GetMaxColor(i)+1;
    Size:=GetRESImageSize(width,height,nColors,EO.Lan,EO.Image);
 
@@ -454,8 +454,8 @@ begin
  //convert and dump image
  for i:=0 to count-1 do
  begin
-   width:=ImageThumbBase.GetWidth(i);
-   height:=ImageThumbBase.GetHeight(i);
+   width:=ImageThumbBase.GetExportWidth(i);
+   height:=ImageThumbBase.GetExportHeight(i);
    ImageThumbBase.GetExportOptions(i,EO);
    SetThumbIndex(i);  //important - otherwise the GetMaxColor and GetPixel functions will not get the right data
 

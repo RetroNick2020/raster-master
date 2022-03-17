@@ -5,7 +5,8 @@ unit rmexportprops;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,rmthumb,rwxgf2;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, MaskEdit,
+  rmthumb, rwxgf2;
 
 type
 
@@ -17,12 +18,16 @@ type
     ComboCompiler: TComboBox;
     ComboMask: TComboBox;
     ComboPalette: TComboBox;
+    EditWidth: TEdit;
+    EditHeight: TEdit;
     EditName: TEdit;
     imageName: TLabel;
     ImageType: TLabel;
     CompilerType: TLabel;
     MaskType: TLabel;
     PaletteType: TLabel;
+    WidthLabel: TLabel;
+    HeightLabel: TLabel;
     ToggleBox1: TToggleBox;
     procedure Button1Click(Sender: TObject);
     procedure ComboCompilerChange(Sender: TObject);
@@ -280,6 +285,9 @@ begin
    ComboImage.ItemIndex:=EO.Image;
    ComboMask.ItemIndex:=EO.mask;
    ComboPalette.ItemIndex:=EO.Palette;
+   EditWidth.Text:=IntToStr(props.Width);
+   EditHeight.Text:=IntToStr(props.Height);
+
    UpdateComboBoxes(ComboCompiler.ItemIndex);
 end;
 
@@ -290,6 +298,9 @@ begin
    props.Image:=ComboImage.ItemIndex;
    props.mask:=ComboMask.ItemIndex;
    props.Palette:=ComboPalette.ItemIndex;
+   props.Width:=StrToIntDef(EditWidth.Text,0);
+   props.Height:=StrToIntDef(EditHeight.Text,0);
+
 end;
 
 procedure TImageExportForm.InitComboBoxes;
@@ -329,6 +340,8 @@ begin
    ComboPalette.Items.Add('AmigaBASIC -4 Bit');
 
    ComboPalette.ItemIndex:=0;
+   EditWidth.Text:='0';
+   EditHeight.Text:='0';
 end;
 
 end.

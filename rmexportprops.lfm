@@ -1,12 +1,12 @@
 object ImageExportForm: TImageExportForm
-  Left = 74
-  Height = 368
-  Top = 408
-  Width = 418
+  Left = 353
+  Height = 429
+  Top = 314
+  Width = 421
   BorderStyle = bsDialog
   Caption = 'Export Properties'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 429
+  ClientWidth = 421
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
   object EditName: TEdit
@@ -80,11 +80,11 @@ object ImageExportForm: TImageExportForm
   object Button1: TButton
     Left = 304
     Height = 31
-    Top = 312
+    Top = 360
     Width = 94
     Caption = 'OK'
     OnClick = Button1Click
-    TabOrder = 5
+    TabOrder = 7
   end
   object CompilerType: TLabel
     Left = 32
@@ -103,5 +103,41 @@ object ImageExportForm: TImageExportForm
     OnChange = ComboCompilerChange
     Style = csDropDownList
     TabOrder = 1
+  end
+  object EditWidth: TEdit
+    Left = 104
+    Height = 28
+    Top = 272
+    Width = 48
+    MaxLength = 3
+    NumbersOnly = True
+    TabOrder = 5
+    Text = '0'
+  end
+  object WidthLabel: TLabel
+    Left = 53
+    Height = 20
+    Top = 272
+    Width = 40
+    Caption = 'Width'
+    ParentColor = False
+  end
+  object EditHeight: TEdit
+    Left = 104
+    Height = 28
+    Top = 312
+    Width = 48
+    MaxLength = 3
+    NumbersOnly = True
+    TabOrder = 6
+    Text = '0'
+  end
+  object HeightLabel: TLabel
+    Left = 48
+    Height = 20
+    Top = 312
+    Width = 45
+    Caption = 'Height'
+    ParentColor = False
   end
 end

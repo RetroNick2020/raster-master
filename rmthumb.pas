@@ -13,6 +13,8 @@ type
              Image           : integer; // user - 0 = do not export, Image Format, 1 = PutImage format for most compiler
              Mask            : integer; // user - 0 = do not export, 1 = Inverse mode - all black become white, all other colors become black
              Palette         : integer; // user - 0 = do not export, 1 = EGA Index, 2 VGA, 3 Amiga RGB - will determine from palette mode in RM
+             Width           : integer; // width overwrite - if not 0 use this value as width
+             Height          : integer; // height overwrite - if not 0 use this value as height
  end;
 
  ImageThumbPropsRec = Packed Record
@@ -81,6 +83,9 @@ type
 
              function GetWidth(index : integer) : integer;
              function GetHeight(index : integer) : integer;
+
+             function GetExportWidth(index : integer) : integer;
+             function GetExportHeight(index : integer) : integer;
 
              procedure MakeThumbImage(index : integer;var imglist : TImageList;action : integer);
              procedure MakeThumbImageFromCore(index : integer;var imglist : TImageList;action : integer);
@@ -190,6 +195,9 @@ begin
     //copy the Export props from the first thum image
     ImageMain[ImageCount-1].Props.ExportFormat:=ImageMain[0].Props.ExportFormat;
     ImageMain[ImageCount-1].Props.ExportFormat.Name:='Image'+IntToStr(ImageCount);
+
+//    ImageMain[ImageCount-1].Props.ExportFormat.Width:=0;
+//    ImageMain[ImageCount-1].Props.ExportFormat.Height:=0;
  end;
 end;
 
@@ -338,6 +346,7 @@ begin
   ImageMain[index].Props.Palette[colorIndex].b:=cr.b;
 end;
 
+
 function TImageThumb.GetWidth(index : integer) : integer;
 begin
   GetWidth:=ImageMain[index].Props.Width;
@@ -346,6 +355,33 @@ end;
 function TImageThumb.GetHeight(index : integer) : integer;
 begin
  GetHeight:=ImageMain[index].Props.Height;
+end;
+
+
+//if there is a custom width property (not 0) and less then props width
+function TImageThumb.GetExportWidth(index : integer) : integer;
+var
+ width : integer;
+begin
+  Width:=ImageMain[index].Props.Width;
+  if (ImageMain[index].Props.ExportFormat.Width > 0) AND (ImageMain[index].Props.ExportFormat.Width < ImageMain[index].Props.Width) then
+  begin
+     Width:=ImageMain[index].Props.ExportFormat.Width;
+  end;
+  GetExportWidth:=Width;
+end;
+
+//if there is a custom height property (not 0) and less then props height
+function TImageThumb.GetExportHeight(index : integer) : integer;
+var
+  height : integer;
+begin
+ Height:=ImageMain[index].Props.Height;
+ if (ImageMain[index].Props.ExportFormat.Height > 0) AND (ImageMain[index].Props.ExportFormat.Height < ImageMain[index].Props.Height) then
+ begin
+    Height:=ImageMain[index].Props.ExportFormat.Height;
+ end;
+ GetExportHeight:=Height;
 end;
 
 procedure TImageThumb.GetExportOptions(index : integer;var EO : ImageExportFormatRec);
@@ -469,7 +505,7 @@ begin
  Blockread(F,head,sizeof(head));
 {$I+}
  if IORESULT <>0 then exit;
- if (head.sig='RMP') and (head.version=1) then
+ if (head.sig='RMP') and (head.version=2) then
  begin
    //delete all current images - use should be warn when oopening files
    count:=head.ImageCount;
@@ -508,8 +544,8 @@ begin
  count:=GetCount;
 
  head.ImageCount:=count;
- head.SIG:='RMP'; // Raster Master Project
- head.version:=1;
+ head.SIG:='RMP';   // Raster Master Project
+ head.version:=2;   // v2 introduced in R38 (added ExportWidth/ExportHieght), all previous up v37 were v1
  Blockwrite(F,head,sizeof(head));
  {$I+}
  if IORESULT <>0 then exit;
