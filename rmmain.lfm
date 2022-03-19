@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
   Left = -9
   Height = 1051
-  Top = 0
+  Top = -9
   Width = 1920
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 1026
+  ClientWidth = 1920
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -402,6 +402,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put Data Statements'
             OnClick = AmigaBasicClick
           end
+          object ABPutPlusMaskData: TMenuItem
+            Caption = 'Put+Mask Data Statements'
+            OnClick = AmigaBasicClick
+          end
           object ABBobData: TMenuItem
             Caption = 'Bob Data Statements'
             OnClick = AmigaBasicClick
@@ -451,6 +455,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put Data Statements'
             OnClick = FreeBASICClick
           end
+          object FBPutPlusMaskData: TMenuItem
+            Caption = 'Put+Mask Data Statements'
+            OnClick = FreeBASICClick
+          end
           object FBPutFile: TMenuItem
             Caption = 'Put File'
             OnClick = FreeBASICClick
@@ -462,6 +470,10 @@ object RMMainForm: TRMMainForm
             Caption = 'PutImage Array'
             OnClick = FreePascalClick
           end
+          object FPPutImagePlusMaskArray: TMenuItem
+            Caption = 'PutImage+Mask Array'
+            OnClick = FreePascalClick
+          end
           object FPPutImageFile: TMenuItem
             Caption = 'PutImage File'
             OnClick = FreePascalClick
@@ -471,6 +483,10 @@ object RMMainForm: TRMMainForm
           Caption = 'GWBASIC'
           object GWPutData: TMenuItem
             Caption = 'Put Data Statements'
+            OnClick = GWBASICClick
+          end
+          object GWPutPlusMaskData: TMenuItem
+            Caption = 'Put+Mask Data Statements'
             OnClick = GWBASICClick
           end
           object GWPutFile: TMenuItem
@@ -495,6 +511,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put Data Statements'
             OnClick = QBasicDataClick
           end
+          object QBPutPlusMaskData: TMenuItem
+            Caption = 'Put+Mask Data Statements'
+            OnClick = QBasicDataClick
+          end
           object QBPutFile: TMenuItem
             Caption = 'Put File'
             OnClick = QBasicDataClick
@@ -504,6 +524,10 @@ object RMMainForm: TRMMainForm
           Caption = 'Quick C'
           object QCPutImageArray: TMenuItem
             Caption = '_putimage array'
+            OnClick = QuickCClick
+          end
+          object QCPutImagePlusMaskArray: TMenuItem
+            Caption = '_putimage+Mask array'
             OnClick = QuickCClick
           end
           object QCPutImageFile: TMenuItem
@@ -517,6 +541,10 @@ object RMMainForm: TRMMainForm
             Caption = 'PutImage Array'
             OnClick = QuickPascalClick
           end
+          object QPPutImagePlusMaskArray: TMenuItem
+            Caption = 'PutImage+Mask Array'
+            OnClick = QuickPascalClick
+          end
           object QPPutImageFile: TMenuItem
             Caption = 'PutImage File'
             OnClick = QuickPascalClick
@@ -528,6 +556,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put Data Statements'
             OnClick = TurboPowerBasicClick
           end
+          object TBPutPlusMaskData: TMenuItem
+            Caption = 'Put+Mask Data Statements'
+            OnClick = TurboPowerBasicClick
+          end
           object TBPutFile: TMenuItem
             Caption = 'Put File'
             OnClick = TurboPowerBasicClick
@@ -537,6 +569,10 @@ object RMMainForm: TRMMainForm
           Caption = 'Turbo Pascal'
           object TPPutImageArray: TMenuItem
             Caption = 'PutImage Array'
+            OnClick = TurboPascalClick
+          end
+          object TPPutImagePlusMaskArray: TMenuItem
+            Caption = 'PutImage+Mask Array'
             OnClick = TurboPascalClick
           end
           object TPPutImageFile: TMenuItem
@@ -564,6 +600,10 @@ object RMMainForm: TRMMainForm
           Caption = 'Turbo C'
           object TCPutImageArray: TMenuItem
             Caption = 'putimage Array'
+            OnClick = TurboCClick
+          end
+          object TCPutImagePlusMaskArray: TMenuItem
+            Caption = 'putimage+Mask Array'
             OnClick = TurboCClick
           end
           object TCPutImageFile: TMenuItem

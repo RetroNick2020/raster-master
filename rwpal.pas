@@ -164,7 +164,7 @@ begin
   Rewrite(F);
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
-  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, 'Format= ',BFormat);
+  Writeln(F,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, 'Format= ',BFormat);
   For i:=0 to NColors-1 do
   begin
     (*
@@ -306,7 +306,7 @@ SetGWStartLineNumber(1000);
   pcmdstr:=PaletteCmdToStr(Lan,rgbFormat);
   LineTrmStr:=LineTrmToStr(Lan);
 //  LineCounter:=1000;
-  Writeln(F,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Commands, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat,' ',CommentEndToStr(Lan));
+  Writeln(F,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Commands, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat,' ',CommentEndToStr(Lan));
   For i:=0 to NColors-1 do
   begin
 (*    r:=RMCoreBase.Palette.GetRed(i);
@@ -574,7 +574,7 @@ begin
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
 
-  Writeln(data.fText,CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat);
+  Writeln(data.fText,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat);
   For i:=0 to NColors-1 do
   begin
     (*
@@ -733,6 +733,7 @@ var
  imagename : string;
 begin
  SetCoreActive;
+ SetGWStartLineNumber(1000);
 {$I-}
   Assign(data.fText,filename);
   Rewrite(data.fText);

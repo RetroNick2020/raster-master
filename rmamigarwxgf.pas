@@ -24,6 +24,7 @@ Function WriteAmigaBasicXGFDataBuffer(x,y,x2,y2,mask : word;var data : bufferRec
 
 Function WriteAmigaBasicXGFFile(x,y,x2,y2 : word;filename:string):word;
 Function WriteAmigaBasicXGFDataFile(x,y,x2,y2 : word;filename:string):word;
+Function WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2 : word;filename:string):word;
 
 
 Function WriteAmigaPascalBobCodeToFile(x,y,x2,y2 : word;filename:string;SaveAsSprite : Boolean):word;
@@ -971,6 +972,32 @@ begin
 {$I+}
  WriteAmigaBasicXGFDataFile:=IORESULT;
 end;
+
+Function WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2 : word;filename:string):word;
+var
+  data :BufferRec;
+  imagename : string;
+  Error : word;
+begin
+ SetCoreActive;  //pull data from RMCore
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
+
+ Assign(data.ftext,filename);
+{$I-}
+ Rewrite(data.ftext);
+ Error:=WriteAmigaBasicXGFDataBuffer(x,y,x2,y2,0,data,Imagename);
+ Error:=WriteAmigaBasicXGFDataBuffer(x,y,x2,y2,1,data,Imagename+'Mask');
+ if Error<>0 then
+ begin
+   WriteAmigaBasicXGFPlusMaskDataFile:=Error;
+   exit;
+ end;
+
+ Close(data.ftext);
+{$I+}
+ WriteAmigaBasicXGFPlusMaskDataFile:=IORESULT;
+end;
+
 
 
 Function WriteAmigaBasicXGFBuffer(x,y,x2,y2 : word;var data :BufferRec):word;

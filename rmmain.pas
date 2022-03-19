@@ -45,6 +45,16 @@ type
     ExportPropsMenu: TPopupMenu;
     ExportRESInclude: TMenuItem;
     ExportRESBinary: TMenuItem;
+    ABPutPlusMaskData: TMenuItem;
+    FBPutPlusMaskData: TMenuItem;
+    FPPutImagePlusMaskArray: TMenuItem;
+    GWPutPlusMaskData: TMenuItem;
+    TCPutImagePlusMaskArray: TMenuItem;
+    TBPutPlusMaskData: TMenuItem;
+    QPPutImagePlusMaskArray: TMenuItem;
+    QCPutImagePlusMaskArray: TMenuItem;
+    QBPutPlusMaskData: TMenuItem;
+    TPPutImagePlusMaskArray: TMenuItem;
     TCDOSLBMArray: TMenuItem;
     TCDOSLBMFile: TMenuItem;
     TCDOSPBMArray: TMenuItem;
@@ -1989,7 +1999,8 @@ var
    GetOpenSaveRegion(x,y,x2,y2);
    ExportDialog.FileName:='';
    Case (Sender As TMenuItem).Name of 'QBPutData' :ExportDialog.Filter := 'QuickBasic\QB64 Put Data Statements|*.bas';
-                                      'QBPutFile' : ExportDialog.Filter := 'QuickBasic\QB64 Put File|*.xgf';
+                              'QBPutPlusMaskData' :ExportDialog.Filter := 'QuickBasic\QB64 Put+Mask Data Statements|*.bas';
+                                     'QBPutFile' : ExportDialog.Filter := 'QuickBasic\QB64 Put File|*.xgf';
    End;
 
    if ExportDialog.Execute then
@@ -2002,6 +2013,7 @@ var
       end;
 
       Case (Sender As TMenuItem).Name of 'QBPutData' : error:=WriteDat(x,y,x2,y2,sourcemode,QBLan,ExportDialog.FileName);
+                                 'QBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QBLan,ExportDialog.FileName);
                                          'QBPutFile' : error:=WriteXGF(x,y,x2,y2,QBLan,ExportDialog.FileName);
       End;
 
@@ -2022,7 +2034,8 @@ var
 begin
   GetOpenSaveRegion(x,y,x2,y2);
   Case (Sender As TMenuItem).Name of 'TPPutImageArray' :ExportDialog.Filter := 'Turbo Pascal PutImage Array|*.pas';
-                                        'TPPutImageFile' : ExportDialog.Filter := 'Turbo Pascal PutImage File|*.xgf';
+                                  'TPPutImagePlusMaskArray' :ExportDialog.Filter := 'Turbo Pascal PutImage+Mask Array|*.pas';
+                                  'TPPutImageFile' : ExportDialog.Filter := 'Turbo Pascal PutImage File|*.xgf';
                                         'TPDOSLBMArray' : ExportDialog.Filter := 'Turbo Pascal DOS Xlib LBM Array|*.pas';
                                         'TPDOSLBMFile' : ExportDialog.Filter := 'Turbo Pascal DOS Xlib LBM File|*.lbm';
                                         'TPDOSPBMArray' : ExportDialog.Filter := 'Turbo Pascal DOS Xlib PBM Array|*.pas';
@@ -2041,7 +2054,8 @@ begin
       end;
 
       Case (Sender As TMenuItem).Name of 'TPPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,TPLan,ExportDialog.FileName);
-                                          'TPPutImageFile' : error:=WriteXGF(x,y,x2,y2,TPLan,ExportDialog.FileName);
+                                 'TPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
+                                         'TPPutImageFile' : error:=WriteXGF(x,y,x2,y2,TPLan,ExportDialog.FileName);
                                           'TPDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
                                           'TPDOSLBMFile'  : error:=WriteLBMToFile(x,y,x2,y2,ExportDialog.FileName);
                                           'TPDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
@@ -2066,7 +2080,8 @@ var
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    Case (Sender As TMenuItem).Name of 'FPPutImageArray' :ExportDialog.Filter := 'FreePascal PutImage Array|*.pas';
-                                      'FPPutImageFile' : ExportDialog.Filter := 'FreePascal PutImage File|*.xgf';
+                              'FPPutImagePlusMaskArray' :ExportDialog.Filter := 'FreePascal PutImage+Mask Array|*.pas';
+                                       'FPPutImageFile' :ExportDialog.Filter := 'FreePascal PutImage File|*.xgf';
    End;
 
    if ExportDialog.Execute then
@@ -2079,6 +2094,7 @@ begin
       end;
 
       Case (Sender As TMenuItem).Name of 'FPPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,FPLan,ExportDialog.FileName);
+                                 'FPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FPLan,ExportDialog.FileName);
                                          'FPPutImageFile'  : error:=WriteXGF(x,y,x2,y2,FPLan,ExportDialog.FileName);
       End;
 
@@ -2099,7 +2115,8 @@ var
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    Case (Sender As TMenuItem).Name of 'GWPutData' :ExportDialog.Filter := 'GWBASIC Put Data Statements|*.bas';
-                                      'GWPutFile' : ExportDialog.Filter := 'GWBASIC Put File|*.xgf';
+                              'GWPutPlusMaskData' :ExportDialog.Filter := 'GWBASIC Put+Mask Data Statements|*.bas';
+                                      'GWPutFile' :ExportDialog.Filter := 'GWBASIC Put File|*.xgf';
    End;
 
    if ExportDialog.Execute then
@@ -2111,6 +2128,7 @@ begin
              PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
       end;
       Case (Sender As TMenuItem).Name of 'GWPutData' : error:=WriteDat(x,y,x2,y2,SourceMode,GWLan,ExportDialog.FileName);
+                                 'GWPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,GWLan,ExportDialog.FileName);
                                          'GWPutFile' : error:=WriteXGF(x,y,x2,y2,GWLan,ExportDialog.FileName);
       End;
 
@@ -2328,11 +2346,13 @@ var
 begin
   GetOpenSaveRegion(x,y,x2,y2);
   Case (Sender As TMenuItem).Name of 'QPPutImageArray' :ExportDialog.Filter := 'Quick Pascal PutImage Array|*.pas';
-                                        'QPPutImageFile' : ExportDialog.Filter := 'Quick Pascal PutImage File|*.xgf';
+                             'QPPutImagePlusMaskArray' :ExportDialog.Filter := 'Quick Pascal PutImage+Mask Array|*.pas';
+                                      'QPPutImageFile' :ExportDialog.Filter := 'Quick Pascal PutImage File|*.xgf';
   End;
   if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'QPPutImageArray' : error:=WriteXgfToCode(x,y,x2,y2,QPLan,ExportDialog.FileName);
+                                 'QPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QPLan,ExportDialog.FileName);
                                           'QPPutImageFile' : error:=WriteXGFToFile(x,y,x2,y2,QPLan,ExportDialog.FileName);
 
       End;
@@ -2437,7 +2457,8 @@ var
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    Case (Sender As TMenuItem).Name of 'QCPutImageArray' :ExportDialog.Filter := 'Quick C _putimage Array|*.c';
-                                      'QCPutImageFile' : ExportDialog.Filter := 'Quick C _putimage File|*.xgf';
+                              'QCPutImagePlusMaskArray' :ExportDialog.Filter := 'Quick C _putimage+Mask Array|*.c';
+                                       'QCPutImageFile' :ExportDialog.Filter := 'Quick C _putimage File|*.xgf';
    End;
 
    if ExportDialog.Execute then
@@ -2450,6 +2471,7 @@ begin
       end;
 
       Case (Sender As TMenuItem).Name of 'QCPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,QCLan,ExportDialog.FileName);
+                                 'QCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QCLan,ExportDialog.FileName);
                                          'QCPutImageFile'  : error:=WriteXGF(x,y,x2,y2,QCLan,ExportDialog.FileName);
       End;
 
@@ -2470,6 +2492,7 @@ var
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    Case (Sender As TMenuItem).Name of 'TCPutImageArray' :ExportDialog.Filter := 'Turbo C putimage Array|*.c';
+                              'TCPutImagePlusMaskArray' :ExportDialog.Filter := 'Turbo C putimage+Mask Array|*.c';
                                        'TCPutImageFile' : ExportDialog.Filter := 'Turbo C putimage File|*.xgf';
                                        'TCDOSLBMFile' : ExportDialog.Filter := 'Turbo C DOS Xlib LBM File|*.lbm';
                                        'TCDOSPBMFile' : ExportDialog.Filter := 'Turbo C DOS Xlib PBM File|*.pbm';
@@ -2487,6 +2510,7 @@ begin
       end;
 
       Case (Sender As TMenuItem).Name of 'TCPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,TCLan,ExportDialog.FileName);
+                                 'TCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                           'TCPutImageFile' : error:=WriteXGF(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                           'TCDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                           'TCDOSLBMFile' : error:=WriteLBMToFile(x,y,x2,y2,ExportDialog.FileName);
@@ -2511,8 +2535,9 @@ var
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   Case (Sender As TMenuItem).Name of 'TBPutData' :ExportDialog.Filter := 'Turbo\Power Basic Data Statements|*.bas';
-                                      'TBPutFile' : ExportDialog.Filter := 'Turbo\Power Basic Put File|*.xgf';
+   Case (Sender As TMenuItem).Name of 'TBPutData' :ExportDialog.Filter := 'Turbo\Power Basic Put Data Statements|*.bas';
+                              'TBPutPlusMaskData' :ExportDialog.Filter := 'Turbo\Power Basic Put+Mask Data Statements|*.bas';
+                                      'TBPutFile' :ExportDialog.Filter := 'Turbo\Power Basic Put File|*.xgf';
    End;
 
 
@@ -2526,6 +2551,7 @@ begin
       end;
 
       Case (Sender As TMenuItem).Name of 'TBPutData' : error:=WriteDat(x,y,x2,y2,SourceMode,PBLan,ExportDialog.FileName);
+                                 'TBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,PBLan,ExportDialog.FileName);
                                       'TBPutFile' : WriteXGF(x,y,x2,y2,PBLan,ExportDialog.FileName);
       End;
 
@@ -2545,8 +2571,9 @@ var
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   Case (Sender As TMenuItem).Name of 'FBPutData' :ExportDialog.Filter := 'FreeBASIC Data Statements|*.bas';
-                                      'FBPutFile' : ExportDialog.Filter := 'FreeBASIC Put File|*.xgf';
+   Case (Sender As TMenuItem).Name of 'FBPutData' :ExportDialog.Filter := 'FreeBASIC Put Data Statements|*.bas';
+                              'FBPutPlusMaskData' :ExportDialog.Filter := 'FreeBASIC Put+Mask Data Statements|*.bas';
+                                      'FBPutFile' :ExportDialog.Filter := 'FreeBASIC Put File|*.xgf';
    End;
 
    if ExportDialog.Execute then
@@ -2559,6 +2586,7 @@ begin
       end;
 
       Case (Sender As TMenuItem).Name of 'FBPutData' : error:=WriteDat(x,y,x2,y2,SourceMode,FBLan,ExportDialog.FileName);
+                                 'FBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FBLan,ExportDialog.FileName);
                                          'FBPutFile' : error:=WriteXGF(x,y,x2,y2,FBLan,ExportDialog.FileName);
       End;
 
@@ -2585,7 +2613,8 @@ begin
       exit;
    end;
 
-   Case (Sender As TMenuItem).Name of 'ABPutData' :ExportDialog.Filter := 'AmigaBASIC Data Statements|*.bas';
+   Case (Sender As TMenuItem).Name of 'ABPutData' :ExportDialog.Filter := 'AmigaBASIC Put Data Statements|*.bas';
+                                      'ABPutPlusMaskData' :ExportDialog.Filter := 'AmigaBASIC Put+Mask Data Statements|*.bas';
                                       'ABBobData' : ExportDialog.Filter := 'AmigaBASIC Bob Data Statements|*.bas';
                                       'ABVSpriteData' : ExportDialog.Filter := 'AmigaBASIC VSprite Data Statements|*.bas';
                                       'ABPutFile' : ExportDialog.Filter := 'AmigaBASIC Put File|*.xgf';
@@ -2596,6 +2625,7 @@ begin
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'ABPutData' : error:=WriteAmigaBasicXGFDataFile(x,y,x2,y2,ExportDialog.FileName);
+                                         'ABPutPlusMaskData' : error:=WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2,ExportDialog.FileName);
                                          'ABBobData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,false);
                                          'ABVSpriteData' : error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,true);
                                          'ABPutFile' :  error:=WriteAmigaBasicXGFFile(x,y,x2,y2,ExportDialog.FileName);

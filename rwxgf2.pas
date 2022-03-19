@@ -71,7 +71,11 @@ type
  BitPlaneWriterProc = Procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
 
  Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
+
+ Function WriteXgfWithMaskToCode(x,y,x2,y2,LanType : word;filename:string):word;
+
  Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
+
 
  procedure WriteXgfToBuffer(x,y,x2,y2,LanType,Mask : word;var data : BufferRec);  // to binary file
  procedure WriteXgfToBufferFP(x,y,x2,y2,Mask : word;var data : BufferRec);
@@ -1015,6 +1019,27 @@ begin
  {$I+}
  WriteXgfToCode:=IOResult;
 end;
+
+Function WriteXgfWithMaskToCode(x,y,x2,y2,LanType : word;filename:string):word;
+var
+ data      : BufferRec;
+ imagename : String;
+begin
+ SetCoreActive;   // we are getting data from core object RMCoreBase
+ SetGWStartLineNumber(1000);
+ assign(data.fText,filename);
+{$I-}
+ rewrite(data.fText);
+
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
+ WriteXGFCodeToBuffer(data,x,y,x2,y2,LanType,0,imagename);
+ WriteXGFCodeToBuffer(data,x,y,x2,y2,LanType,1,imagename+'Mask');  //mask
+
+ close(data.fText);
+ {$I+}
+ WriteXgfWithMaskToCode:=IOResult;
+end;
+
 
 //write a single binary file
 Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
