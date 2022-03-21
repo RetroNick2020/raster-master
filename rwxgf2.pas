@@ -103,10 +103,13 @@ type
 
  procedure SetGWStartLineNumber(start : integer);
  function GetGWNextLineNumber : string;
+ function LineCountToStr(Lan : integer) : string;
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);
 procedure BitplaneWriterCCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+procedure BitplaneWriterBasicCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+procedure BitplaneWriterGWBasicCode(inByte : Byte; var Buffer : BufferRec;action : integer);
 
 Implementation
 
@@ -607,6 +610,16 @@ begin
  inc(GWBasicLineNumber,10);
 end;
 
+
+function LineCountToStr(Lan : integer) : string;
+begin
+ LineCountToStr:='';
+ if (lan=GWLan) then
+ begin
+   LineCountToStr:=GetGWNextLineNumber+' ';
+ end;
+end;
+
 procedure BitplaneWriterGWBasicCode(inByte : Byte; var Buffer : BufferRec;action : integer);
 var
  i : integer;
@@ -995,6 +1008,7 @@ var
  imagename : String;
 begin
  SetCoreActive;   // we are getting data from core object RMCoreBase
+ SetGWStartLineNumber(1000);
  assign(data.fText,filename);
 {$I-}
  rewrite(data.fText);

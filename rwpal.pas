@@ -132,14 +132,7 @@ begin
  end;
 end;
 
-function LineCountToStr(Lan : integer) : string;
-begin
- LineCountToStr:='';
- if (lan=GWLan) then
- begin
-   LineCountToStr:=GetGWNextLineNumber+' ';
- end;
-end;
+
 
 function FileNameToPaletteName(filename : string) : string;
 begin

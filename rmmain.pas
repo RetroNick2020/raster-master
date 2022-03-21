@@ -9,7 +9,7 @@ uses
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
   rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng;
+  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse;
 
 
 type
@@ -49,6 +49,15 @@ type
     FBPutPlusMaskData: TMenuItem;
     FPPutImagePlusMaskArray: TMenuItem;
     GWPutPlusMaskData: TMenuItem;
+    GWMouseShapeData: TMenuItem;
+    FPMouseShapeArray: TMenuItem;
+    QCMouseShapeArray: TMenuItem;
+    QPMouseShapeArray: TMenuItem;
+    TBMouseShapeData: TMenuItem;
+    QBMouseShapeData: TMenuItem;
+    TCMouseShapeArray: TMenuItem;
+    FBMouseShapeData: TMenuItem;
+    TPMouseShapeArray: TMenuItem;
     TCPutImagePlusMaskArray: TMenuItem;
     TBPutPlusMaskData: TMenuItem;
     QPPutImagePlusMaskArray: TMenuItem;
@@ -248,6 +257,8 @@ type
     procedure PaletteEditColors(Sender: TObject);
     procedure PropertiesClick(Sender: TObject);
     procedure QuickPascalClick(Sender: TObject);
+    procedure MouseSaveClick(Sender: TObject);
+
 
     procedure RESExportClick(Sender: TObject);
     procedure SaveDeleteClick(Sender: TObject);
@@ -2889,6 +2900,71 @@ begin
       end;
    end;
 end;
+
+procedure TRMMainForm.MouseSaveClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ error : word;
+ validpm : boolean;
+ mwidth   : integer;
+ mheight  : integer;
+begin
+   GetOpenSaveRegion(x,y,x2,y2);
+   mwidth:=x2-x+1;
+   mheight:=y2-y+1;
+
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   validpm:=(pm=PaletteModeCGA0) OR (pm=PaletteModeCGA1) OR (pm=PaletteModeAmiga4);
+   if validpm = false then
+   begin
+      ShowMessage('Invalid Mode for Mouse Shape. Choose a Palette mode with 4 colors!');
+      exit;
+   end;
+
+   if (mwidth<>16) OR (mheight<>16) then
+   begin
+      ShowMessage('Mouse Shape Width and Height should be 16 pixels!');
+      exit;
+   end;
+
+   Case (Sender As TMenuItem).Name of 'QBMouseShapeData',
+                                      'FBMouseShapeData',
+                                      'TBMouseShapeData',
+                                      'GWMouseShapeData'  : ExportDialog.Filter := 'Basic Mouse Shape Data Statements|*.bas';
+                                      'TPMouseShapeArray',
+                                      'QPMouseShapeArray',
+                                      'FPMouseShapeArray' : ExportDialog.Filter := 'Pascal Mouse Shape Array|*.pas';
+                                      'TCMouseShapeArray',
+                                      'QCMouseShapeArray' : ExportDialog.Filter := 'C Mouse Shape Array|*.c';
+   end;
+
+
+
+   if ExportDialog.Execute then
+   begin
+      Case (Sender As TMenuItem).Name of 'QBMouseShapeData',
+                                         'FBMouseShapeData',
+                                         'TBMouseShapeData': error:=WriteMShapeToCode(x,y,QBLan,ExportDialog.FileName);
+                                         'GWMouseShapeData': error:=WriteMShapeToCode(x,y,GWLan,ExportDialog.FileName);
+                                        'TPMouseShapeArray',
+                                        'QPMouseShapeArray': error:=WriteMShapeToCode(x,y,TPLan,ExportDialog.FileName);
+                                        'TCMouseShapeArray',
+                                        'QCMouseShapeArray': error:=WriteMShapeToCode(x,y,TCLan,ExportDialog.FileName);
+      end;
+
+
+
+
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+
+end;
+
 
 procedure TRMMainForm.EditCopyClick(Sender: TObject);
 var

@@ -4,8 +4,8 @@ object RMMainForm: TRMMainForm
   Top = -9
   Width = 1920
   Caption = 'Raster Master'
-  ClientHeight = 1026
-  ClientWidth = 1920
+  ClientHeight = 0
+  ClientWidth = 0
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -463,6 +463,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put File'
             OnClick = FreeBASICClick
           end
+          object FBMouseShapeData: TMenuItem
+            Caption = 'Mouse Shape Data Statements'
+            OnClick = MouseSaveClick
+          end
         end
         object FreePascal: TMenuItem
           Caption = 'FreePascal'
@@ -478,6 +482,10 @@ object RMMainForm: TRMMainForm
             Caption = 'PutImage File'
             OnClick = FreePascalClick
           end
+          object FPMouseShapeArray: TMenuItem
+            Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
+          end
         end
         object GWBASIC: TMenuItem
           Caption = 'GWBASIC'
@@ -492,6 +500,10 @@ object RMMainForm: TRMMainForm
           object GWPutFile: TMenuItem
             Caption = 'Put File'
             OnClick = GWBASICClick
+          end
+          object GWMouseShapeData: TMenuItem
+            Caption = 'Mouse Shape Data Statements'
+            OnClick = MouseSaveClick
           end
         end
         object JavaScript: TMenuItem
@@ -519,6 +531,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put File'
             OnClick = QBasicDataClick
           end
+          object QBMouseShapeData: TMenuItem
+            Caption = 'Mouse Shape Data Statements'
+            OnClick = MouseSaveClick
+          end
         end
         object QuickC: TMenuItem
           Caption = 'Quick C'
@@ -533,6 +549,10 @@ object RMMainForm: TRMMainForm
           object QCPutImageFile: TMenuItem
             Caption = '_putimage File'
             OnClick = QuickCClick
+          end
+          object QCMouseShapeArray: TMenuItem
+            Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
           end
         end
         object QuickPascal: TMenuItem
@@ -549,6 +569,10 @@ object RMMainForm: TRMMainForm
             Caption = 'PutImage File'
             OnClick = QuickPascalClick
           end
+          object QPMouseShapeArray: TMenuItem
+            Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
+          end
         end
         object TurboBasic: TMenuItem
           Caption = 'Turbo/Power Basic'
@@ -564,6 +588,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put File'
             OnClick = TurboPowerBasicClick
           end
+          object TBMouseShapeData: TMenuItem
+            Caption = 'Mouse Shape Data Statements'
+            OnClick = MouseSaveClick
+          end
         end
         object TurboPascal: TMenuItem
           Caption = 'Turbo Pascal'
@@ -578,6 +606,10 @@ object RMMainForm: TRMMainForm
           object TPPutImageFile: TMenuItem
             Caption = 'PutImage File'
             OnClick = TurboPascalClick
+          end
+          object TPMouseShapeArray: TMenuItem
+            Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
           end
           object TPDOSLBMArray: TMenuItem
             Caption = 'DOS Xlib LBM Array'
@@ -609,6 +641,10 @@ object RMMainForm: TRMMainForm
           object TCPutImageFile: TMenuItem
             Caption = 'putimage File'
             OnClick = TurboCClick
+          end
+          object TCMouseShapeArray: TMenuItem
+            Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
           end
           object TCDOSLBMArray: TMenuItem
             Caption = 'DOS Xlib LBM Array'
