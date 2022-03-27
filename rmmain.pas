@@ -51,6 +51,18 @@ type
     GWPutPlusMaskData: TMenuItem;
     GWMouseShapeData: TMenuItem;
     FPMouseShapeArray: TMenuItem;
+    QPPaletteArray: TMenuItem;
+    QPPaletteCommands: TMenuItem;
+    PaletteExportQuickPascal: TMenuItem;
+    PBPaletteCommands: TMenuItem;
+    MenuItem2: TMenuItem;
+    FPPaletteArray: TMenuItem;
+    FPPaletteCommands: TMenuItem;
+    MenuItem3: TMenuItem;
+    FBPaletteData: TMenuItem;
+    FBPaletteCommands: TMenuItem;
+    MenuItem7: TMenuItem;
+    PBPaletteData: TMenuItem;
     QCMouseShapeArray: TMenuItem;
     QPMouseShapeArray: TMenuItem;
     TBMouseShapeData: TMenuItem;
@@ -1979,6 +1991,10 @@ var
 begin
    Case (Sender As TMenuItem).Name of 'QBPaletteData' : ExportDialog.Filter := 'QuickBasic\QB64 Palette Data|*.bas';
                                     'QBPaletteCommands' : ExportDialog.Filter :='QuickBasic\QB64 Palette Commands|*.bas';
+                                    'FBPaletteData' : ExportDialog.Filter := 'FreeBASIC Palette Data|*.bas';
+                                    'FBPaletteCommands' : ExportDialog.Filter :='FreeBASIC Palette Commands|*.bas';
+                                    'PBPaletteData' : ExportDialog.Filter := 'Turbo\Power Basic Palette Data|*.bas';
+                                    'PBPaletteCommands' : ExportDialog.Filter :='Turbo\Power Basic Palette Commands|*.bas';
    end;
 
    if ExportDialog.Execute then
@@ -1990,6 +2006,10 @@ begin
 
       Case (Sender As TMenuItem).Name of 'QBPaletteData' : error:=WritePalData(ExportDialog.FileName,QBLan,ColorFormat);
                                      'QBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,QBLan,ColorFormat);
+                                     'FBPaletteData' : error:=WritePalData(ExportDialog.FileName,FBLan,ColorFormat);
+                                     'FBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,FBLan,ColorFormat);
+                                     'PBPaletteData' : error:=WritePalData(ExportDialog.FileName,PBLan,ColorFormat);
+                                     'PBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,PBLan,ColorFormat);
       end;
 
       if error<>0 then
@@ -2411,6 +2431,8 @@ var
  begin
     Case (Sender As TMenuItem).Name of 'QCPaletteArray' : ExportDialog.Filter := 'QuickC Palette Array|*.c';
                                       'QCPaletteCommands' : ExportDialog.Filter :='QuickC Palette Commands|*.c';
+                                      'QPPaletteArray' : ExportDialog.Filter := 'QuickPasca; Palette Array|*.pas';
+                                      'QPPaletteCommands' : ExportDialog.Filter :='QuickPascal Palette Commands|*.pas';
     end;
 
     if ExportDialog.Execute then
@@ -2419,9 +2441,12 @@ var
        ColorFormat:=ColorSixBitFormat;
        if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
-       Case (Sender As TMenuItem).Name of 'QCPaletteArray' : error:=WritePalData(ExportDialog.FileName,QCLan,ColorFormat);
+       Case (Sender As TMenuItem).Name of 'QCPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,QCLan,ColorFormat);
                                          'QCPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,QCLan,ColorFormat);
+                                         'QPPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,QPLan,ColorFormat);
+                                         'QPPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,QPLan,ColorFormat);
        end;
+
 
        if error<>0 then
        begin
@@ -2443,10 +2468,10 @@ procedure TRMMainForm.PaletteExportTurboCClick(Sender: TObject);
      if ExportDialog.Execute then
      begin
         pm:=RMCoreBase.Palette.GetPaletteMode;
-        ColorFormat:=ColorSixBitFormat;
+        ColorFormat:=ColorEightBitFormat;
         if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
-        Case (Sender As TMenuItem).Name of 'TCPaletteArray' : error:=WritePalData(ExportDialog.FileName,TCLan,ColorFormat);
+        Case (Sender As TMenuItem).Name of 'TCPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,TCLan,ColorFormat);
                                         'TCPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,TCLan,ColorFormat);
 
         end;
@@ -2882,15 +2907,19 @@ var
 begin
    Case (Sender As TMenuItem).Name of 'TPPaletteArray' : ExportDialog.Filter := 'Turbo Pascal Palette Array|*.pas';
                                          'TPPaletteCommands' : ExportDialog.Filter :='Turbo Pascal Palette Commands|*.pas';
+                                         'FPPaletteArray' : ExportDialog.Filter := 'FreePascal Palette Array|*.pas';
+                                         'FPPaletteCommands' : ExportDialog.Filter :='FreePascal Palette Commands|*.pas';
    end;
    if ExportDialog.Execute then
    begin
-      ColorFormat:=ColorSixBitFormat;
+      ColorFormat:=ColorEightBitFormat;
       pm:=RMCoreBase.Palette.GetPaletteMode;
       if (pm=PaletteModeEGA) then ColorFormat:=ColorIndexFormat;
 
       Case (Sender As TMenuItem).Name of 'TPPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,TPLan,ColorFormat);
                                       'TPPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,TPLan,ColorFormat);
+                                      'FPPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,FPLan,ColorFormat);
+                                      'FPPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,FPLan,ColorFormat);
       end;
 
       if error<>0 then

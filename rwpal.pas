@@ -77,8 +77,8 @@ begin
               QBLan:LanToStr:='QuickBASIC';
               QCLan:LanToStr:='QuickC';
               QPLan:LanToStr:='QuickPascal';
-              FBLan:LanToStr:='Freebasic';
-              FPLan:LanToStr:='Freepascal';
+              FBLan:LanToStr:='FreeBASIC';
+              FPLan:LanToStr:='FreePascal';
 
   end;
 end;
@@ -86,11 +86,11 @@ end;
 function PaletteCmdToStr(Lan,ColorFormat : integer) : string;
 begin
  PaletteCmdToStr:='Palette';
- if (Lan=TPLan) and (ColorFormat=ColorIndexFormat) then
+ if ((Lan=TPLan) OR (Lan=FPLan)) and (ColorFormat=ColorIndexFormat) then
  begin
    PaletteCmdToStr:='SetPalette(';
  end
- else if (Lan=TPLan) then
+ else if (Lan=TPLan) OR (Lan=FPLan) then
  begin
    PaletteCmdToStr:='SetRGBPalette(';
  end
@@ -105,7 +105,16 @@ begin
  else if (Lan=QCLan) then
  begin
   PaletteCmdToStr:='_remappalette(';
+ end
+ else if (Lan=QPLan) then
+ begin
+  PaletteCmdToStr:='_RemapPalette(';
+ end
+ else if (Lan=PBLan)  and (ColorFormat=ColorSixBitFormat) then  //Turbo/PB do not support additional palette information for VGA rgb formula
+ begin                                                     //maybe in future will replacement function for PB
+  PaletteCmdToStr:='PaletteX';
  end;
+
 end;
 
 function LineTrmToStr(Lan : integer) : string;
@@ -127,8 +136,15 @@ end;
 function CommentEndToStr(Lan : integer) : string;
 begin
  CommentEndToStr:='';
- Case Lan of TPLan,FPLan,APLan:CommentEndToStr:='*)';
+ Case Lan of QPLan,TPLan,FPLan,APLan:CommentEndToStr:='*)';
              TCLan,QCLan,ACLan:CommentEndToStr:='*/';
+ end;
+end;
+
+function CommandEndBracketToStr(Lan : integer) : string;
+begin
+ CommandEndBracketToStr:=');';
+ Case Lan of ABLan,FBLan,QBlan,PBLan,GWLan:CommandEndBracketToStr:='';
  end;
 end;
 
@@ -160,11 +176,6 @@ begin
   Writeln(F,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, 'Format= ',BFormat);
   For i:=0 to NColors-1 do
   begin
-    (*
-    r:=RMCoreBase.Palette.GetRed(i);
-    g:=RMCoreBase.Palette.GetGreen(i);
-    b:=RMCoreBase.Palette.GetBlue(i);
-*)
     GetColor(i,CR);
     r:=CR.r;
     g:=CR.g;
@@ -172,7 +183,7 @@ begin
     if rgbFormat = ColorIndexFormat then
     begin
       cistr:=ColorValueToStr(RGBToEGAIndex(r,g,b),rgbFormat);
-      WriteLn(F,LineCountToStr(Lan),'DATA ',cistr); //linecounttostr is blank unless js GWLan
+      WriteLn(F,LineCountToStr(Lan),'DATA ',cistr); //linecounttostr is blank unless is GWLan
     end
     else
     begin
@@ -220,7 +231,7 @@ begin
   begin
     arraysize:=Ncolors*3-1;
   end;
-  If (Lan = TPlan) OR (Lan =FPLan) OR (Lan = APLan) then
+  If (Lan=TPlan) OR (Lan =FPLan) OR (Lan=QPlan) OR (Lan = APLan) then
   begin
    Writeln(F,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
   end
@@ -235,10 +246,6 @@ begin
 
   For i:=0 to NColors-1 do
   begin
-(*    r:=RMCoreBase.Palette.GetRed(i);
-    g:=RMCoreBase.Palette.GetGreen(i);
-    b:=RMCoreBase.Palette.GetBlue(i);
-  *)
     GetColor(i,CR);
     r:=CR.r;
     g:=CR.g;
@@ -297,21 +304,17 @@ SetGWStartLineNumber(1000);
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
   pcmdstr:=PaletteCmdToStr(Lan,rgbFormat);
-  LineTrmStr:=LineTrmToStr(Lan);
+  LineTrmStr:=CommandEndBracketToStr(Lan);
 //  LineCounter:=1000;
   Writeln(F,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Commands, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat,' ',CommentEndToStr(Lan));
   For i:=0 to NColors-1 do
   begin
-(*    r:=RMCoreBase.Palette.GetRed(i);
-    g:=RMCoreBase.Palette.GetGreen(i);
-    b:=RMCoreBase.Palette.GetBlue(i);
-*)
     GetColor(i,CR);
     r:=CR.r;
     g:=CR.g;
     b:=CR.b;
 
-    if (Lan=QBLan) and (rgbFormat = ColorSixBitFormat) then
+    if ((Lan=QBLan) or (Lan=FBLan) or (Lan=GWLan) or (Lan=PBLan) or (Lan=QCLan) or (Lan=QPLan)) and (rgbFormat = ColorSixBitFormat) then
     begin
       cistr:=IntToStr(EightToSixBit(r)+(EightToSixBit(g)*256)+(EightToSixBit(b)*65536));
       WriteLn(F,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);

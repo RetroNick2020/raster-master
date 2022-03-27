@@ -4,8 +4,8 @@ object RMMainForm: TRMMainForm
   Top = -9
   Width = 1920
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 1026
+  ClientWidth = 1920
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
@@ -575,7 +575,7 @@ object RMMainForm: TRMMainForm
           end
         end
         object TurboBasic: TMenuItem
-          Caption = 'Turbo/Power Basic'
+          Caption = 'Turbo\Power Basic'
           object TBPutData: TMenuItem
             Caption = 'Put Data Statements'
             OnClick = TurboPowerBasicClick
@@ -776,6 +776,28 @@ object RMMainForm: TRMMainForm
             OnClick = AmigaPascalPaletteClick
           end
         end
+        object MenuItem3: TMenuItem
+          Caption = 'FreeBASIC'
+          object FBPaletteData: TMenuItem
+            Caption = 'Palette Data Statements'
+            OnClick = PaletteExportQBasicClick
+          end
+          object FBPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportQBasicClick
+          end
+        end
+        object MenuItem2: TMenuItem
+          Caption = 'FreePascal'
+          object FPPaletteArray: TMenuItem
+            Caption = 'Palettte Array'
+            OnClick = PaletteExportTurboPascalClick
+          end
+          object FPPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportTurboPascalClick
+          end
+        end
         object PaletteExportGWBasic: TMenuItem
           Caption = 'GWBASIC'
           object GWPaletteData: TMenuItem
@@ -807,6 +829,28 @@ object RMMainForm: TRMMainForm
           object QCPaletteCommands: TMenuItem
             Caption = 'Palette Commands'
             OnClick = PaletteExportQuickCClick
+          end
+        end
+        object PaletteExportQuickPascal: TMenuItem
+          Caption = 'QuickPascal'
+          object QPPaletteArray: TMenuItem
+            Caption = 'Palettte Array'
+            OnClick = PaletteExportQuickCClick
+          end
+          object QPPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportQuickCClick
+          end
+        end
+        object MenuItem7: TMenuItem
+          Caption = 'Turbo\Power Basic'
+          object PBPaletteData: TMenuItem
+            Caption = 'Palette Data Statements'
+            OnClick = PaletteExportQBasicClick
+          end
+          object PBPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportQBasicClick
           end
         end
         object PaletteExportTurboC: TMenuItem
