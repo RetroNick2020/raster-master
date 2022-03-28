@@ -400,7 +400,7 @@ var
 begin
  myWidth:=x2-x+1;
  myHeight:=y2-y+1;
- myHead.Width:=myWidth;
+ myHead.Width:=mywidth SHL 3;
  myHead.Height:=myHeight;
 
  Move(myHead,tempBuf,sizeof(tempBuf));
