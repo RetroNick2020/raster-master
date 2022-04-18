@@ -112,7 +112,7 @@ begin
  end
  else if (Lan=PBLan)  and (ColorFormat=ColorSixBitFormat) then  //Turbo/PB do not support additional palette information for VGA rgb formula
  begin                                                     //maybe in future will replacement function for PB
-  PaletteCmdToStr:='PaletteX';
+  PaletteCmdToStr:='Call PaletteX(';
  end;
 
 end;
@@ -291,7 +291,7 @@ var
  cistr,rstr,gstr,bstr :string;
  pcmdstr : string;
  LineTrmStr : string;
-// LineCounter : integer;
+ PBasicEndBracket : string;
  CR : TRMColorRec;
 
 begin
@@ -305,7 +305,7 @@ SetGWStartLineNumber(1000);
   BFormat:=ColorFormatToStr(rgbFormat);
   pcmdstr:=PaletteCmdToStr(Lan,rgbFormat);
   LineTrmStr:=CommandEndBracketToStr(Lan);
-//  LineCounter:=1000;
+
   Writeln(F,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette Commands, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors,' Format=',BFormat,' ',CommentEndToStr(Lan));
   For i:=0 to NColors-1 do
   begin
@@ -317,7 +317,8 @@ SetGWStartLineNumber(1000);
     if ((Lan=QBLan) or (Lan=FBLan) or (Lan=GWLan) or (Lan=PBLan) or (Lan=QCLan) or (Lan=QPLan)) and (rgbFormat = ColorSixBitFormat) then
     begin
       cistr:=IntToStr(EightToSixBit(r)+(EightToSixBit(g)*256)+(EightToSixBit(b)*65536));
-      WriteLn(F,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr);
+      if (Lan=PBlan) then   PBasicEndBracket:=')' else   PBasicEndBracket:='';
+      WriteLn(F,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr,PBasicEndBracket);  // only for Call PaletteX(index,color) otherwise normal Palette command structure
     end
     else if rgbFormat = ColorIndexFormat then
     begin
