@@ -20,11 +20,16 @@ type
     Action1: TAction;
     ActionList1: TActionList;
     ActualBox: TImage;
+    ActualPane: TPanel;
+    ColorBox: TShape;
+    ColorPalette1: TColorPalette;
     FreePascal: TMenuItem;
     GWBASIC: TMenuItem;
     FreeBASIC: TMenuItem;
     AmigaBasic: TMenuItem;
+    HorizScroll: TScrollBar;
     ImageList1: TImageList;
+    InfoBarLabel: TLabel;
     ListView1: TListView;
     MenuItem1: TMenuItem;
     EditCopy: TMenuItem;
@@ -51,6 +56,10 @@ type
     GWPutPlusMaskData: TMenuItem;
     GWMouseShapeData: TMenuItem;
     FPMouseShapeArray: TMenuItem;
+    MenuItem12: TMenuItem;
+    LeftPanel: TPanel;
+    Panel1: TPanel;
+    MiddlePanel: TPanel;
     QPPaletteArray: TMenuItem;
     QPPaletteCommands: TMenuItem;
     PaletteExportQuickPascal: TMenuItem;
@@ -65,10 +74,31 @@ type
     PBPaletteData: TMenuItem;
     QCMouseShapeArray: TMenuItem;
     QPMouseShapeArray: TMenuItem;
+    Splitter1: TSplitter;
+    Splitter2: TSplitter;
     TBMouseShapeData: TMenuItem;
     QBMouseShapeData: TMenuItem;
     TCMouseShapeArray: TMenuItem;
     FBMouseShapeData: TMenuItem;
+    ToolCircleIcon: TImage;
+    ToolEllipseIcon: TImage;
+    ToolFCircleIcon: TImage;
+    ToolFEllipseIcon: TImage;
+    ToolFRectangleIcon: TImage;
+    ToolGridIcon: TImage;
+    ToolHFLIPButton: TButton;
+    ToolLineIcon: TImage;
+    ToolPaintIcon: TImage;
+    ToolPencilIcon: TImage;
+    ToolRectangleIcon: TImage;
+    ToolScrollDownIcon: TImage;
+    ToolScrollLeftIcon: TImage;
+    ToolScrollRightIcon: TImage;
+    ToolScrollUpIcon: TImage;
+    ToolSelectAreaIcon: TImage;
+    ToolSprayPaintIcon: TImage;
+    ToolUndoIcon: TImage;
+    ToolVFLIPButton: TButton;
     TPMouseShapeArray: TMenuItem;
     TCPutImagePlusMaskArray: TMenuItem;
     TBPutPlusMaskData: TMenuItem;
@@ -140,10 +170,10 @@ type
     QBPutFile: TMenuItem;
     PascalBOBBitmapArray: TMenuItem;
     PascalVSpriteBitmapArray: TMenuItem;
+    TrackBar1: TTrackBar;
     TransparentImage: TMenuItem;
     NonTransparentImage: TMenuItem;
     SaveDelete: TMenuItem;
-    Panel2: TPanel;
     ToolEllipseMenu: TMenuItem;
     ToolFEllipseMenu: TMenuItem;
     PaletteExportQuickC: TMenuItem;
@@ -162,8 +192,6 @@ type
     PaletteAmiga32: TMenuItem;
     PaletteAmiga: TMenuItem;
     ExportDialog: TSaveDialog;
-    ToolEllipseIcon: TImage;
-    ToolFEllipseIcon: TImage;
     TurboBasic: TMenuItem;
     QuickC: TMenuItem;
     TurboC: TMenuItem;
@@ -171,33 +199,15 @@ type
     RMPanel: TPanel;
     TurboPascal: TMenuItem;
     QuickBasic: TMenuItem;
-    ToolHFLIPButton: TButton;
     ColorButton1: TColorButton;
-    ColorPalette1: TColorPalette;
     EditCut1: TEditCut;
     FileOpen1: TFileOpen;
-    ToolUndoIcon: TImage;
-    ToolScrollLeftIcon: TImage;
-    ToolScrollRightIcon: TImage;
-    ToolScrollUpIcon: TImage;
-    ToolScrollDownIcon: TImage;
-    ToolVFLIPButton: TButton;
-    ToolCircleIcon: TImage;
-    InfoBarLabel: TLabel;
-    Panel1: TPanel;
-    ToolSelectAreaIcon: TImage;
-    ToolSprayPaintIcon: TImage;
-    ToolFCircleIcon: TImage;
-    ToolPencilIcon: TImage;
     ToolGridMenu: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
     ToolMenu: TMenuItem;
-    ToolLineIcon: TImage;
-    ToolRectangleIcon: TImage;
     ToolPencilMenu: TMenuItem;
     ToolLineMenu: TMenuItem;
-    ToolFRectangleIcon: TImage;
     ToolRectangleMenu: TMenuItem;
     ToolFRectangleMenu: TMenuItem;
     ToolCircleMenu: TMenuItem;
@@ -227,18 +237,13 @@ type
     MenuItem9: TMenuItem;
     OpenDialog1: TOpenDialog;
     SaveDialog1: TSaveDialog;
-    ColorBox : TShape;
-    ToolPaintIcon: TImage;
-    ToolGridIcon: TImage;
-    ZoomBox: TImage;
     MainMenu1: TMainMenu;
     FileExitMenu: TMenuItem;
     OpenFile: TMenuItem;
     SaveFile: TMenuItem;
-    HorizScroll: TScrollBar;
-
-    TrackBar1: TTrackBar;
     VirtScroll: TScrollBar;
+
+    ZoomBox: TImage;
     procedure AmigaBasicClick(Sender: TObject);
     procedure AmigaCClick(Sender: TObject);
     procedure AmigaCPaletteClick(Sender: TObject);
@@ -263,6 +268,8 @@ type
     procedure javaScriptArrayClick(Sender: TObject);
     procedure ListView1DblClick(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
+    procedure ThumbPopUpMenuExportClick(Sender: TObject);
+    procedure ThumbPopUpMenusaveClick(Sender: TObject);
     procedure PalettePasteClick(Sender: TObject);
     procedure OpenProjectFileClick(Sender: TObject);
     procedure PaletteCopyClick(Sender: TObject);
@@ -1873,7 +1880,6 @@ begin
    SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
-
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
       if ext = '.PCX' then
       begin
@@ -2411,7 +2417,7 @@ begin
 
  if ExportDialog.Execute then
  begin
-    Case (Sender As TMenuItem).Name of 'ExportRESInclude' : error:=RESInclude(ExportDialog.FileName);
+    Case (Sender As TMenuItem).Name of 'ExportRESInclude' : error:=RESInclude(ExportDialog.FileName,0,FALSE);
                                         'ExportRESBinary' : error:=RESBinary(ExportDialog.FileName);
     end;
     if error<>0 then
@@ -3132,6 +3138,33 @@ begin
  ListView1.Items[0].Caption:='Image '+IntToStr(1);
  ListView1.Items[0].ImageIndex :=0;
 
+end;
+
+procedure TRMMainForm.ThumbPopUpMenuExportClick(Sender: TObject);
+var
+ Error : word;
+ index : integer;
+begin
+ //update the current thumb image
+ ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+ ExportDialog.Filter := 'RES Include|*.inc';
+
+ if ExportDialog.Execute then
+ begin
+   index:=ListView1.ItemIndex;
+   if index = -1 then index:=0;
+   error:=RESInclude(ExportDialog.FileName,index,TRUE);
+   if error<>0 then
+   begin
+     ShowMessage('Error Exporting!');
+     exit;
+   end;
+ end;
+end;
+
+procedure TRMMainForm.ThumbPopUpMenusaveClick(Sender: TObject);
+begin
+ SaveFileClick(Self);
 end;
 
 procedure TRMMainForm.PalettePasteClick(Sender: TObject);

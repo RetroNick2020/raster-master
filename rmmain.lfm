@@ -1,343 +1,436 @@
 object RMMainForm: TRMMainForm
-  Left = -9
-  Height = 1051
-  Top = -9
+  Left = -69
+  Height = 1055
+  Top = 11
   Width = 1920
+  Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 1026
+  ClientHeight = 1030
   ClientWidth = 1920
+  DefaultMonitor = dmDesktop
   DesignTimePPI = 120
   Menu = MainMenu1
   OnCreate = FormCreate
   Position = poDefault
   LCLVersion = '2.0.10.0'
   Scaled = False
-  object HorizScroll: TScrollBar
-    Left = 368
-    Height = 32
-    Top = 744
-    Width = 690
-    PageSize = 0
-    TabOrder = 0
-    OnChange = HorizScrollChange
-  end
-  object ZoomBox: TImage
-    Left = 368
-    Height = 618
-    Top = 112
-    Width = 690
-    OnMouseDown = ZoomBoxMouseDown
-    OnMouseMove = ZoomBoxMouseMove
-    OnMouseUp = ZoomBoxMouseUp
-    OnMouseWheel = ZoomBoxMouseWheel
-  end
-  object TrackBar1: TTrackBar
-    Left = 1064
-    Height = 125
-    Top = 112
-    Width = 30
-    Min = 1
-    OnChange = TrackBar1Change
-    Orientation = trVertical
-    Position = 1
-    TickMarks = tmTopLeft
-    TabOrder = 1
-  end
-  object ColorBox: TShape
-    Left = 1104
-    Height = 64
-    Top = 112
-    Width = 60
-    Brush.Color = clSkyBlue
-    ParentShowHint = False
-    OnMouseDown = ColorBoxMouseDown
-    OnMouseEnter = ColorBoxMouseEnter
-    ShowHint = True
-  end
-  object InfoBarLabel: TLabel
-    Left = 376
-    Height = 72
-    Top = 16
-    Width = 224
-    AutoSize = False
-    ParentColor = False
-    WordWrap = True
-  end
-  object VirtScroll: TScrollBar
-    Left = 1068
-    Height = 486
-    Top = 244
-    Width = 26
-    Kind = sbVertical
-    PageSize = 0
-    TabOrder = 2
-    OnChange = VirtScrollChange
-  end
-  object ColorPalette1: TColorPalette
-    Left = 1104
-    Height = 234
-    Top = 184
-    Width = 60
-    ButtonHeight = 30
-    ButtonWidth = 30
-    ColumnCount = 8
-    Flipped = True
-    PickedIndex = 0
-    SelectionColor = clWhite
-    SelectionKind = pskThickInverted
-    OnColorPick = ColorPalette1ColorPick
-    OnGetHintText = ColorPalette1GetHintText
-    ParentColor = False
-    ParentShowHint = False
-    ShowHint = True
-  end
-  object Panel1: TPanel
-    Left = 624
-    Height = 88
-    Top = 16
-    Width = 434
-    ClientHeight = 88
-    ClientWidth = 434
-    TabOrder = 3
-    object ToolCircleIcon: TImage
-      Left = 96
-      Height = 32
-      Hint = 'Empty Circle'
-      Top = 8
-      Width = 32
-      OnClick = ToolCircleMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolFCircleIcon: TImage
-      Left = 96
-      Height = 32
-      Hint = 'Filled Circle'
-      Top = 48
-      Width = 32
-      OnClick = ToolFCircleMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolPencilIcon: TImage
-      Left = 16
-      Height = 32
-      Hint = 'Pencil'
-      Top = 8
-      Width = 32
-      OnClick = ToolPencilMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolLineIcon: TImage
-      Left = 16
-      Height = 32
-      Hint = 'Line'
-      Top = 48
-      Width = 32
-      OnClick = ToolLineMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolRectangleIcon: TImage
-      Left = 56
-      Height = 32
-      Hint = 'Empty Rectangle'
-      Top = 8
-      Width = 32
-      OnClick = ToolRectangleMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolFRectangleIcon: TImage
-      Left = 56
-      Height = 32
-      Hint = 'Filled Rectangle'
-      Top = 48
-      Width = 32
-      OnClick = ToolFRectangleMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolSprayPaintIcon: TImage
-      Left = 176
-      Height = 32
-      Hint = 'Spray Paint'
-      Top = 8
-      Width = 32
-      OnClick = ToolMenuSprayPaintClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolPaintIcon: TImage
-      Left = 176
-      Height = 32
-      Hint = 'Paint'
-      Top = 48
-      Width = 32
-      OnClick = ToolMenuPaintClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolGridIcon: TImage
-      Left = 216
-      Height = 32
-      Hint = 'Toggle Grid'
-      Top = 7
-      Width = 32
-      OnClick = ToolGridMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolSelectAreaIcon: TImage
-      Left = 216
-      Height = 32
-      Hint = 'Select Area'
-      Top = 48
-      Width = 32
-      OnClick = ToolMenuSelectAreaMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolHFLIPButton: TButton
-      Left = 296
-      Height = 31
-      Top = 9
-      Width = 54
-      Caption = 'HFLIP'
-      OnClick = ToolFlipHorizMenuClick
-      TabOrder = 0
-    end
-    object ToolVFLIPButton: TButton
-      Left = 354
-      Height = 31
-      Top = 8
-      Width = 54
-      Caption = 'VFLIP'
-      OnClick = ToolFlipVirtMenuClick
-      TabOrder = 1
-    end
-    object ToolScrollLeftIcon: TImage
-      Left = 256
-      Height = 32
-      Hint = 'Scroll Left'
-      Top = 48
-      Width = 32
-      OnClick = ToolScrollLeftMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolScrollRightIcon: TImage
-      Left = 296
-      Height = 32
-      Hint = 'Scroll Right'
-      Top = 48
-      Width = 32
-      OnClick = ToolScrollRightMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolScrollUpIcon: TImage
-      Left = 336
-      Height = 32
-      Hint = 'Scroll Up'
-      Top = 48
-      Width = 32
-      OnClick = ToolScrollUpMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolScrollDownIcon: TImage
-      Left = 376
-      Height = 32
-      Hint = 'Scroll Down'
-      Top = 48
-      Width = 32
-      OnClick = ToolScrollDownMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolUndoIcon: TImage
-      Left = 256
-      Height = 32
-      Hint = 'Undo'
-      Top = 8
-      Width = 32
-      OnClick = ToolUndoIconClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolEllipseIcon: TImage
-      Left = 136
-      Height = 32
-      Hint = 'Empty Ellipse'
-      Top = 9
-      Width = 32
-      OnClick = ToolEllipseMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-    object ToolFEllipseIcon: TImage
-      Left = 136
-      Height = 32
-      Hint = 'Filled Ellipse'
-      Top = 48
-      Width = 32
-      OnClick = ToolFEllipseMenuClick
-      ParentShowHint = False
-      ShowHint = True
-    end
-  end
+  WindowState = wsFullScreen
   object RMPanel: TPanel
-    Left = 1296
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 1737
     Height = 136
-    Top = 640
+    Top = 879
     Width = 168
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Right = 15
+    BorderSpacing.Bottom = 15
     ClientHeight = 136
     ClientWidth = 168
-    TabOrder = 4
+    TabOrder = 0
     object RMLogo: TImage
       Cursor = crHandPoint
       Left = 16
       Height = 96
+      Hint = 'Click Me! And Subscribe to my YouTube Channel!'
       Top = 16
       Width = 128
       AutoSize = True
       OnClick = RMLogoClick
+      ParentShowHint = False
+      ShowHint = True
       StretchOutEnabled = False
       StretchInEnabled = False
       Transparent = True
     end
   end
-  object Panel2: TPanel
-    Left = 32
-    Height = 281
-    Top = 40
-    Width = 288
-    ClientHeight = 281
-    ClientWidth = 288
-    TabOrder = 5
-    object ActualBox: TImage
-      Left = 16
-      Height = 256
-      Top = 8
-      Width = 256
+  object MiddlePanel: TPanel
+    AnchorSideLeft.Control = Splitter2
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    Left = 398
+    Height = 918
+    Top = 0
+    Width = 896
+    BorderSpacing.Left = 11
+    BevelOuter = bvNone
+    ClientHeight = 918
+    ClientWidth = 896
+    TabOrder = 2
+    object InfoBarLabel: TLabel
+      Left = 0
+      Height = 72
+      Top = 16
+      Width = 224
+      AutoSize = False
+      ParentColor = False
+      WordWrap = True
+    end
+    object Panel1: TPanel
+      Left = 240
+      Height = 88
+      Top = 16
+      Width = 434
+      ClientHeight = 88
+      ClientWidth = 434
+      TabOrder = 0
+      object ToolCircleIcon: TImage
+        Left = 96
+        Height = 32
+        Hint = 'Empty Circle'
+        Top = 8
+        Width = 32
+        OnClick = ToolCircleMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolFCircleIcon: TImage
+        Left = 96
+        Height = 32
+        Hint = 'Filled Circle'
+        Top = 48
+        Width = 32
+        OnClick = ToolFCircleMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolPencilIcon: TImage
+        Left = 16
+        Height = 32
+        Hint = 'Pencil'
+        Top = 8
+        Width = 32
+        OnClick = ToolPencilMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolLineIcon: TImage
+        Left = 16
+        Height = 32
+        Hint = 'Line'
+        Top = 48
+        Width = 32
+        OnClick = ToolLineMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolRectangleIcon: TImage
+        Left = 56
+        Height = 32
+        Hint = 'Empty Rectangle'
+        Top = 8
+        Width = 32
+        OnClick = ToolRectangleMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolFRectangleIcon: TImage
+        Left = 56
+        Height = 32
+        Hint = 'Filled Rectangle'
+        Top = 48
+        Width = 32
+        OnClick = ToolFRectangleMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolSprayPaintIcon: TImage
+        Left = 176
+        Height = 32
+        Hint = 'Spray Paint'
+        Top = 8
+        Width = 32
+        OnClick = ToolMenuSprayPaintClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolPaintIcon: TImage
+        Left = 176
+        Height = 32
+        Hint = 'Paint'
+        Top = 48
+        Width = 32
+        OnClick = ToolMenuPaintClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolGridIcon: TImage
+        Left = 216
+        Height = 32
+        Hint = 'Toggle Grid'
+        Top = 7
+        Width = 32
+        OnClick = ToolGridMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolSelectAreaIcon: TImage
+        Left = 216
+        Height = 32
+        Hint = 'Select Area'
+        Top = 48
+        Width = 32
+        OnClick = ToolMenuSelectAreaMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolHFLIPButton: TButton
+        Left = 296
+        Height = 31
+        Top = 9
+        Width = 54
+        Caption = 'HFLIP'
+        OnClick = ToolFlipHorizMenuClick
+        TabOrder = 0
+      end
+      object ToolVFLIPButton: TButton
+        Left = 354
+        Height = 31
+        Top = 8
+        Width = 54
+        Caption = 'VFLIP'
+        OnClick = ToolFlipVirtMenuClick
+        TabOrder = 1
+      end
+      object ToolScrollLeftIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Scroll Left'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollLeftMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolScrollRightIcon: TImage
+        Left = 296
+        Height = 32
+        Hint = 'Scroll Right'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollRightMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolScrollUpIcon: TImage
+        Left = 336
+        Height = 32
+        Hint = 'Scroll Up'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollUpMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolScrollDownIcon: TImage
+        Left = 376
+        Height = 32
+        Hint = 'Scroll Down'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollDownMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolUndoIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Undo'
+        Top = 8
+        Width = 32
+        OnClick = ToolUndoIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolEllipseIcon: TImage
+        Left = 136
+        Height = 32
+        Hint = 'Empty Ellipse'
+        Top = 9
+        Width = 32
+        OnClick = ToolEllipseMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolFEllipseIcon: TImage
+        Left = 136
+        Height = 32
+        Hint = 'Filled Ellipse'
+        Top = 48
+        Width = 32
+        OnClick = ToolFEllipseMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+    end
+    object ZoomBox: TImage
+      Left = 0
+      Height = 618
+      Top = 112
+      Width = 690
+      OnMouseDown = ZoomBoxMouseDown
+      OnMouseMove = ZoomBoxMouseMove
+      OnMouseUp = ZoomBoxMouseUp
+      OnMouseWheel = ZoomBoxMouseWheel
+    end
+    object ColorBox: TShape
+      Left = 736
+      Height = 64
+      Top = 112
+      Width = 60
+      Brush.Color = clSkyBlue
+      ParentShowHint = False
+      OnMouseDown = ColorBoxMouseDown
+      OnMouseEnter = ColorBoxMouseEnter
+      ShowHint = True
+    end
+    object ColorPalette1: TColorPalette
+      Left = 736
+      Height = 234
+      Top = 192
+      Width = 60
+      ButtonHeight = 30
+      ButtonWidth = 30
+      ColumnCount = 8
+      Flipped = True
+      PickedIndex = 0
+      SelectionColor = clWhite
+      SelectionKind = pskThickInverted
+      OnColorPick = ColorPalette1ColorPick
+      OnGetHintText = ColorPalette1GetHintText
+      ParentColor = False
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object TrackBar1: TTrackBar
+      Left = 696
+      Height = 125
+      Top = 112
+      Width = 30
+      Min = 1
+      OnChange = TrackBar1Change
+      Orientation = trVertical
+      Position = 1
+      TickMarks = tmTopLeft
+      TabOrder = 1
+    end
+    object VirtScroll: TScrollBar
+      Left = 696
+      Height = 486
+      Top = 240
+      Width = 26
+      Kind = sbVertical
+      PageSize = 0
+      TabOrder = 2
+      OnChange = VirtScrollChange
+    end
+    object HorizScroll: TScrollBar
+      Left = 0
+      Height = 32
+      Top = 736
+      Width = 690
+      PageSize = 0
+      TabOrder = 3
+      OnChange = HorizScrollChange
     end
   end
-  object ListView1: TListView
-    Left = 32
-    Height = 432
-    Top = 344
-    Width = 288
-    Columns = <>
-    IconOptions.AutoArrange = True
-    LargeImages = ImageList1
-    LargeImagesWidth = 128
-    PopupMenu = ExportPropsMenu
-    ReadOnly = True
-    TabOrder = 6
-    ViewStyle = vsIcon
-    OnDblClick = ListView1DblClick
+  object LeftPanel: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Splitter2
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 1030
+    Top = 0
+    Width = 387
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    ClientHeight = 1030
+    ClientWidth = 387
+    TabOrder = 1
+    object Splitter1: TSplitter
+      AnchorSideLeft.Control = LeftPanel
+      AnchorSideTop.Control = ActualPane
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = ListView1
+      Cursor = crVSplit
+      Left = 0
+      Height = 11
+      Top = 358
+      Width = 387
+      Align = alNone
+      Anchors = [akLeft, akRight]
+      Color = clBackground
+      ParentColor = False
+      ResizeAnchor = akBottom
+    end
+    object ListView1: TListView
+      AnchorSideLeft.Control = LeftPanel
+      AnchorSideTop.Control = Splitter1
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = LeftPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 15
+      Height = 651
+      Top = 369
+      Width = 357
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Left = 15
+      BorderSpacing.Right = 15
+      BorderSpacing.Bottom = 10
+      Color = clBtnFace
+      Columns = <>
+      IconOptions.AutoArrange = True
+      LargeImages = ImageList1
+      LargeImagesWidth = 128
+      PopupMenu = ExportPropsMenu
+      ReadOnly = True
+      TabOrder = 1
+      ViewStyle = vsIcon
+      OnDblClick = ListView1DblClick
+    end
+    object ActualPane: TPanel
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = Splitter1
+      Left = 16
+      Height = 350
+      Top = 8
+      Width = 356
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Right = 15
+      ClientHeight = 350
+      ClientWidth = 356
+      TabOrder = 0
+      object ActualBox: TImage
+        Left = 16
+        Height = 256
+        Top = 8
+        Width = 256
+      end
+    end
+  end
+  object Splitter2: TSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 376
+    Height = 1030
+    Top = 0
+    Width = 11
+    Align = alNone
+    Anchors = [akTop, akBottom]
+    Color = clBackground
+    ParentColor = False
   end
   object MainMenu1: TMainMenu
     Left = 1584
@@ -1059,6 +1152,10 @@ object RMMainForm: TRMMainForm
   object ExportPropsMenu: TPopupMenu
     Left = 1585
     Top = 149
+    object MenuItem12: TMenuItem
+      Caption = 'Export Include'
+      OnClick = ThumbPopUpMenuExportClick
+    end
     object Properties: TMenuItem
       Caption = 'Properties'
       OnClick = PropertiesClick

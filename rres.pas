@@ -5,7 +5,9 @@ Unit rres;
 Interface
    uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex;
 
-Function RESInclude(filename:string):word;
+//Function RESInclude(filename:string):word;
+Function RESInclude(filename:string; index : integer; SaveOnlyIndex : Boolean):word;
+
 Function RESBinary(filename:string):word;
 
 const
@@ -215,7 +217,7 @@ begin
    end;
 end;
 
-Function RESInclude(filename:string):word;
+Function RESInclude(filename:string; index : integer; SaveOnlyIndex : Boolean):word;
 var
  data    : BufferRec;
  EO      : ImageExportFormatRec;
@@ -223,6 +225,7 @@ var
  count   : integer;
  width   : integer;
  height  : integer;
+ StartIndex : integer;
 begin
  SetThumbActive;   // we are getting pixel data from core object ThumbBase
  SetGWStartLineNumber(1000); // this is only used for exporting GWBASIC/PCBASIC code
@@ -231,8 +234,18 @@ begin
 {$I-}
  rewrite(data.fText);
 
- count:=ImageThumbBase.GetCount;
- for i:=0 to count-1 do
+ if SaveOnlyIndex then
+ begin
+   StartIndex:=index;
+   count:=StartIndex+1;
+ end
+ else
+ begin
+   StartIndex:=0;
+   count:=ImageThumbBase.GetCount;
+ end;
+
+ for i:=StartIndex to count-1 do
  begin
    width:=ImageThumbBase.GetExportWidth(i);
    height:=ImageThumbBase.GetExportHeight(i);
