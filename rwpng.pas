@@ -393,7 +393,7 @@ begin
  EasyPNG.Free;
  ReadPNG:=0;
 end;
-
+(* no transparent support
 
 procedure TEasyPNG.CopyCoreToImage(x,y,x2,y2 : integer);
 var
@@ -408,6 +408,7 @@ begin
 
  picture1.Bitmap.Width:=width;
  Picture1.Bitmap.height:=height;
+ picture1.Bitmap.PixelFormat:=pf32bit;
  for j:=0 to height-1 do
  begin
    for i:=0 to width-1 do
@@ -416,6 +417,46 @@ begin
      RMCoreBase.Palette.GetColor(ci,cr);
      Color:=RGBToColor(cr.r,cr.g,cr.b);
      Picture1.Bitmap.Canvas.Pixels[i,j]:=Color;
+   end;
+ end;
+end;
+ *)
+
+procedure TEasyPNG.CopyCoreToImage(x,y,x2,y2 : integer);
+var
+ width,height : integer;
+ i,j   : integer;
+ ci    : integer;
+ cr    : TRMColorRec;
+ pixeldata  : PByte;
+ pixelpos   : longint;
+begin
+ width:=x2-x+1;
+ height:=y2-y+1;
+
+ picture1.Bitmap.Width:=width;
+ Picture1.Bitmap.height:=height;
+ picture1.Bitmap.PixelFormat:=pf32bit;         //change format to 32 bit/RGBA
+ pixeldata:=picture1.Bitmap.RawImage.Data;
+ pixelpos:=0;
+ for j:=0 to height-1 do
+ begin
+   for i:=0 to width-1 do
+   begin
+     ci:=RMCoreBase.GetPixel(x+i,y+j);
+     RMCoreBase.Palette.GetColor(ci,cr);
+     pixeldata[pixelpos]:=cr.b;     // Blue
+     pixeldata[pixelpos+1]:=cr.g;   // Green
+     pixeldata[pixelpos+2]:=cr.r;   // Red
+     if (cr.r = 255) and (cr.b=255) and (cr.g=0) then   //if fuschia
+     begin
+       pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
+     end
+     else
+     begin
+      pixeldata[pixelpos+3]:=255; // Alpha     255 = solid
+     end;
+     inc(pixelpos,4);
    end;
  end;
 end;
