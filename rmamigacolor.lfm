@@ -1,22 +1,23 @@
 object RMAmigaColorDialog: TRMAmigaColorDialog
-  Left = 1269
+  Left = -905
   Height = 355
-  Top = 602
-  Width = 510
+  Top = 346
+  Width = 634
+  BorderStyle = bsDialog
   Caption = 'Amiga Palette'
   ClientHeight = 355
-  ClientWidth = 510
+  ClientWidth = 634
   DesignTimePPI = 120
   OnCreate = FormCreate
   LCLVersion = '2.0.10.0'
   object AmigaColorPalette: TColorPalette
     Left = 16
-    Height = 61
+    Height = 120
     Top = 8
-    Width = 946
+    Width = 474
     ButtonHeight = 60
     ButtonWidth = 60
-    ColumnCount = 16
+    ColumnCount = 8
     PickedIndex = 0
     SelectionKind = pskThick
     OnColorPick = ColorPaletteColorPick
@@ -26,13 +27,13 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object Shape1: TShape
     Left = 24
     Height = 84
-    Top = 184
+    Top = 216
     Width = 81
   end
   object TrackBar1: TTrackBar
     Left = 144
     Height = 39
-    Top = 176
+    Top = 208
     Width = 253
     Max = 15
     OnChange = TrackBar1Change
@@ -45,7 +46,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object TrackBar2: TTrackBar
     Left = 144
     Height = 39
-    Top = 208
+    Top = 240
     Width = 253
     Max = 15
     OnChange = TrackBar2Change
@@ -58,7 +59,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object TrackBar3: TTrackBar
     Left = 144
     Height = 39
-    Top = 240
+    Top = 272
     Width = 253
     Max = 15
     OnChange = TrackBar3Change
@@ -71,7 +72,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object Label1: TLabel
     Left = 129
     Height = 20
-    Top = 176
+    Top = 208
     Width = 9
     Caption = 'R'
     ParentColor = False
@@ -79,7 +80,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object Label2: TLabel
     Left = 129
     Height = 20
-    Top = 208
+    Top = 240
     Width = 10
     Caption = 'G'
     ParentColor = False
@@ -87,7 +88,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object Label3: TLabel
     Left = 129
     Height = 20
-    Top = 240
+    Top = 272
     Width = 9
     Caption = 'B'
     ParentColor = False
@@ -95,7 +96,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object Label4: TLabel
     Left = 408
     Height = 20
-    Top = 176
+    Top = 208
     Width = 9
     Caption = 'R'
     ParentColor = False
@@ -103,7 +104,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object Label5: TLabel
     Left = 408
     Height = 20
-    Top = 208
+    Top = 240
     Width = 10
     Caption = 'G'
     ParentColor = False
@@ -111,16 +112,23 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object Label6: TLabel
     Left = 408
     Height = 20
-    Top = 240
+    Top = 272
     Width = 9
     Caption = 'B'
     ParentColor = False
   end
   object Button1: TButton
-    Left = 384
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 530
     Height = 31
-    Top = 288
+    Top = 314
     Width = 94
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
     Caption = 'OK'
     OnClick = OKClick
     TabOrder = 3
@@ -128,7 +136,7 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
   object ColorIndexLabel: TLabel
     Left = 32
     Height = 20
-    Top = 144
+    Top = 176
     Width = 79
     Caption = 'Color Index:'
     ParentColor = False

@@ -1,12 +1,12 @@
 object RMMainForm: TRMMainForm
-  Left = -69
-  Height = 1055
-  Top = 11
-  Width = 1920
+  Left = 46
+  Height = 869
+  Top = 130
+  Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 1030
-  ClientWidth = 1920
+  ClientHeight = 844
+  ClientWidth = 1729
   DefaultMonitor = dmDesktop
   DesignTimePPI = 120
   Menu = MainMenu1
@@ -15,64 +15,190 @@ object RMMainForm: TRMMainForm
   LCLVersion = '2.0.10.0'
   Scaled = False
   WindowState = wsFullScreen
-  object RMPanel: TPanel
-    AnchorSideRight.Control = Owner
+  object MiddleBottomPanel: TPanel
+    AnchorSideLeft.Control = LeftHSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = MiddleTopPanel
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = RightHSplitter
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 267
+    Height = 732
+    Top = 112
+    Width = 1229
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    ClientHeight = 732
+    ClientWidth = 1229
+    TabOrder = 1
+    object ScrollBox1: TScrollBox
+      AnchorSideLeft.Control = MiddleBottomPanel
+      AnchorSideRight.Control = MiddleBottomPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = MiddleBottomPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 732
+      Top = 0
+      Width = 1229
+      HorzScrollBar.Page = 113
+      HorzScrollBar.Tracking = True
+      VertScrollBar.Page = 113
+      VertScrollBar.Tracking = True
+      Align = alClient
+      BorderStyle = bsNone
+      ClientHeight = 732
+      ClientWidth = 1229
+      TabOrder = 0
+      object ZoomBox: TImage
+        Left = 0
+        Height = 732
+        Top = 0
+        Width = 1229
+        Align = alClient
+        OnMouseDown = ZoomBoxMouseDown
+        OnMouseMove = ZoomBoxMouseMove
+        OnMouseUp = ZoomBoxMouseUp
+        OnMouseWheel = ZoomBoxMouseWheel
+      end
+    end
+  end
+  object LeftPanel: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = LeftHSplitter
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1737
-    Height = 136
-    Top = 879
-    Width = 168
-    Anchors = [akRight, akBottom]
-    BorderSpacing.Right = 15
-    BorderSpacing.Bottom = 15
-    ClientHeight = 136
-    ClientWidth = 168
+    Left = 0
+    Height = 844
+    Top = 0
+    Width = 267
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    ClientHeight = 844
+    ClientWidth = 267
     TabOrder = 0
-    object RMLogo: TImage
-      Cursor = crHandPoint
-      Left = 16
-      Height = 96
-      Hint = 'Click Me! And Subscribe to my YouTube Channel!'
-      Top = 16
-      Width = 128
-      AutoSize = True
-      OnClick = RMLogoClick
-      ParentShowHint = False
-      ShowHint = True
-      StretchOutEnabled = False
-      StretchInEnabled = False
-      Transparent = True
+    object LeftVSplitter: TSplitter
+      AnchorSideLeft.Control = LeftPanel
+      AnchorSideTop.Control = ActualPane
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrCenter
+      AnchorSideBottom.Control = ListView1
+      Cursor = crVSplit
+      Left = 0
+      Height = 13
+      Top = 224
+      Width = 266
+      Align = alNone
+      Anchors = [akLeft, akRight]
+      Color = 11625216
+      ParentColor = False
+      ResizeAnchor = akBottom
+    end
+    object ListView1: TListView
+      AnchorSideLeft.Control = LeftPanel
+      AnchorSideTop.Control = LeftVSplitter
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = LeftPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 607
+      Top = 237
+      Width = 256
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Right = 11
+      Color = 15790320
+      Columns = <>
+      IconOptions.AutoArrange = True
+      LargeImages = ImageList1
+      LargeImagesWidth = 128
+      PopupMenu = ExportPropsMenu
+      ReadOnly = True
+      TabOrder = 1
+      ViewStyle = vsIcon
+      OnClick = ListView1Click
+    end
+    object ActualPane: TPanel
+      AnchorSideLeft.Control = LeftPanel
+      AnchorSideTop.Control = LeftPanel
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = LeftVSplitter
+      Left = 0
+      Height = 224
+      Top = 0
+      Width = 252
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Right = 15
+      BevelOuter = bvNone
+      ClientHeight = 224
+      ClientWidth = 252
+      TabOrder = 0
+      object ActualBox: TImage
+        Left = 16
+        Height = 256
+        Top = 8
+        Width = 256
+      end
     end
   end
-  object MiddlePanel: TPanel
-    AnchorSideLeft.Control = Splitter2
+  object LeftHSplitter: TSplitter
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
-    Left = 398
-    Height = 918
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 256
+    Height = 844
     Top = 0
-    Width = 896
-    BorderSpacing.Left = 11
-    BevelOuter = bvNone
-    ClientHeight = 918
-    ClientWidth = 896
-    TabOrder = 2
-    object InfoBarLabel: TLabel
-      Left = 0
-      Height = 72
-      Top = 16
-      Width = 224
-      AutoSize = False
-      ParentColor = False
-      WordWrap = True
-    end
-    object Panel1: TPanel
-      Left = 240
+    Width = 11
+    Align = alNone
+    Anchors = [akTop, akBottom]
+    Color = 11625216
+    ParentColor = False
+  end
+  object RightHSplitter: TSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 1496
+    Height = 844
+    Top = 0
+    Width = 11
+    Align = alNone
+    Anchors = [akTop, akBottom]
+    Color = 11625216
+    ParentColor = False
+  end
+  object MiddleTopPanel: TPanel
+    AnchorSideLeft.Control = LeftHSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = RightHSplitter
+    Left = 267
+    Height = 112
+    Top = 0
+    Width = 1229
+    Anchors = [akTop, akLeft, akRight]
+    ClientHeight = 112
+    ClientWidth = 1229
+    TabOrder = 4
+    object ToolPanel: TPanel
+      AnchorSideTop.Control = MiddleTopPanel
+      AnchorSideRight.Control = MiddleTopPanel
+      AnchorSideRight.Side = asrBottom
+      Left = 784
       Height = 88
-      Top = 16
+      Top = 8
       Width = 434
+      Anchors = [akTop, akRight]
+      BorderSpacing.Top = 7
+      BorderSpacing.Right = 10
       ClientHeight = 88
       ClientWidth = 434
       TabOrder = 0
@@ -265,20 +391,42 @@ object RMMainForm: TRMMainForm
         ShowHint = True
       end
     end
-    object ZoomBox: TImage
-      Left = 0
-      Height = 618
-      Top = 112
-      Width = 690
-      OnMouseDown = ZoomBoxMouseDown
-      OnMouseMove = ZoomBoxMouseMove
-      OnMouseUp = ZoomBoxMouseUp
-      OnMouseWheel = ZoomBoxMouseWheel
+    object InfoBarLabel: TLabel
+      AnchorSideLeft.Control = MiddleTopPanel
+      AnchorSideTop.Control = MiddleTopPanel
+      AnchorSideBottom.Control = MiddleTopPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 12
+      Height = 110
+      Top = 1
+      Width = 412
+      Anchors = [akTop, akLeft, akBottom]
+      AutoSize = False
+      BorderSpacing.Left = 11
+      ParentColor = False
+      WordWrap = True
     end
+  end
+  object RightPanel: TPanel
+    AnchorSideLeft.Control = RightHSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 1507
+    Height = 844
+    Top = 0
+    Width = 222
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ClientHeight = 844
+    ClientWidth = 222
+    TabOrder = 5
     object ColorBox: TShape
-      Left = 736
+      Left = 8
       Height = 64
-      Top = 112
+      Top = 264
       Width = 60
       Brush.Color = clSkyBlue
       ParentShowHint = False
@@ -286,10 +434,53 @@ object RMMainForm: TRMMainForm
       OnMouseEnter = ColorBoxMouseEnter
       ShowHint = True
     end
+    object RMPanel: TPanel
+      AnchorSideRight.Control = RightPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = RightPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 38
+      Height = 136
+      Top = 692
+      Width = 168
+      Anchors = [akRight, akBottom]
+      BorderSpacing.Right = 15
+      BorderSpacing.Bottom = 15
+      ClientHeight = 136
+      ClientWidth = 168
+      TabOrder = 1
+      object RMLogo: TImage
+        Cursor = crHandPoint
+        Left = 16
+        Height = 96
+        Hint = 'Click Me! And Subscribe to my YouTube Channel!'
+        Top = 16
+        Width = 128
+        AutoSize = True
+        OnClick = RMLogoClick
+        ParentShowHint = False
+        ShowHint = True
+        StretchOutEnabled = False
+        StretchInEnabled = False
+        Transparent = True
+      end
+    end
+    object TrackBar1: TTrackBar
+      Left = 8
+      Height = 125
+      Top = 115
+      Width = 30
+      Min = 1
+      OnChange = TrackBar1Change
+      Orientation = trVertical
+      Position = 1
+      TickMarks = tmTopLeft
+      TabOrder = 0
+    end
     object ColorPalette1: TColorPalette
-      Left = 736
+      Left = 8
       Height = 234
-      Top = 192
+      Top = 344
       Width = 60
       ButtonHeight = 30
       ButtonWidth = 30
@@ -304,137 +495,10 @@ object RMMainForm: TRMMainForm
       ParentShowHint = False
       ShowHint = True
     end
-    object TrackBar1: TTrackBar
-      Left = 696
-      Height = 125
-      Top = 112
-      Width = 30
-      Min = 1
-      OnChange = TrackBar1Change
-      Orientation = trVertical
-      Position = 1
-      TickMarks = tmTopLeft
-      TabOrder = 1
-    end
-    object VirtScroll: TScrollBar
-      Left = 696
-      Height = 486
-      Top = 240
-      Width = 26
-      Kind = sbVertical
-      PageSize = 0
-      TabOrder = 2
-      OnChange = VirtScrollChange
-    end
-    object HorizScroll: TScrollBar
-      Left = 0
-      Height = 32
-      Top = 736
-      Width = 690
-      PageSize = 0
-      TabOrder = 3
-      OnChange = HorizScrollChange
-    end
-  end
-  object LeftPanel: TPanel
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = Owner
-    AnchorSideRight.Control = Splitter2
-    AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
-    Left = 0
-    Height = 1030
-    Top = 0
-    Width = 387
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    BevelOuter = bvNone
-    ClientHeight = 1030
-    ClientWidth = 387
-    TabOrder = 1
-    object Splitter1: TSplitter
-      AnchorSideLeft.Control = LeftPanel
-      AnchorSideTop.Control = ActualPane
-      AnchorSideTop.Side = asrBottom
-      AnchorSideRight.Control = LeftPanel
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = ListView1
-      Cursor = crVSplit
-      Left = 0
-      Height = 11
-      Top = 358
-      Width = 387
-      Align = alNone
-      Anchors = [akLeft, akRight]
-      Color = clBackground
-      ParentColor = False
-      ResizeAnchor = akBottom
-    end
-    object ListView1: TListView
-      AnchorSideLeft.Control = LeftPanel
-      AnchorSideTop.Control = Splitter1
-      AnchorSideTop.Side = asrBottom
-      AnchorSideRight.Control = LeftPanel
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = LeftPanel
-      AnchorSideBottom.Side = asrBottom
-      Left = 15
-      Height = 651
-      Top = 369
-      Width = 357
-      Anchors = [akTop, akLeft, akRight, akBottom]
-      BorderSpacing.Left = 15
-      BorderSpacing.Right = 15
-      BorderSpacing.Bottom = 10
-      Color = clBtnFace
-      Columns = <>
-      IconOptions.AutoArrange = True
-      LargeImages = ImageList1
-      LargeImagesWidth = 128
-      PopupMenu = ExportPropsMenu
-      ReadOnly = True
-      TabOrder = 1
-      ViewStyle = vsIcon
-      OnDblClick = ListView1DblClick
-    end
-    object ActualPane: TPanel
-      AnchorSideRight.Control = LeftPanel
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = Splitter1
-      Left = 16
-      Height = 350
-      Top = 8
-      Width = 356
-      Anchors = [akTop, akLeft, akRight, akBottom]
-      BorderSpacing.Right = 15
-      ClientHeight = 350
-      ClientWidth = 356
-      TabOrder = 0
-      object ActualBox: TImage
-        Left = 16
-        Height = 256
-        Top = 8
-        Width = 256
-      end
-    end
-  end
-  object Splitter2: TSplitter
-    AnchorSideLeft.Side = asrBottom
-    AnchorSideTop.Control = Owner
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
-    Left = 376
-    Height = 1030
-    Top = 0
-    Width = 11
-    Align = alNone
-    Anchors = [akTop, akBottom]
-    Color = clBackground
-    ParentColor = False
   end
   object MainMenu1: TMainMenu
-    Left = 1584
-    Top = 216
+    Left = 1624
+    Top = 128
     object FileExitMenu: TMenuItem
       Caption = 'File'
       object NewFile: TMenuItem
@@ -1102,6 +1166,13 @@ object RMMainForm: TRMMainForm
         end
       end
     end
+    object Utilities: TMenuItem
+      Caption = 'Utilities'
+      object MapEditMenu: TMenuItem
+        Caption = 'Map Editor'
+        OnClick = MapEditMenuClick
+      end
+    end
     object HelpMenu: TMenuItem
       Caption = 'Help'
       object RMAboutDialog: TMenuItem
@@ -1111,8 +1182,8 @@ object RMMainForm: TRMMainForm
     end
   end
   object ActionList1: TActionList
-    Left = 1584
-    Top = 288
+    Left = 1624
+    Top = 208
     object EditCut1: TEditCut
       Category = 'Edit'
       Caption = 'Cu&t'
@@ -1131,27 +1202,27 @@ object RMMainForm: TRMMainForm
   end
   object OpenDialog1: TOpenDialog
     Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
-    Left = 1584
-    Top = 368
+    Left = 1624
+    Top = 304
   end
   object SaveDialog1: TSaveDialog
     Title = 'Save'
     Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
-    Left = 1584
-    Top = 448
+    Left = 1624
+    Top = 400
   end
   object ExportDialog: TSaveDialog
     Title = 'Export'
-    Left = 1584
-    Top = 536
+    Left = 1624
+    Top = 488
   end
   object ImageList1: TImageList
-    Left = 1584
-    Top = 624
+    Left = 1624
+    Top = 592
   end
   object ExportPropsMenu: TPopupMenu
-    Left = 1585
-    Top = 149
+    Left = 1624
+    Top = 40
     object MenuItem12: TMenuItem
       Caption = 'Export Include'
       OnClick = ThumbPopUpMenuExportClick

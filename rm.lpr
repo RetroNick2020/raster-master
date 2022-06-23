@@ -9,13 +9,14 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor, rmcolorvga, rmabout,
   rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif, rmexportprops, rmxgfcore,
-  rwpng
+  rwpng, mapcore, MapEditor, rwmap
      { you can add units after this };
 
 {$R *.res}
 
 begin
   RequireDerivedFormResource:=True;
+  Application.Scaled:=True;
   Application.Title:='RM';
   Application.Initialize;
   Application.CreateForm(TRMMainForm, RMMainForm);
@@ -24,6 +25,7 @@ begin
   Application.CreateForm(TAboutDialog, AboutDialog);
   Application.CreateForm(TRMAmigaColorDialog, RMAmigaColorDialog);
   Application.CreateForm(TImageExportForm, ImageExportForm);
+  Application.CreateForm(TMapEdit, MapEdit);
   Application.Run;
 end.
 

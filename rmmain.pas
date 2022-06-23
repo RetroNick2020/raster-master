@@ -9,7 +9,7 @@ uses
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
   rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse;
+  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor;
 
 
 type
@@ -27,7 +27,6 @@ type
     GWBASIC: TMenuItem;
     FreeBASIC: TMenuItem;
     AmigaBasic: TMenuItem;
-    HorizScroll: TScrollBar;
     ImageList1: TImageList;
     InfoBarLabel: TLabel;
     ListView1: TListView;
@@ -58,8 +57,36 @@ type
     FPMouseShapeArray: TMenuItem;
     MenuItem12: TMenuItem;
     LeftPanel: TPanel;
-    Panel1: TPanel;
-    MiddlePanel: TPanel;
+    MapEditMenu: TMenuItem;
+    MiddleTopPanel: TPanel;
+    RightPanel: TPanel;
+    RMLogo: TImage;
+    RMPanel: TPanel;
+    ScrollBox1: TScrollBox;
+    RightHSplitter: TSplitter;
+    ToolCircleIcon: TImage;
+    ToolEllipseIcon: TImage;
+    ToolFCircleIcon: TImage;
+    ToolFEllipseIcon: TImage;
+    ToolFRectangleIcon: TImage;
+    ToolGridIcon: TImage;
+    ToolHFLIPButton: TButton;
+    ToolLineIcon: TImage;
+    ToolPaintIcon: TImage;
+    ToolPanel: TPanel;
+    ToolPencilIcon: TImage;
+    ToolRectangleIcon: TImage;
+    ToolScrollDownIcon: TImage;
+    ToolScrollLeftIcon: TImage;
+    ToolScrollRightIcon: TImage;
+    ToolScrollUpIcon: TImage;
+    ToolSelectAreaIcon: TImage;
+    ToolSprayPaintIcon: TImage;
+    ToolUndoIcon: TImage;
+    ToolVFLIPButton: TButton;
+    TrackBar1: TTrackBar;
+    Utilities: TMenuItem;
+    MiddleBottomPanel: TPanel;
     QPPaletteArray: TMenuItem;
     QPPaletteCommands: TMenuItem;
     PaletteExportQuickPascal: TMenuItem;
@@ -74,31 +101,12 @@ type
     PBPaletteData: TMenuItem;
     QCMouseShapeArray: TMenuItem;
     QPMouseShapeArray: TMenuItem;
-    Splitter1: TSplitter;
-    Splitter2: TSplitter;
+    LeftVSplitter: TSplitter;
+    LeftHSplitter: TSplitter;
     TBMouseShapeData: TMenuItem;
     QBMouseShapeData: TMenuItem;
     TCMouseShapeArray: TMenuItem;
     FBMouseShapeData: TMenuItem;
-    ToolCircleIcon: TImage;
-    ToolEllipseIcon: TImage;
-    ToolFCircleIcon: TImage;
-    ToolFEllipseIcon: TImage;
-    ToolFRectangleIcon: TImage;
-    ToolGridIcon: TImage;
-    ToolHFLIPButton: TButton;
-    ToolLineIcon: TImage;
-    ToolPaintIcon: TImage;
-    ToolPencilIcon: TImage;
-    ToolRectangleIcon: TImage;
-    ToolScrollDownIcon: TImage;
-    ToolScrollLeftIcon: TImage;
-    ToolScrollRightIcon: TImage;
-    ToolScrollUpIcon: TImage;
-    ToolSelectAreaIcon: TImage;
-    ToolSprayPaintIcon: TImage;
-    ToolUndoIcon: TImage;
-    ToolVFLIPButton: TButton;
     TPMouseShapeArray: TMenuItem;
     TCPutImagePlusMaskArray: TMenuItem;
     TBPutPlusMaskData: TMenuItem;
@@ -170,7 +178,6 @@ type
     QBPutFile: TMenuItem;
     PascalBOBBitmapArray: TMenuItem;
     PascalVSpriteBitmapArray: TMenuItem;
-    TrackBar1: TTrackBar;
     TransparentImage: TMenuItem;
     NonTransparentImage: TMenuItem;
     SaveDelete: TMenuItem;
@@ -195,8 +202,6 @@ type
     TurboBasic: TMenuItem;
     QuickC: TMenuItem;
     TurboC: TMenuItem;
-    RMLogo: TImage;
-    RMPanel: TPanel;
     TurboPascal: TMenuItem;
     QuickBasic: TMenuItem;
     ColorButton1: TColorButton;
@@ -241,14 +246,14 @@ type
     FileExitMenu: TMenuItem;
     OpenFile: TMenuItem;
     SaveFile: TMenuItem;
-    VirtScroll: TScrollBar;
-
     ZoomBox: TImage;
+
     procedure AmigaBasicClick(Sender: TObject);
     procedure AmigaCClick(Sender: TObject);
     procedure AmigaCPaletteClick(Sender: TObject);
     procedure AmigaPascalClick(Sender: TObject);
     procedure AmigaPascalPaletteClick(Sender: TObject);
+
 
     procedure ColorBoxMouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
@@ -261,13 +266,16 @@ type
 
 
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FreeBASICClick(Sender: TObject);
     procedure FreePascalClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
     procedure EditResizeToNewSize(Sender: TObject);
     procedure javaScriptArrayClick(Sender: TObject);
-    procedure ListView1DblClick(Sender: TObject);
+
+    procedure ListView1Click(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
+    procedure MapEditMenuClick(Sender: TObject);
     procedure ThumbPopUpMenuExportClick(Sender: TObject);
     procedure ThumbPopUpMenusaveClick(Sender: TObject);
     procedure PalettePasteClick(Sender: TObject);
@@ -447,24 +455,38 @@ begin
 ZoomSize:=RMDrawTools.GetZoomMode;
 DrawMode:=False;
 DrawFirst:=False;
+ActualBox.Width:=256;
+ActualBox.Height:=256;
 ActualBox.Canvas.Brush.Style := bsSolid;
 ActualBox.Canvas.Brush.Color := clblack;
 ActualBox.Canvas.FillRect(0,0,256,256);
 
+
+ZoomBox.Width:=RMDrawTools.GetZoomPageWidth;
+ZoomBox.Height:=RMDrawTools.GetZoomPageHeight;
 ZoomBox.Canvas.Brush.Style := bsSolid;
 ZoomBox.Canvas.Brush.Color := clwhite;
 
 
-RMDrawTools.SetZoomMaxX(ZoomBox.Width);
-RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+//RMDrawTools.SetZoomMaxX(ZoomBox.Width);
+//RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
+RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
+
 
 RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
 LoadResourceIcons;
 //check MaxImagePixel
-MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-HorizScroll.Max:=MaxXOffset;
-MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-VirtScroll.Max:=MaxYOffset;
+//mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+MaxXOffset:=0;
+
+// mod RM4 HorizScroll.Max:=MaxXOffset;
+
+
+// mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+MaxYOffset:=0;
+
+//mod RM4 VirtScroll.Max:=MaxYOffset;
 
 XOffset:=0;
 YOffset:=0;
@@ -484,6 +506,11 @@ HideSelectAreaTools;
 UpdateToolSelectionIcons;
 ToolPencilMenu.Checked:=true; //enable pencil tool in menu
 InitThumbView;
+end;
+
+procedure TRMMainForm.FormShow(Sender: TObject);
+begin
+
 end;
 
 procedure TRMMainForm.RMAboutDialogClick(Sender: TObject);
@@ -1031,16 +1058,16 @@ end;
 
 procedure TRMMainForm.FreezeScrollAndZoom;
 begin
-   VirtScroll.Enabled:=false;
-   HorizScroll.Enabled:=false;
+   //mod RM4 VirtScroll.Enabled:=false;
+   //mod RM4 HorizScroll.Enabled:=false;
    TrackBar1.Enabled:=false;
    EditResizeTo.Enabled:=false;
 end;
 
 procedure TRMMainForm.UnFreezeScrollAndZoom;
 begin
-  VirtScroll.Enabled:=true;
-  HorizScroll.Enabled:=true;
+  //mod RM4 VirtScroll.Enabled:=true;
+  //mod RM5 HorizScroll.Enabled:=true;
   TrackBar1.Enabled:=true;
   EditResizeTo.Enabled:=true;
 end;
@@ -1048,7 +1075,7 @@ end;
 
 procedure TRMMainForm.VirtScrollChange(Sender: TObject);
 begin
-   YOffset:=VirtScroll.Position;
+   //mod RM4 YOffset:=VirtScroll.Position;
    updatezoomarea;
 end;
 
@@ -1084,7 +1111,7 @@ var
 begin
  XYStr:='Zoom X = '+IntToStr(FX)+' Zoom Y = '+IntToStr(FY)+#13#10+
         'Zoom X2 = '+IntToStr(FX2)+' Zoom Y2 = '+IntToStr(FY2)+#13#10+
-        'X = '+IntToStr(FX+XOffset)+' Y = '+IntToStr(FY+YOffset)+#13#10+
+        'X = '+IntToStr(FX+XOffset)+' Y = '+IntToStr(FY+YOffset)+
         'X2 = '+IntToStr(FX2+XOffset)+' Y2 = '+IntToStr(FY2+YOffset)+#13#10+
         'Width = '+IntToStr(ABS(FX2-FX+1))+' Height = '+IntToStr(ABS(FY2-FY+1));
  InfoBarLabel.Caption:=XYStr;
@@ -1117,8 +1144,13 @@ i,j,w,h,xoff,yoff : integer;
 tc : TColor;
 clipstatus : integer;
 begin
-   xoff:=HorizScroll.Position;
-   yoff:=VirtScroll.Position;
+   // mod RM4 xoff:=HorizScroll.Position;
+   // mod RM4 yoff:=VirtScroll.Position;
+
+   xoff:=0;
+   yoff:=0;
+
+
 
    w:=RMDrawTools.GetCellsPerRow(ZoomBox.Width);
    h:=RMDrawTools.GetCellsPerCol(ZoomBox.Height);
@@ -1450,10 +1482,11 @@ begin
 
      end;
      //check MaxImagePixel
-    MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-    HorizScroll.Max:=MaxXOffset;
-    MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-    VirtScroll.Max:=MaxYOffset;
+
+    //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+    //mod RM4 HorizScroll.Max:=MaxXOffset;
+    //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+    //mod RM4 VirtScroll.Max:=MaxYOffset;
 
     UpdateActualArea;
     RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
@@ -1704,10 +1737,10 @@ begin
    RMDrawTools.SetZoomSize(ZoomSize);
    RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
    //check MaxImagePixel
-   MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-   HorizScroll.Max:=MaxXOffset;
-   MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-   VirtScroll.Max:=MaxYOffset;
+   //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+   //mod RM4 HorizScroll.Max:=MaxXOffset;
+   //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+   //mod RM4 VirtScroll.Max:=MaxYOffset;
    TrackBar1.Position:=RMDrawTools.GetZoomSize;
    UpdateZoomArea;
 end;
@@ -1724,7 +1757,7 @@ end;
 
 procedure TRMMainForm.HorizScrollChange(Sender: TObject);
 begin
-  XOffset:=HorizScroll.Position;
+  //mod RM4 XOffset:=HorizScroll.Position;
   updatezoomarea;
 end;
 
@@ -1732,16 +1765,22 @@ procedure TRMMainForm.TrackBar1Change(Sender: TObject);
 begin
   //Label4.Caption := 'Position = '+IntToStr(TrackBar1.Position);
   RMDrawTools.SetZoomSize(TrackBar1.Position);
+
+  ZoomBox.AutoSize:=true;
+  ZoomBox.Picture.Bitmap.SetSize(1,1);
+  ZoomBox.Picture.Bitmap.SetSize(RMDrawTools.GetZoomPageWidth,RMDrawTools.GetZoomPageHeight);
+  ZoomBox.AutoSize:=false;
+  ZoomBox.Canvas.Clear;
   RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   //check MaxImagePixel
 
   RMDrawTools.SetZoomMaxX(ZoomBox.Width);
   RMDrawTools.SetZoomMaxY(ZoomBox.Height);
 
-  MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-  HorizScroll.Max:=MaxXOffset;
-  MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-  VirtScroll.Max:=MaxYOffset;
+  //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+  //mod RM4 HorizScroll.Max:=MaxXOffset;
+  //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+  //mod RM4 VirtScroll.Max:=MaxYOffset;
   ZoomSize:=RMDrawTools.GetZoomSize;
   UpdateZoomArea;
 end;
@@ -2223,16 +2262,26 @@ begin
 
 
   RMDrawTools.SetZoomSize(1);
+
+  ZoomBox.AutoSize:=true;
+  ZoomBox.Picture.Bitmap.SetSize(RMDrawTools.GetZoomPageWidth,RMDrawTools.GetZoomPageHeight);
+  ZoomBox.AutoSize:=false;
+  ZoomBox.Canvas.Clear;
   RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-  //check MaxImagePixel
 
-  RMDrawTools.SetZoomMaxX(ZoomBox.Width);
-  RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+   //check MaxImagePixel
 
-  MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-  HorizScroll.Max:=MaxXOffset;
-  MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-  VirtScroll.Max:=MaxYOffset;
+  RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
+  RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
+
+
+
+
+
+  //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+  //mod RM4 HorizScroll.Max:=MaxXOffset;
+  //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+  //mod RM4 VirtScroll.Max:=MaxYOffset;
   ZoomSize:=RMDrawTools.GetZoomSize;
 
   UpdateActualArea;
@@ -2265,6 +2314,8 @@ var
       end;
    end;
 end;
+
+
 
 Procedure TRMMainForm.EditColors;
 var
@@ -2821,7 +2872,6 @@ begin
   end;
 end;
 
-
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var
  pm : integer;
@@ -3037,8 +3087,13 @@ Procedure TRMMainForm.CopyScrollPositionToCore;
 var
  sp : TScrollPosRec;
 begin
-  sp.HorizPos:=HorizScroll.Position;
-  sp.VirtPos:=VirtScroll.Position;
+  //mod RM4 sp.HorizPos:=HorizScroll.Position;
+  //mod RM4 sp.VirtPos:=VirtScroll.Position;
+
+
+  sp.HorizPos:=ScrollBox1.HorzScrollBar.Position;
+  sp.VirtPos:=ScrollBox1.VertScrollBar.Position;
+
   RMDrawTools.SetScrollPos(sp);
 end;
 
@@ -3048,11 +3103,15 @@ var
 begin
   RMDrawTools.GetScrollPos(sp);
 
-  HorizScroll.Position:=sp.HorizPos;
-  VirtScroll.Position:=sp.VirtPos;
+  //mod RM4 HorizScroll.Position:=sp.HorizPos;
+  //mod RM4 VirtScroll.Position:=sp.VirtPos;
+  ScrollBox1.HorzScrollBar.Position:=sp.HorizPos;
+  ScrollBox1.VertScrollBar.Position:=sp.VirtPos;
+
+
 end;
 
-procedure TRMMainForm.ListView1DblClick(Sender: TObject);
+procedure TRMMainForm.ListView1Click(Sender: TObject);
 var
   item : TListItem;
 begin
@@ -3068,16 +3127,21 @@ begin
    ActualBox.Width:=RMCoreBase.GetWidth;
    ActualBox.Height:=RMCoreBase.GetHeight;
 
+   ZoomBox.AutoSize:=true;
+   ZoomBox.Picture.Bitmap.SetSize(RMDrawTools.GetZoomPageWidth,RMDrawTools.GetZoomPageHeight);
+   ZoomBox.AutoSize:=false;
+   ZoomBox.Canvas.Clear;
+
   // RMDrawTools.SetZoomSize(1);
    RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
    RMDrawTools.SetZoomMaxX(ZoomBox.Width);
    RMDrawTools.SetZoomMaxY(ZoomBox.Height);
 
    //load  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
-   MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-   HorizScroll.Max:=MaxXOffset;
-   MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-   VirtScroll.Max:=MaxYOffset;
+   //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+   //mod RM4 HorizScroll.Max:=MaxXOffset;
+   //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+   //mod RM4 VirtScroll.Max:=MaxYOffset;
    ZoomSize:=RMDrawTools.GetZoomSize;
    CopyScrollPositionFromCore;
 
@@ -3121,8 +3185,8 @@ begin
  UpdateZoomArea;
  UnFreezeScrollAndZoom;
  Trackbar1.Position:=RMDrawTools.getZoomSize;
- HorizScroll.Position:=0;
- VirtScroll.Position:=0;
+ ScrollBox1.HorzScrollBar.Position:=0;
+ ScrollBox1.HorzScrollBar.Position:=0;
 
  ImageThumbBase.SetCount(1);
  ImageThumbBase.SetCurrent(0);
@@ -3138,6 +3202,15 @@ begin
  ListView1.Items[0].Caption:='Image '+IntToStr(1);
  ListView1.Items[0].ImageIndex :=0;
 
+end;
+
+procedure TRMMainForm.MapEditMenuClick(Sender: TObject);
+begin
+ ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+ MapEdit.UpdateTileView;
+ if  MapEdit.ShowModal = mrOK then
+ begin
+ end;
 end;
 
 procedure TRMMainForm.ThumbPopUpMenuExportClick(Sender: TObject);
@@ -3231,10 +3304,10 @@ begin
       RMDrawTools.SetZoomMaxY(ZoomBox.Height);
 
       //load  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
-      MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-      HorizScroll.Max:=MaxXOffset;
-      MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-      VirtScroll.Max:=MaxYOffset;
+      //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+      //mod RM4 HorizScroll.Max:=MaxXOffset;
+      //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+      //mod RM4 VirtScroll.Max:=MaxYOffset;
       ZoomSize:=RMDrawTools.GetZoomSize;
       CopyScrollPositionFromCore;
 
@@ -3321,10 +3394,10 @@ begin
       RMDrawTools.SetZoomMaxX(ZoomBox.Width);
       RMDrawTools.SetZoomMaxY(ZoomBox.Height);
 
-      MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-      HorizScroll.Max:=MaxXOffset;
-      MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-      VirtScroll.Max:=MaxYOffset;
+      //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
+      //mod RM4 HorizScroll.Max:=MaxXOffset;
+      //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
+      //mod RM4 VirtScroll.Max:=MaxYOffset;
       ZoomSize:=RMDrawTools.GetZoomSize;
 
       CoreToPalette;
@@ -3368,8 +3441,8 @@ begin
  UpdateZoomArea;
  UnFreezeScrollAndZoom;
  Trackbar1.Position:=RMDrawTools.getZoomSize;
- HorizScroll.Position:=0;
- VirtScroll.Position:=0;
+ ScrollBox1.HorzScrollBar.Position:=0;
+ ScrollBox1.VertScrollBar.Position:=0;
 
  ImageThumbBase.AddImage;
 // ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCount-1);
@@ -3400,8 +3473,8 @@ begin
  UpdateZoomArea;
  UnFreezeScrollAndZoom;
  Trackbar1.Position:=RMDrawTools.getZoomSize;
- HorizScroll.Position:=0;
- VirtScroll.Position:=0;
+ ScrollBox1.HorzScrollBar.Position:=0;
+ ScrollBox1.VertScrollBar.Position:=0;
  UpdateThumbView;
 end;
 

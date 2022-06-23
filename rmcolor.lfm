@@ -1,25 +1,33 @@
 object RMEGAColorDialog: TRMEGAColorDialog
-  Left = 806
-  Height = 256
-  Top = 640
-  Width = 415
+  Left = -1301
+  Height = 301
+  Top = 426
+  Width = 524
   BorderStyle = bsDialog
   Caption = 'EGA Palette'
-  ClientHeight = 256
-  ClientWidth = 415
+  ClientHeight = 301
+  ClientWidth = 524
   DesignTimePPI = 120
   OnCreate = FormCreate
   LCLVersion = '2.0.10.0'
   object OK: TButton
-    Left = 280
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 417
     Height = 37
-    Top = 176
+    Top = 254
     Width = 97
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
     Caption = 'OK'
     OnClick = OKClick
     TabOrder = 0
   end
   object ColorPalette1: TColorPalette
+    AnchorSideRight.Side = asrBottom
     Left = 16
     Height = 26
     Top = 32
@@ -31,18 +39,19 @@ object RMEGAColorDialog: TRMEGAColorDialog
     SelectionColor = clWhite
     SelectionKind = pskThickInverted
     OnColorPick = ColorPalette1ColorPick
+    Anchors = [akTop, akLeft, akRight]
     ParentColor = False
   end
   object Shape1: TShape
     Left = 24
     Height = 81
-    Top = 152
+    Top = 184
     Width = 81
   end
   object EGAIndexLabel: TLabel
     Left = 120
     Height = 20
-    Top = 160
+    Top = 192
     Width = 71
     Caption = 'EGA Index:'
     ParentColor = False

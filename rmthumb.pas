@@ -1,7 +1,12 @@
 Unit rmthumb;
 
 Interface
-  uses rmcore,rmtools,graphics,controls,types,dialogs,sysutils;
+  uses rmcore,rmtools,graphics,controls,types,dialogs,sysutils,mapcore,rwmap;
+
+Const
+  RMProjectSig = 'RMP';
+  RMProjectVersion = 3;
+
 type
  ImageThumbRec = Record
              Pixel : array of array of integer;
@@ -18,6 +23,7 @@ type
  end;
 
  ImageThumbPropsRec = Packed Record
+             UID         : TGUID;
              ExportFormat: ImageExportFormatRec;
              Palette     : TRMPaletteBuf;
              PaletteMode : Integer;
@@ -44,6 +50,10 @@ type
                         SIG : array[1..3] of char;
                         version : word;
                         ImageCount : word;
+                        MapCount   : word;
+                        Future1    : word;   //try and future proof changing project file
+                        Future2    : word;
+                        Future3    : word;
  end;
 
  TImageThumb = Class
@@ -53,6 +63,7 @@ type
              LastPicked      : integer;
              Current         : integer; //image that is being edited
              UndoImageBufPtr : ^TRMImageBuf;
+
 
              constructor Create;
              procedure SetListSize(size : integer);
@@ -69,6 +80,8 @@ type
              function GetCount : integer;
              procedure SetCount(count : integer);
 
+             function FindUID(uid : TGUID) : integer;
+             function GetUID(index : integer) : TGUID;
              function GetExportPaletteCount : integer;
              function GetExportImageCount : integer;
              function GetExportMaskCount : integer;
@@ -115,6 +128,7 @@ constructor TImageThumb.Create;
 begin
  SetlistSize(MaxThumbImages);
  ImageCount:=0;
+
  SetLastPicked(-1); //nothing selected
  SetCurrent(-1);
  ImageBufPtr:=RMCoreBase.GetImageBufPtr;
@@ -180,6 +194,26 @@ begin
  dec(ImageCount);
 end;
 
+function TImageThumb.GetUID(index : integer) : TGUID;
+begin
+  GetUID:=ImageMain[index].Props.UID;
+end;
+
+function TImageThumb.FindUID(uid : TGUID) : integer;
+var
+ i : integer;
+begin
+ FindUID:=-1;
+ for i:=0 to GetCount -1 do
+ begin
+   if IsEqualGUID(uid,ImageMain[i].Props.UID) then
+   begin
+      FindUID:=i;
+      exit;
+   end;
+ end;
+end;
+
 procedure TImageThumb.AddImage;  //adds image to end of list
 begin
  if ImageCount >= MaxThumbImages then exit;
@@ -188,13 +222,15 @@ begin
  if ImageCount = 1 then
  begin
    fillchar(ImageMain[0].Props.ExportFormat,sizeof(ImageMain[0].Props.ExportFormat),0);
-   ImageMain[0].Props.ExportFormat.Name:='Image1'
+   ImageMain[0].Props.ExportFormat.Name:='Image1';
+   CreateGUID(ImageMain[0].Props.UID);
  end
  else if ImageCount > 1 then
  begin
     //copy the Export props from the first thum image
     ImageMain[ImageCount-1].Props.ExportFormat:=ImageMain[0].Props.ExportFormat;
     ImageMain[ImageCount-1].Props.ExportFormat.Name:='Image'+IntToStr(ImageCount);
+    CreateGUID(ImageMain[ImageCount-1].Props.UID);
 
 //    ImageMain[ImageCount-1].Props.ExportFormat.Width:=0;
 //    ImageMain[ImageCount-1].Props.ExportFormat.Height:=0;
@@ -271,8 +307,8 @@ begin
   ImageMain[index].Props.PaletteMode:=RMCoreBase.Palette.GetPaletteMode;
   ImageMain[index].Props.ColorCount:= RMCoreBase.Palette.GetColorCount;
   ImageMain[index].Props.CurColor:=RMCoreBase.GetCurColor;
-
   ImageMain[index].Props.DrawTool:=RMDrawTools.GetDrawTool;
+
   RMDrawTools.GetClipAreaCoords(ImageMain[index].Props.ClipArea);
   RMDrawTools.GetGridArea(ImageMain[index].Props.GridArea);
   RMDrawTools.GetScrollPos(ImageMain[index].Props.ScrollPos);
@@ -505,7 +541,7 @@ begin
  Blockread(F,head,sizeof(head));
 {$I+}
  if IORESULT <>0 then exit;
- if (head.sig='RMP') and (head.version=2) then
+ if (head.sig=RMProjectSig) and (head.version=RMProjectVersion) then
  begin
    //delete all current images - use should be warn when oopening files
    count:=head.ImageCount;
@@ -524,6 +560,8 @@ begin
    begin
      ReadImageFromProject(F,i+indexoffset);
    end;
+
+   ReadAllMapsF(F,head.MapCount,insertmode);
  end;
 {$I-}
  close(f);
@@ -544,8 +582,13 @@ begin
  count:=GetCount;
 
  head.ImageCount:=count;
- head.SIG:='RMP';   // Raster Master Project
- head.version:=2;   // v2 introduced in R38 (added ExportWidth/ExportHieght), all previous up v37 were v1
+ head.MapCount:=MapCoreBase.GetMapCount;
+ head.Future1:=0;
+ head.Future2:=0;
+ head.Future3:=0;
+
+ head.SIG:=RMProjectSig;   // Raster Master Project
+ head.version:=RMProjectVersion;   // v3 added in R46 (added unique id), v2 introduced in R38 (added ExportWidth/ExportHieght), all previous up v37 were v1
  Blockwrite(F,head,sizeof(head));
  {$I+}
  if IORESULT <>0 then exit;
@@ -554,6 +597,7 @@ begin
  begin
      WriteImageToProject(F,i);
  end;
+ WriteAllMapsF(F);
 {$I-}
  close(f);
 {$I+}
@@ -603,9 +647,7 @@ var
  width,height : integer;
  LineBuf      : array[0..255] of byte;
  i,j : integer;
- count : integer;
  ImageProps : ImageThumbPropsRec;
- StartIndex    : integer;
 begin
  {$I-}
  Blockread(F,ImageProps,sizeof(ImageProps));

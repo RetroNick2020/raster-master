@@ -2,14 +2,15 @@ object RMVgaColorDialog: TRMVgaColorDialog
   Left = -1204
   Height = 348
   Top = 98
-  Width = 512
+  Width = 632
   BorderStyle = bsDialog
   Caption = 'VGA Color'
   ClientHeight = 348
-  ClientWidth = 512
+  ClientWidth = 632
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
   object ColorPalette: TColorPalette
+    AnchorSideRight.Side = asrBottom
     Left = 16
     Height = 120
     Top = 8
@@ -20,18 +21,19 @@ object RMVgaColorDialog: TRMVgaColorDialog
     PickedIndex = 0
     SelectionKind = pskThick
     OnColorPick = ColorPaletteColorPick
+    Anchors = [akLeft, akRight]
     ParentColor = False
   end
   object Shape1: TShape
-    Left = 24
+    Left = 32
     Height = 84
-    Top = 184
+    Top = 208
     Width = 81
   end
   object TrackBar1: TTrackBar
-    Left = 144
+    Left = 152
     Height = 39
-    Top = 176
+    Top = 200
     Width = 253
     Max = 63
     OnChange = TrackBar1Change
@@ -42,9 +44,9 @@ object RMVgaColorDialog: TRMVgaColorDialog
     TabOrder = 0
   end
   object TrackBar2: TTrackBar
-    Left = 144
+    Left = 152
     Height = 39
-    Top = 208
+    Top = 232
     Width = 253
     Max = 63
     OnChange = TrackBar2Change
@@ -55,9 +57,9 @@ object RMVgaColorDialog: TRMVgaColorDialog
     TabOrder = 1
   end
   object TrackBar3: TTrackBar
-    Left = 144
+    Left = 152
     Height = 39
-    Top = 240
+    Top = 264
     Width = 253
     Max = 63
     OnChange = TrackBar3Change
@@ -68,66 +70,73 @@ object RMVgaColorDialog: TRMVgaColorDialog
     TabOrder = 2
   end
   object Label1: TLabel
-    Left = 129
+    Left = 137
     Height = 20
-    Top = 176
+    Top = 200
     Width = 9
     Caption = 'R'
     ParentColor = False
   end
   object Label2: TLabel
-    Left = 129
+    Left = 137
     Height = 20
-    Top = 208
+    Top = 232
     Width = 10
     Caption = 'G'
     ParentColor = False
   end
   object Label3: TLabel
-    Left = 129
+    Left = 137
     Height = 20
-    Top = 240
+    Top = 264
     Width = 9
     Caption = 'B'
     ParentColor = False
   end
   object Label4: TLabel
-    Left = 408
+    Left = 416
     Height = 20
-    Top = 176
+    Top = 200
     Width = 9
     Caption = 'R'
     ParentColor = False
   end
   object Label5: TLabel
-    Left = 408
+    Left = 416
     Height = 20
-    Top = 208
+    Top = 232
     Width = 10
     Caption = 'G'
     ParentColor = False
   end
   object Label6: TLabel
-    Left = 408
+    Left = 416
     Height = 20
-    Top = 240
+    Top = 264
     Width = 9
     Caption = 'B'
     ParentColor = False
   end
   object Button1: TButton
-    Left = 384
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 528
     Height = 31
-    Top = 288
+    Top = 307
     Width = 94
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
     Caption = 'OK'
     OnClick = OKClick
     TabOrder = 3
   end
   object VGAIndexLabel: TLabel
-    Left = 32
+    Left = 40
     Height = 20
-    Top = 144
+    Top = 168
     Width = 72
     Caption = 'VGA Index:'
     ParentColor = False

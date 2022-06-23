@@ -9,6 +9,9 @@
       <Title Value="RM"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
+      <XPManifest>
+        <DpiAware Value="True"/>
+      </XPManifest>
       <Icon Value="0"/>
       <Resources Count="31">
         <Resource_0 FileName="Images\CIRC1.BMP" Type="BITMAP" ResourceName="CIRC1"/>
@@ -130,7 +133,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="17">
+    <Units Count="20">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -217,6 +220,22 @@
         <Filename Value="wmouse.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit16>
+      <Unit17>
+        <Filename Value="mapcore.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="mapeditor.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="MapEdit"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="MapEditor"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="rwmap.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit19>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

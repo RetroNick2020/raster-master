@@ -103,6 +103,9 @@ Type
              function GetZoomMaxX : integer;
              function GetZoomMaxY : integer;
 
+             function GetZoomPageWidth : integer;
+             function GetZoomPageHeight : integer;
+
 
              procedure SetClipStatus(mode : integer);
              function  GetClipStatus : integer;
@@ -303,6 +306,16 @@ end;
 function TRMDrawTools.GetZoomMaxY : integer;
 begin
  GetZoomMaxY:=GridArea.ZoomMaxY;
+end;
+
+function TRMDrawTools.GetZoomPageWidth : integer;
+begin
+  GetZoomPageWidth:=GridArea.CellWidth*RMCoreBase.GetWidth;
+end;
+
+function TRMDrawTools.GetZoomPageHeight : integer;
+begin
+  GetZoomPageHeight:=GridArea.CellHeight*RMCoreBase.GetHeight;
 end;
 
 procedure TRMDrawTools.PutPixel(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
@@ -960,7 +973,8 @@ begin
 
   if RMCoreBase.GetWidth = 8 then
   begin
-   If GridArea.ZoomSize < 7 then GridArea.ZoomSize:=7;
+   If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
+
   end
   else if RMCoreBase.GetWidth = 16 then
   begin
