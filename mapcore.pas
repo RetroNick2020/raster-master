@@ -14,7 +14,7 @@ Const
   DefMaxMapHeight = 64;
 
   RMMapSig = 'RMM';
-  RMMapVersion = 1;
+  RMMapVersion = 2;
 type
 
   TileRec = packed Record
@@ -35,13 +35,20 @@ type
              tileheight : integer;
              ZoomTilewidth : integer;
              ZoomTileheight : integer;
-
              ZoomSize : integer;
-
   end;
 
+  MapExportFormatRec = Packed Record
+             Name            : String[20]; // user = RES file used in name/description, in Text output used in array name, for palettes we add pal to name
+             Lan             : integer; // auto -ahould be for what compiler eg PascalLan,BasicLan,CLan
+             MapFormat       : integer; // user - 0 = do not export, Map Format, 1 = Simple format
+             Width           : integer; // map width overwrite - if not 0 use this value as width
+             Height          : integer; // map height overwrite - if not 0 use this value as height
+ end;
+
   MapRec = packed Record
-             Props : MapPropsRec;
+             Props       : MapPropsRec;
+             ExportProps : MapExportFormatRec;
              Tile : array of array of TileRec;
   end;
 
@@ -61,6 +68,14 @@ type
 
                     procedure GetMapProps(index : integer;var props : MapPropsRec);
                     procedure SetMapProps(index : integer; props : MapPropsRec);
+
+                    function GetExportHeight(index : integer) : integer;
+                    function GetExportWidth(index : integer) : integer;
+                    function GetExportMapCount : integer;
+
+                    procedure GetMapExportProps(index : integer;var props : MapExportFormatRec);
+                    procedure SetMapExportProps(index : integer; props : MapExportFormatRec);
+                    procedure ClearExportProperties(index : integer);
 
                     function GetMapWidth(index : integer) : integer;
                     function GetMapHeight(index : integer) : integer;
@@ -133,10 +148,70 @@ begin
  GetZoomSize:=Map[index].Props.ZoomSize;
 end;
 
+procedure TMapCoreBase.GetMapExportProps(index : integer;var props : MapExportFormatRec);
+begin
+  props:=Map[index].ExportProps;
+end;
+
+procedure TMapCoreBase.SetMapExportProps(index : integer; props : MapExportFormatRec);
+begin
+  Map[index].ExportProps:=props;
+end;
+
+function TMapCoreBase.GetExportMapCount : integer;
+var
+ i : integer;
+ Exportcount : integer;
+begin
+ ExportCount:=0;
+ for i:=0 to GetMapCount-1 do
+ begin
+   if Map[i].ExportProps.MapFormat > 0 then inc(ExportCount);
+ end;
+ GetExportMapCount:=ExportCount;
+end;
+
+//if there is a custom width property (not 0) and less then props width
+function TMapCoreBase.GetExportWidth(index : integer) : integer;
+var
+ width : integer;
+begin
+  Width:=Map[index].Props.Width;
+  if (Map[index].ExportProps.Width > 0) AND (Map[index].ExportProps.Width < Map[index].Props.Width) then
+  begin
+     Width:=Map[index].ExportProps.Width;
+  end;
+  GetExportWidth:=Width;
+end;
+
+//if there is a custom height property (not 0) and less then props height
+function TMapCoreBase.GetExportHeight(index : integer) : integer;
+var
+  height : integer;
+begin
+ Height:=Map[index].Props.Height;
+ if (Map[index].ExportProps.Height > 0) AND (Map[index].ExportProps.Height < Map[index].Props.Height) then
+ begin
+    Height:=Map[index].ExportProps.Height;
+ end;
+ GetExportHeight:=Height;
+end;
+
+procedure TMapCoreBase.ClearExportProperties(index : integer);
+begin
+  Map[index].ExportProps.MapFormat:=0;
+  Map[index].ExportProps.Lan:=0;
+  Map[index].ExportProps.width:=0;
+  Map[index].ExportProps.height:=0;
+  Map[index].ExportProps.name:='Map'+IntToStr(index+1);
+end;
+
 procedure TMapCoreBase.SetMapSize(index, mwidth,mheight : integer);
 begin
  Map[index].Props.width:=mwidth;
  Map[index].Props.height:=mheight;
+ ClearExportProperties(index);
+
  SetLength(Map[index].Tile,DefMaxMapWidth,DefMaxMapHeight);
  ClearMap(index,-1);
 end;
@@ -317,6 +392,8 @@ end;
 procedure TMapCoreBase.AddMap;  //adds image to end of list - there must atleast one map
 var
  props : MapPropsRec;
+ ExportProps : MapExportFormatRec;
+ Lan,Format  : integer;
 begin
  if (MapCount=0) or (MapCount >= MaxListSize) then exit;
  inc(MapCount);
@@ -325,6 +402,16 @@ begin
  GetMapProps(0,props);
  SetMapProps(MapCount-1,props);
  SetMapSize(MapCount-1,props.width,props.height);
+
+
+ //copy Lan and Format settings from Map 0
+ GetMapExportProps(0,ExportProps);
+ Lan:=ExportProps.Lan;
+ Format:=ExportProps.MapFormat;
+ GetMapExportProps(MapCount-1,ExportProps);
+ ExportProps.Lan:=Lan;
+ ExportProps.MapFormat:=Format;
+ SetMapExportProps(MapCount-1,ExportProps);
 end;
 
 begin

@@ -4,7 +4,7 @@ unit rwpal;
 
 interface
 uses
-  SysUtils,FileUtil,StrUtils,RMCore,rmxgfcore,rwxgf2;
+  SysUtils,FileUtil,StrUtils,RMCore,rmxgfcore,rwxgf2,gwbasic;
 
 Const
   ColorIndexFormat = 1;

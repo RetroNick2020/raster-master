@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 46
+  Left = 63
   Height = 869
-  Top = 130
+  Top = 230
   Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
@@ -1223,7 +1223,7 @@ object RMMainForm: TRMMainForm
   object ExportPropsMenu: TPopupMenu
     Left = 1624
     Top = 40
-    object MenuItem12: TMenuItem
+    object ExportInclude: TMenuItem
       Caption = 'Export Include'
       OnClick = ThumbPopUpMenuExportClick
     end

@@ -55,7 +55,7 @@ type
     GWPutPlusMaskData: TMenuItem;
     GWMouseShapeData: TMenuItem;
     FPMouseShapeArray: TMenuItem;
-    MenuItem12: TMenuItem;
+    ExportInclude: TMenuItem;
     LeftPanel: TPanel;
     MapEditMenu: TMenuItem;
     MiddleTopPanel: TPanel;
@@ -419,7 +419,6 @@ procedure TRMMainForm.PaletteToCore;
 var
   i,count : integer;
   cr      : TRMColorRec;
-  tc      : TColor;
 begin
   count:=ColorPalette1.ColorCount;
   RMCoreBase.Palette.ClearColors;
@@ -1106,8 +1105,6 @@ end;
 procedure TRMMainForm.UpdateInfoBarDetail;
 var
   XYStr   : string;
-  ClipStr : string;
-  ca      : TClipAreaRec;
 begin
  XYStr:='Zoom X = '+IntToStr(FX)+' Zoom Y = '+IntToStr(FY)+#13#10+
         'Zoom X2 = '+IntToStr(FX2)+' Zoom Y2 = '+IntToStr(FY2)+#13#10+
@@ -1547,7 +1544,6 @@ procedure TRMMainForm.ZoomBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 
  var
-  PT : TPoint;
   DT : integer;
 begin
    DT:=RMDrawTools.GetDrawTool;                                             //if there is a clip area and we are no longer in clip mode - remove it

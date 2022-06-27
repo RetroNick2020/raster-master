@@ -4,7 +4,7 @@
 
 Unit rwxgf2;
  Interface
-   uses SysUtils,LazFileUtils,rmcore,rmthumb,rmxgfcore,bits;
+   uses SysUtils,LazFileUtils,rmcore,rmthumb,rmxgfcore,bits,gwbasic;
 
 Const
    NoLan   = 0;
@@ -101,9 +101,7 @@ type
  function GetXImageSizeFB(width,height : integer) : longint;
  function GetXImageSizeFP(width,height : integer) : longint;
 
- procedure SetGWStartLineNumber(start : integer);
- function GetGWNextLineNumber : string;
- function LineCountToStr(Lan : integer) : string;
+
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);
@@ -137,8 +135,7 @@ const
  BorlandColorMap : ColorMap = (0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15);
 // MSColorMap: ColorMap = (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
 
-var
- GWBasicLineNumber : integer;
+
 
 Procedure spTOmp(var singlePlane : LineBufType ;
                  var multiplane  : LineBufType;
@@ -599,26 +596,7 @@ begin
   buffer.Error:=IORESULT;
 end;
 
-procedure SetGWStartLineNumber(start : integer);
-begin
- GWBasicLineNumber :=start;
-end;
 
-function GetGWNextLineNumber : string;
-begin
- GetGWNextLineNumber:=IntToStr(GWBasicLineNumber);
- inc(GWBasicLineNumber,10);
-end;
-
-
-function LineCountToStr(Lan : integer) : string;
-begin
- LineCountToStr:='';
- if (lan=GWLan) then
- begin
-   LineCountToStr:=GetGWNextLineNumber+' ';
- end;
-end;
 
 procedure BitplaneWriterGWBasicCode(inByte : Byte; var Buffer : BufferRec;action : integer);
 var

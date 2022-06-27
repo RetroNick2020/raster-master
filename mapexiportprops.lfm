@@ -1,12 +1,12 @@
-object ImageExportForm: TImageExportForm
-  Left = 353
-  Height = 429
-  Top = 314
-  Width = 421
+object MapExportForm: TMapExportForm
+  Left = 796
+  Height = 318
+  Top = 316
+  Width = 400
   BorderStyle = bsDialog
-  Caption = 'Image Export Properties'
-  ClientHeight = 0
-  ClientWidth = 0
+  Caption = 'Map Export Properties'
+  ClientHeight = 318
+  ClientWidth = 400
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
   object EditName: TEdit
@@ -17,7 +17,7 @@ object ImageExportForm: TImageExportForm
     MaxLength = 20
     TabOrder = 0
   end
-  object imageName: TLabel
+  object MapName: TLabel
     Left = 53
     Height = 20
     Top = 32
@@ -25,66 +25,22 @@ object ImageExportForm: TImageExportForm
     Caption = 'Name'
     ParentColor = False
   end
-  object ImageType: TLabel
-    Left = 16
+  object MapType: TLabel
+    Left = 28
     Height = 20
     Top = 128
-    Width = 77
-    Caption = 'Image Type'
+    Width = 65
+    Caption = 'Map Type'
     ParentColor = False
   end
-  object ComboImage: TComboBox
+  object ComboMap: TComboBox
     Left = 104
     Height = 28
     Top = 128
     Width = 264
     ItemHeight = 20
     Style = csDropDownList
-    TabOrder = 2
-  end
-  object MaskType: TLabel
-    Left = 24
-    Height = 20
-    Top = 176
-    Width = 69
-    Caption = 'Mask Type'
-    ParentColor = False
-  end
-  object ComboMask: TComboBox
-    Left = 104
-    Height = 28
-    Top = 176
-    Width = 264
-    ItemHeight = 20
-    Style = csDropDownList
-    TabOrder = 3
-  end
-  object PaletteType: TLabel
-    Left = 13
-    Height = 20
-    Top = 224
-    Width = 80
-    Caption = 'Palette Type'
-    ParentColor = False
-  end
-  object ComboPalette: TComboBox
-    Left = 104
-    Height = 28
-    Top = 224
-    Width = 264
-    ItemHeight = 20
-    OnChange = ComboPaletteChange
-    Style = csDropDownList
-    TabOrder = 4
-  end
-  object Button1: TButton
-    Left = 304
-    Height = 31
-    Top = 360
-    Width = 94
-    Caption = 'OK'
-    OnClick = Button1Click
-    TabOrder = 7
+    TabOrder = 1
   end
   object CompilerType: TLabel
     Left = 32
@@ -102,22 +58,22 @@ object ImageExportForm: TImageExportForm
     ItemHeight = 20
     OnChange = ComboCompilerChange
     Style = csDropDownList
-    TabOrder = 1
+    TabOrder = 2
   end
   object EditWidth: TEdit
     Left = 104
     Height = 28
-    Top = 272
+    Top = 176
     Width = 48
     MaxLength = 3
     NumbersOnly = True
-    TabOrder = 5
+    TabOrder = 3
     Text = '0'
   end
   object WidthLabel: TLabel
     Left = 53
     Height = 20
-    Top = 272
+    Top = 176
     Width = 40
     Caption = 'Width'
     ParentColor = False
@@ -125,19 +81,28 @@ object ImageExportForm: TImageExportForm
   object EditHeight: TEdit
     Left = 104
     Height = 28
-    Top = 312
+    Top = 216
     Width = 48
     MaxLength = 3
     NumbersOnly = True
-    TabOrder = 6
+    TabOrder = 4
     Text = '0'
   end
   object HeightLabel: TLabel
     Left = 48
     Height = 20
-    Top = 312
+    Top = 216
     Width = 45
     Caption = 'Height'
     ParentColor = False
+  end
+  object Button1: TButton
+    Left = 280
+    Height = 31
+    Top = 264
+    Width = 94
+    Caption = 'OK'
+    OnClick = Button1Click
+    TabOrder = 5
   end
 end

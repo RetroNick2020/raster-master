@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,LMessages,Types,
-  ComCtrls, Menus,rmthumb,mapcore,rwmap;
+  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops;
 
 type
  (* TScrollBox = class(Forms.TScrollBox)
@@ -21,12 +21,16 @@ type
     Clear: TMenuItem;
     MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    MenuItem14: TMenuItem;
+    MenuMapProps: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem6: TMenuItem;
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
     MenuNew: TMenuItem;
     OpenDialog1: TOpenDialog;
+    ExportMapsPropsMenu: TPopupMenu;
     RadioDraw: TRadioButton;
     RadioErase: TRadioButton;
     SaveDialog1: TSaveDialog;
@@ -87,9 +91,11 @@ type
     procedure MapListViewClick(Sender: TObject);
 
     procedure MenuDeleteClick(Sender: TObject);
+    procedure MenuExportBasicLNMapData(Sender: TObject);
     procedure MenuExportBasicMapData(Sender: TObject);
     procedure MenuExportCArray(Sender: TObject);
     procedure MenuExportPascalArray(Sender: TObject);
+    procedure MenuMapPropsClick(Sender: TObject);
     procedure MenuOpenClick(Sender: TObject);
     procedure MenuNewClick(Sender: TObject);
     procedure MenuSaveClick(Sender: TObject);
@@ -368,12 +374,21 @@ begin
   end;
 end;
 
+procedure TMapEdit.MenuExportBasicLNMapData(Sender: TObject);
+begin
+ SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
+ if SaveDialog1.Execute then
+ begin
+  ExportMap(SaveDialog1.FileName,BasicLNLan);
+ end;
+end;
+
 procedure TMapEdit.MenuExportBasicMapData(Sender: TObject);
 begin
  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
  if SaveDialog1.Execute then
  begin
-  ExportBasicMap(SaveDialog1.FileName);
+  ExportMap(SaveDialog1.FileName,BasicLan);
  end;
 end;
 
@@ -382,7 +397,7 @@ begin
  SaveDialog1.Filter := 'c|*.c|All Files|*.*';
  if SaveDialog1.Execute then
  begin
-  ExportCMap(SaveDialog1.FileName);
+  ExportMap(SaveDialog1.FileName,CLan);
  end;
 end;
 
@@ -391,7 +406,25 @@ begin
   SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*';
   if SaveDialog1.Execute then
   begin
-   ExportPascalMap(SaveDialog1.FileName);
+   ExportMap(SaveDialog1.FileName,PascalLan);
+  end;
+end;
+
+procedure TMapEdit.MenuMapPropsClick(Sender: TObject);
+var
+  EO : MapExportFormatRec;
+  index : integer;
+begin
+  index:=MapListView.ItemIndex;
+  if index = -1 then index:=0;
+ // ShowMessage(IntToStr(index));
+  MapCoreBase.GetMapExportProps(index,EO);
+  MapExportForm.InitComboBoxes;
+  MapExportForm.SetExportProps(EO);
+  if MapExportForm.ShowModal = mrOK then
+  begin
+     MapExportForm.GetExportProps(EO);
+     MapCoreBase.SetMapExportProps(index,EO)
   end;
 end;
 

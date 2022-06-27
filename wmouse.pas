@@ -5,7 +5,7 @@ unit wmouse;
 interface
 
 uses
-  Classes, SysUtils,LazFileUtils,rmxgfcore,rwxgf2;
+  Classes, SysUtils,LazFileUtils,rmxgfcore,rwxgf2,gwbasic;
 
 Function WriteMShapeToCode(x,y,LanType : word;filename:string):word;
 

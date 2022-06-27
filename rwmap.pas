@@ -4,7 +4,7 @@ unit rwmap;
 
 interface
 uses
-  Classes, SysUtils, LazFileUtils, mapcore;
+  Classes, SysUtils, LazFileUtils, mapcore,gwbasic;
 
 Procedure ReadMap(filename : string);
 Procedure ReadMaps(filename : string);
@@ -16,14 +16,16 @@ Procedure WriteMaps(filename : string);
 Procedure WriteAllMapsF(var F : File);
 Procedure WriteMapF(var F : File; index : integer);
 
-procedure ExportPascalMap(filename : string);
-procedure ExportCMap(filename : string);
-procedure ExportBasicMap(filename : string);
+procedure ExportMap(filename : string; Lan : integer);
+procedure WriteMapsCodeToBuffer(var F : Text);
+procedure ResExportMaps(var F:File);
 
 const
+ NoLan    = 0;
  BasicLan = 1;
- CLan     = 2;
- PascalLan= 3;
+ BasicLNLan = 2;
+ CLan     = 3;
+ PascalLan= 4;
 
  ValueFormatDecimal = 0;
  ValueFormatHex = 1;
@@ -39,7 +41,7 @@ type
                       VC              : integer;  //value counter - how many byte/integer written
                       VCL             : longint;  //value counter per line
                       LineCount       : integer; //line counter
-                      FText           : Text;     //text file handle
+                      FTextPtr        : ^Text;     //text file handle
                       LanId           : integer;
   end;
 
@@ -77,18 +79,28 @@ begin
   mc.LanId:=Lan;
 end;
 
-procedure MWInit(var mc : MapCodeRec;filename : string);
+procedure MWInit(var mc : MapCodeRec;var F : Text);
 begin
-  MWSetIndent(mc,10);
-  MWSetIndentOnFirstLine(mc,true);
-  MWSetValuesPerLine(mc,10);
-  MWSetValuesTotal(mc,0);
-  MWSetValueFormat(mc,ValueFormatDecimal);
-  MWSetLan(mc,PascalLan);
+ mc.FTextPtr:=@F;
+ mc.VC:=0;
+ mc.VCL:=0;
+ mc.LineCount:=0;
 
-  mc.VC:=0;
-  mc.VCL:=0;
-  mc.LineCount:=0;
+ MWSetIndent(mc,10);
+ MWSetIndentOnFirstLine(mc,true);
+ MWSetValuesPerLine(mc,10);
+ MWSetValuesTotal(mc,0);
+ MWSetValueFormat(mc,ValueFormatDecimal);
+ MWSetLan(mc,PascalLan);
+end;
+
+procedure MWWriteLineNumber(var mc : MapCodeRec);
+begin
+ if (mc.LanId<>BasicLNLan) then exit;
+ if mc.VCL = 0 then
+ begin
+    Write(mc.FTextPtr^,GetGWNextLineNumber,' ');
+ end;
 end;
 
 procedure MWWriteLineFeed(var mc : MapCodeRec);
@@ -96,7 +108,7 @@ begin
  if (mc.VC=mc.ValuesTotal) then exit;
  if mc.VCL = mc.ValuesPerLine then
  begin
-    WriteLn(mc.FText);
+    WriteLn(mc.FTextPtr^);
     mc.VCL:=0;
     inc(mc.LineCount);
  end;
@@ -104,18 +116,19 @@ end;
 
 procedure MWWriteData(var mc : MapCodeRec);
 begin
-  if mc.LanId<>BasicLan then exit;
-  //to do - write line numbers if gwbasic
-  if mc.VCL = 0 then Write(mc.FText,'DATA ');
+  if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan) then
+  begin
+    if mc.VCL = 0 then Write(mc.FTextPtr^,'DATA ');
+  end;
 end;
 
 procedure MWWriteIndent(var mc : MapCodeRec);
 begin
- if mc.LanId=BasicLan then exit;
+ if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan)  then exit;
  if (mc.VCL = 0) then
  begin
   if (mc.IndentOnFirst = false) and (mc.LineCount=0) then exit;
-  Write(mc.FText,' ':mc.InDentSize);
+  Write(mc.FTextPtr^,' ':mc.InDentSize);
  end;
 end;
 
@@ -131,11 +144,11 @@ begin
  begin
    if (mc.VCL<mc.ValuesPerLine) then
    begin
-     Write(mc.FText,',');
+     Write(mc.FTextPtr^,',');
    end
    else if (mc.VCL=mc.ValuesPerLine)  then  //end of line but not last value
    begin
-     if (mc.LanId<>BasicLan) then Write(mc.FText,','); //if not basic write a comma
+     if (mc.LanId<>BasicLan) and (mc.LanId<>BasicLNLan) then Write(mc.FTextPtr^,','); //if not basic write a comma
    end;
  end;
 end;
@@ -153,6 +166,7 @@ end;
 
 procedure MWWriteByte(var mc : MapCodeRec;value : byte);
 begin
+ MWWriteLineNumber(mc); //line numbers - only if lan - basicLN
  MWWriteData(mc);       //basiclan data statements -  lanid should be basiclan
  MWWriteIndent(mc);    // method will decide if indent needed
 
@@ -161,11 +175,11 @@ begin
 
  if  mc.ValueFormat = ValueFormatDecimal then
  begin
-   Write(mc.FText,value);
+   Write(mc.FTextPtr^,value);
  end
  else if mc.ValueFormat = ValueFormatHex then
  begin
-   Write(mc.FText,ByteToHEx(value,mc.LanId));
+   Write(mc.FTextPtr^,ByteToHEx(value,mc.LanId));
  end;
 
  MWWriteComma(mc);     // method will decide if comma needed
@@ -185,6 +199,7 @@ end;
 
 procedure MWWriteInteger(var mc : MapCodeRec;value : integer);
 begin
+ MWWriteLineNumber(mc); //line numbers - only if lan - basicLN
  MWWriteData(mc);       //basiclan data statements -  lanid should be basiclan
  MWWriteIndent(mc);    // method will decide if indent needed
 
@@ -193,11 +208,11 @@ begin
 
  if  mc.ValueFormat = ValueFormatDecimal then
  begin
-   Write(mc.FText,value);
+   Write(mc.FTextPtr^,value);
  end
  else if mc.ValueFormat = ValueFormatHex then
  begin
-   Write(mc.FText,IntegerToHex(value,mc.LanId));
+   Write(mc.FTextPtr^,IntegerToHex(value,mc.LanId));
  end;
 
  MWWriteComma(mc);     // method will decide if comma needed
@@ -205,172 +220,189 @@ begin
 end;
 
 
+procedure ExportPascalMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+var
+  MapProps   : MapPropsRec;
+  size : longint;
+  mwidth,mheight : integer;
+begin
+ MapCoreBase.GetMapProps(index,MapProps);
+ mwidth:=MapCoreBase.GetExportWidth(index);
+ mheight:=MapCoreBase.GetExportHeight(index);
 
-procedure ExportPascalMap(filename : string);
+ size:=mwidth*mheight+4;
+ MWSetValuesTotal(mc,size);
+ MWSetLan(mc,PascalLan);
+ MWSetValueFormat(mc,ValueFormatDecimal);
+
+ Writeln(mc.FTextPtr^,'(* Pascal Map Code *)');
+ Writeln(mc.FTextPtr^,'(* Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
+         MapProps.tilewidth,' Tile Height=',MapProps.tileheight,' *)');
+ Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of integer = (');
+end;
+
+procedure ExportCMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+var
+  MapProps   : MapPropsRec;
+  size : longint;
+  mwidth,mheight : integer;
+begin
+ MapCoreBase.GetMapProps(index,MapProps);
+ mwidth:=MapCoreBase.GetExportWidth(index);
+ mheight:=MapCoreBase.GetExportHeight(index);
+
+ size:=mwidth*mheight+4;
+ MWSetValuesTotal(mc,size);
+ MWSetLan(mc,CLan);
+ MWSetValueFormat(mc,ValueFormatDecimal);
+
+ Writeln(mc.FTextPtr^,'/* C Map Code */');
+ Writeln(mc.FTextPtr^,'/* Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
+         MapProps.tilewidth,' Tile Height=',MapProps.tileheight,' */');
+ Writeln(mc.FTextPtr^,'  ','int ',Imagename, '[',size,']  = {');
+end;
+
+procedure ExportBasicMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+var
+  MapProps    : MapPropsRec;
+  size : longint;
+  mwidth,mheight : integer;
+begin
+ MapCoreBase.GetMapProps(index,MapProps);
+ mwidth:=MapCoreBase.GetExportWidth(index);
+ mheight:=MapCoreBase.GetExportHeight(index);
+
+
+ size:=mwidth*mheight+4;
+ MWSetValuesTotal(mc,size);
+ MWSetLan(mc,BasicLan);
+ MWSetValueFormat(mc,ValueFormatDecimal);
+
+ Writeln(mc.FTextPtr^,#39,' Basic Map Code');
+ Writeln(mc.FTextPtr^,#39,' Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
+         MapProps.tilewidth,' Tile Height=',MapProps.tileheight);
+ Writeln(mc.FTextPtr^,#39,' ',Imagename);
+end;
+
+procedure ExportBasicLNMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+var
+  MapProps    : MapPropsRec;
+  size : longint;
+  mwidth,mheight : integer;
+begin
+ SetGWStartLineNumber(1000);
+
+ MapCoreBase.GetMapProps(index,MapProps);
+ mwidth:=MapCoreBase.GetExportWidth(index);
+ mheight:=MapCoreBase.GetExportHeight(index);
+
+
+ size:=mwidth*mheight+4;
+ MWSetValuesTotal(mc,size);
+ MWSetLan(mc,BasicLNLan);
+ MWSetValueFormat(mc,ValueFormatDecimal);
+
+ Writeln(mc.FTextPtr^,GetGWNextLineNumber,' ',#39,' Basic Map Code');
+ Writeln(mc.FTextPtr^,GetGWNextLineNumber,' ',#39,' Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
+         MapProps.tilewidth,' Tile Height=',MapProps.tileheight);
+ Writeln(mc.FTextPtr^,GetGWNextLineNumber,' ',#39,' ',Imagename);
+end;
+
+//same code for languages - only header is different
+procedure ExportMapMain(var mc : MapCodeRec; index : integer);
+var
+  MapProps : MapPropsRec;
+  i,j : integer;
+  Tile  : TileRec;
+  mwidth,mheight : integer;
+begin
+ MapCoreBase.GetMapProps(index,MapProps);
+ mwidth:=MapCoreBase.GetExportWidth(index);
+ mheight:=MapCoreBase.GetExportHeight(index);
+
+ MWWriteInteger(mc,mwidth);
+ MWWriteInteger(mc,mheight);
+ MWWriteInteger(mc,MapProps.tilewidth);
+ MWWriteInteger(mc,MapProps.tileheight);
+
+ for j:=0 to mheight -1 do
+ begin
+   for i:=0 to mwidth-1 do
+   begin
+     MapCoreBase.GetMapTile(index,i,j,Tile);
+     {$I-}
+     MWWriteInteger(mc,Tile.ImageIndex);
+     {$I+}
+     if IORESULT<>0 then exit;
+   end;
+ end;
+end;
+
+
+procedure ExportMap(filename : string;Lan : Integer);
 var
   mc : MapCodeRec;
   index : integer;
-  i,j : integer;
-  props : MapPropsRec;
-  Tile  : TileRec;
-  size : longint;
   ImageName : String;
+  F : Text;
 begin
+ MWInit(mc,F);
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
  {$I-}
-  Assign(mc.FText,Filename);
-  Rewrite(mc.FText);
+  Assign(F,Filename);
+  Rewrite(F);
   {$I+}
   if IORESULT<>0 then exit;
 
   index:=MapCoreBase.GetCurrentMap;
-  MapCoreBase.GetMapProps(index,props);
-  size:=props.width*props.height+4;
-
-  MWInit(mc,filename);
-  MWSetValuesTotal(mc,size);
-  MWSetLan(mc,PascalLan);
-
-  MWSetValueFormat(mc,ValueFormatDecimal);
-
-  Writeln(mc.FText,'(* Pascal Map Code *)');
-  Writeln(mc.FText,'(* Size =',size,' Width=',props.width,' Height=',props.height,' Tile Width=',
-          props.tilewidth,' Tile Height=',props.tileheight,' *)');
-
-  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
-  Writeln(mc.FText,'  ',ImageName,' : array[0..',size-1,'] of integer = (');
-
-  MWWriteInteger(mc,props.width);
-  MWWriteInteger(mc,props.height);
-  MWWriteInteger(mc,props.tilewidth);
-  MWWriteInteger(mc,props.tileheight);
-
-  for j:=0 to props.height -1 do
-  begin
-    for i:=0 to props.width-1 do
-    begin
-      MapCoreBase.GetMapTile(index,i,j,Tile);
-      {$I-}
-      MWWriteInteger(mc,Tile.ImageIndex);
-      {$I+}
-      if IORESULT<>0 then exit;
-    end;
-  end;
-  Writeln(mc.FText,');');
+  Case Lan of BasicLan:ExportBasicMapHeader(mc,index,ImageName);
+            BasicLnLan:ExportBasicLNMapHeader(mc,index,ImageName);
+                  CLan:ExportCMapHeader(mc,index,ImageName);
+             PascalLan:ExportPascalMapHeader(mc,index,ImageName);
+  End;
+  ExportMapMain(mc,index);
+  Case Lan of BasicLan,BasicLNLan:Writeln(F);
+                             CLan:Writeln(F,'};');
+                        PascalLan:Writeln(F,');');
+  End;
   {$I-}
-  close(mc.Ftext);
+  close(F);
 {$I+}
 end;
 
-procedure ExportCMap(filename : string);
+
+procedure WriteMapsCodeToBuffer(var F : Text);
 var
   mc : MapCodeRec;
-  index : integer;
-  i,j : integer;
-  props : MapPropsRec;
-  Tile  : TileRec;
-  size : longint;
   ImageName : String;
+  i : integer;
+  MapCount: integer;
+  Lan : integer;
+  ExportProps : MapExportFormatRec;
 begin
- {$I-}
-  Assign(mc.FText,Filename);
-  Rewrite(mc.FText);
-  {$I+}
-  if IORESULT<>0 then exit;
-
-  index:=MapCoreBase.GetCurrentMap;
-  MapCoreBase.GetMapProps(index,props);
-  size:=props.width*props.height+4;
-
-  MWInit(mc,filename);
-  MWSetValuesTotal(mc,size);
-  MWSetLan(mc,CLan);
-
-  MWSetValueFormat(mc,ValueFormatDecimal);
-
-  Writeln(mc.FText,'/* C Map Code */');
-  Writeln(mc.FText,'/* Size =',size,' Width=',props.width,' Height=',props.height,' Tile Width=',
-          props.tilewidth,' Tile Height=',props.tileheight,' */');
-
-  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
-  Writeln(mc.FText,'  ','int ',Imagename, '[',size,']  = {');
-
-  MWWriteInteger(mc,props.width);
-  MWWriteInteger(mc,props.height);
-  MWWriteInteger(mc,props.tilewidth);
-  MWWriteInteger(mc,props.tileheight);
-
-  for j:=0 to props.height -1 do
+  MapCount:=MapCoreBase.GetMapCount;
+  for i:=0 to MapCount-1 do
   begin
-    for i:=0 to props.width-1 do
+    MapCoreBase.GetMapExportProps(i,ExportProps);
+    if (ExportProps.Lan > 0) and (ExportProps.MapFormat > 0) then
     begin
-      MapCoreBase.GetMapTile(index,i,j,Tile);
-      {$I-}
-      MWWriteInteger(mc,Tile.ImageIndex);
-      {$I+}
-      if IORESULT<>0 then exit;
+      MWInit(mc,F);
+      Lan:=ExportProps.Lan;
+      Imagename:=ExportProps.Name;
+
+      Case Lan of BasicLan:ExportBasicMapHeader(mc,i,ImageName);
+                BasicLnLan:ExportBasicLNMapHeader(mc,i,ImageName);
+                      CLan:ExportCMapHeader(mc,i,ImageName);
+                 PascalLan:ExportPascalMapHeader(mc,i,ImageName);
+      End;
+      ExportMapMain(mc,i);
+      Case Lan of BasicLan,BasicLNLan:Writeln(F);
+                      CLan:Writeln(F,'};');
+                 PascalLan:Writeln(F,');');
+      End;
     end;
   end;
-  Writeln(mc.FText,'};');
-  {$I-}
-  close(mc.Ftext);
-{$I+}
 end;
-
-procedure ExportBasicMap(filename : string);
-var
-  mc : MapCodeRec;
-  index : integer;
-  i,j : integer;
-  props : MapPropsRec;
-  Tile  : TileRec;
-  size : longint;
-  ImageName : String;
-begin
- {$I-}
-  Assign(mc.FText,Filename);
-  Rewrite(mc.FText);
-  {$I+}
-  if IORESULT<>0 then exit;
-
-  index:=MapCoreBase.GetCurrentMap;
-  MapCoreBase.GetMapProps(index,props);
-  size:=props.width*props.height+4;
-
-  MWInit(mc,filename);
-  MWSetValuesTotal(mc,size);
-  MWSetLan(mc,BasicLan);
-
-  MWSetValueFormat(mc,ValueFormatDecimal);
-
-  Writeln(mc.FText,#39,' Basic Map Code');
-  Writeln(mc.FText,#39,' Size =',size,' Width=',props.width,' Height=',props.height,' Tile Width=',
-          props.tilewidth,' Tile Height=',props.tileheight);
-
-  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
-  Writeln(mc.FText,#39,' ',Imagename);
-
-  MWWriteInteger(mc,props.width);
-  MWWriteInteger(mc,props.height);
-  MWWriteInteger(mc,props.tilewidth);
-  MWWriteInteger(mc,props.tileheight);
-
-  for j:=0 to props.height -1 do
-  begin
-    for i:=0 to props.width-1 do
-    begin
-      MapCoreBase.GetMapTile(index,i,j,Tile);
-      {$I-}
-      MWWriteInteger(mc,Tile.ImageIndex);
-      {$I+}
-      if IORESULT<>0 then exit;
-    end;
-  end;
-  Writeln(mc.FText);
-  {$I-}
-  close(mc.Ftext);
-{$I+}
-end;
-
 
 Procedure ReadMaps(filename : string);
 var
@@ -440,10 +472,15 @@ Procedure ReadMapF(var F : File;index : integer);
 var
  LineBuf      : array[0..255] of TileRec;
  MapProps     : MapPropsRec;
+ ExportProps  : MapExportFormatRec;
  i,j : integer;
 begin
  Blockread(F,MapProps,sizeof(MapProps));
+ Blockread(F,ExportProps,sizeof(ExportProps));
+
  MapCoreBase.SetMapProps(index,MapProps);
+ MapCoreBase.SetMapExportProps(index,ExportProps);
+
  MapCoreBase.SetMapSize(index,MapProps.width,MapProps.height);
  //read Tiles
  for j:=0 to MapProps.height-1 do
@@ -465,13 +502,16 @@ var
  width,height : integer;
  LineBuf      : array[0..255] of TileRec;
  MapProps     : MapPropsRec;
+ ExportProps  : MapExportFormatRec;
  i,j : integer;
 begin
  width:=MapCoreBase.GetMapWidth(index);
  height:=MapCoreBase.GetMapHeight(index);
 
  MapCoreBase.GetMapProps(index,MapProps);
+ MapCoreBase.GetMapExportProps(index,ExportProps);
  BlockWrite(F,MapProps,sizeof(MapProps));
+ BlockWrite(F,ExportProps,sizeof(ExportProps));
 
  //write Tiles
  for j:=0 to height -1 do
@@ -528,7 +568,7 @@ begin
  index:=MapCoreBase.GetCurrentMap;
  head.MapCount:=1;
  head.SIG:=RMMapSig;   // Raster Master Map
- head.version:=RMMapVersion;   // v1 added in R46
+ head.version:=RMMapVersion;   // v1 added in R46 , v2 added R47
 
  Assign(F,filename);
  {$I-}
@@ -540,6 +580,48 @@ begin
  close(f);
 end;
 
+
+procedure ResExportMaps(var F:File);
+var
+  MapProps  : MapPropsRec;
+  ExportProps  : MapExportFormatRec;
+  i,j,index : integer;
+  Tile  : TileRec;
+  mwidth,mheight : integer;
+  MapCount : integer;
+  Line     : array[0..255] of integer;
+begin
+ MapCount:=MapCoreBase.GetMapCount;
+
+ for index:=0 to MapCount-1 do
+ begin
+   MapCoreBase.GetMapProps(index,MapProps);
+   MapCoreBase.GetMapExportProps(index,ExportProps);
+   if ExportProps.MapFormat > 0 then
+   begin
+     mwidth:=MapCoreBase.GetExportWidth(index);
+     mheight:=MapCoreBase.GetExportHeight(index);
+     Line[0]:=mwidth;
+     Line[1]:=mheight;
+     Line[2]:=MapProps.tilewidth;
+     Line[3]:=MapProps.tileheight;
+     Blockwrite(F,Line,4*sizeof(integer));  //write the header
+
+     for j:=0 to mheight -1 do
+     begin
+       for i:=0 to mwidth-1 do
+       begin
+         MapCoreBase.GetMapTile(index,i,j,Tile);
+         Line[i]:=Tile.ImageIndex;
+       end;
+       {$I-}
+       Blockwrite(F,Line,mwidth*sizeof(integer));
+       {$I+}
+       if IORESULT<>0 then exit;
+     end;
+   end;
+ end;
+end;
 
 end.
 

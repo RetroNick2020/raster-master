@@ -3,10 +3,10 @@
 Unit rres;
 
 Interface
-   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex;
+   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore;
 
 //Function RESInclude(filename:string):word;
-Function RESInclude(filename:string; index : integer; SaveOnlyIndex : Boolean):word;
+Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
 
 Function RESBinary(filename:string):word;
 
@@ -208,6 +208,16 @@ begin
   GetRESPaletteSize:=Size;
 end;
 
+function GetRESMapSize(mwidth,mheight : integer) : longint;
+var
+ size : longint;
+begin
+  size:=(mwidth*mheight*sizeof(integer))+(4*sizeof(integer));
+  GetRESMapSize:=Size;
+end;
+
+
+
 Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
 begin
   //we don't want GWLan  - it has line number already
@@ -217,7 +227,8 @@ begin
    end;
 end;
 
-Function RESInclude(filename:string; index : integer; SaveOnlyIndex : Boolean):word;
+//exportonlyindex means export only the index, none of the other images.palette maps
+Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
 var
  data    : BufferRec;
  EO      : ImageExportFormatRec;
@@ -234,7 +245,7 @@ begin
 {$I-}
  rewrite(data.fText);
 
- if SaveOnlyIndex then
+ if ExportOnlyIndex then
  begin
    StartIndex:=index;
    count:=StartIndex+1;
@@ -324,6 +335,11 @@ begin
    if (EO.LAN=APLan) and (EO.Image = 2) then WriteAmigaPascalBobCodeToBuffer(0,0,height-1,width-1,EO.Name,data,true);  //vsprite
 
  end;
+
+ if ExportOnlyIndex = false then     //export the maps
+ begin
+     WriteMapsCodeToBuffer(data.fText);
+ end;
  close(data.fText);
  {$I+}
  RESInclude:=IOResult;
@@ -351,8 +367,16 @@ var
  Error       : integer;
  MaskName    : string;
  PalName     : string;
+ MapCount    : integer;
+ MapName     : string;
+ MapSize     : longint;
+ MapExport   :  MapExportFormatRec;
 begin
- ExportCount:=ImageThumbBase.GetExportImageCount+ImageThumbBase.GetExportMaskCount+ImageThumbBase.GetExportPaletteCount;
+ ExportCount:=ImageThumbBase.GetExportImageCount;
+ inc(ExportCount,ImageThumbBase.GetExportMaskCount);
+ inc(ExportCount,ImageThumbBase.GetExportPaletteCount);
+ inc(ExportCount,MapCoreBase.GetExportMapCount);
+
  if ExportCount = 0 then exit;
 
  SetThumbActive;   // we are getting pixel data from core object ThumbBase
@@ -461,8 +485,44 @@ begin
        exit;
      end;
    end;
+  end; //for count - finished wwriting all the image/pal header info
 
- end;
+  // dump res header fields for Maps
+  MapCount:=MapCoreBase.GetMapCount;
+  for i:=0 to MapCount-1 do
+  begin
+      MapCoreBase.GetMapExportProps(i,MapExport);
+      if MapExport.MapFormat > 0 then
+      begin
+        width:=MapCoreBase.GetExportWidth(i);
+        height:=MapCoreBase.GetExportHeight(i);
+        MapSize:=GetRESMapSize(width,height);
+
+        fillchar(RR.rid,sizeof(RR.rid),32);
+        MapName:=MapExport.Name;
+        slen:=Length(MapName);
+        if slen > 20 then slen:=20;
+        Move(MapName[1],RR.rid,slen);
+
+        RR.size:=MapSize;
+        RR.offset:=OffsetCount;
+        RR.rt:=MapExport.Lan*200+MapExport.MapFormat; //language id * 200 + Map format to generate resource type
+
+        inc(OffsetCount,MapSize);
+        {$I-}
+        Blockwrite(data.f,RR,sizeof(RR));
+        {$I+}
+        Error:=IORESULT;
+        if Error<>0 then
+        begin
+          RESBinary:=Error;
+          exit;
+        end;
+
+      end;
+  end;
+
+
 
  //convert and dump image
  for i:=0 to count-1 do
@@ -505,6 +565,9 @@ begin
 
    end;
  end;
+
+ ResExportMaps(data.f); //export the maps
+
  {$I-}
  close(data.f);
  {$I+}

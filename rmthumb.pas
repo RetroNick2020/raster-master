@@ -5,7 +5,7 @@ Interface
 
 Const
   RMProjectSig = 'RMP';
-  RMProjectVersion = 3;
+  RMProjectVersion = 4;
 
 type
  ImageThumbRec = Record

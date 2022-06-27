@@ -130,6 +130,7 @@ object MapEdit: TMapEdit
       Align = alClient
       Color = 15790320
       Columns = <>
+      PopupMenu = ExportMapsPropsMenu
       ReadOnly = True
       TabOrder = 0
       OnClick = MapListViewClick
@@ -306,6 +307,13 @@ object MapEdit: TMapEdit
             OnClick = MenuExportBasicMapData
           end
         end
+        object MenuItem13: TMenuItem
+          Caption = 'Basic (Line# )'
+          object MenuItem14: TMenuItem
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportBasicLNMapData
+          end
+        end
         object MenuItem6: TMenuItem
           Caption = 'C'
           object MenuItem11: TMenuItem
@@ -400,5 +408,13 @@ object MapEdit: TMapEdit
   object OpenDialog1: TOpenDialog
     Left = 80
     Top = 528
+  end
+  object ExportMapsPropsMenu: TPopupMenu
+    Left = 80
+    Top = 632
+    object MenuMapProps: TMenuItem
+      Caption = 'Properties'
+      OnClick = MenuMapPropsClick
+    end
   end
 end
