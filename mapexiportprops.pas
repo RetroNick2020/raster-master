@@ -78,7 +78,7 @@ begin
    Combocompiler.Items.Clear;
    ComboCompiler.Items.Add('None');
    ComboCompiler.Items.Add('Basic');
-   ComboCompiler.Items.Add('Basic (Line#');
+   ComboCompiler.Items.Add('Basic (Line#)');
    ComboCompiler.Items.Add('C');
    ComboCompiler.Items.Add('Pascal');
    ComboCompiler.ItemIndex:=0;

@@ -589,7 +589,7 @@ var
   Tile  : TileRec;
   mwidth,mheight : integer;
   MapCount : integer;
-  Line     : array[0..255] of integer;
+  Line     : array[0..255] of smallint;
 begin
  MapCount:=MapCoreBase.GetMapCount;
 
@@ -605,7 +605,7 @@ begin
      Line[1]:=mheight;
      Line[2]:=MapProps.tilewidth;
      Line[3]:=MapProps.tileheight;
-     Blockwrite(F,Line,4*sizeof(integer));  //write the header
+     Blockwrite(F,Line,4*sizeof(smallint));  //write the header
 
      for j:=0 to mheight -1 do
      begin
@@ -615,7 +615,7 @@ begin
          Line[i]:=Tile.ImageIndex;
        end;
        {$I-}
-       Blockwrite(F,Line,mwidth*sizeof(integer));
+       Blockwrite(F,Line,mwidth*sizeof(smallint));
        {$I+}
        if IORESULT<>0 then exit;
      end;
