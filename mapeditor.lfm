@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 150
+  Left = 230
   Height = 832
-  Top = 93
+  Top = 113
   Width = 1402
   Caption = 'Map Edititor'
   ClientHeight = 807

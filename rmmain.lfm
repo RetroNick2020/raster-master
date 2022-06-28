@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 63
+  Left = 60
   Height = 869
-  Top = 230
+  Top = 97
   Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'

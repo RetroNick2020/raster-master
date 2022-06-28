@@ -1,7 +1,7 @@
 object MapExportForm: TMapExportForm
-  Left = 796
+  Left = 1143
   Height = 318
-  Top = 316
+  Top = 268
   Width = 400
   BorderStyle = bsDialog
   Caption = 'Map Export Properties'

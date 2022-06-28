@@ -1,7 +1,7 @@
 object RMAmigaColorDialog: TRMAmigaColorDialog
-  Left = -905
+  Left = 655
   Height = 355
-  Top = 346
+  Top = 373
   Width = 634
   BorderStyle = bsDialog
   Caption = 'Amiga Palette'
