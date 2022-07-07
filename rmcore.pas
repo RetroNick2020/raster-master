@@ -549,6 +549,8 @@ function FourToEightBit(FourBitValue : integer) : integer;
 function TwoToEightBit(TwoBitValue : integer) : integer;
 function EightToTwoBit(EightBitValue : integer) : integer;
 
+function ColorDistance(col1, col2: TColor): Double;
+
 function ColorsInPalette(pm : integer) : integer;
 
 function CanLoadPaletteFile(PaletteMode : integer) : boolean;

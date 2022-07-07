@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 60
+  Left = 108
   Height = 869
-  Top = 97
+  Top = 82
   Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
@@ -423,17 +423,6 @@ object RMMainForm: TRMMainForm
     ClientHeight = 844
     ClientWidth = 222
     TabOrder = 5
-    object ColorBox: TShape
-      Left = 8
-      Height = 64
-      Top = 264
-      Width = 60
-      Brush.Color = clSkyBlue
-      ParentShowHint = False
-      OnMouseDown = ColorBoxMouseDown
-      OnMouseEnter = ColorBoxMouseEnter
-      ShowHint = True
-    end
     object RMPanel: TPanel
       AnchorSideRight.Control = RightPanel
       AnchorSideRight.Side = asrBottom
@@ -464,6 +453,17 @@ object RMMainForm: TRMMainForm
         StretchInEnabled = False
         Transparent = True
       end
+    end
+    object ColorBox: TShape
+      Left = 8
+      Height = 64
+      Top = 264
+      Width = 60
+      Brush.Color = clSkyBlue
+      ParentShowHint = False
+      OnMouseDown = ColorBoxMouseDown
+      OnMouseEnter = ColorBoxMouseEnter
+      ShowHint = True
     end
     object TrackBar1: TTrackBar
       Left = 8
@@ -1171,6 +1171,10 @@ object RMMainForm: TRMMainForm
       object MapEditMenu: TMenuItem
         Caption = 'Map Editor'
         OnClick = MapEditMenuClick
+      end
+      object SpriteImportMenu: TMenuItem
+        Caption = 'Sprite Import '
+        OnClick = SpriteImportMenuClick
       end
     end
     object HelpMenu: TMenuItem

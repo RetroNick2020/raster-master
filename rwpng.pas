@@ -18,25 +18,38 @@ type
   public
     Picture1 : TPicture;
     Palette : TRMPaletteBuf;
+    GlobalPalette : TRMPaletteBuf; //palette created after scanning entire image
+    LocalPalette  : TRMPaletteBuf; //palette created after scanning location area of sprite image
+
     Dictionary: specialize TFPGMap<string, longint>;
 
     constructor Create;
     destructor destroy; override;
     procedure BuildHashes(x,y,x2,y2 : integer);
-    Function FindMostColorIndex : integer;
-    procedure CreatePalette;
+    function BuildTopColors(var  TopPalette : TRMPaletteBuf) : integer;
 
-    function FindPaletteIndex(r,g,b,pm,nColors : integer) : integer;
-    procedure CopyImageToCore(x,y,x2,y2 : integer);
-    procedure CopyPaletteToCore;
+    Function FindMostColorIndex : integer;
+    procedure CreatePaletteUsingBasePalette(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer;
+                             var TopPalette : TRMPaletteBuf;topncolors : integer);
+//    function FindPaletteIndexInCurrentSpritePalette(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nColors : integer) : integer;
+    procedure CopyImageToCore(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer; x,y,x2,y2 : integer);
+    procedure CopyPaletteToCore(NewPalette : TRMPaletteBuf;PaletteMode : integer);
+
     Procedure LoadFromFile(filename : string);
+    procedure CopyPictureToCanvas(canvas : TCanvas;x,y,x2,y2 : integer);
     procedure CopyCoreToImage(x,y,x2,y2 : integer);
     Procedure SaveToFile(filename : string);
+
+    procedure GetPalette(var Pal : TRMPaletteBuf);
+
+    function GetWidth : integer;
+    function GetHeight : integer;
 
   end;
 
 function ReadPNG(x,y,x2,y2 : integer;filename : string; LoadPalette : Boolean) : integer;
 function SavePNG(x,y,x2,y2 : integer;filename : string) : integer;
+function FindPaletteIndex(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nColors : integer) : integer;
 
 
 implementation
@@ -71,7 +84,49 @@ begin
   end;
 end;
 
+function FindExactColorMatch(Var Palette : TRMPaletteBuf;nColors,r,g,b : integer) : integer;
+var
+  i: integer;
+begin
+  FindExactColorMatch:=-1;
+  for i:=0 to nColors-1 do
+  begin
+     if (r=Palette[i].r) AND (g=Palette[i].g) AND (b=Palette[i].b) then
+     begin
+        FindExactColorMatch:=i;
+        exit;
+     end;
+  end;
+end;
 
+function FindNearColorMatch(Var Palette : TRMPaletteBuf;nColors,r,g,b : integer) : integer;
+var
+  c1,c2 : TColor;
+  gap,tgap : double;
+  i,fcm,ec : integer;
+begin
+  ec:=FindExactColorMatch(Palette,nColors,r,g,b);
+  if ec > -1 then
+  begin
+    FindNearColorMatch:=ec;
+    exit;
+  end;
+
+  c1:=RGBToColor(r,g,b);
+  gap:=10000;
+  fcm:=0;
+  for i:=0 to nColors-1 do
+  begin
+     c2:=RGBToColor(Palette[i].r,Palette[i].g,Palette[i].b);
+     tgap:=ColorDistance(c1,c2);
+     if tgap < gap then
+     begin
+        gap:=tgap;
+        fcm:=i;
+     end;
+  end;
+  FindNearColorMatch:=fcm;
+end;
 
 constructor TEasyPNG.Create;
 begin
@@ -113,11 +168,12 @@ begin
  if height > Picture1.height then height:=Picture1.height;
 
  cc:=0;
+ Dictionary.Clear;
  for j:=0 to height-1 do
  begin
    for i:=0 to width-1 do
    begin
-     color:=Picture1.Bitmap.Canvas.Pixels[i,j];
+     color:=Picture1.Bitmap.Canvas.Pixels[x+i,y+j];
      colorstr:=TColorToStr(color);
      if Dictionary.TryGetData(colorstr,v) then
      begin
@@ -133,10 +189,32 @@ begin
  end;
 end;
 
+function TEasyPNG.BuildTopColors(var  TopPalette : TRMPaletteBuf) : integer;
+var
+ ColorCount : integer;
+ MostColors : integer;
+ ColorStr   : string;
+begin
+  ColorCount:=0;
+  while (Dictionary.Count > 0) and (ColorCount < 256)  do
+  begin
+   MostColors:=FindMostColorIndex;
+   if MostColors<>-1 then
+   begin
+     ColorStr:=Dictionary.keys[MostColors];
+     Dictionary.Delete(MostColors);
+     ColorStrToRGB(ColorStr,TopPalette[ColorCount].r,
+                            TopPalette[ColorCount].g,
+                            TopPalette[ColorCount].b);
+     inc(ColorCount);
+   end;
+  end;
 
+ BuildTopColors:=ColorCount;
+end;
 
 // based on rgb and palette mode find best color index
-function TEasyPNG.FindPaletteIndex(r,g,b,pm,nColors : integer) : integer;
+function FindPaletteIndex(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nColors : integer) : integer;
 var
  ColorIndex : integer;
 begin
@@ -148,8 +226,8 @@ begin
    g:=TwoToEightBit(EightToTwoBit(g));
    b:=TwoToEightBit(EightToTwoBit(b));
 
-   ColorIndex:=RMCoreBase.Palette.FindNearColorMatch(r,g,b);
-   if ColorIndex > 15 then ColorIndex:=ColorIndex Mod 15;
+   ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);
+   if ColorIndex > 15 then ColorIndex:=ColorIndex Mod 15; //just picks a color base mod 15 - we need something
  end
  else if (pm=PaletteModeVGA) or (pm=paletteModeVGA256) then
  begin
@@ -163,7 +241,7 @@ begin
    b:=TwoToEightBit(EightToTwoBit(b));
 
 
-    ColorIndex:=RMCoreBase.Palette.FindNearColorMatch(r,g,b);  //near performas findexact also
+    ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
     if (pm=PaletteModeVGA) and (ColorIndex > 15) then ColorIndex:=ColorIndex Mod 15;
  end
  else if isAmigaPaletteMode(pm) then
@@ -177,19 +255,19 @@ begin
    g:=TwoToEightBit(EightToTwoBit(g));
    b:=TwoToEightBit(EightToTwoBit(b));
 
-   ColorIndex:=RMCoreBase.Palette.FindNearColorMatch(r,g,b);  //near performas findexact also
+   ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
    if  (ColorIndex > (nColors-1)) then ColorIndex:=ColorIndex Mod (nColors-1);
  end
  else if (pm=PaletteModeCGA0) or (pm=PaletteModeCGA1) then
  begin
    //cga and mono - good luck trying to match anything here
-   ColorIndex:=RMCoreBase.Palette.FindNearColorMatch(r,g,b);  //near performas findexact also
+   ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
    if  (ColorIndex > 3) then ColorIndex:=ColorIndex Mod 3;
  end
  else if (pm=PaletteModeMono) then
  begin
    //cga and mono - good luck trying to match anything here
-   ColorIndex:=RMCoreBase.Palette.FindNearColorMatch(r,g,b);  //near performas findexact also
+   ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
    if  (ColorIndex > 1) then ColorIndex:=1;
  end;
 
@@ -202,125 +280,105 @@ end;
 // if vga and amiga palette will try to create a compatible palette
 // if EGA, CGA, or Mono mode it will just copy the default palettes for these modes
 
-procedure TEasyPNG.CreatePalette;
+procedure TEasyPNG.CreatePaletteUsingBasePalette(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer;
+                             var TopPalette : TRMPaletteBuf;topncolors : integer);
 var
- i : integer;
-mc : integer;
-colorstr : string;
 nColors : integer;
-pm : integer;
+//pm : integer;
 r,g,b : integer;
 EGAIndex : integer;
 FindInPalette : integer;
 palCounter    : integer;
+ i            : integer;
 begin
  //we only need to make palette for certain palette mode. CGA/Mono do not need palettes changes
  //we find nearest color to their palette - hard to get any decent results without dithering, but this is not an imaging program
- pm:=RMCoreBAse.Palette.GetPaletteMode;
- RMCoreBase.Palette.GetPalette(palette);
+// pm:=RMCoreBAse.Palette.GetPaletteMode;
+// RMCoreBase.Palette.GetPalette(palette);  //get the current sprite palette
+                                          //we will overwrite the current palette starting at index 1
+                                          //we may end up with less colors than the default palette
+                                          //by assigning the default palette first we don't need to com up with the extra colors needed
  palCounter:=1;
- nColors:=RMCoreBase.Palette.GetColorCount;
+// nColors:=RMCoreBase.Palette.GetColorCount;
+ nColors:=ColorCount;
 
- if (pm = PaletteModeVGA256) or (pm = PaletteModeVGA) then
+ if (PaletteMode = PaletteModeVGA256) or (PaletteMode = PaletteModeVGA) then
  begin
-    while Dictionary.Count > 0 do   //we skip index 0
-    begin
-      mc:=FindMostColorIndex;
-      if mc<>-1 then
-      begin
-        colorstr:=Dictionary.keys[mc];
-        ColorStrToRGB(colorstr,r,g,b);
-          (*
+         (*
         r:=SixToEightBit(EightToSixBit(r));
         g:=SixToEightBit(EightToSixBit(g));
         b:=SixToEightBit(EightToSixBit(b));
-            *)
+           *)
 
-        r:=TwoToEightBit(EightToTwoBit(r));
-        g:=TwoToEightBit(EightToTwoBit(g));
-        b:=TwoToEightBit(EightToTwoBit(b));
+    For i:=0 to TopNColors-1 do
+    begin
+        r:=TwoToEightBit(EightToTwoBit(TopPalette[i].r));
+        g:=TwoToEightBit(EightToTwoBit(TopPalette[i].g));
+        b:=TwoToEightBit(EightToTwoBit(TopPalette[i].b));
 
-        FindInPalette:=FindColorInPalette(Palette,palCounter,r,g,b);
+        FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
         if (FindInPalette=-1) then      //not found
         begin
           if palCounter < (nColors-1) then
           begin
-            Palette[palCounter].r:=r;
-            Palette[palCounter].g:=g;
-            Palette[palCounter].b:=b;
+            BasePalette[palCounter].r:=r;
+            BasePalette[palCounter].g:=g;
+            BasePalette[palCounter].b:=b;
             inc(palCounter);
           end;
         end;
-        Dictionary.Delete(mc);
-      end;
     end;
+
  end
- else if (pm = PaletteModeEGA) then
+ else if (PaletteMode = PaletteModeEGA) then
  begin
-    while Dictionary.Count > 0 do   //we skip index 0
-    begin
-      mc:=FindMostColorIndex;
-      if mc<>-1 then
-      begin
-        colorstr:=Dictionary.keys[mc];
-        ColorStrToRGB(colorstr,r,g,b);
+   For i:=0 to TopNColors-1 do
+   begin
+        r:=TwoToEightBit(EightToTwoBit(TopPalette[i].r));
+        g:=TwoToEightBit(EightToTwoBit(TopPalette[i].g));
+        b:=TwoToEightBit(EightToTwoBit(TopPalette[i].b));
 
-        r:=TwoToEightBit(EightToTwoBit(r));
-        g:=TwoToEightBit(EightToTwoBit(g));
-        b:=TwoToEightBit(EightToTwoBit(b));
-
-
-        FindInPalette:=FindColorInPalette(Palette,palCounter,r,g,b);
+        FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
         if (FindInPalette=-1) then   //not found or found in index higher than 15
         begin
           EGAIndex:=RGBToEGAIndex(r,g,b);
           if EGAIndex < 64 then
           begin
-            Palette[palCounter].r:=EGADefault64[EGAIndex].r;
-            Palette[palCounter].g:=EGADefault64[EGAIndex].g;
-            Palette[palCounter].b:=EGADefault64[EGAIndex].b;
+            BasePalette[palCounter].r:=EGADefault64[EGAIndex].r;
+            BasePalette[palCounter].g:=EGADefault64[EGAIndex].g;
+            BasePalette[palCounter].b:=EGADefault64[EGAIndex].b;
             inc(palCounter);
           end;
         end;
-        Dictionary.Delete(mc);
-      end;
     end;
  end
- else if isAmigaPaletteMode(pm) then
+ else if isAmigaPaletteMode(PaletteMode) then
  begin
-    while Dictionary.Count > 0 do
-    begin
-      mc:=FindMostColorIndex;
-      if mc<>-1 then
+   For i:=0 to TopNColors-1 do
+   begin
+      (*
+      r:=FourToEightBit(EightToFourBit(r));
+      g:=FourToEightBit(EightToFourBit(g));
+      b:=FourToEightBit(EightToFourBit(b));
+        *)
+
+      r:=TwoToEightBit(EightToTwoBit(TopPalette[i].r));  // this gives better results than the above
+      g:=TwoToEightBit(EightToTwoBit(TopPalette[i].g));
+      b:=TwoToEightBit(EightToTwoBit(TopPalette[i].b));
+
+      FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
+      if (FindInPalette=-1) then
       begin
-        colorstr:=Dictionary.keys[mc];
-        ColorStrToRGB(colorstr,r,g,b);
-        (*
-        r:=FourToEightBit(EightToFourBit(r));
-        g:=FourToEightBit(EightToFourBit(g));
-        b:=FourToEightBit(EightToFourBit(b));
-          *)
-
-        r:=TwoToEightBit(EightToTwoBit(r));            // this gives better results than the above
-        g:=TwoToEightBit(EightToTwoBit(g));
-        b:=TwoToEightBit(EightToTwoBit(b));
-
-
-        FindInPalette:=FindColorInPalette(Palette,palCounter,r,g,b);
-        if (FindInPalette=-1) then
-        begin
           if palCounter < (nColors-1) then
           begin
-            Palette[palCounter].r:=r;
-            Palette[palCounter].g:=g;
-            Palette[palCounter].b:=b;
+            BasePalette[palCounter].r:=r;
+            BasePalette[palCounter].g:=g;
+            BasePalette[palCounter].b:=b;
             inc(palCounter);
           end;
-        end;
-        Dictionary.Delete(mc);
       end;
     end;
- end;
+  end;
 end;
 
 // will map each pixel to the closest color in the built palette
@@ -328,7 +386,7 @@ end;
 // all other modes will have various levels of success depending on amount of colors and if they can be altered
 // cga and mono will probably fail really bad when loading colors that do not match up exactly
 
-procedure TEasyPNG.CopyImageToCore(x,y,x2,y2 : integer);
+procedure TEasyPNG.CopyImageToCore(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer; x,y,x2,y2 : integer);
 var
  width,height : integer;
  i,j : integer;
@@ -337,8 +395,10 @@ var
  pm : integer;
  nColors : integer;
 begin
- nColors:=RMCoreBase.Palette.GetColorCount;
- pm:=RMCoreBAse.Palette.GetPaletteMode;
+// nColors:=RMCoreBase.Palette.GetColorCount;
+ nColors:=ColorCount;
+// pm:=RMCoreBAse.Palette.GetPaletteMode;
+ pm:=PaletteMode;
  width:=x2-x+1;
  height:=y2-y+1;
  if width > Picture1.width then width:=Picture1.width;
@@ -348,22 +408,35 @@ begin
    for i:=0 to width-1 do
    begin
      color:=Picture1.Bitmap.Canvas.Pixels[i,j];
-     ci:=FindPaletteIndex(Red(Color),Green(Color),Blue(Color),pm,nColors);
+     ci:=FindPaletteIndex(Red(Color),Green(Color),Blue(Color),BasePalette,pm,nColors);
      RMCoreBase.PutPixel(x+i,y+j,ci);
    end;
  end;
 end;
 
 //copy palette to RMCore
-procedure TEasyPNG.CopyPaletteToCore;
-var
- pm : integer;
+procedure TEasyPNG.CopyPaletteToCore(NewPalette : TRMPaletteBuf;PaletteMode : integer);
 begin
- pm:=RMCoreBAse.Palette.GetPaletteMode;
- if (pm = PaletteModeVGA256) or (pm = PaletteModeVGA) or (pm = PaletteModeEGA) or (isAmigaPaletteMode(pm)) then
+// pm:=RMCoreBAse.Palette.GetPaletteMode;
+ if (PaletteMode = PaletteModeVGA256) or (PaletteMode = PaletteModeVGA) or (PaletteMode = PaletteModeEGA) or (isAmigaPaletteMode(PaletteMode)) then
  begin
-   RMCoreBase.Palette.SetPalette(Palette);
+   RMCoreBase.Palette.SetPalette(NewPalette);
  end;
+end;
+
+procedure TEasyPNG.GetPalette(var Pal : TRMPaletteBuf);
+begin
+ pal:=Palette;
+end;
+
+function TEasyPNG.GetWidth : integer;
+begin
+  GetWidth:=Picture1.Width;
+end;
+
+function TEasyPNG.GetHeight : integer;
+begin
+  GetHeight:=Picture1.Height;
 end;
 
 Procedure TEasyPNG.LoadFromFile(filename : string);
@@ -380,16 +453,24 @@ end;
 function ReadPNG(x,y,x2,y2 : integer;filename : string; LoadPalette : Boolean) : integer;
 var
  EasyPNG : TEasyPNG;
+ OurPalette,TopColors : TRMPaletteBuf;
+ PaletteMode,ColorCount,TopColorCount : Integer;
 begin
  EasyPNG:=TEasyPNG.Create;
  EasyPNG.LoadFromFile(filename);
+
+ RMCoreBase.Palette.GetPalette(OurPalette);
+ PaletteMode:=RMCoreBase.Palette.GetPaletteMode;
+ ColorCount:=RMCoreBase.Palette.GetColorCount;
+
  if LoadPalette then
  begin
    EasyPNG.BuildHashes(x,y,x2,y2);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
-   EasyPNG.CreatePalette;
-   EasyPNG.CopyPaletteToCore;
+   TopColorCount:=EasyPNG.BuildTopColors(TopColors);
+   EasyPNG.CreatePaletteUsingBasePalette(OurPalette,PaletteMode,ColorCount,TopColors,TopColorCount);
+   EasyPNG.CopyPaletteToCore(OurPalette,PaletteMode);
  end;
- EasyPNG.CopyImageToCore(x,y,x2,y2);
+ EasyPNG.CopyImageToCore(OurPalette,PaletteMode,ColorCount,x,y,x2,y2);
  EasyPNG.Free;
  ReadPNG:=0;
 end;
@@ -461,6 +542,10 @@ begin
  end;
 end;
 
+procedure TEasyPNG.CopyPictureToCanvas(canvas : TCanvas;x,y,x2,y2 : integer);
+begin
+
+end;
 
 Procedure TEasyPNG.SaveToFile(filename : string);
 begin
@@ -478,6 +563,8 @@ begin
  EasyPNG.Free;
  SavePNG:=0;
 end;
+
+
 
 
 end.

@@ -9,7 +9,7 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor, rmcolorvga, rmabout,
   rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif, rmexportprops, rmxgfcore,
-  rwpng, mapcore, MapEditor, rwmap, mapexiportprops, gwbasic
+  rwpng, mapcore, MapEditor, rwmap, mapexiportprops, gwbasic, SpriteImport
      { you can add units after this };
 
 {$R *.res}
@@ -27,6 +27,7 @@ begin
   Application.CreateForm(TImageExportForm, ImageExportForm);
   Application.CreateForm(TMapEdit, MapEdit);
   Application.CreateForm(TMapExportForm, MapExportForm);
+  Application.CreateForm(TSpriteImportForm, SpriteImportForm);
   Application.Run;
 end.
 

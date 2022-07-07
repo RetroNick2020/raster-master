@@ -1,0 +1,155 @@
+object SpriteImportForm: TSpriteImportForm
+  Left = 217
+  Height = 737
+  Top = 176
+  Width = 1438
+  Caption = 'Sprite Import'
+  ClientHeight = 737
+  ClientWidth = 1438
+  DesignTimePPI = 120
+  OnCreate = FormCreate
+  LCLVersion = '2.0.10.0'
+  object TopPanel: TPanel
+    AnchorSideBottom.Control = ScrollBox1
+    Left = 0
+    Height = 184
+    Top = 0
+    Width = 1357
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ClientHeight = 184
+    ClientWidth = 1357
+    TabOrder = 0
+    object SpriteImage: TImage
+      Left = 24
+      Height = 128
+      Top = 16
+      Width = 128
+    end
+    object OpenSpriteSheet: TButton
+      Left = 184
+      Height = 31
+      Top = 16
+      Width = 208
+      Caption = 'Open Sprite Sheet'
+      OnClick = OpenSpriteSheetClick
+      TabOrder = 0
+    end
+    object SpriteSizeLabel: TLabel
+      Left = 424
+      Height = 20
+      Top = 24
+      Width = 70
+      Caption = 'Sprite Size'
+      ParentColor = False
+    end
+    object SpriteSizeComboBox: TComboBox
+      Left = 520
+      Height = 28
+      Top = 19
+      Width = 125
+      ItemHeight = 20
+      ItemIndex = 2
+      Items.Strings = (
+        '8 X 8'
+        '16 X 16'
+        '32 X 32'
+        '64 X 64'
+        '128 X 128'
+        '256 X 256'
+      )
+      OnChange = SpriteSizeComboBoxChange
+      Style = csDropDownList
+      TabOrder = 1
+      Text = '32 X 32'
+    end
+    object NewPaletteComboBox: TComboBox
+      Left = 688
+      Height = 28
+      Top = 19
+      Width = 296
+      ItemHeight = 20
+      ItemIndex = 1
+      Items.Strings = (
+        'New Palette(From Clip Area)'
+        'New Palette(From Entire Image)'
+        'Use Current Sprite Palette'
+      )
+      OnChange = NewPaletteComboBoxChange
+      Style = csDropDownList
+      TabOrder = 2
+      Text = 'New Palette(From Entire Image)'
+    end
+    object PaletteComboBox: TComboBox
+      Left = 1016
+      Height = 28
+      Top = 16
+      Width = 168
+      ItemHeight = 20
+      ItemIndex = 1
+      Items.Strings = (
+        'EGA Palette'
+        'VGA Palette'
+        'VGA Palette 256'
+      )
+      OnChange = PaletteComboBoxChange
+      Style = csDropDownList
+      TabOrder = 3
+      Text = 'VGA Palette'
+    end
+    object InfoLabel: TLabel
+      Left = 1280
+      Height = 20
+      Top = 144
+      Width = 62
+      Anchors = [akRight, akBottom]
+      Caption = 'InfoLabel'
+      ParentColor = False
+    end
+  end
+  object ScrollBox1: TScrollBox
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 553
+    Top = 184
+    Width = 1438
+    HorzScrollBar.Page = 792
+    HorzScrollBar.Tracking = True
+    VertScrollBar.Page = 504
+    VertScrollBar.Tracking = True
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ClientHeight = 549
+    ClientWidth = 1434
+    TabOrder = 1
+    object SourceImage: TImage
+      AnchorSideLeft.Control = ScrollBox1
+      AnchorSideTop.Control = ScrollBox1
+      Left = 0
+      Height = 504
+      Top = 0
+      Width = 792
+      OnClick = SourceImageClick
+      OnMouseMove = SourceImageMouseMove
+    end
+  end
+  object ZoomTrackBar: TTrackBar
+    Left = 1376
+    Height = 125
+    Top = 24
+    Width = 31
+    Min = 1
+    OnChange = ZoomTrackBarChange
+    Orientation = trVertical
+    Position = 5
+    TickMarks = tmTopLeft
+    Anchors = [akTop, akRight]
+    TabOrder = 2
+  end
+  object OpenDialog1: TOpenDialog
+    Left = 1368
+    Top = 232
+  end
+end

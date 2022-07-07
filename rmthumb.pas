@@ -77,6 +77,11 @@ type
              procedure InsertImage(index : integer);
              procedure DeleteImage(index : integer);
              procedure AddImage;  //adds image to end of list
+
+             procedure AddImportImage(width,height : integer);
+             procedure CreateNewImageProperties(index,width,height : integer);
+
+
              function GetCount : integer;
              procedure SetCount(count : integer);
 
@@ -89,10 +94,17 @@ type
              function GetPixelTColor(index,x,y : integer) : TColor;
              //emulate BGI functions needed elseware
              function GetPixel(index,x,y : integer) : integer;
+             procedure PutPixel(index,x,y,color : integer);
+
              function GetMaxColor(index : integer) : integer;
 
              procedure GetColor(index : integer;colorIndex : integer; var cr : TRMColorRec);
              procedure SetColor(index : integer;colorIndex : integer; var cr : TRMColorRec);
+
+             procedure SetPalette(index : integer; P : TRMPaletteBuf);
+             procedure SetPaletteMode(index, mode : integer);
+             procedure SetColorCount(index,colorcount : integer);
+
 
              function GetWidth(index : integer) : integer;
              function GetHeight(index : integer) : integer;
@@ -237,6 +249,79 @@ begin
  end;
 end;
 
+procedure TImageThumb.SetPalette(index : integer;P : TRMPaletteBuf);
+begin
+  ImageMain[index].Props.Palette:=P;
+end;
+
+procedure TImageThumb.SetPaletteMode(index,mode : integer);
+begin
+  ImageMain[index].Props.PaletteMode:=mode;
+end;
+
+procedure TImageThumb.SetColorCount(index,colorcount : integer);
+begin
+  ImageMain[index].Props.ColorCount:=colorcount;
+end;
+
+procedure TImageThumb.CreateNewImageProperties(index,width,height : integer);
+var
+
+ i,j : integer;
+begin
+//  width:=RMCoreBase.GetWidth;
+//  height:=RMCoreBase.GetHeight;
+  SetImageSize(index,width,height);
+  for j:=0 to height-1 do
+  begin
+     for i:=0 to width-1 do
+     begin
+        ImageMain[index].Image.Pixel[i,j]:=0;
+        ImageMain[index].UndoImage.Pixel[i,j]:=0;
+     end;
+  end;
+  ImageMain[index].Props.Palette:=VGADefault256;
+  ImageMain[index].Props.PaletteMode:=PaletteModeVGA;
+  ImageMain[index].Props.ColorCount:= 16;
+  ImageMain[index].Props.CurColor:=1;  //blue in ega/vga mode
+  ImageMain[index].Props.DrawTool:=DrawShapePencil;
+
+  ImageMain[index].Props.ClipArea.status:=0;
+  ImageMain[index].Props.ClipArea.sized:=0;
+//Todo - create a default setting for GridArea  ImageMain[index].Props.GridArea.;
+  RMDrawTools.GetGridArea(ImageMain[index].Props.GridArea);
+  ImageMain[index].Props.ScrollPos.HorizPos:=0;
+  ImageMain[index].Props.ScrollPos.VirtPos:=0;
+
+end;
+
+
+procedure TImageThumb.AddImportImage(width,height : integer);  //similar to AddImage but a little different
+begin                                  //used for adding images from Sprite Import Utility
+                                       //instead of copying current image properties - we create the properties
+ if ImageCount >= MaxThumbImages then exit;
+ inc(ImageCount);
+// CopyCoreToIndexImage(ImageCount-1);
+   CreateNewImageProperties(ImageCount-1,width,height);
+
+ if ImageCount = 1 then
+ begin
+   fillchar(ImageMain[0].Props.ExportFormat,sizeof(ImageMain[0].Props.ExportFormat),0);
+   ImageMain[0].Props.ExportFormat.Name:='Image1';
+   CreateGUID(ImageMain[0].Props.UID);
+ end
+ else if ImageCount > 1 then
+ begin
+    //copy the Export props from the first thum image
+    ImageMain[ImageCount-1].Props.ExportFormat:=ImageMain[0].Props.ExportFormat;
+    ImageMain[ImageCount-1].Props.ExportFormat.Name:='Image'+IntToStr(ImageCount);
+    CreateGUID(ImageMain[ImageCount-1].Props.UID);
+
+//    ImageMain[ImageCount-1].Props.ExportFormat.Width:=0;
+//    ImageMain[ImageCount-1].Props.ExportFormat.Height:=0;
+ end;
+end;
+
 function TImageThumb.GetCount : integer;
 begin
  GetCount:=ImageCount;
@@ -361,6 +446,11 @@ end;
 function TImageThumb.GetPixel(index,x,y : integer) : integer;
 begin
   GetPixel:=ImageMain[index].Image.Pixel[x,y];
+end;
+
+procedure TImageThumb.PutPixel(index,x,y,color : integer);
+begin
+  ImageMain[index].Image.Pixel[x,y]:=color;
 end;
 
 function TImageThumb.GetMaxColor(index : integer) : integer;

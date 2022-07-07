@@ -9,7 +9,7 @@ uses
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
   rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor;
+  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport;
 
 
 type
@@ -58,6 +58,7 @@ type
     ExportInclude: TMenuItem;
     LeftPanel: TPanel;
     MapEditMenu: TMenuItem;
+    SpriteImportMenu: TMenuItem;
     MiddleTopPanel: TPanel;
     RightPanel: TPanel;
     RMLogo: TImage;
@@ -276,6 +277,7 @@ type
     procedure ListView1Click(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
+    procedure SpriteImportMenuClick(Sender: TObject);
     procedure ThumbPopUpMenuExportClick(Sender: TObject);
     procedure ThumbPopUpMenusaveClick(Sender: TObject);
     procedure PalettePasteClick(Sender: TObject);
@@ -503,7 +505,7 @@ ClearSelectedToolsMenu;
 PaletteVGA.Checked:=true; // set vga palette
 HideSelectAreaTools;
 UpdateToolSelectionIcons;
-ToolPencilMenu.Checked:=true; //enable pencil tool in menu
+ToolPencilMenu.Checked:=true; //enable pencil tool in SpriteImportMenu
 InitThumbView;
 end;
 
@@ -3206,6 +3208,34 @@ begin
  MapEdit.UpdateTileView;
  if  MapEdit.ShowModal = mrOK then
  begin
+ end;
+end;
+
+procedure TRMMainForm.SpriteImportMenuClick(Sender: TObject);
+var
+  OldCount,NewCount : integer;
+  NewItems          : integer;
+  i : integer;
+begin
+ OldCount:=ImageThumbBase.GetCount;
+ if  SpriteImportForm.ShowModal = mrOK then
+ begin
+ end;
+ NewCount:=ImageThumbBase.GetCount;
+ if OldCount = NewCount then exit; //nothing changed - no imports
+ NewItems:=NewCount-OldCount;
+
+ ImageThumbBase.UpdateAllThumbImages(imagelist1);
+ for i:=1 to NewItems do
+ begin
+   ListView1.Items.Add;
+ end;
+
+ //we could update just the new items but this is fast enough
+ For i:=0 to ListView1.Items.Count-1 do
+ begin
+   Listview1.Items[i].Caption:='Image '+IntToStr(i+1);
+   Listview1.Items[i].ImageIndex:=i;
  end;
 end;
 
