@@ -3218,9 +3218,7 @@ var
   i : integer;
 begin
  OldCount:=ImageThumbBase.GetCount;
- if  SpriteImportForm.ShowModal = mrOK then
- begin
- end;
+ SpriteImportForm.ShowModal;
  NewCount:=ImageThumbBase.GetCount;
  if OldCount = NewCount then exit; //nothing changed - no imports
  NewItems:=NewCount-OldCount;

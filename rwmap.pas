@@ -290,7 +290,7 @@ var
   size : longint;
   mwidth,mheight : integer;
 begin
- SetGWStartLineNumber(1000);
+ //SetGWStartLineNumber(1000);
 
  MapCoreBase.GetMapProps(index,MapProps);
  mwidth:=MapCoreBase.GetExportWidth(index);
@@ -346,6 +346,7 @@ var
   ImageName : String;
   F : Text;
 begin
+ SetGWStartLineNumber(1000);
  MWInit(mc,F);
  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
  {$I-}
@@ -478,10 +479,10 @@ begin
  Blockread(F,MapProps,sizeof(MapProps));
  Blockread(F,ExportProps,sizeof(ExportProps));
 
+ MapCoreBase.SetMapSize(index,MapProps.width,MapProps.height);
  MapCoreBase.SetMapProps(index,MapProps);
  MapCoreBase.SetMapExportProps(index,ExportProps);
 
- MapCoreBase.SetMapSize(index,MapProps.width,MapProps.height);
  //read Tiles
  for j:=0 to MapProps.height-1 do
  begin

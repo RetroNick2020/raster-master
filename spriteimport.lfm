@@ -1,7 +1,7 @@
 object SpriteImportForm: TSpriteImportForm
-  Left = 217
+  Left = 222
   Height = 737
-  Top = 176
+  Top = 133
   Width = 1438
   Caption = 'Sprite Import'
   ClientHeight = 737
