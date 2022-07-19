@@ -9,7 +9,7 @@ uses
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
   rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport;
+  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib,rmxgfcore;
 
 
 type
@@ -58,6 +58,13 @@ type
     ExportInclude: TMenuItem;
     LeftPanel: TPanel;
     MapEditMenu: TMenuItem;
+    gcc: TMenuItem;
+    gccRayLibIndex0: TMenuItem;
+    gccRayLibFuchsia: TMenuItem;
+    fpRayLibFuchsia: TMenuItem;
+    fpRayLibIndex0: TMenuItem;
+    fpRayLibRGB: TMenuItem;
+    gccRayLibRGB: TMenuItem;
     SpriteImportMenu: TMenuItem;
     MiddleTopPanel: TPanel;
     RightPanel: TPanel;
@@ -277,6 +284,7 @@ type
     procedure ListView1Click(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
+    procedure RayLibExportClick(Sender: TObject);
     procedure SpriteImportMenuClick(Sender: TObject);
     procedure ThumbPopUpMenuExportClick(Sender: TObject);
     procedure ThumbPopUpMenusaveClick(Sender: TObject);
@@ -3076,18 +3084,12 @@ begin
  end;
 end;
 
-
-
-
-
-
 Procedure TRMMainForm.CopyScrollPositionToCore;
 var
  sp : TScrollPosRec;
 begin
   //mod RM4 sp.HorizPos:=HorizScroll.Position;
   //mod RM4 sp.VirtPos:=VirtScroll.Position;
-
 
   sp.HorizPos:=ScrollBox1.HorzScrollBar.Position;
   sp.VirtPos:=ScrollBox1.VertScrollBar.Position;
@@ -3209,6 +3211,60 @@ begin
  if  MapEdit.ShowModal = mrOK then
  begin
  end;
+end;
+
+procedure TRMMainForm.RayLibExportClick(Sender: TObject);
+var
+  x,y,x2,y2 : integer;
+  format,Lan : integer;
+  error : integer;
+begin
+  GetOpenSaveRegion(x,y,x2,y2);
+  Case (Sender As TMenuItem).Name of 'fpRayLibFuchsia' :begin
+                                                           ExportDialog.Filter := 'FreePascal Array|*.pas';
+                                                           Lan:=FPLan;
+                                                           format:=1;
+                                                         end;
+                                      'fpRayLibIndex0' :begin
+                                                           ExportDialog.Filter := 'FreePascal Array|*.pas';
+                                                           Lan:=FPLan;
+                                                           format:=2;
+                                                         end;
+                                         'fpRayLibRGB' :begin
+                                                            ExportDialog.Filter := 'FreePascal Array|*.pas';
+                                                            Lan:=FPLan;
+                                                            format:=3;
+                                                         end;
+                                        'gccRayLibFuchsia':begin
+                                                             ExportDialog.Filter := 'gcc Array|*.c';
+                                                             Lan:=gccLan;
+                                                             format:=1;
+                                                           end;
+                                         'gccRayLibIndex0':begin
+                                                             ExportDialog.Filter := 'gcc Array|*.c';
+                                                             Lan:=gccLan;
+                                                             format:=2;
+                                                           end;
+                                         'gccRayLibRGB' : begin
+                                                             ExportDialog.Filter := 'gcc Array|*.c';
+                                                             Lan:=gccLan;
+                                                             format:=3;
+                                                           end;
+   end;
+   if ExportDialog.Execute then
+   begin
+      SetCoreActive;
+      WriteRayLibCodeToFile(ExportDialog.FileName,x,y,x2,y2,Lan,format);
+      {$I+}
+      error:=IORESULT;
+      {$I-}
+
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
 end;
 
 procedure TRMMainForm.SpriteImportMenuClick(Sender: TObject);

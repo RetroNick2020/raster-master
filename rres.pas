@@ -3,7 +3,8 @@
 Unit rres;
 
 Interface
-   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore;
+   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,
+     wraylib;
 
 //Function RESInclude(filename:string):word;
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
@@ -333,6 +334,19 @@ begin
 
    if (EO.LAN=APLan) and (EO.Image = 1) then WriteAmigaPascalBobCodeToBuffer(0,0,height-1,width-1,EO.Name,data,false);        // bob
    if (EO.LAN=APLan) and (EO.Image = 2) then WriteAmigaPascalBobCodeToBuffer(0,0,height-1,width-1,EO.Name,data,true);  //vsprite
+
+   //FP RayLib formats
+   if (EO.Lan = FPLan) and (EO.Image > 1) and (EO.Image < 5) then
+   begin
+     // -1 in image format is to make it like gcc format numbers
+     WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image-1,EO.Name);
+   end;
+
+   //gcc RayLib Format
+   if (EO.Lan = gccLan) and (EO.Image > 0) and (EO.Image < 4) then
+   begin
+      WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image,EO.Name);
+   end;
 
  end;
 

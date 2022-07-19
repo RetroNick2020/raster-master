@@ -4,7 +4,7 @@ unit rwmap;
 
 interface
 uses
-  Classes, SysUtils, LazFileUtils, mapcore,gwbasic;
+  Classes, SysUtils, LazFileUtils,gwbasic, mapcore,rmcodegen;
 
 Procedure ReadMap(filename : string);
 Procedure ReadMaps(filename : string);
@@ -20,207 +20,14 @@ procedure ExportMap(filename : string; Lan : integer);
 procedure WriteMapsCodeToBuffer(var F : Text);
 procedure ResExportMaps(var F:File);
 
-const
- NoLan    = 0;
- BasicLan = 1;
- BasicLNLan = 2;
- CLan     = 3;
- PascalLan= 4;
-
- ValueFormatDecimal = 0;
- ValueFormatHex = 1;
-
-type
-  MapCodeRec = Record
-                     InDentSize      : integer; //how many characters to pad
-                      IndentOnFirst   : Boolean; //indent on first line
-                      ValuesPerLine   : integer; //# values seperated by comma
-                      ValuesTotal     : longint; //#number of values we are going to write
-                      ValueFormat     : integer;
-
-                      VC              : integer;  //value counter - how many byte/integer written
-                      VCL             : longint;  //value counter per line
-                      LineCount       : integer; //line counter
-                      FTextPtr        : ^Text;     //text file handle
-                      LanId           : integer;
-  end;
 
 
 
 implementation
 
-procedure MWSetIndent(var mc : MapCodeRec;isize : integer);
-begin
-  mc.InDentSize:=isize;
-end;
-
-procedure MWSetIndentOnFirstLine(var mc : MapCodeRec;indent : boolean);
-begin
-  mc.IndentOnFirst:=indent;
-end;
-
-procedure MWSetValuesPerLine(var mc : MapCodeRec;amount : integer);
-begin
-  mc.ValuesPerLine:=amount;
-end;
-
-procedure MWSetValuesTotal(var mc : MapCodeRec;amount : longint);
-begin
-  mc.ValuesTotal:=amount;
-end;
-
-procedure MWSetValueFormat(var mc : MapCodeRec;format : integer);
-begin
-  mc.ValueFormat:=format;
-end;
-
-procedure MWSetLan(var mc : MapCodeRec;Lan : integer);
-begin
-  mc.LanId:=Lan;
-end;
-
-procedure MWInit(var mc : MapCodeRec;var F : Text);
-begin
- mc.FTextPtr:=@F;
- mc.VC:=0;
- mc.VCL:=0;
- mc.LineCount:=0;
-
- MWSetIndent(mc,10);
- MWSetIndentOnFirstLine(mc,true);
- MWSetValuesPerLine(mc,10);
- MWSetValuesTotal(mc,0);
- MWSetValueFormat(mc,ValueFormatDecimal);
- MWSetLan(mc,PascalLan);
-end;
-
-procedure MWWriteLineNumber(var mc : MapCodeRec);
-begin
- if (mc.LanId<>BasicLNLan) then exit;
- if mc.VCL = 0 then
- begin
-    Write(mc.FTextPtr^,GetGWNextLineNumber,' ');
- end;
-end;
-
-procedure MWWriteLineFeed(var mc : MapCodeRec);
-begin
- if (mc.VC=mc.ValuesTotal) then exit;
- if mc.VCL = mc.ValuesPerLine then
- begin
-    WriteLn(mc.FTextPtr^);
-    mc.VCL:=0;
-    inc(mc.LineCount);
- end;
-end;
-
-procedure MWWriteData(var mc : MapCodeRec);
-begin
-  if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan) then
-  begin
-    if mc.VCL = 0 then Write(mc.FTextPtr^,'DATA ');
-  end;
-end;
-
-procedure MWWriteIndent(var mc : MapCodeRec);
-begin
- if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan)  then exit;
- if (mc.VCL = 0) then
- begin
-  if (mc.IndentOnFirst = false) and (mc.LineCount=0) then exit;
-  Write(mc.FTextPtr^,' ':mc.InDentSize);
- end;
-end;
-
-procedure MWWriteComma(var mc : MapCodeRec);
-begin
- if (mc.VC=mc.ValuesTotal) then
- begin
-//   write(FTEXT,'END');
-   exit;
- end;
-
- if mc.VCL > 0 then
- begin
-   if (mc.VCL<mc.ValuesPerLine) then
-   begin
-     Write(mc.FTextPtr^,',');
-   end
-   else if (mc.VCL=mc.ValuesPerLine)  then  //end of line but not last value
-   begin
-     if (mc.LanId<>BasicLan) and (mc.LanId<>BasicLNLan) then Write(mc.FTextPtr^,','); //if not basic write a comma
-   end;
- end;
-end;
-
-function ByteToHex(num : byte;LanId : integer) : string;
-var
- HStr : String;
-begin
- HStr:=hexstr(num,2);
- if LanId=BasicLan then HStr:='&H'+HStr;
- if LanId=PascalLan then HStr:='$'+HStr;
- if LanId=CLan then HStr:='0x'+HStr;
- ByteToHex:=HStr;
-end;
-
-procedure MWWriteByte(var mc : MapCodeRec;value : byte);
-begin
- MWWriteLineNumber(mc); //line numbers - only if lan - basicLN
- MWWriteData(mc);       //basiclan data statements -  lanid should be basiclan
- MWWriteIndent(mc);    // method will decide if indent needed
-
- inc(mc.VC);
- inc(mc.VCL);
-
- if  mc.ValueFormat = ValueFormatDecimal then
- begin
-   Write(mc.FTextPtr^,value);
- end
- else if mc.ValueFormat = ValueFormatHex then
- begin
-   Write(mc.FTextPtr^,ByteToHEx(value,mc.LanId));
- end;
-
- MWWriteComma(mc);     // method will decide if comma needed
- MWWriteLineFeed(mc);  // method will decide if line feed needed
-end;
-
-function IntegerToHex(num,LanId : integer) : string;
-var
- HStr : String;
-begin
- HStr:=hexstr(num,4);
- if LanId=BasicLan then HStr:='&H'+HStr;
- if LanId=PascalLan then HStr:='$'+HStr;
- if LanId=CLan then HStr:='0x'+HStr;
- IntegerToHex:=HStr;
-end;
-
-procedure MWWriteInteger(var mc : MapCodeRec;value : integer);
-begin
- MWWriteLineNumber(mc); //line numbers - only if lan - basicLN
- MWWriteData(mc);       //basiclan data statements -  lanid should be basiclan
- MWWriteIndent(mc);    // method will decide if indent needed
-
- inc(mc.VC);
- inc(mc.VCL);
-
- if  mc.ValueFormat = ValueFormatDecimal then
- begin
-   Write(mc.FTextPtr^,value);
- end
- else if mc.ValueFormat = ValueFormatHex then
- begin
-   Write(mc.FTextPtr^,IntegerToHex(value,mc.LanId));
- end;
-
- MWWriteComma(mc);     // method will decide if comma needed
- MWWriteLineFeed(mc);  // method will decide if line feed needed
-end;
 
 
-procedure ExportPascalMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+procedure ExportPascalMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
 var
   MapProps   : MapPropsRec;
   size : longint;
@@ -241,7 +48,7 @@ begin
  Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of integer = (');
 end;
 
-procedure ExportCMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+procedure ExportCMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
 var
   MapProps   : MapPropsRec;
   size : longint;
@@ -262,7 +69,7 @@ begin
  Writeln(mc.FTextPtr^,'  ','int ',Imagename, '[',size,']  = {');
 end;
 
-procedure ExportBasicMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+procedure ExportBasicMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
 var
   MapProps    : MapPropsRec;
   size : longint;
@@ -284,7 +91,7 @@ begin
  Writeln(mc.FTextPtr^,#39,' ',Imagename);
 end;
 
-procedure ExportBasicLNMapHeader(var mc : MapCodeRec; index : integer;ImageName : string);
+procedure ExportBasicLNMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
 var
   MapProps    : MapPropsRec;
   size : longint;
@@ -309,7 +116,7 @@ begin
 end;
 
 //same code for languages - only header is different
-procedure ExportMapMain(var mc : MapCodeRec; index : integer);
+procedure ExportMapMain(var mc : CodeGenRec; index : integer);
 var
   MapProps : MapPropsRec;
   i,j : integer;
@@ -341,7 +148,7 @@ end;
 
 procedure ExportMap(filename : string;Lan : Integer);
 var
-  mc : MapCodeRec;
+  mc : CodeGenRec;
   index : integer;
   ImageName : String;
   F : Text;
@@ -374,7 +181,7 @@ end;
 
 procedure WriteMapsCodeToBuffer(var F : Text);
 var
-  mc : MapCodeRec;
+  mc : CodeGenRec;
   ImageName : String;
   i : integer;
   MapCount: integer;

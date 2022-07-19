@@ -5,7 +5,7 @@ unit mapexiportprops;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,mapcore,rwmap;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,mapcore,rwmap,rmcodegen;
 
 type
 

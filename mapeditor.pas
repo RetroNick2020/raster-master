@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,LMessages,Types,
-  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops;
+  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen;
 
 type
  (* TScrollBox = class(Forms.TScrollBox)

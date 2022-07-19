@@ -5,8 +5,8 @@ object RMMainForm: TRMMainForm
   Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 844
-  ClientWidth = 1729
+  ClientHeight = 0
+  ClientWidth = 0
   DefaultMonitor = dmDesktop
   DesignTimePPI = 120
   Menu = MainMenu1
@@ -642,6 +642,33 @@ object RMMainForm: TRMMainForm
           object FPMouseShapeArray: TMenuItem
             Caption = 'Mouse Shape Array'
             OnClick = MouseSaveClick
+          end
+          object fpRayLibFuchsia: TMenuItem
+            Caption = 'RayLib (RGBA - Fuchsia) Array'
+            OnClick = RayLibExportClick
+          end
+          object fpRayLibIndex0: TMenuItem
+            Caption = 'RayLib (RGBA - Index 0) Array'
+            OnClick = RayLibExportClick
+          end
+          object fpRayLibRGB: TMenuItem
+            Caption = 'RayLib (RGB) Array'
+            OnClick = RayLibExportClick
+          end
+        end
+        object gcc: TMenuItem
+          Caption = 'gcc'
+          object gccRayLibFuchsia: TMenuItem
+            Caption = 'RayLib (RGBA - Fuchsia) Array'
+            OnClick = RayLibExportClick
+          end
+          object gccRayLibIndex0: TMenuItem
+            Caption = 'RayLib (RGBA - Index 0) Array'
+            OnClick = RayLibExportClick
+          end
+          object gccRayLibRGB: TMenuItem
+            Caption = 'RayLib (RGB) Array'
+            OnClick = RayLibExportClick
           end
         end
         object GWBASIC: TMenuItem

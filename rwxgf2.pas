@@ -20,6 +20,7 @@ Const
    APLan   = 10;
    ACLan   = 11;
    QPLan   = 12; //Quick Pascal
+   gccLan  = 13;
 
    NoExportFormat = 0;
    TPPutImageExportFormat = 1;
@@ -28,6 +29,10 @@ Const
    ABVSpriteExportFormat = 3;
    XLibLBMExportFormat = 4;
    XLibPBMExportFormat = 5;
+   RayLibRGBAFuchsiaExportFormat = 1;
+   RayLibRGBAIndex0ExportFormat = 2;
+   RayLibRGBExportFormat = 3;
+
 
 
 

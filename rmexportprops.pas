@@ -138,8 +138,13 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('putimage');
+                           ComboImage.Items.Add('RayLib RGBA Fuchsia');
+                           ComboImage.Items.Add('RayLib RGBA Index 0');
+                           ComboImage.Items.Add('RayLib RGB');
+
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
+
                            ComboImage.ItemIndex:=EO.Image;
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
@@ -197,7 +202,18 @@ begin
                             ComboMask.ItemIndex:=EO.Mask;
                             ComboPalette.ItemIndex:=EO.Palette;
                           end;
-
+                   gccLan:begin
+                             ComboImage.Items.Clear;
+                             ComboMask.Items.Clear;
+                             ComboImage.Items.Add('None');
+                             ComboImage.Items.Add('RayLib RGBA Fuchsia');
+                             ComboImage.Items.Add('RayLib RGBA Index 0');
+                             ComboImage.Items.Add('RayLib RGB');
+                             ComboMask.Items.Add('None');
+                             ComboImage.ItemIndex:=EO.Image;
+                             ComboMask.ItemIndex:=EO.Mask;
+                             ComboPalette.ItemIndex:=EO.Palette;
+                           end;
   end;
 end;
 
@@ -254,7 +270,7 @@ begin
    ComboCompiler.Items.Add('Amiga Pascal');
    ComboCompiler.Items.Add('Amiga C');
    ComboCompiler.Items.Add('Quick Pascal');
-
+   ComboCompiler.Items.Add('gcc');
    ComboCompiler.ItemIndex:=0;
 
    ComboImage.Items.Clear;

@@ -133,7 +133,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="23">
+    <Units Count="25">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -255,6 +255,14 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="SpriteImport"/>
       </Unit22>
+      <Unit23>
+        <Filename Value="wraylib.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="rmcodegen.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit24>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

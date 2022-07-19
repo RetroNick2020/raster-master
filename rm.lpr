@@ -9,7 +9,8 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor, rmcolorvga, rmabout,
   rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif, rmexportprops, rmxgfcore,
-  rwpng, mapcore, MapEditor, rwmap, mapexiportprops, gwbasic, SpriteImport
+  rwpng, mapcore, MapEditor, rwmap, mapexiportprops, gwbasic, SpriteImport,
+  wraylib, rmcodegen
      { you can add units after this };
 
 {$R *.res}
