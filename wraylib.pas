@@ -20,12 +20,20 @@ begin
  RayLibImageSize:=Size;
 end;
 
-function GetRayLibFormatName(format : integer) : string;
+function GetRayLibFormatDesc(format : integer) : string;
 begin
- GetRayLibFormatName:='';
- Case format of 1:GetRayLibFormatName:='RGBA - Fuchsia';
-                2:GetRayLibFormatName:='RGBA - Index 0';
-                3:GetRayLibFormatName:='RGB';
+ GetRayLibFormatDesc:='';
+ Case format of 1:GetRayLibFormatDesc:='RGBA - Fuchsia';
+                2:GetRayLibFormatDesc:='RGBA - Index 0';
+                3:GetRayLibFormatDesc:='RGB';
+ end;
+end;
+
+function GetRayLibFormatValue(format : integer) : string;
+begin
+ GetRayLibFormatValue:='';
+ Case format of 1,2:GetRayLibFormatValue:='7';  // PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+                3:GetRayLibFormatValue:='4';    // PIXELFORMAT_UNCOMPRESSED_R8G8B8
  end;
 end;
 
@@ -40,8 +48,13 @@ begin
  MWSetValueFormat(mc,ValueFormatHex);
 
  Writeln(mc.FTextPtr^,'(* RayLib Pascal Image Code Created By Raster Master *)');
- Writeln(mc.FTextPtr^,'(* Size = ',size,' Format = ',GetRayLibFormatName(format),' Width=',width,' Height=',height,' *)');
+ Writeln(mc.FTextPtr^,'(* Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height,' *)');
+ Writeln(mc.FTextPtr^,'  ',ImageName,'_Size = ',size,';');
+ Writeln(mc.FTextPtr^,'  ',ImageName,'_Format = ', GetRayLibFormatValue(format),';');
+ Writeln(mc.FTextPtr^,'  ',ImageName,'_Width = ',width,';');
+ Writeln(mc.FTextPtr^,'  ',ImageName,'_Height = ',height,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of byte = (');
+
 end;
 
 
@@ -57,8 +70,12 @@ begin
  MWSetValueFormat(mc,ValueFormatHex);
 
  Writeln(mc.FTextPtr^,'/* RayLib C Image Code Created By Raster Master */');
- Writeln(mc.FTextPtr^,'/* Size = ',size,' Format = ',GetRayLibFormatName(format),' Width=',width,' Height=',height,' */');
- Writeln(mc.FTextPtr^,'  ','static unsigned char ',Imagename, '[',size,']  = {');
+ Writeln(mc.FTextPtr^,'/* Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height,' */');
+ Writeln(mc.FTextPtr^,'#define ',ImageName,'_Size   ',size);
+ Writeln(mc.FTextPtr^,'#define ',ImageName,'_Format ',GetRayLibFormatValue(format));
+ Writeln(mc.FTextPtr^,'#define ',ImageName,'_Width  ',width);
+ Writeln(mc.FTextPtr^,'#define ',ImageName,'_Height ',height);
+ Writeln(mc.FTextPtr^,'static unsigned char ',Imagename, '[',size,']  = {');
 end;
 
 
