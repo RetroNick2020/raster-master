@@ -5,17 +5,21 @@
 // see video for example usage
 
 Program fpresdemo2;
-  uses  ptccrt,ptcgraph;
+  uses
+  {$ifdef Linux}
+  cthreads,
+  {$endif}
+  ptccrt,ptcgraph;
 
 type
  reshead = packed Record
             sig : array[1..3] of char;
             ver : byte;
-            resitemcount: integer;
+            resitemcount: smallint;
            end;
 
  resrec = packed Record
-             rt     : integer;
+             rt     : smallint;
              rid    : array[1..20] of char;
              offset : longint;
              size   : longint;
@@ -51,7 +55,7 @@ end;
 
 procedure DelSpaces(var s : string);
 begin
- while s[length(s)]=#32 do
+ while (length(s)>0) and (s[length(s)]=#32) do
  begin
    delete(s,length(s),1);
  end;
@@ -130,7 +134,7 @@ begin
 end;
 
 var
- gd,gm : integer;
+ gd,gm : smallint;
 
 begin
  gd:=VGA;

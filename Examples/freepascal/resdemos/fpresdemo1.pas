@@ -2,7 +2,11 @@
 // see video for example usage
 
 Program fpresdemo1;
-    uses  ptccrt,ptcgraph;
+  uses
+  {$ifdef Linux}
+  cthreads,
+  {$endif}
+  ptccrt,ptcgraph;
 
 const
 {$I shapes.inc}
@@ -26,7 +30,7 @@ begin
 end;
 
 var
- gd,gm : integer;
+ gd,gm : smallint;
 
 begin
  gd:=VGA;
