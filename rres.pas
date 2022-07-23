@@ -184,7 +184,16 @@ begin
                            end;
                          end;
              QCLan,QPLan,QBLan,GWLan,PBLan:size:=GetXImageSize(width,height,ncolors);
-             FPLan:size:=GetXImageSizeFP(width,height);
+             FPLan:begin
+                      if ImageType = 1 then
+                      begin
+                         size:=GetXImageSizeFP(width,height);
+                      end
+                      else if (ImageType >1)  and (ImageType < 5) then
+                      begin
+                         size:=ResRayLibImageSize(width,height,ImageType-1);
+                      end;
+                   end;
              FBLan:size:=GetXImageSizeFB(width,height);
 
              ABLan:begin
@@ -194,6 +203,7 @@ begin
                      end;
                    end;
              APLan,ACLan:size:=GetAmigaBitMapSize(width,height,ncolors);
+             gccLan:size:=ResRayLibImageSize(width,height,ImageType);
  end;
 
 GetRESImageSize:=size;
@@ -478,7 +488,7 @@ begin
      Blockwrite(data.f,RR,sizeof(RR));
 
      //if there is a mask image we write the info also - size is the same, offset and name will be different
-     if EO.Mask = 1 then
+     if (EO.Image=1) and (EO.Mask = 1) then    //only create mask for putimage
      begin
        MaskName:=EO.Name+'Mask';
        slen:=Length(MaskName);
@@ -562,10 +572,11 @@ begin
                               FPLan: begin
                                        if (EO.Image = 1) then WriteXGFToBufferFP(0,0,width-1,height-1,0,data);
                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFP(0,0,width-1,height-1,1,data);
+                                       if (EO.Image > 1) and (EO.Image<5) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image-1);
                                      end;
                               FBLan: begin
-                                        if (EO.Image = 1) then WriteXGFToBufferFB(0,0,width-1,height-1,0,data);
-                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFB(0,0,width-1,height-1,1,data);
+                                       if (EO.Image = 1) then WriteXGFToBufferFB(0,0,width-1,height-1,0,data);
+                                       if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFB(0,0,width-1,height-1,1,data);
                                      end;
                               ABLan:begin
                                       if (EO.Image = 1) then WriteAmigaBasicXGFBuffer(0,0,width-1,height-1,data);
@@ -573,8 +584,11 @@ begin
                                       if (EO.Image = 3) then WriteAmigaBasicBobBuffer(0,0,width-1,height-1,data,true);  //sprite
                                     end;
                         ACLan,APLan:begin
-                                       if (EO.Image = 1) then WriteAmigaBobBuffer(0,0,width-1,height-1,data,false);
-                                       if (EO.Image = 2) then WriteAmigaBobBuffer(0,0,width-1,height-1,data,true);
+                                      if (EO.Image = 1) then WriteAmigaBobBuffer(0,0,width-1,height-1,data,false);
+                                      if (EO.Image = 2) then WriteAmigaBobBuffer(0,0,width-1,height-1,data,true);
+                                    end;
+                             gccLan:begin
+                                      ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image);
                                     end;
 
    end;

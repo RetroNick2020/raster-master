@@ -42,9 +42,14 @@ begin
  MWSetLan(mc,PascalLan);
  MWSetValueFormat(mc,ValueFormatDecimal);
 
- Writeln(mc.FTextPtr^,'(* Pascal Map Code *)');
+ Writeln(mc.FTextPtr^,'(* Pascal Map Code Created By Raster Master *)');
  Writeln(mc.FTextPtr^,'(* Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
          MapProps.tilewidth,' Tile Height=',MapProps.tileheight,' *)');
+ Writeln(mc.FTextPtr^,'  ',Imagename,'_Size   =  ',size,';');
+ Writeln(mc.FTextPtr^,'  ',Imagename,'_Width  = ',mwidth,';');
+ Writeln(mc.FTextPtr^,'  ',Imagename,'_Height =',mheight,';');
+ Writeln(mc.FTextPtr^,'  ',Imagename,'_Tile_Width  = ',MapProps.tilewidth,';');
+ Writeln(mc.FTextPtr^,'  ',Imagename,'_Tile_Height = ',MapProps.tileheight,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of integer = (');
 end;
 
@@ -63,9 +68,15 @@ begin
  MWSetLan(mc,CLan);
  MWSetValueFormat(mc,ValueFormatDecimal);
 
- Writeln(mc.FTextPtr^,'/* C Map Code */');
+ Writeln(mc.FTextPtr^,'/* C Map Code Created By Raster Master */');
  Writeln(mc.FTextPtr^,'/* Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
          MapProps.tilewidth,' Tile Height=',MapProps.tileheight,' */');
+ Writeln(mc.FTextPtr^,'#define ',Imagename,'_Size   ',size);
+ Writeln(mc.FTextPtr^,'#define ',Imagename,'_Width  ',mwidth);
+ Writeln(mc.FTextPtr^,'#define ',Imagename,'_Height ',mheight);
+ Writeln(mc.FTextPtr^,'#define ',Imagename,'_Tile_Width  ',MapProps.tilewidth);
+ Writeln(mc.FTextPtr^,'#define ',Imagename,'_Tile_Height ',MapProps.tileheight);
+
  Writeln(mc.FTextPtr^,'  ','int ',Imagename, '[',size,']  = {');
 end;
 
@@ -85,7 +96,7 @@ begin
  MWSetLan(mc,BasicLan);
  MWSetValueFormat(mc,ValueFormatDecimal);
 
- Writeln(mc.FTextPtr^,#39,' Basic Map Code');
+ Writeln(mc.FTextPtr^,#39,' Basic Map Code Created By Raster Master');
  Writeln(mc.FTextPtr^,#39,' Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
          MapProps.tilewidth,' Tile Height=',MapProps.tileheight);
  Writeln(mc.FTextPtr^,#39,' ',Imagename);
@@ -109,7 +120,7 @@ begin
  MWSetLan(mc,BasicLNLan);
  MWSetValueFormat(mc,ValueFormatDecimal);
 
- Writeln(mc.FTextPtr^,GetGWNextLineNumber,' ',#39,' Basic Map Code');
+ Writeln(mc.FTextPtr^,GetGWNextLineNumber,' ',#39,' Basic Map Code Created By Raster Master');
  Writeln(mc.FTextPtr^,GetGWNextLineNumber,' ',#39,' Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
          MapProps.tilewidth,' Tile Height=',MapProps.tileheight);
  Writeln(mc.FTextPtr^,GetGWNextLineNumber,' ',#39,' ',Imagename);
