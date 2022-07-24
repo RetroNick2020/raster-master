@@ -38,7 +38,8 @@ begin
  InitWindow(screenWidth, screenHeight, 'RGBA Array Demo for raylib');
  SetTargetFPS(120);
 
- LoadRGBImageFromMemory(MyImage,Image21,32,32,4);
+ //change Image1 to Image2 or Image3 to see the different images
+ LoadRGBImageFromMemory(MyImage,Image1,Image1_Width,Image1_Height,Image1_Format);
  MyTexture:=LoadTextureFromImage(MyImage);
 
  X:=300;
