@@ -54,7 +54,7 @@ begin
  end;
 end;
 
-procedure ExportPascalHeader(var mc : codegenrec;width,height,format : integer;ImageName : string);
+procedure ExportPascalHeader(var mc : codegenrec;width,height,imageId,format : integer;ImageName : string);
 var
   size : longint;
 begin
@@ -70,12 +70,13 @@ begin
  Writeln(mc.FTextPtr^,'  ',ImageName,'_Format = ', GetRayLibFormatValue(format),';');
  Writeln(mc.FTextPtr^,'  ',ImageName,'_Width = ',width,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,'_Height = ',height,';');
+ Writeln(mc.FTextPtr^,'  ',ImageName,'_Id = ',imageId,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of byte = (');
 
 end;
 
 
-procedure ExportCHeader(var mc : codegenrec;width,height,format : integer;ImageName : string);
+procedure ExportCHeader(var mc : codegenrec;width,height,imageId,format : integer;ImageName : string);
 var
   size : longint;
 begin
@@ -91,6 +92,7 @@ begin
  Writeln(mc.FTextPtr^,'#define ',ImageName,'_Format ',GetRayLibFormatValue(format));
  Writeln(mc.FTextPtr^,'#define ',ImageName,'_Width  ',width);
  Writeln(mc.FTextPtr^,'#define ',ImageName,'_Height ',height);
+ Writeln(mc.FTextPtr^,'#define ',ImageName,'_Id ',imageId);
  Writeln(mc.FTextPtr^,'static unsigned char ',Imagename, '[',size,']  = {');
 end;
 
@@ -99,7 +101,7 @@ end;
 procedure WriteRayLibCodeToBuffer(var F : Text; x,y,x2,y2, Lan,format : integer;ImageName : string);
 var
   mc : codegenrec;
-  width,height : integer;
+  width,height,imageId : integer;
   i,j : integer;
   PixelIndex : integer;
   cr    : TRMColorRec;
@@ -108,9 +110,9 @@ begin
   MWInit(mc,F);
   width:=x2-x+1;
   height:=y2-y+1;
-
-  case Lan of FPLan:ExportPascalHeader(mc,width,height,format,ImageName);
-               gccLan:ExportCHeader(mc,width,height,format,ImageName);
+  imageId:=GetThumbIndex;
+  case Lan of FPLan:ExportPascalHeader(mc,width,height,imageId,format,ImageName);
+               gccLan:ExportCHeader(mc,width,height,imageId,format,ImageName);
   end;
 
   for j:=y to y2 do
@@ -163,6 +165,7 @@ var
  F : Text;
  ImageName : string;
 begin
+  SetCoreActive;
  {$I-}
   Assign(F,Filename);
   Rewrite(F);

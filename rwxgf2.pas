@@ -76,9 +76,7 @@ type
  BitPlaneWriterProc = Procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
 
  Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
-
  Function WriteXgfWithMaskToCode(x,y,x2,y2,LanType : word;filename:string):word;
-
  Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
 
 
@@ -88,19 +86,18 @@ type
 
  function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 
- Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;//to text file
- Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+// Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;//to text file
+// Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+// Function WriteFPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
 
- Function WriteFPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+// Function WriteQBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+// Function WriteGWCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
 
- Function WriteQBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
- Function WriteGWCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+// Function WriteQCCodeToBuffer(var data :BufferRec;x,y,x2,y2,ImageId : word; imagename:string):word;    //to text file
+// Function WriteQPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
 
- Function WriteQCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
- Function WriteQPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
-
- Function WriteFBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
- Function WritePBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+ //Function WriteFBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
+ //Function WritePBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
 
  function GetXImageSize(width,height,ncolors : integer) : longint;
  function GetXImageSizeFB(width,height : integer) : longint;
@@ -696,7 +693,7 @@ begin
    buffer.Error:=IORESULT;
 end;
 
-Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -713,8 +710,14 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'(* Turbo Pascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
- writeln(data.ftext,'(* PutImage Bitmap *)');
+ writeln(data.ftext,'(* Turbo Pascal PutImage Bitmap Code Created By Raster Master *)');
+ writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+ writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+ writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+ writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+ writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
+
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,TPLan);
  writeln(data.ftext);
@@ -724,7 +727,7 @@ begin
 end;
 
 
-Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageId : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -741,8 +744,14 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'/* Turbo C, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
- writeln(data.ftext,'/* putimage Bitmap */');
+ writeln(data.ftext,'/* Turbo C putimage Bitmap Code Created By Raster Master */');
+ writeln(data.ftext,'/* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+ writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+ writeln(data.ftext,' #define ',Imagename,'_Width ',width);
+ writeln(data.ftext,' #define ',Imagename,'_Height ',height);
+ writeln(data.ftext,' #define ',Imagename,'_Colors ',nColors);
+ Writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
+
  writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,TCLan);
  writeln(data.ftext);
@@ -751,7 +760,7 @@ begin
  WriteTCCodeToBuffer:=IORESULT;
 end;
 
-Function WriteQCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function WriteQCCodeToBuffer(var data :BufferRec;x,y,x2,y2,ImageId : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -768,8 +777,14 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'/* QuickC, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
- writeln(data.ftext,'/* putimage Bitmap */');
+ writeln(data.ftext,'/* QuickC putimage Bitmap Code Created By Raster Master */');
+ writeln(data.ftext,'/* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+ writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+ writeln(data.ftext,' #define ',Imagename,'_Width ',width);
+ writeln(data.ftext,' #define ',Imagename,'_Height ',height);
+ writeln(data.ftext,' #define ',Imagename,'_Colors ',nColors);
+ Writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
+
  writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,QCLan);
  writeln(data.ftext);
@@ -779,7 +794,7 @@ begin
 end;
 
 
-Function WriteQPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function WriteQPCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -796,8 +811,14 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'(* QuickPascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
- writeln(data.ftext,'(* PutImage Bitmap *)');
+ writeln(data.ftext,'(* QuickPascal PutImage Bitmap Code Created By Raster Master *)');
+ writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+ writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+ writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+ writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+ writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
+
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,QPLan);
  writeln(data.ftext);
@@ -806,13 +827,12 @@ begin
  WriteQPCodeToBuffer:=IORESULT;
 end;
 
-Function WriteFPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function WriteFPCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageId : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
   nColors   : integer;
   BWriter   : BitPlaneWriterProc;
-
 begin
  BWriter:=@BitplaneWriterPascalCode;
 
@@ -824,8 +844,14 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'(* FreePascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
- writeln(data.ftext,'(* PutImage Bitmap *)');
+ writeln(data.ftext,'(* FreePascal PutImage Bitmap Code Created By Raster Master *)');
+ writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+ writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+ writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+ writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+ writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
+
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
  WriteXGFBufferFP(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
@@ -853,8 +879,8 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,#39,' QuickBASIC\QB64, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,#39,' Put Bitmap ');
+ writeln(data.ftext,#39,' QuickBASIC\QB64 Put Bitmap Code Created By Raster Master');
+ writeln(data.ftext,#39,' Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
  writeln(data.ftext,#39,' ',Imagename);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,QBLan);
  writeln(data.ftext);
@@ -881,8 +907,8 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,#39,' Turbo\Power Basic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,#39,' Put Bitmap ');
+ writeln(data.ftext,#39,' Turbo\Power Basic Put Bitmap Code Created By Raster Master');
+ writeln(data.ftext,#39,' Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
  writeln(data.ftext,#39,' ',Imagename);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,PBLan);
  writeln(data.ftext);
@@ -908,8 +934,8 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,GetGWNextLineNumber,' ',#39,' GWBASIC\PCBASIC, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,GetGWNextLineNumber,' ',#39,' Put Bitmap ');
+ writeln(data.ftext,GetGWNextLineNumber,' ',#39,' GWBASIC\PCBASIC Put Bitmap Code Created By Raster Master');
+ writeln(data.ftext,GetGWNextLineNumber,' ',#39,' Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
  writeln(data.ftext,GetGWNextLineNumber,' ',#39,' ',Imagename);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,GWLan);
  writeln(data.ftext);
@@ -939,8 +965,8 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,#39,' Freebasic, Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
- writeln(data.ftext,#39,' Put Bitmap ');
+ writeln(data.ftext,#39,' Freebasic Put Bitmap Code Created By Raster Master');
+ writeln(data.ftext,#39,' Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
  writeln(data.ftext,#39,' ',Imagename);
  WriteXGFBufferFB(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
@@ -989,27 +1015,28 @@ Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
 var
  data      : BufferRec;
  imagename : String;
+ imageid   : word;
 begin
  SetCoreActive;   // we are getting data from core object RMCoreBase
  SetGWStartLineNumber(1000);
  assign(data.fText,filename);
 {$I-}
  rewrite(data.fText);
-
+ imageid:=GetThumbIndex;
  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
- case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imagename);
-                 TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imagename);
+ case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                 TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
                  QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
                  GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
 
-                 QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imagename);
-                 QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imagename);
+                 QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                 QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
                  PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
 
                  FBLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename);
-                 FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imagename);
+                 FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
  end;
  close(data.fText);
@@ -1057,21 +1084,23 @@ end;
 function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 var
  omask : integer;
+ imageid : word;
 begin
+  imageId:=GetThumbIndex;
   omask:=GetMaskMode;
   SetMaskMode(Mask);
-  case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imagename);
-                  TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imagename);
+  case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                  TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
                   QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
                   GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
 
-                  QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imagename);
-                  QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imagename);
+                  QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                  QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imageId,imagename);
 
                   PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
 
-                  FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imagename);
+                  FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
                   FBLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename)
   end;
   SetMaskMode(omask);

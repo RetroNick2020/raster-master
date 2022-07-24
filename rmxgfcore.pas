@@ -163,6 +163,7 @@ begin
  SetGetPixelProc(@CoreGetPixel);
  SetGetColorProc(@CoreGetColor);
  SetSetColorProc(@CoreSetColor);
+ SetThumbIndex(ImageThumbBase.GetCurrent);
 end;
 
 Procedure SetThumbActive;

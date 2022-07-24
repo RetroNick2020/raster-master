@@ -8,8 +8,8 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
-  rmabout,rwpal,rwraw,rwpcx,rwbmp,rwxgf,wcon,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib,rmxgfcore;
+  rmabout,rwpal,rwraw,rwpcx,rwbmp,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
+  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib;
 
 
 type
@@ -2074,8 +2074,8 @@ end;
 procedure TRMMainForm.QBasicDataClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
  begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2087,16 +2087,16 @@ var
 
    if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
+    //  sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+    //  pm:=RMCoreBase.Palette.GetPaletteMode;
+    //  case pm of         PaletteModeMono:sourcemode:=Source2;
+    //       PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+    //         PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+    //  end;
 
-      Case (Sender As TMenuItem).Name of 'QBPutData' : error:=WriteDat(x,y,x2,y2,sourcemode,QBLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'QBPutData' : error:=WriteXGFToCode(x,y,x2,y2,QBLan,ExportDialog.FileName);
                                  'QBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QBLan,ExportDialog.FileName);
-                                         'QBPutFile' : error:=WriteXGF(x,y,x2,y2,QBLan,ExportDialog.FileName);
+                                         'QBPutFile' : error:=WriteXGFToFile(x,y,x2,y2,QBLan,ExportDialog.FileName);
       End;
 
       if (error<>0) then
@@ -2110,8 +2110,8 @@ var
 procedure TRMMainForm.TurboPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
 begin
   GetOpenSaveRegion(x,y,x2,y2);
@@ -2128,16 +2128,16 @@ begin
   End;
   if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
+//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+//      pm:=RMCoreBase.Palette.GetPaletteMode;
+//      case pm of         PaletteModeMono:sourcemode:=Source2;
+//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+//     end;
 
-      Case (Sender As TMenuItem).Name of 'TPPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,TPLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'TPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
                                  'TPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
-                                         'TPPutImageFile' : error:=WriteXGF(x,y,x2,y2,TPLan,ExportDialog.FileName);
+                                         'TPPutImageFile' : error:=WriteXGFToFile(x,y,x2,y2,TPLan,ExportDialog.FileName);
                                           'TPDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
                                           'TPDOSLBMFile'  : error:=WriteLBMToFile(x,y,x2,y2,ExportDialog.FileName);
                                           'TPDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
@@ -2156,8 +2156,8 @@ end;
 procedure TRMMainForm.FreePascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2168,16 +2168,16 @@ begin
 
    if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
+//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+//      pm:=RMCoreBase.Palette.GetPaletteMode;
+//      case pm of         PaletteModeMono:sourcemode:=Source2;
+//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+//      end;
 
-      Case (Sender As TMenuItem).Name of 'FPPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,FPLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'FPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,FPLan,ExportDialog.FileName);
                                  'FPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FPLan,ExportDialog.FileName);
-                                         'FPPutImageFile'  : error:=WriteXGF(x,y,x2,y2,FPLan,ExportDialog.FileName);
+                                         'FPPutImageFile'  : error:=WriteXGFToFile(x,y,x2,y2,FPLan,ExportDialog.FileName);
       End;
 
       if error<>0 then
@@ -2191,8 +2191,8 @@ end;
 procedure TRMMainForm.GWBASICClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2203,15 +2203,15 @@ begin
 
    if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
-      Case (Sender As TMenuItem).Name of 'GWPutData' : error:=WriteDat(x,y,x2,y2,SourceMode,GWLan,ExportDialog.FileName);
+//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+//      pm:=RMCoreBase.Palette.GetPaletteMode;
+//      case pm of         PaletteModeMono:sourcemode:=Source2;
+//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+//      end;
+      Case (Sender As TMenuItem).Name of 'GWPutData' : error:=WriteXGFToCode(x,y,x2,y2,GWLan,ExportDialog.FileName);
                                  'GWPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,GWLan,ExportDialog.FileName);
-                                         'GWPutFile' : error:=WriteXGF(x,y,x2,y2,GWLan,ExportDialog.FileName);
+                                         'GWPutFile' : error:=WriteXGFToFile(x,y,x2,y2,GWLan,ExportDialog.FileName);
       End;
 
       if error<>0 then
@@ -2550,8 +2550,8 @@ procedure TRMMainForm.PaletteExportTurboCClick(Sender: TObject);
 procedure TRMMainForm.QuickCClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2562,16 +2562,16 @@ begin
 
    if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
+//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+//      pm:=RMCoreBase.Palette.GetPaletteMode;
+//      case pm of         PaletteModeMono:sourcemode:=Source2;
+//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+//      end;
 
-      Case (Sender As TMenuItem).Name of 'QCPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,QCLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'QCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,QCLan,ExportDialog.FileName);
                                  'QCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QCLan,ExportDialog.FileName);
-                                         'QCPutImageFile'  : error:=WriteXGF(x,y,x2,y2,QCLan,ExportDialog.FileName);
+                                         'QCPutImageFile'  : error:=WriteXGFToFile(x,y,x2,y2,QCLan,ExportDialog.FileName);
       End;
 
       if error<>0 then
@@ -2585,8 +2585,8 @@ end;
 procedure TRMMainForm.TurboCClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2601,16 +2601,16 @@ begin
    End;
    if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
+//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+//      pm:=RMCoreBase.Palette.GetPaletteMode;
+//      case pm of         PaletteModeMono:sourcemode:=Source2;
+//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+//      end;
 
-      Case (Sender As TMenuItem).Name of 'TCPutImageArray' : error:=WriteDat(x,y,x2,y2,SourceMode,TCLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'TCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                  'TCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
-                                          'TCPutImageFile' : error:=WriteXGF(x,y,x2,y2,TCLan,ExportDialog.FileName);
+                                          'TCPutImageFile' : error:=WriteXGFToFile(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                           'TCDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                           'TCDOSLBMFile' : error:=WriteLBMToFile(x,y,x2,y2,ExportDialog.FileName);
                                           'TCDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
@@ -2629,8 +2629,8 @@ end;
 procedure TRMMainForm.TurboPowerBasicClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2642,16 +2642,16 @@ begin
 
    if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
+//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+//      pm:=RMCoreBase.Palette.GetPaletteMode;
+//      case pm of         PaletteModeMono:sourcemode:=Source2;
+//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+//      end;
 
-      Case (Sender As TMenuItem).Name of 'TBPutData' : error:=WriteDat(x,y,x2,y2,SourceMode,PBLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'TBPutData' : error:=WriteXGFToCode(x,y,x2,y2,PBLan,ExportDialog.FileName);
                                  'TBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,PBLan,ExportDialog.FileName);
-                                      'TBPutFile' : WriteXGF(x,y,x2,y2,PBLan,ExportDialog.FileName);
+                                      'TBPutFile' : WriteXGFToFile(x,y,x2,y2,PBLan,ExportDialog.FileName);
       End;
 
       if error<>0 then
@@ -2665,8 +2665,8 @@ end;
 procedure TRMMainForm.FreeBASICClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- pm : integer;
- sourcemode : word;
+// pm : integer;
+// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2677,16 +2677,16 @@ begin
 
    if ExportDialog.Execute then
    begin
-      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      case pm of         PaletteModeMono:sourcemode:=Source2;
-           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-      end;
+//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
+//      pm:=RMCoreBase.Palette.GetPaletteMode;
+//      case pm of         PaletteModeMono:sourcemode:=Source2;
+//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
+//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
+//      end;
 
-      Case (Sender As TMenuItem).Name of 'FBPutData' : error:=WriteDat(x,y,x2,y2,SourceMode,FBLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'FBPutData' : error:=WriteXGFToCode(x,y,x2,y2,FBLan,ExportDialog.FileName);
                                  'FBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FBLan,ExportDialog.FileName);
-                                         'FBPutFile' : error:=WriteXGF(x,y,x2,y2,FBLan,ExportDialog.FileName);
+                                         'FBPutFile' : error:=WriteXGFToFile(x,y,x2,y2,FBLan,ExportDialog.FileName);
       End;
 
       if error<>0 then
@@ -3253,7 +3253,7 @@ begin
    end;
    if ExportDialog.Execute then
    begin
-      SetCoreActive;
+      //SetCoreActive;
       WriteRayLibCodeToFile(ExportDialog.FileName,x,y,x2,y2,Lan,format);
       {$I+}
       error:=IORESULT;
