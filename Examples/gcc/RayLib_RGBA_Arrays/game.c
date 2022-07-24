@@ -16,13 +16,15 @@ int main(void)
     const int screenHeight = 450;
     int x = 400;
     int y = 200;
+   
     Image myImage;
     Texture2D myTexture;
     
     InitWindow(screenWidth, screenHeight, "raylib RGB and RGBA array demo");
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     
-    LoadImageFromArray(&myImage,Image1,32,32,7);  //4 = RGB, 7 = RGBA
+    //change Image1 to Image2 and Image3 to see images located images.h file
+    LoadImageFromArray(&myImage,Image1,Image1_Width,Image1_Height,Image1_Format);  //4 = RGB, 7 = RGBA
     myTexture=LoadTextureFromImage(myImage);
     
     while (!WindowShouldClose())    // Detect window close button or ESC key
