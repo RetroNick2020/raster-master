@@ -352,6 +352,13 @@ begin
      WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image-1,EO.Name);
    end;
 
+   //QB/FB RayLib formats
+   if ((EO.Lan = QBLan) or (EO.Lan = FBLan)) and (EO.Image > 1) and (EO.Image < 5) then
+   begin
+     // -1 in image format is to make it like gcc format numbers
+     WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image-1,EO.Name);
+   end;
+
    //gcc RayLib Format
    if (EO.Lan = gccLan) and (EO.Image > 0) and (EO.Image < 4) then
    begin
@@ -562,6 +569,7 @@ begin
                                     begin
                                       if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                       if (EO.Image = 1) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
+                                      if (EO.Image > 1) and (EO.Image<5) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image-1);
                                     end;
                         TPLan,TCLan: begin
                                        if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
@@ -577,6 +585,7 @@ begin
                               FBLan: begin
                                        if (EO.Image = 1) then WriteXGFToBufferFB(0,0,width-1,height-1,0,data);
                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFB(0,0,width-1,height-1,1,data);
+                                       if (EO.Image > 1) and (EO.Image<5) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image-1);
                                      end;
                               ABLan:begin
                                       if (EO.Image = 1) then WriteAmigaBasicXGFBuffer(0,0,width-1,height-1,data);

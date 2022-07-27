@@ -65,6 +65,12 @@ type
     fpRayLibIndex0: TMenuItem;
     fpRayLibRGB: TMenuItem;
     gccRayLibRGB: TMenuItem;
+    fbRayLibIndex0: TMenuItem;
+    fbRayLibRGB: TMenuItem;
+    fbRayLibFuchsia: TMenuItem;
+    qbRayLibIndex0: TMenuItem;
+    qbRayLibRGB: TMenuItem;
+    qbRayLibFuchsia: TMenuItem;
     SpriteImportMenu: TMenuItem;
     MiddleTopPanel: TPanel;
     RightPanel: TPanel;
@@ -3250,6 +3256,22 @@ begin
                                                              Lan:=gccLan;
                                                              format:=3;
                                                            end;
+                                         'qbRayLibFuchsia', 'fbRayLibFuchsia':begin
+                                                              ExportDialog.Filter := 'Basic Array|*.bas';
+                                                              Lan:=QBLan;
+                                                              format:=1;
+                                                            end;
+                                          'qbRayLibIndex0','fbRayLibIndex0':begin
+                                                              ExportDialog.Filter := 'Basic Array|*.bas';
+                                                              Lan:=QBLan;
+                                                              format:=2;
+                                                            end;
+                                          'qbRayLibRGB','fbRayLibRGB' : begin
+                                                              ExportDialog.Filter := 'Basic Array|*.bas';
+                                                              Lan:=QBLan;
+                                                              format:=3;
+                                                            end;
+
    end;
    if ExportDialog.Execute then
    begin

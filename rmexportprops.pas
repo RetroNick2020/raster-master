@@ -104,8 +104,13 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('RayLib RGBA Fuchsia');
+                           ComboImage.Items.Add('RayLib RGBA Index 0');
+                           ComboImage.Items.Add('RayLib RGB');
+
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
+
                            ComboImage.ItemIndex:=EO.Image;
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
@@ -154,8 +159,13 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('RayLib RGBA Fuchsia');
+                           ComboImage.Items.Add('RayLib RGBA Index 0');
+                           ComboImage.Items.Add('RayLib RGB');
+
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
+
                            ComboImage.ItemIndex:=EO.Image;
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
@@ -261,7 +271,7 @@ begin
    ComboCompiler.Items.Add('Turbo Pascal');
    ComboCompiler.Items.Add('Turbo C');
    ComboCompiler.Items.Add('QuickC');
-   ComboCompiler.Items.Add('QuickBASIC');
+   ComboCompiler.Items.Add('QuickBASIC/QB64');
    ComboCompiler.Items.Add('Power/Turbo Basic');
    ComboCompiler.Items.Add('GWBASIC');
    ComboCompiler.Items.Add('Freepascal');

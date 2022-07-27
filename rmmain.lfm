@@ -624,6 +624,15 @@ object RMMainForm: TRMMainForm
             Caption = 'Mouse Shape Data Statements'
             OnClick = MouseSaveClick
           end
+          object fbRayLibFuchsia: TMenuItem
+            Caption = 'RayLib (RGBA - Fuchsia) Array'
+          end
+          object fbRayLibIndex0: TMenuItem
+            Caption = 'RayLib (RGBA - Index 0) Array'
+          end
+          object fbRayLibRGB: TMenuItem
+            Caption = 'RayLib (RGB) Array'
+          end
         end
         object FreePascal: TMenuItem
           Caption = 'FreePascal'
@@ -718,6 +727,18 @@ object RMMainForm: TRMMainForm
           object QBMouseShapeData: TMenuItem
             Caption = 'Mouse Shape Data Statements'
             OnClick = MouseSaveClick
+          end
+          object qbRayLibFuchsia: TMenuItem
+            Caption = 'RayLib (RGBA - Fuchsia) Array'
+            OnClick = RayLibExportClick
+          end
+          object qbRayLibIndex0: TMenuItem
+            Caption = 'RayLib (RGBA - Index 0) Array'
+            OnClick = RayLibExportClick
+          end
+          object qbRayLibRGB: TMenuItem
+            Caption = 'RayLib (RGB) Array'
+            OnClick = RayLibExportClick
           end
         end
         object QuickC: TMenuItem

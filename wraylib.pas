@@ -96,6 +96,19 @@ begin
  Writeln(mc.FTextPtr^,'static unsigned char ',Imagename, '[',size,']  = {');
 end;
 
+procedure ExportBasicHeader(var mc : codegenrec;width,height,imageId,format : integer;ImageName : string);
+var
+  size : longint;
+begin
+ size:=RayLibImageSize(width,height,format);
+ MWSetValuesTotal(mc,size);
+ MWSetValuesPerLine(mc,20);
+ MWSetLan(mc,BasicLan);
+ MWSetValueFormat(mc,ValueFormatHex);
+
+ Writeln(mc.FTextPtr^,#39,' RayLib Basic Image Code Created By Raster Master');
+ Writeln(mc.FTextPtr^,#39,' Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height,' *)');
+end;
 
 
 procedure WriteRayLibCodeToBuffer(var F : Text; x,y,x2,y2, Lan,format : integer;ImageName : string);
@@ -113,6 +126,7 @@ begin
   imageId:=GetThumbIndex;
   case Lan of FPLan:ExportPascalHeader(mc,width,height,imageId,format,ImageName);
                gccLan:ExportCHeader(mc,width,height,imageId,format,ImageName);
+               FBLan,QBLan:ExportBasicHeader(mc,width,height,imageId,format,ImageName);
   end;
 
   for j:=y to y2 do
@@ -156,6 +170,8 @@ begin
 
   Case Lan of gccLan:Writeln(F,'};');
                FPLan:Writeln(F,');');
+             else Writeln(f);
+
   End;
 end;
 
