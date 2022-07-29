@@ -227,7 +227,120 @@ begin
   GetRESMapSize:=Size;
 end;
 
+procedure WriteBasicVariable(var data : BufferRec;Lan : integer;vname : string;value : longint);
+begin
+  writeln(data.fText,LineCountToStr(Lan),vname,' = ',value);
+end;
 
+procedure WriteBasicDimReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+begin
+  if (Lan<>GWLan) then writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+
+  writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'(',size,')');
+  writeln(data.fText,LineCountToStr(Lan),'For i=0 to ',size-1);
+  writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'(i)');
+  writeln(data.fText,LineCountToStr(Lan),'Next i');
+end;
+
+procedure WriteAmigaBasicBobVSprite(var data : BufferRec;Lan : integer; name : string;size : longint);
+begin
+ writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+
+ writeln(data.fText,LineCountToStr(Lan),name,'$=""');
+ writeln(data.fText,LineCountToStr(Lan),'For i=0 to ',size-1);
+ writeln(data.fText,LineCountToStr(Lan),'   Read a');
+ writeln(data.fText,LineCountToStr(Lan),'   ',name,'$=',name,'$+chr$(a)');
+ writeln(data.fText,LineCountToStr(Lan),'Next i');
+end;
+
+procedure WriteAmigaBasicPaletteReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+begin
+  writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+
+  writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'!(',size,')');
+  writeln(data.fText,LineCountToStr(Lan),'For i=0 to ',size-1);
+  writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'!(i)');
+  writeln(data.fText,LineCountToStr(Lan),'Next i');
+end;
+
+
+procedure WriteBasicRMInit(var data : BufferRec);
+var
+ count : integer;
+ width,height : integer;
+ EO : ImageExportFormatRec;
+ nColors : integer;
+ Size    : LongInt;
+ PalSize : Longint;
+ i       : integer;
+ DefIntFlag : Boolean;
+begin
+  DefIntFlag:=True;
+  count:=ImageThumbBase.GetCount;
+  for i:=0 to count-1 do
+  begin
+     width:=ImageThumbBase.GetExportWidth(i);
+     height:=ImageThumbBase.GetExportHeight(i);
+     ImageThumbBase.GetExportOptions(i,EO);
+     nColors:=ImageThumbBase.GetMaxColor(i)+1;
+     size:=GetRESImageSize(width,height,nColors,EO.Lan,EO.Image);
+
+     if (EO.LAN = ABLan) or (EO.LAN = GWLan) or (EO.LAN = QBLan) or (EO.LAN = FBLan) or (EO.LAN = PBLan) then
+     begin
+       if DefIntFlag then
+       begin
+          Writeln(data.fText,LineCountToStr(EO.Lan),'DEFINT A-Z');
+          DefIntFlag:=False;  // we only write this once - we put it here because we don't know which language until we pull the first image
+       end;
+
+       //write palette first
+       if EO.Palette > 0 then
+       begin
+         PalSize:=GetRESPaletteSize(nColors,EO.Lan,EO.Palette);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal.Size',PalSize);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal.Colors',nColors);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal.Id',i);
+         if (EO.Lan=ABLan) and  (EO.Palette=5) then   // uses SINGLE(!) variable for palette in n.nn format
+         begin
+           WriteAmigaBasicPaletteReadStub(data,EO.Lan,EO.Name+'Pal',PalSize);
+         end
+         else
+         begin
+           WriteBasicDimReadStub(data,EO.Lan,EO.Name+'Pal',PalSize);
+         end;
+       end;
+
+       if (EO.Image > 0) then  //we have an image
+       begin
+          if EO.Image = 1 then size := size div 2;  //we writing basic integers for Image format 1
+          WriteBasicVariable(data,EO.Lan,EO.Name+'.Size',size);
+          WriteBasicVariable(data,EO.Lan,EO.Name+'.Width',width);
+          WriteBasicVariable(data,EO.Lan,EO.Name+'.Height',height);
+          WriteBasicVariable(data,EO.Lan,EO.Name+'.Colors',nColors);
+          WriteBasicVariable(data,EO.Lan,EO.Name+'.Id',i);
+          if (EO.Lan=ABLan) and ((EO.Image=2) or (EO.Image=3)) then   //these are stored in strings so we need a diffent way
+          begin
+            WriteAmigaBasicBobVSprite(data,EO.Lan,EO.Name,size);
+          end
+          else
+          begin
+            if (EO.Image = 1) then WriteBasicDimReadStub(data,EO.Lan,EO.Name,size);   //we only generate loading stub for putimage code. RayLib RGB/RGBA still needs to be loaded by you!
+          end;
+       end;
+
+       if (EO.Image = 1) and (EO.Mask > 0) then    //we have putimage mask
+       begin
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Size',size);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Width',width);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Height',height);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Colors',nColors);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Id',i);
+         WriteBasicDimReadStub(data,EO.Lan,EO.Name+'Mask',size);
+       end;
+     end;
+  end;
+//  writeln(data.fText,'Return');
+end;
 
 Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
 begin
@@ -263,6 +376,7 @@ begin
  end
  else
  begin
+   WriteBasicRMinit(data);
    StartIndex:=0;
    count:=ImageThumbBase.GetCount;
  end;
