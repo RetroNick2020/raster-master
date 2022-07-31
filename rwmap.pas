@@ -96,6 +96,7 @@ begin
  MWSetLan(mc,BasicLan);
  MWSetValueFormat(mc,ValueFormatDecimal);
 
+ Writeln(mc.FTextPtr^,ImageName+'MapLabel:');
  Writeln(mc.FTextPtr^,#39,' Basic Map Code Created By Raster Master');
  Writeln(mc.FTextPtr^,#39,' Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
          MapProps.tilewidth,' Tile Height=',MapProps.tileheight);

@@ -86,24 +86,9 @@ type
 
  function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 
-// Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;//to text file
-// Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
-// Function WriteFPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
-
-// Function WriteQBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
-// Function WriteGWCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
-
-// Function WriteQCCodeToBuffer(var data :BufferRec;x,y,x2,y2,ImageId : word; imagename:string):word;    //to text file
-// Function WriteQPCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
-
- //Function WriteFBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
- //Function WritePBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;    //to text file
-
  function GetXImageSize(width,height,ncolors : integer) : longint;
  function GetXImageSizeFB(width,height : integer) : longint;
  function GetXImageSizeFP(width,height : integer) : longint;
-
-
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);

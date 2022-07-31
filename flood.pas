@@ -6,10 +6,10 @@ interface
  uses
   Classes, SysUtils,rmcore;
 
-Procedure Fill(xx,yy,NColor: Word);
+Procedure Fill(xx,yy,NColor: Integer);
 implementation
 
-Procedure Fill(xx,yy,NColor: Word);
+Procedure Fill(xx,yy,NColor: Integer);
 const
  Left =1;
  right=2;
@@ -149,6 +149,9 @@ end;
 
 
 begin
+if (xx<0) or (xx>(RMCoreBase.GetWidth-1)) then exit;
+if (yy<0) or (yy>(RMCoreBase.GetHeight-1)) then exit;
+
 //GetMem(StackHolderX,SizeOf(Stype));
 //GetMem(StackHolderY,SizeOf(Stype));
 //GetMem(StackHolderPos,SizeOf(Stype));

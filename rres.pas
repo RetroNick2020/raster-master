@@ -3,7 +3,7 @@
 Unit rres;
 
 Interface
-   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,
+   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
      wraylib;
 
 //Function RESInclude(filename:string):word;
@@ -138,39 +138,6 @@ begin
    end;
 {$I+}
 end;
-(*
-Procedure res_dis_xgf(Var IRFILE : RFILE; x,y : integer;ri : integer;dmode : integer);
-var
- width,height : integer;
- bpl,i,error  : integer;
- scanline     : array[1..1030] of integer;
-begin
-{$I-}
-   seek(IRFILE.resfile,IRFILE.reslist^[ri].offset);
-   blockread(IRFILE.resfile,width,2);
-   blockread(IRFILE.resfile,height,2);
-
-   scanline[1]:=width;
-   scanline[2]:=0;
-
-   if (getmaxcolor=255) then
-   begin
-     bpl:=width+1;
-   end
-   else
-   begin
-     bpl:=imagesize(0,0,width,0)-6;
-   end;
-
-   for i:=0 to height do
-   begin
-     blockread(IRFILE.resfile,scanline[3],bpl);
-     putimage(x,y+i,Ptr(seg(scanline),ofs(scanline))^,dmode);
-   end;
-{$I+}
-end;
-*)
-
 
 function GetRESImageSize(width,height,nColors,Lan,ImageType : integer) : longint;
 var
@@ -274,6 +241,10 @@ var
  PalSize : Longint;
  i       : integer;
  DefIntFlag : Boolean;
+ MP : MapPropsRec;
+ MPE : MapExportFormatRec;
+ mwidth,mheight : integer;
+ Lan   : integer;
 begin
   DefIntFlag:=True;
   count:=ImageThumbBase.GetCount;
@@ -339,7 +310,36 @@ begin
        end;
      end;
   end;
-//  writeln(data.fText,'Return');
+
+
+  //write map info
+ count:=MapCoreBase.GetMapCount;
+ For i:=0 to count-1 do
+ begin
+   MapCoreBase.GetMapProps(i,MP);
+   MapCoreBase.GetMapExportProps(i,MPE);
+   mwidth:=MapCoreBase.GetExportWidth(i);
+   mheight:=MapCoreBase.GetExportHeight(i);
+   size:=mwidth*mheight+4;
+
+   if ((MPE.Lan=BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then
+   begin
+     Lan:=QBLan;
+     if MPE.Lan = BasicLnLan then
+     begin
+       Lan:=GWLan;
+     end;
+
+     WriteBasicVariable(data,Lan,MPE.Name+'Map.Size',size);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map.Width',mwidth);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map.Height',mheight);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map.TileWidth',MP.tilewidth);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map.TileHeight',MP.tileheight);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map.Id',i);
+     WriteBasicDimReadStub(data,Lan,MPE.Name+'Map',size)
+
+   end;
+ end;
 end;
 
 Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
@@ -376,7 +376,7 @@ begin
  end
  else
  begin
-   WriteBasicRMinit(data);
+   WriteBasicRMinit(data);      //generates the dims, variable assignments,  and loader code for all the basic languages
    StartIndex:=0;
    count:=ImageThumbBase.GetCount;
  end;
@@ -411,22 +411,22 @@ begin
 
    if (EO.LAN=TPLan) AND (EO.Image = 2) then  // XLib LBM
    begin
-     WriteTPLBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+     WriteTPLBMCodeToBuffer(data,0,0,width-1,height-1,i,EO.Name);
    end;
 
    if (EO.LAN=TPLan) AND (EO.Image = 3) then // XLib PBM
    begin
-     WriteTPPBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+     WriteTPPBMCodeToBuffer(data,0,0,width-1,height-1,i,EO.Name);
    end;
 
    if (EO.LAN=TCLan) AND (EO.Image = 2) then  // XLib LBM
    begin
-     WriteTCLBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+     WriteTCLBMCodeToBuffer(data,0,0,width-1,height-1,i,EO.Name);
    end;
 
    if (EO.LAN=TCLan) AND (EO.Image = 3) then // XLib PBM
    begin
-     WriteTCPBMCodeToBuffer(data,0,0,width-1,height-1,EO.Name);
+     WriteTCPBMCodeToBuffer(data,0,0,width-1,height-1,i,EO.Name);
    end;
 
 

@@ -1096,6 +1096,7 @@ var
   BPCount : word;
   size : longword;
   BWriter : BitPlaneWriterProc;
+  nColors : integer;
 begin
  BWriter:=@BitplaneWriterPascalWORDStatements;
 
@@ -1107,17 +1108,28 @@ begin
 
  Size:=((((width+15) div 16)*2)*height*BPCount) div 2;
  data.ArraySize:=Size;
-
- writeln(data.ftext,'(* Amiga Pascal , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' *)');
+ nColors:=GetMaxColor+1;
  if SaveAsSprite then
  begin
-     writeln(data.ftext,'(* VSprite Bitmap *)');
-     writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of WORD = (');
-     CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
+   writeln(data.ftext,'(* Amiga Pascal VSprite Bitmap Code Created By Raster Master *)');
+   writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+   writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+   writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+   writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+   writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+//   writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
+   writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of WORD = (');
+   CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
  end
  else
  begin
-   writeln(data.ftext,'(* BOB Bitmap *)');
+   writeln(data.ftext,'(* Amiga Pascal BOB Bitmap Code Created By Raster Master *)');
+   writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+   writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+   writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+   writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+   writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+//   writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
    writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of WORD = (');
    CreateBitPlanes(x,y,x2,y2,BWriter,data);
  end;
@@ -1155,6 +1167,7 @@ var
   Width,height : Word;
   BPCount : word;
   size : longword;
+  nColors : integer;
   BWriter : BitPlaneWriterProc;
 begin
  BWriter:=@BitplaneWriterCWORDStatements;
@@ -1167,18 +1180,30 @@ begin
 
  Size:=((((width+15) div 16)*2)*height*BPCount) div 2;
  data.ArraySize:=Size;
+ nColors:=GetMaxColor+1;
 
- writeln(data.ftext,'/* Amiga C , Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',GetMaxColor+1,' */');
- writeln(data.ftext,'/* rename __chip to chip if using SAS compiler. remove __chip if compiler does not support it */');
  if SaveAsSprite then
  begin
-   writeln(data.ftext,'/* VSprite Bitmap */');
+   writeln(data.ftext,'/* Amiga C VSprite Bitmap Code Created By Raster Master */');
+   writeln(data.ftext,'/* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+   writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+   writeln(data.ftext,' #define ',Imagename,'_Width ',width);
+   writeln(data.ftext,' #define ',Imagename,'_Height ',height);
+   writeln(data.ftext,' #define ',Imagename,'_Colors ',nColors);
+//   Writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
+   writeln(data.ftext,'/* rename __chip to chip if using SAS compiler. remove __chip if compiler does not support it */');
    writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
    CreateSpriteBitPlanes(x,y,x2,y2,BWriter,data);
  end
  else
  begin
-   writeln(data.ftext,'/* BOB Bitmap */');
+   writeln(data.ftext,'/* Amiga C Bob Bitmap Code Created By Raster Master */');
+   writeln(data.ftext,'/* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+   writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+   writeln(data.ftext,' #define ',Imagename,'_Width ',width);
+   writeln(data.ftext,' #define ',Imagename,'_Height ',height);
+   writeln(data.ftext,' #define ',Imagename,'_Colors ',nColors);
+//   Writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
    writeln(data.ftext,' ','WORD __chip ',Imagename, '[',size,']  = {');
    CreateBitPlanes(x,y,x2,y2,BWriter,data);
  end;

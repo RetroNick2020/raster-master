@@ -9,10 +9,11 @@ interface
  procedure WriteLBMToBuffer(x,y,x2,y2 : word;var data : BufferRec);  // to binary file
  procedure WritePBMToBuffer(x,y,x2,y2 : word;var data : BufferRec);  // to binary file
 
- function WriteTPLBMCodeToBuffer(var data : BufferRec;x,y,x2,y2 : word; imagename:string):word;
- function WriteTPPBMCodeToBuffer(var data : BufferRec;x,y,x2,y2 : word; imagename:string):word;
- Function WriteTCLBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
- Function WriteTCPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+ function WriteTPLBMCodeToBuffer(var data : BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
+ function WriteTPPBMCodeToBuffer(var data : BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
+
+ Function  WriteTCLBMCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
+ Function WriteTCPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 
 
 
@@ -92,7 +93,7 @@ begin
  BitplaneWriter(0,data,2);  //flush it
 end;
 
-Function WriteTPPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function WriteTPPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -110,8 +111,13 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'(* Turbo Pascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
- writeln(data.ftext,'(* DOS XLIB PBM Bitmap *)');
+ writeln(data.ftext,'(* Turbo Pascal DOS XLIB PBM Bitmap Created By Raster Master *)');
+ writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+ writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+ writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+ writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+ writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
  WritePBMBuffer(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
@@ -121,7 +127,7 @@ begin
 end;
 
 
-Function  WriteTPLBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function  WriteTPLBMCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -139,8 +145,13 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'(* Turbo Pascal, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
- writeln(data.ftext,'(* DOS XLIB LBM Bitmap *)');
+ writeln(data.ftext,'(* Turbo Pascal DOS XLIB LBM Bitmap Code Created By Raster Master *)');
+ writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+ writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+ writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+ writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+ writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
  WriteLBMBuffer(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
@@ -150,7 +161,7 @@ begin
 end;
 
 
-Function WriteTCPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function WriteTCPBMCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -168,11 +179,15 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'/* Turbo C, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
- writeln(data.ftext,'/* DOS XLIB PBM Bitmap */');
-
+ writeln(data.ftext,'/* Turbo C DOS XLIB PBM Bitmap Created By Raster Master */');
+ writeln(data.ftext,'/* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+ writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+ writeln(data.ftext,' #define ',Imagename,'_Width ',width);
+ writeln(data.ftext,' #define ',Imagename,'_Height ',height);
+ writeln(data.ftext,' #define ',Imagename,'_Colors ',nColors);
+ writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
  writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
- WritePBMBuffer(BWriter,data,x,y,x2,y2);
+ writePBMBuffer(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
 
 {$I+}
@@ -180,7 +195,7 @@ begin
 end;
 
 
-Function  WriteTCLBMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+Function  WriteTCLBMCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longint;
@@ -198,8 +213,14 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
- writeln(data.ftext,'/* Turbo C, Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
- writeln(data.ftext,'/* DOS XLIB LBM Bitmap */');
+ writeln(data.ftext,'/* Turbo C DOS XLIB LBM Bitmap Created By Raster Master */');
+ writeln(data.ftext,'/* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+ writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+ writeln(data.ftext,' #define ',Imagename,'_Width ',width);
+ writeln(data.ftext,' #define ',Imagename,'_Height ',height);
+ writeln(data.ftext,' #define ',Imagename,'_Colors ',nColors);
+ writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
+
  writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
 
  WriteLBMBuffer(BWriter,data,x,y,x2,y2);
@@ -215,15 +236,17 @@ Function WriteLBMToCode(x,y,x2,y2,LanType : word;filename:string):word;
 var
  data      : BufferRec;
  imagename : String;
+ imageid   : word;
 begin
  SetCoreActive;   // we are getting data from core object RMCoreBase
+ imageid:=GetThumbIndex;
  assign(data.fText,filename);
 {$I-}
  rewrite(data.fText);
 
  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
- case LanType of TPLan: WriteTPLBMCodeToBuffer(data,x,y,x2,y2,imagename);
-                 TCLan: WriteTCLBMCodeToBuffer(data,x,y,x2,y2,imagename);
+ case LanType of TPLan: WriteTPLBMCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                 TCLan: WriteTCLBMCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
 
  end;
@@ -252,15 +275,17 @@ Function WritePBMToCode(x,y,x2,y2,LanType : word;filename:string):word;
  var
   data      : BufferRec;
   imagename : String;
+  imageid   : word;
  begin
   SetCoreActive;   // we are getting data from core object RMCoreBase
+  imageid:=GetThumbIndex;
   assign(data.fText,filename);
  {$I-}
   rewrite(data.fText);
 
   Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
-  case LanType of TPLan: WriteTPPBMCodeToBuffer(data,x,y,x2,y2,imagename);
-                  TCLan: WriteTCPBMCodeToBuffer(data,x,y,x2,y2,imagename);
+  case LanType of TPLan: WriteTPPBMCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                  TCLan: WriteTCPBMCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
   end;
   close(data.fText);
   {$I+}
