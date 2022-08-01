@@ -20,7 +20,7 @@ Var
 
 
 //load RGB and RGBA images from Raster Master generated arrays
-procedure LoadRGBImageFromMemory(var Image : TImage; var rgbImage; width,height, rgbformat : integer);
+procedure LoadRGBImageFromArray(var Image : TImage; var rgbImage; width,height, rgbformat : integer);
 begin
   Image.Data:=@rgbImage;
   Image.format:=rgbformat;            //4 = RGB, 7 = RGBA
@@ -39,7 +39,7 @@ begin
  SetTargetFPS(120);
 
  //change Image1 to Image2 or Image3 to see the different images
- LoadRGBImageFromMemory(MyImage,Image1,Image1_Width,Image1_Height,Image1_Format);
+ LoadRGBImageFromArray(MyImage,Image1,Image1_Width,Image1_Height,Image1_Format);
  MyTexture:=LoadTextureFromImage(MyImage);
 
  X:=300;
