@@ -74,7 +74,7 @@ procedure TSpriteImportForm.OpenSpriteSheetClick(Sender: TObject);
 var
   pwidth,pheight : integer;
 begin
-  OpenDialog1.Filter := 'PNG|*.png' ;
+  OpenDialog1.Filter := 'PNG|*.png|BMP|*.bmp|JPG|*.jpg|ICO|*.ico|All Files|*.*' ;
   if OpenDialog1.Execute then
   begin
       EasyPNG.LoadFromFile(OpenDialog1.FileName);

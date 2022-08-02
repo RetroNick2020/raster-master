@@ -144,12 +144,12 @@ Type
              procedure AddVGAPalette256(var CP : TColorPalette);
              procedure AddAmigaPalette(var CP : TColorPalette; ColorNum : integer);
              procedure CreateRandomSprayPoints;
-             Procedure HFlip(x,y,x2,y2: word);
-             Procedure VFlip(x,y,x2,y2: word);
-             Procedure ScrollUp(x,y,x2,y2: word);
-             Procedure ScrollDown(x,y,x2,y2: word);
-             Procedure ScrollLeft(x,y,x2,y2: word);
-             Procedure ScrollRight(x,y,x2,y2: word);
+             Procedure HFlip(x,y,x2,y2: integer);
+             Procedure VFlip(x,y,x2,y2: integer);
+             Procedure ScrollUp(x,y,x2,y2: integer);
+             Procedure ScrollDown(x,y,x2,y2: integer);
+             Procedure ScrollLeft(x,y,x2,y2: integer);
+             Procedure ScrollRight(x,y,x2,y2: integer);
              Procedure Copy(x,y,x2,y2 : integer);
              Procedure Paste(x,y,x2,y2 : integer);
 
@@ -1138,10 +1138,10 @@ begin
     end;
 end;
 
-Procedure TRMDrawTools.Hflip(x,y,x2,y2: word);
+Procedure TRMDrawTools.Hflip(x,y,x2,y2: integer);
 Var
- i,j : word;
- L,T   : word;
+ i,j : integer;
+ L   : integer;
  C,C2,A  : Word;
 begin
   L :=(x2-x) Div 2;
@@ -1160,11 +1160,11 @@ begin
 
 end;
 
-Procedure TRMDrawTools.VFlip(x,y,x2,y2 : word);
+Procedure TRMDrawTools.VFlip(x,y,x2,y2 : integer);
 Var
- i,j : word;
- L,T   : word;
- C,C2,A  : Word;
+ i,j : integer;
+ L   : integer;
+ C,C2,A  : integer;
 begin
   L :=(y2-y) Div 2;
   A :=y2;
@@ -1181,9 +1181,9 @@ begin
   end;
 end;
 
-Procedure TRMDrawTools.ScrollLeft(x,y,x2,y2 : word);
+Procedure TRMDrawTools.ScrollLeft(x,y,x2,y2 : integer);
 Var
- i,j,c,d : Word;
+ i,j,c,d : integer;
 begin
  For j:=y to y2 do
  begin
@@ -1197,9 +1197,9 @@ begin
  end;
 end;
 
-Procedure TRMDrawTools.ScrollRight(x,y,x2,y2 : word);
+Procedure TRMDrawTools.ScrollRight(x,y,x2,y2 : integer);
 Var
- i,j,c,d : Word;
+ i,j,c,d : integer;
 begin
  For j:=y to y2 do
  begin
@@ -1213,9 +1213,9 @@ begin
  end;
 end;
 
-Procedure TRMDrawTools.ScrollUp(x,y,x2,y2 : word);
+Procedure TRMDrawTools.ScrollUp(x,y,x2,y2 : integer);
 Var
- i,j,c,d : Word;
+ i,j,c,d : integer;
 begin
  For i:=x to x2 do
  begin
@@ -1229,9 +1229,9 @@ begin
  end;
 end;
 
-Procedure TRMDrawTools.ScrollDown(x,y,x2,y2 : word);
+Procedure TRMDrawTools.ScrollDown(x,y,x2,y2 : integer);
 Var
- i,j,c,d : Word;
+ i,j,c,d : integer;
 begin
  For i:=x to x2 do
  begin

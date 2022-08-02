@@ -21,6 +21,8 @@ procedure WriteRayLibCodeToFile(filename : string; x,y,x2,y2, Lan,format : integ
 
 procedure ResExportRayLibToBuffer(var F : File; x,y,x2,y2,format : integer);
 function ResRayLibImageSize(width,height ,format : integer) : longint;
+function RayLibImageSize(width,height ,format : integer) : longint;
+function GetRayLibFormatValue(format : integer) : string;
 
 implementation
 

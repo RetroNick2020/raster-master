@@ -150,7 +150,17 @@ begin
 
                            end;
                          end;
-             QCLan,QPLan,QBLan,GWLan,PBLan:size:=GetXImageSize(width,height,ncolors);
+             QCLan,QPLan,GWLan,PBLan:size:=GetXImageSize(width,height,ncolors);
+             QBLan:begin
+                      if ImageType = 1 then
+                      begin
+                       size:=GetXImageSize(width,height,ncolors);
+                      end
+                      else if (ImageType >1)  and (ImageType < 5) then
+                      begin
+                         size:=ResRayLibImageSize(width,height,ImageType-1);
+                      end;
+                    end;
              FPLan:begin
                       if ImageType = 1 then
                       begin
@@ -161,8 +171,16 @@ begin
                          size:=ResRayLibImageSize(width,height,ImageType-1);
                       end;
                    end;
-             FBLan:size:=GetXImageSizeFB(width,height);
-
+             FBLan:begin
+                      if ImageType = 1 then
+                      begin
+                        size:=GetXImageSizeFB(width,height);
+                      end
+                      else if (ImageType >1)  and (ImageType < 5) then
+                      begin
+                         size:=ResRayLibImageSize(width,height,ImageType-1);
+                      end;
+                   end;
              ABLan:begin
                      Case ImageType of 1:size:=GetABXImageSize(width,height,nColors);
                                        2:size:=GetBobDataSize(width,height,nColors,false); //bob
@@ -245,6 +263,7 @@ var
  MPE : MapExportFormatRec;
  mwidth,mheight : integer;
  Lan   : integer;
+ Format : integer;
 begin
   DefIntFlag:=True;
   count:=ImageThumbBase.GetCount;
@@ -255,7 +274,13 @@ begin
      ImageThumbBase.GetExportOptions(i,EO);
      nColors:=ImageThumbBase.GetMaxColor(i)+1;
      size:=GetRESImageSize(width,height,nColors,EO.Lan,EO.Image);
-
+     if (EO.LAN = QBLan) or (EO.LAN=FBLan) then
+     begin
+        if (EO.Image > 1) and (EO.Image < 5) then
+        begin
+           size:=RayLibImageSize(width,height,EO.Image-1)
+        end;
+     end;
      if (EO.LAN = ABLan) or (EO.LAN = GWLan) or (EO.LAN = QBLan) or (EO.LAN = FBLan) or (EO.LAN = PBLan) then
      begin
        if DefIntFlag then
@@ -285,6 +310,12 @@ begin
        begin
           if EO.Image = 1 then size := size div 2;  //we writing basic integers for Image format 1
           WriteBasicVariable(data,EO.Lan,EO.Name+'.Size',size);
+          if ((EO.Lan = QBLan) or (EO.Lan = FBLan)) and ((EO.Image > 1) and (EO.Image < 5)) then
+          begin
+             Format:=7;
+             if EO.Image = 4 then Format:=4;
+             WriteBasicVariable(data,EO.Lan,EO.Name+'.Format',Format);   // for QB64/Freebasic RayLib formats
+          end;
           WriteBasicVariable(data,EO.Lan,EO.Name+'.Width',width);
           WriteBasicVariable(data,EO.Lan,EO.Name+'.Height',height);
           WriteBasicVariable(data,EO.Lan,EO.Name+'.Colors',nColors);
@@ -469,6 +500,7 @@ begin
    //QB/FB RayLib formats
    if ((EO.Lan = QBLan) or (EO.Lan = FBLan)) and (EO.Image > 1) and (EO.Image < 5) then
    begin
+     WriteBasicLabel(data,EO.Lan,EO.Name);
      // -1 in image format is to make it like gcc format numbers
      WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image-1,EO.Name);
    end;
