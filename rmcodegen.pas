@@ -12,7 +12,8 @@ const
  BasicLNLan = 2;
  CLan     = 3;
  PascalLan= 4;
-
+ FBBasicLan = 5;   //fix this in the future - just a hack right now to make things work with freebasic
+ QB64BasicLan = 6; //fix this in the future - just a hack right now to make things work with Qb64
  ValueFormatDecimal = 0;
  ValueFormatHex = 1;
 

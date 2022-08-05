@@ -155,12 +155,14 @@ begin
                       if ImageType = 1 then
                       begin
                        size:=GetXImageSize(width,height,ncolors);
-                      end
-                      else if (ImageType >1)  and (ImageType < 5) then
-                      begin
-                         size:=ResRayLibImageSize(width,height,ImageType-1);
                       end;
                     end;
+             QB64Lan:begin
+                       if (ImageType >0)  and (ImageType < 4) then
+                       begin
+                          size:=ResRayLibImageSize(width,height,ImageType);
+                       end;
+                     end;
              FPLan:begin
                       if ImageType = 1 then
                       begin
@@ -171,16 +173,18 @@ begin
                          size:=ResRayLibImageSize(width,height,ImageType-1);
                       end;
                    end;
+             FBinQBModeLan:begin
+                             if ImageType = 1 then
+                             begin
+                               size:=GetXImageSizeFB(width,height);
+                             end;
+                           end;
              FBLan:begin
-                      if ImageType = 1 then
+                      if (ImageType >0)  and (ImageType < 4) then
                       begin
-                        size:=GetXImageSizeFB(width,height);
-                      end
-                      else if (ImageType >1)  and (ImageType < 5) then
-                      begin
-                         size:=ResRayLibImageSize(width,height,ImageType-1);
+                         size:=ResRayLibImageSize(width,height,ImageType);
                       end;
-                   end;
+                    end;
              ABLan:begin
                      Case ImageType of 1:size:=GetABXImageSize(width,height,nColors);
                                        2:size:=GetBobDataSize(width,height,nColors,false); //bob
@@ -212,10 +216,36 @@ begin
   GetRESMapSize:=Size;
 end;
 
-procedure WriteBasicVariable(var data : BufferRec;Lan : integer;vname : string;value : longint);
+procedure WriteBasicVariable(var data : BufferRec;Lan : integer;vname,vsubname : string;value : longint);
+var
+ DotOrUnderScore : String;
 begin
-  writeln(data.fText,LineCountToStr(Lan),vname,' = ',value);
+  DotOrUnderScore:='.';
+
+  if (Lan = FBinQBModeLan) or (Lan = FBLan) then
+  begin
+    DotOrUnderScore:='_';
+  end;
+  if (Lan = FBLan) then
+  begin
+    writeln(data.fText,LineCountToStr(Lan),'Dim ',vname,DotOrUnderScore,vsubname,' As Integer = ',value);
+  end
+  else
+  begin
+    writeln(data.fText,LineCountToStr(Lan),vname,DotOrUnderScore,vsubname,' = ',value);
+  end;
 end;
+
+procedure WriteFBBasicDimReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+begin
+  if (Lan<>GWLan) then writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+
+  writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'(',size,') As Integer');
+  writeln(data.fText,LineCountToStr(Lan),'For _rmi=0 to ',size-1);
+  writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'(_rmi)');
+  writeln(data.fText,LineCountToStr(Lan),'Next _rmi');
+end;
+
 
 procedure WriteBasicDimReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
 begin
@@ -225,6 +255,47 @@ begin
   writeln(data.fText,LineCountToStr(Lan),'For i=0 to ',size-1);
   writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'(i)');
   writeln(data.fText,LineCountToStr(Lan),'Next i');
+end;
+
+procedure WriteFBBasicReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+begin
+  writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+  writeln(data.fText,LineCountToStr(Lan),'Dim As Any Ptr ',name);
+  writeln(data.fText,LineCountToStr(Lan),name,' = ImageCreate(',name,'_Width,',name,'_Height)');
+  writeln(data.fText,LineCountToStr(Lan),'For _rmy=0 to ',name,'_Height-1');
+  writeln(data.fText,LineCountToStr(Lan),'  For _rmx=0 to ',name,'_Width-1');
+  writeln(data.fText,LineCountToStr(Lan),'   Read _rmr,_rmg,_rmb');
+  writeln(data.fText,LineCountToStr(Lan),'   if ',name,'_Format = 7 Then');
+  writeln(data.fText,LineCountToStr(Lan),'      Read _rma');
+  writeln(data.fText,LineCountToStr(Lan),'      PSet ',name,',(_rmx, _rmy),RGBA(_rmr,_rmg,_rmb,_rma)');
+  writeln(data.fText,LineCountToStr(Lan),'   else');
+  writeln(data.fText,LineCountToStr(Lan),'       PSet ',name,',(_rmx, _rmy),RGB(_rmr,_rmg,_rmb)');
+  writeln(data.fText,LineCountToStr(Lan),'   end if');
+
+  writeln(data.fText,LineCountToStr(Lan),'  Next _rmx');
+  writeln(data.fText,LineCountToStr(Lan),'Next _rmy');
+end;
+
+procedure WriteQB64BasicReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+begin
+  writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+  writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'&');
+  writeln(data.fText,LineCountToStr(Lan),name,'& = _NewImage(',name,'.Width,',name,'.Height,32)');
+  writeln(data.fText,LineCountToStr(Lan),'prevdest = _Dest');
+  writeln(data.fText,LineCountToStr(Lan),'_Dest ',name,'&');
+  writeln(data.fText,LineCountToStr(Lan),'For y=0 to ',name,'.Height-1');
+  writeln(data.fText,LineCountToStr(Lan),'  For x=0 to ',name,'.Width-1');
+  writeln(data.fText,LineCountToStr(Lan),'   Read r,g,b');
+  writeln(data.fText,LineCountToStr(Lan),'   if ',name,'.Format = 7 Then');
+  writeln(data.fText,LineCountToStr(Lan),'      Read a');
+  writeln(data.fText,LineCountToStr(Lan),'      PSet(x,y),_RGBA(r,g,b,a)');
+  writeln(data.fText,LineCountToStr(Lan),'   else');
+  writeln(data.fText,LineCountToStr(Lan),'      PSet(x,y),_RGB(r,g,b)');
+  writeln(data.fText,LineCountToStr(Lan),'   end if');
+  writeln(data.fText,LineCountToStr(Lan),'  Next x');
+  writeln(data.fText,LineCountToStr(Lan),'Next y');
+  writeln(data.fText,LineCountToStr(Lan),'_Dest prevdest');
+
 end;
 
 procedure WriteAmigaBasicBobVSprite(var data : BufferRec;Lan : integer; name : string;size : longint);
@@ -274,18 +345,28 @@ begin
      ImageThumbBase.GetExportOptions(i,EO);
      nColors:=ImageThumbBase.GetMaxColor(i)+1;
      size:=GetRESImageSize(width,height,nColors,EO.Lan,EO.Image);
-     if (EO.LAN = QBLan) or (EO.LAN=FBLan) then
+
+     if (EO.LAN = QB64Lan) or (EO.LAN=FBLan) then         //size is different for RGBA formats
      begin
-        if (EO.Image > 1) and (EO.Image < 5) then
+        if (EO.Image > 0) and (EO.Image < 4) then
         begin
-           size:=RayLibImageSize(width,height,EO.Image-1)
+           size:=RayLibImageSize(width,height,EO.Image);
         end;
      end;
-     if (EO.LAN = ABLan) or (EO.LAN = GWLan) or (EO.LAN = QBLan) or (EO.LAN = FBLan) or (EO.LAN = PBLan) then
+
+
+     if (EO.LAN = ABLan) or (EO.LAN = GWLan) or (EO.LAN = QBLan) or (EO.LAN = QB64Lan) or (EO.LAN = FBinQBModeLan) or (EO.LAN = FBLan) or (EO.LAN = PBLan) then
      begin
        if DefIntFlag then
        begin
-          Writeln(data.fText,LineCountToStr(EO.Lan),'DEFINT A-Z');
+          if (EO.Lan=FBLan) then
+          begin
+            writeln(data.fText,LineCountToStr(EO.Lan),'Dim As Integer _rmx,_rmy,_rmr,_rmg,_rmb,_rma,_rmi');
+          end
+          else
+          begin
+            Writeln(data.fText,LineCountToStr(EO.Lan),'DEFINT A-Z');
+          end;
           DefIntFlag:=False;  // we only write this once - we put it here because we don't know which language until we pull the first image
        end;
 
@@ -293,9 +374,9 @@ begin
        if EO.Palette > 0 then
        begin
          PalSize:=GetRESPaletteSize(nColors,EO.Lan,EO.Palette);
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal.Size',PalSize);
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal.Colors',nColors);
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal.Id',i);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal','Size',PalSize);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal','Colors',nColors);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Pal','Id',i);
          if (EO.Lan=ABLan) and  (EO.Palette=5) then   // uses SINGLE(!) variable for palette in n.nn format
          begin
            WriteAmigaBasicPaletteReadStub(data,EO.Lan,EO.Name+'Pal',PalSize);
@@ -309,20 +390,30 @@ begin
        if (EO.Image > 0) then  //we have an image
        begin
           if EO.Image = 1 then size := size div 2;  //we writing basic integers for Image format 1
-          WriteBasicVariable(data,EO.Lan,EO.Name+'.Size',size);
-          if ((EO.Lan = QBLan) or (EO.Lan = FBLan)) and ((EO.Image > 1) and (EO.Image < 5)) then
+          WriteBasicVariable(data,EO.Lan,EO.Name,'Size',size);
+          if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) and ((EO.Image > 0) and (EO.Image < 4)) then
           begin
              Format:=7;
-             if EO.Image = 4 then Format:=4;
-             WriteBasicVariable(data,EO.Lan,EO.Name+'.Format',Format);   // for QB64/Freebasic RayLib formats
+             if EO.Image = 3 then Format:=4;
+             WriteBasicVariable(data,EO.Lan,EO.Name,'Format',Format);   // for QB64/Freebasic RayLib formats
           end;
-          WriteBasicVariable(data,EO.Lan,EO.Name+'.Width',width);
-          WriteBasicVariable(data,EO.Lan,EO.Name+'.Height',height);
-          WriteBasicVariable(data,EO.Lan,EO.Name+'.Colors',nColors);
-          WriteBasicVariable(data,EO.Lan,EO.Name+'.Id',i);
+          WriteBasicVariable(data,EO.Lan,EO.Name,'Width',width);
+          WriteBasicVariable(data,EO.Lan,EO.Name,'Height',height);
+          WriteBasicVariable(data,EO.Lan,EO.Name,'Colors',nColors);
+          WriteBasicVariable(data,EO.Lan,EO.Name,'Id',i);
+
+          //write loader code
           if (EO.Lan=ABLan) and ((EO.Image=2) or (EO.Image=3)) then   //these are stored in strings so we need a diffent way
           begin
             WriteAmigaBasicBobVSprite(data,EO.Lan,EO.Name,size);
+          end
+          else if (EO.Lan=FBLan) and ((EO.Image>0) and (EO.Image<4)) then
+          begin
+            WriteFBBasicReadStub(data,EO.Lan,EO.Name,size);   //FreeBASIC - not QB mode - RGB/RGBA Load code
+          end
+          else if (EO.Lan=QB64Lan) and ((EO.Image>0) and (EO.Image<4)) then
+          begin
+            WriteQB64BasicReadStub(data,EO.Lan,EO.Name,size);   //FreeBASIC - not QB mode - RGB/RGBA Load code
           end
           else
           begin
@@ -332,11 +423,11 @@ begin
 
        if (EO.Image = 1) and (EO.Mask > 0) then    //we have putimage mask
        begin
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Size',size);
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Width',width);
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Height',height);
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Colors',nColors);
-         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask.Id',i);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Size',size);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Width',width);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Height',height);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Colors',nColors);
+         WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Id',i);
          WriteBasicDimReadStub(data,EO.Lan,EO.Name+'Mask',size);
        end;
      end;
@@ -353,22 +444,32 @@ begin
    mheight:=MapCoreBase.GetExportHeight(i);
    size:=mwidth*mheight+4;
 
-   if ((MPE.Lan=BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then
+   if ((MPE.Lan=BasicLan) or (MPE.Lan=FBBasicLan) or (MPE.Lan=QB64BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then   //hack alert - fix FBBasicLan
    begin
      Lan:=QBLan;
      if MPE.Lan = BasicLnLan then
      begin
        Lan:=GWLan;
+     end
+     else if MPE.Lan = FBBasicLan then
+     begin
+       Lan:=FBLan;
      end;
 
-     WriteBasicVariable(data,Lan,MPE.Name+'Map.Size',size);
-     WriteBasicVariable(data,Lan,MPE.Name+'Map.Width',mwidth);
-     WriteBasicVariable(data,Lan,MPE.Name+'Map.Height',mheight);
-     WriteBasicVariable(data,Lan,MPE.Name+'Map.TileWidth',MP.tilewidth);
-     WriteBasicVariable(data,Lan,MPE.Name+'Map.TileHeight',MP.tileheight);
-     WriteBasicVariable(data,Lan,MPE.Name+'Map.Id',i);
-     WriteBasicDimReadStub(data,Lan,MPE.Name+'Map',size)
-
+     WriteBasicVariable(data,Lan,MPE.Name+'Map','Size',size);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map','Width',mwidth);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map','Height',mheight);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map','TileWidth',MP.tilewidth);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map','TileHeight',MP.tileheight);
+     WriteBasicVariable(data,Lan,MPE.Name+'Map','Id',i);
+     if Lan = FBLan then
+     begin
+        WriteFBBasicDimReadStub(data,Lan,MPE.Name+'Map',size);
+     end
+     else
+     begin
+        WriteBasicDimReadStub(data,Lan,MPE.Name+'Map',size)
+     end;
    end;
  end;
 end;
@@ -376,10 +477,8 @@ end;
 Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
 begin
   //we don't want GWLan  - it has line number already
-  if (Lan=ABLan) or (Lan=QBLan) or (Lan=PBLan) or (Lan=FBLan) then
-   begin
-     Writeln(data.fText,LabelName,'Label:');
-   end;
+  case Lan of ABLan,FBinQBModeLan,FBLan,QBLan,QB64Lan,PBLan:Writeln(data.fText,LabelName,'Label:');
+  end;
 end;
 
 //exportonlyindex means export only the index, none of the other images.palette maps
@@ -425,11 +524,11 @@ begin
      WritePalToArrayBuffer(data,EO.Name+'Pal',EO.Lan,EO.Palette);
    end;
 
-   case EO.Lan of TPLan,TCLan,FPLan,FBLan,QBLan,GWLan,QCLan,QPLan,PBLan:
+   case EO.Lan of TPLan,TCLan,FPLan,FBinQBModeLan,QBLan,GWLan,QCLan,QPLan,PBLan:
         begin
           if EO.Image = 1 then   //put image format
           begin
-            WriteBasicLabel(data,EO.Lan,EO.Name);
+            WriteBasicLabel(data,EO.Lan,EO.Name);  //checks if it's basic lan then writes lable - ignoes other lan
             WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,0,EO.Name);
           end;
           if (EO.Image = 1) and (EO.Mask=1) then    //put image mask
@@ -498,11 +597,11 @@ begin
    end;
 
    //QB/FB RayLib formats
-   if ((EO.Lan = QBLan) or (EO.Lan = FBLan)) and (EO.Image > 1) and (EO.Image < 5) then
+   if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) and (EO.Image > 0) and (EO.Image < 4) then
    begin
      WriteBasicLabel(data,EO.Lan,EO.Name);
      // -1 in image format is to make it like gcc format numbers
-     WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image-1,EO.Name);
+     WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image,EO.Name);
    end;
 
    //gcc RayLib Format
@@ -715,8 +814,10 @@ begin
                                     begin
                                       if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                       if (EO.Image = 1) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
-                                      if (EO.Image > 1) and (EO.Image<5) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image-1);
                                     end;
+                              QB64Lan:begin
+                                        if (EO.Image > 0) and (EO.Image<4) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image);
+                                      end;
                         TPLan,TCLan: begin
                                        if (EO.Image = 1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
@@ -728,11 +829,13 @@ begin
                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFP(0,0,width-1,height-1,1,data);
                                        if (EO.Image > 1) and (EO.Image<5) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image-1);
                                      end;
-                              FBLan: begin
+                              FBinQBModeLan: begin
                                        if (EO.Image = 1) then WriteXGFToBufferFB(0,0,width-1,height-1,0,data);
                                        if (EO.Image = 1) and (EO.Mask=1) then WriteXGFToBufferFB(0,0,width-1,height-1,1,data);
-                                       if (EO.Image > 1) and (EO.Image<5) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image-1);
                                      end;
+                              FBLan:begin
+                                       if (EO.Image > 0) and (EO.Image<4) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image);
+                                    end;
                               ABLan:begin
                                       if (EO.Image = 1) then WriteAmigaBasicXGFBuffer(0,0,width-1,height-1,data);
                                       if (EO.Image = 2) then WriteAmigaBasicBobBuffer(0,0,width-1,height-1,data,false); //bob

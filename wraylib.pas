@@ -128,7 +128,7 @@ begin
   imageId:=GetThumbIndex;
   case Lan of FPLan:ExportPascalHeader(mc,width,height,imageId,format,ImageName);
                gccLan:ExportCHeader(mc,width,height,imageId,format,ImageName);
-               FBLan,QBLan:ExportBasicHeader(mc,width,height,imageId,format,ImageName);
+               FBLan,QB64Lan:ExportBasicHeader(mc,width,height,imageId,format,ImageName);
   end;
 
   for j:=y to y2 do

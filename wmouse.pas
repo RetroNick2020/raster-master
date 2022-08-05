@@ -190,7 +190,7 @@ begin
  case LanType of
                  TPLan,QPLan,FPLan: WritePascalMShapeCodeToBuffer(data,x,y,LanType,imagename);
                  TCLan,QCLan: WriteCMShapeCodeToBuffer(data,x,y,LanType,imagename);
-                 GWLan,QBLan,FBLan,PBLan: WriteBasicMShapeCodeToBuffer(data,x,y,LanType,imagename);
+                 GWLan,QBLan,FBinQBModeLan,PBLan: WriteBasicMShapeCodeToBuffer(data,x,y,LanType,imagename);
  end;
  close(data.fText);
  {$I+}

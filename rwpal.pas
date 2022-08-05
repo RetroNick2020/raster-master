@@ -77,7 +77,7 @@ begin
               QBLan:LanToStr:='QuickBASIC';
               QCLan:LanToStr:='QuickC';
               QPLan:LanToStr:='QuickPascal';
-              FBLan:LanToStr:='FreeBASIC';
+              FBinQBModeLan:LanToStr:='FreeBASIC';
               FPLan:LanToStr:='FreePascal';
 
   end;
@@ -144,7 +144,7 @@ end;
 function CommandEndBracketToStr(Lan : integer) : string;
 begin
  CommandEndBracketToStr:=');';
- Case Lan of ABLan,FBLan,QBlan,PBLan,GWLan:CommandEndBracketToStr:='';
+ Case Lan of ABLan,FBinQBModeLan,QBlan,PBLan,GWLan:CommandEndBracketToStr:='';
  end;
 end;
 
@@ -314,7 +314,7 @@ SetGWStartLineNumber(1000);
     g:=CR.g;
     b:=CR.b;
 
-    if ((Lan=QBLan) or (Lan=FBLan) or (Lan=GWLan) or (Lan=PBLan) or (Lan=QCLan) or (Lan=QPLan)) and (rgbFormat = ColorSixBitFormat) then
+    if ((Lan=QBLan) or (Lan=FBinQBModeLan) or (Lan=GWLan) or (Lan=PBLan) or (Lan=QCLan) or (Lan=QPLan)) and (rgbFormat = ColorSixBitFormat) then
     begin
       cistr:=IntToStr(EightToSixBit(r)+(EightToSixBit(g)*256)+(EightToSixBit(b)*65536));
       if (Lan=PBlan) then   PBasicEndBracket:=')' else   PBasicEndBracket:='';
@@ -681,7 +681,7 @@ end;
 //write c/pascal constants and basic data statements
 procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
 begin
-   case Lan of ABLan,QBLan,PBLan,GWLAN,FBLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
+   case Lan of ABLan,QBLan,PBLan,GWLAN,FBinQBModeLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
                TPLan,QPLan,APLan,FPLan,TCLan,QCLan,ACLan:WritePalCPascalBuffer(data,imagename,Lan,rgbFormat);
    end;
 end;

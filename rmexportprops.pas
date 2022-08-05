@@ -104,9 +104,6 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
-                           ComboImage.Items.Add('RayLib RGBA Fuchsia');
-                           ComboImage.Items.Add('RayLib RGBA Index 0');
-                           ComboImage.Items.Add('RayLib RGB');
 
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
@@ -115,7 +112,18 @@ begin
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                           end;
-
+                   QB64Lan:begin
+                             ComboImage.Items.Clear;
+                             ComboMask.Items.Clear;
+                             ComboImage.Items.Add('None');
+                             ComboImage.Items.Add('RGBA Fuchsia');
+                             ComboImage.Items.Add('RGBA Index 0');
+                             ComboImage.Items.Add('RGB');
+                             ComboMask.Items.Add('None');
+                             ComboImage.ItemIndex:=EO.Image;
+                             ComboMask.ItemIndex:=EO.Mask;
+                             ComboPalette.ItemIndex:=EO.Palette;
+                           end;
                    PBLan:begin
                            ComboImage.Items.Clear;
                            ComboMask.Items.Clear;
@@ -154,18 +162,28 @@ begin
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
-                   FBLan:begin
+                   FBinQBModeLan:begin
                            ComboImage.Items.Clear;
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
-                           ComboImage.Items.Add('RayLib RGBA Fuchsia');
-                           ComboImage.Items.Add('RayLib RGBA Index 0');
-                           ComboImage.Items.Add('RayLib RGB');
 
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
 
+                           ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
+                           ComboPalette.ItemIndex:=EO.Palette;
+                         end;
+                   FBLan:begin
+                           ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
+                           ComboImage.Items.Add('None');
+                           ComboImage.Items.Add('RGBA Fuchsia');
+                           ComboImage.Items.Add('RGBA Index 0');
+                           ComboImage.Items.Add('RGB');
+
+                           ComboMask.Items.Add('None');
                            ComboImage.ItemIndex:=EO.Image;
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
@@ -271,10 +289,12 @@ begin
    ComboCompiler.Items.Add('Turbo Pascal');
    ComboCompiler.Items.Add('Turbo C');
    ComboCompiler.Items.Add('QuickC');
-   ComboCompiler.Items.Add('QuickBASIC/QB64');
+   ComboCompiler.Items.Add('QBasic/QuickBASIC');
+   ComboCompiler.Items.Add('QB64');
    ComboCompiler.Items.Add('Power/Turbo Basic');
    ComboCompiler.Items.Add('GWBASIC');
    ComboCompiler.Items.Add('Freepascal');
+   ComboCompiler.Items.Add('Freebasic - QB Mode');
    ComboCompiler.Items.Add('Freebasic');
    ComboCompiler.Items.Add('AmigaBASIC');
    ComboCompiler.Items.Add('Amiga Pascal');

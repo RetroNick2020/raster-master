@@ -13,7 +13,7 @@ function LineCountToStr(Lan : integer) : string;
 
 implementation
 const
- GWLan   = 6;
+ GWLan   = 7;
 var
  GWBasicLineNumber : integer;
 

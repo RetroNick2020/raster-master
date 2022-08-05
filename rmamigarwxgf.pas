@@ -1226,7 +1226,7 @@ begin
  Assign(data.ftext,filename);
 {$I-}
  Rewrite(data.ftext);
- WriteAmigaPascalBobCodeToBuffer(x,y,x2,y2,imagename,data,saveassprite);
+ WriteAmigaCBobCodeToBuffer(x,y,x2,y2,imagename,data,saveassprite);
  Close(data.ftext);
 {$I+}
  if data.Error<>0 then

@@ -12,15 +12,21 @@ Const
    TCLan   = 2;
    QCLan   = 3;
    QBLan   = 4;
-   PBLan   = 5;
-   GWLan   = 6;
-   FPLan   = 7;
-   FBLan   = 8;
-   ABLan   = 9; //AmigaBasic
-   APLan   = 10;
-   ACLan   = 11;
-   QPLan   = 12; //Quick Pascal
-   gccLan  = 13;
+   QB64Lan = 5;
+
+   PBLan   = 6;
+   GWLan   = 7;    // also update GWLan in gbasic unit
+   FPLan   = 8;
+
+   FBinQBModeLan = 9;
+   FBLan         = 10;  //modern mode - no legacy support for RGB/RGBA
+
+   ABLan   = 11; //AmigaBasic
+   APLan   = 12;
+   ACLan   = 13;
+   QPLan   = 14; //Quick Pascal
+   gccLan  = 15;
+   APQLan  = 16; //Amiga APQBasic support - once we figure out how to access t_BitMap memory and stuff it with bitplane data
 
    NoExportFormat = 0;
    TPPutImageExportFormat = 1;
@@ -1020,7 +1026,7 @@ begin
 
                  PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
 
-                 FBLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename);
+                 FBinQBModeLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename);
                  FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
  end;
@@ -1086,7 +1092,7 @@ begin
                   PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
 
                   FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
-                  FBLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename)
+                  FBinQBModeLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename)
   end;
   SetMaskMode(omask);
   WriteXGFCodeToBuffer:=data.Error;

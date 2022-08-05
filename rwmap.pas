@@ -210,13 +210,13 @@ begin
       Lan:=ExportProps.Lan;
       Imagename:=ExportProps.Name;
 
-      Case Lan of BasicLan:ExportBasicMapHeader(mc,i,ImageName);
+      Case Lan of BasicLan,FBBasicLan,QB64BasicLan:ExportBasicMapHeader(mc,i,ImageName);
                 BasicLnLan:ExportBasicLNMapHeader(mc,i,ImageName);
                       CLan:ExportCMapHeader(mc,i,ImageName);
                  PascalLan:ExportPascalMapHeader(mc,i,ImageName);
       End;
       ExportMapMain(mc,i);
-      Case Lan of BasicLan,BasicLNLan:Writeln(F);
+      Case Lan of BasicLan,FBBasicLan,QB64BasicLan,BasicLNLan:Writeln(F);
                       CLan:Writeln(F,'};');
                  PascalLan:Writeln(F,');');
       End;

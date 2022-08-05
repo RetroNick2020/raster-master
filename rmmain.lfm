@@ -607,7 +607,7 @@ object RMMainForm: TRMMainForm
           end
         end
         object FreeBASIC: TMenuItem
-          Caption = 'FreeBASIC'
+          Caption = 'FreeBASIC - QB Mode'
           object FBPutData: TMenuItem
             Caption = 'Put Data Statements'
             OnClick = FreeBASICClick
@@ -624,14 +624,20 @@ object RMMainForm: TRMMainForm
             Caption = 'Mouse Shape Data Statements'
             OnClick = MouseSaveClick
           end
+        end
+        object MenuItem8: TMenuItem
+          Caption = 'FreeBASIC'
           object fbRayLibFuchsia: TMenuItem
-            Caption = 'RayLib (RGBA - Fuchsia) Array'
+            Caption = 'RGBA - Fuchsia Array'
+            OnClick = RayLibExportClick
           end
           object fbRayLibIndex0: TMenuItem
-            Caption = 'RayLib (RGBA - Index 0) Array'
+            Caption = 'RGBA - Index 0 Array'
+            OnClick = RayLibExportClick
           end
           object fbRayLibRGB: TMenuItem
-            Caption = 'RayLib (RGB) Array'
+            Caption = 'RGB Array'
+            OnClick = RayLibExportClick
           end
         end
         object FreePascal: TMenuItem
@@ -711,7 +717,7 @@ object RMMainForm: TRMMainForm
           end
         end
         object QuickBasic: TMenuItem
-          Caption = 'QuickBasic\QB64'
+          Caption = 'QBasic\QuickBasic'
           object QBPutData: TMenuItem
             Caption = 'Put Data Statements'
             OnClick = QBasicDataClick
@@ -728,16 +734,19 @@ object RMMainForm: TRMMainForm
             Caption = 'Mouse Shape Data Statements'
             OnClick = MouseSaveClick
           end
+        end
+        object MenuItem12: TMenuItem
+          Caption = 'QB64'
           object qbRayLibFuchsia: TMenuItem
-            Caption = 'RayLib (RGBA - Fuchsia) Array'
+            Caption = 'RGBA - Fuchsia Array'
             OnClick = RayLibExportClick
           end
           object qbRayLibIndex0: TMenuItem
-            Caption = 'RayLib (RGBA - Index 0) Array'
+            Caption = 'RGBA - Index 0 Array'
             OnClick = RayLibExportClick
           end
           object qbRayLibRGB: TMenuItem
-            Caption = 'RayLib (RGB) Array'
+            Caption = 'RGB Array'
             OnClick = RayLibExportClick
           end
         end

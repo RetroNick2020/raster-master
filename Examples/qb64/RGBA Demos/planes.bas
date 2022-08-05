@@ -5,18 +5,69 @@ Image1.Width = 32
 Image1.Height = 32
 Image1.Colors = 256
 Image1.Id = 0
-Image2.Size = 4096
+Restore Image1Label
+Dim Image1&
+Image1& = _NewImage(Image1.Width,Image1.Height,32)
+prevdest = _Dest
+_Dest Image1&
+For y=0 to Image1.Height-1
+  For x=0 to Image1.Width-1
+   Read r,g,b
+   if Image1.Format = 7 Then
+      Read a
+      PSet(x,y),_RGBA(r,g,b,a)
+   else
+      PSet(x,y),_RGB(r,g,b)
+   end if
+  Next x
+Next y
+_Dest prevdest
+Image2.Size = 2048
 Image2.Format = 7
 Image2.Width = 32
 Image2.Height = 32
 Image2.Colors = 256
 Image2.Id = 1
+Restore Image2Label
+Dim Image2&
+Image2& = _NewImage(Image2.Width,Image2.Height,32)
+prevdest = _Dest
+_Dest Image2&
+For y=0 to Image2.Height-1
+  For x=0 to Image2.Width-1
+   Read r,g,b
+   if Image2.Format = 7 Then
+      Read a
+      PSet(x,y),_RGBA(r,g,b,a)
+   else
+      PSet(x,y),_RGB(r,g,b)
+   end if
+  Next x
+Next y
+_Dest prevdest
 Image3.Size = 3072
 Image3.Format = 4
 Image3.Width = 32
 Image3.Height = 32
 Image3.Colors = 256
 Image3.Id = 2
+Restore Image3Label
+Dim Image3&
+Image3& = _NewImage(Image3.Width,Image3.Height,32)
+prevdest = _Dest
+_Dest Image3&
+For y=0 to Image3.Height-1
+  For x=0 to Image3.Width-1
+   Read r,g,b
+   if Image3.Format = 7 Then
+      Read a
+      PSet(x,y),_RGBA(r,g,b,a)
+   else
+      PSet(x,y),_RGB(r,g,b)
+   end if
+  Next x
+Next y
+_Dest prevdest
 Image1Label:
 ' RayLib Basic Image Code Created By Raster Master
 ' Size = 4096 Format = RGBA - Index 0 Width=32 Height=32 *)

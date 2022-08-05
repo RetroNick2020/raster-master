@@ -81,6 +81,8 @@ begin
    ComboCompiler.Items.Add('Basic (Line#)');
    ComboCompiler.Items.Add('C');
    ComboCompiler.Items.Add('Pascal');
+   ComboCompiler.Items.Add('FreeBASIC');
+   ComboCompiler.Items.Add('QB64');
    ComboCompiler.ItemIndex:=0;
 
    ComboMap.Items.Clear;
@@ -122,6 +124,18 @@ begin
                                 ComboMap.Items.Add('Simple');
                                 ComboMap.ItemIndex:=EO.MapFormat;
                            end;
+                   FBBasicLan:begin
+                               ComboMap.Items.Clear;
+                               ComboMap.Items.Add('None');
+                               ComboMap.Items.Add('Simple');
+                               ComboMap.ItemIndex:=EO.MapFormat;
+                          end;
+                   QB64BasicLan:begin
+                               ComboMap.Items.Clear;
+                               ComboMap.Items.Add('None');
+                               ComboMap.Items.Add('Simple');
+                               ComboMap.ItemIndex:=EO.MapFormat;
+                          end;
 
    end;
 end;

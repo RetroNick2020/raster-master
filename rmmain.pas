@@ -65,12 +65,14 @@ type
     fpRayLibIndex0: TMenuItem;
     fpRayLibRGB: TMenuItem;
     gccRayLibRGB: TMenuItem;
+    fbRayLibFuchsia: TMenuItem;
     fbRayLibIndex0: TMenuItem;
     fbRayLibRGB: TMenuItem;
-    fbRayLibFuchsia: TMenuItem;
-    qbRayLibIndex0: TMenuItem;
+    MenuItem12: TMenuItem;
     qbRayLibRGB: TMenuItem;
+    qbRayLibIndex0: TMenuItem;
     qbRayLibFuchsia: TMenuItem;
+    MenuItem8: TMenuItem;
     SpriteImportMenu: TMenuItem;
     MiddleTopPanel: TPanel;
     RightPanel: TPanel;
@@ -2063,8 +2065,8 @@ begin
 
       Case (Sender As TMenuItem).Name of 'QBPaletteData' : error:=WritePalData(ExportDialog.FileName,QBLan,ColorFormat);
                                      'QBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,QBLan,ColorFormat);
-                                     'FBPaletteData' : error:=WritePalData(ExportDialog.FileName,FBLan,ColorFormat);
-                                     'FBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,FBLan,ColorFormat);
+                                     'FBPaletteData' : error:=WritePalData(ExportDialog.FileName,FBinQBModeLan,ColorFormat);
+                                     'FBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,FBinQBModeLan,ColorFormat);
                                      'PBPaletteData' : error:=WritePalData(ExportDialog.FileName,PBLan,ColorFormat);
                                      'PBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,PBLan,ColorFormat);
       end;
@@ -2690,9 +2692,9 @@ begin
 //             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
 //      end;
 
-      Case (Sender As TMenuItem).Name of 'FBPutData' : error:=WriteXGFToCode(x,y,x2,y2,FBLan,ExportDialog.FileName);
-                                 'FBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FBLan,ExportDialog.FileName);
-                                         'FBPutFile' : error:=WriteXGFToFile(x,y,x2,y2,FBLan,ExportDialog.FileName);
+      Case (Sender As TMenuItem).Name of 'FBPutData' : error:=WriteXGFToCode(x,y,x2,y2,FBinQBModeLan,ExportDialog.FileName);
+                                 'FBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FBinQBModeLan,ExportDialog.FileName);
+                                         'FBPutFile' : error:=WriteXGFToFile(x,y,x2,y2,FBinQBModeLan,ExportDialog.FileName);
       End;
 
       if error<>0 then
@@ -3256,19 +3258,36 @@ begin
                                                              Lan:=gccLan;
                                                              format:=3;
                                                            end;
-                                         'qbRayLibFuchsia', 'fbRayLibFuchsia':begin
+                                         'qbRayLibFuchsia':begin
                                                               ExportDialog.Filter := 'Basic Array|*.bas';
-                                                              Lan:=QBLan;
+                                                              Lan:=QB64Lan;
                                                               format:=1;
                                                             end;
-                                          'qbRayLibIndex0','fbRayLibIndex0':begin
+                                          'qbRayLibIndex0':begin
                                                               ExportDialog.Filter := 'Basic Array|*.bas';
-                                                              Lan:=QBLan;
+                                                              Lan:=QB64Lan;
                                                               format:=2;
                                                             end;
-                                          'qbRayLibRGB','fbRayLibRGB' : begin
+                                          'qbRayLibRGB' : begin
+                                                            ExportDialog.Filter := 'Basic Array|*.bas';
+                                                            Lan:=QB64Lan;
+                                                            format:=3;
+                                                          end;
+
+                                          'fbRayLibFuchsia':begin
+                                                               ExportDialog.Filter := 'Basic Array|*.bas';
+                                                               Lan:=FBLan;
+                                                               format:=1;
+                                                            end;
+
+                                           'fbRayLibIndex0':begin
                                                               ExportDialog.Filter := 'Basic Array|*.bas';
-                                                              Lan:=QBLan;
+                                                              Lan:=FBLan;
+                                                              format:=2;
+                                                            end;
+                                           'fbRayLibRGB' : begin
+                                                              ExportDialog.Filter := 'Basic Array|*.bas';
+                                                              Lan:=FBLan;
                                                               format:=3;
                                                             end;
 
