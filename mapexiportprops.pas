@@ -83,6 +83,7 @@ begin
    ComboCompiler.Items.Add('Pascal');
    ComboCompiler.Items.Add('FreeBASIC');
    ComboCompiler.Items.Add('QB64');
+   ComboCompiler.Items.Add('Amiga QuickBasic AQB');
    ComboCompiler.ItemIndex:=0;
 
    ComboMap.Items.Clear;
@@ -131,6 +132,12 @@ begin
                                ComboMap.ItemIndex:=EO.MapFormat;
                           end;
                    QB64BasicLan:begin
+                               ComboMap.Items.Clear;
+                               ComboMap.Items.Add('None');
+                               ComboMap.Items.Add('Simple');
+                               ComboMap.ItemIndex:=EO.MapFormat;
+                          end;
+                   AQBBasicLan:begin
                                ComboMap.Items.Clear;
                                ComboMap.Items.Add('None');
                                ComboMap.Items.Add('Simple');

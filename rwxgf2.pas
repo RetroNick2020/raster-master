@@ -24,9 +24,10 @@ Const
    ABLan   = 11; //AmigaBasic
    APLan   = 12;
    ACLan   = 13;
-   QPLan   = 14; //Quick Pascal
-   gccLan  = 15;
-   APQLan  = 16; //Amiga APQBasic support - once we figure out how to access t_BitMap memory and stuff it with bitplane data
+   AQBLan  = 14; //Amiga APQBasic support - once we figure out how to access t_BitMap memory and stuff it with bitplane data
+   QPLan   = 15; //Quick Pascal
+   gccLan  = 16;
+
 
    NoExportFormat = 0;
    TPPutImageExportFormat = 1;

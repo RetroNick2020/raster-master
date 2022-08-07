@@ -75,8 +75,10 @@ begin
               TCLan:LanToStr:='Turbo C';
               GWLan:LanToStr:='GWBASIC/PC-BASIC';
               QBLan:LanToStr:='QuickBASIC';
+              AQBLan:LanToStr:='Amiga QuickBasic';
               QCLan:LanToStr:='QuickC';
               QPLan:LanToStr:='QuickPascal';
+              FBLan:LanToStr:='FreeBASIC';
               FBinQBModeLan:LanToStr:='FreeBASIC';
               FPLan:LanToStr:='FreePascal';
 
@@ -628,7 +630,7 @@ begin
   begin
     arraysize:=Ncolors*3-1;
   end;
-  If (Lan = TPlan) OR (Lan =FPLan) OR (Lan = APLan) then
+  If (Lan = TPlan) OR (Lan = QPlan) OR (Lan =FPLan) OR (Lan = APLan) then
   begin
    Writeln(data.fText,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
   end
@@ -681,7 +683,7 @@ end;
 //write c/pascal constants and basic data statements
 procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
 begin
-   case Lan of ABLan,QBLan,PBLan,GWLAN,FBinQBModeLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
+   case Lan of ABLan,AQBLan,QBLan,PBLan,GWLAN,FBinQBModeLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
                TPLan,QPLan,APLan,FPLan,TCLan,QCLan,ACLan:WritePalCPascalBuffer(data,imagename,Lan,rgbFormat);
    end;
 end;

@@ -10,6 +10,7 @@ object RMMainForm: TRMMainForm
   DefaultMonitor = dmDesktop
   DesignTimePPI = 120
   Menu = MainMenu1
+  OnClose = FormClose
   OnCreate = FormCreate
   Position = poDefault
   LCLVersion = '2.0.10.0'
@@ -604,6 +605,13 @@ object RMMainForm: TRMMainForm
           object PascalVSpriteBitmapArray: TMenuItem
             Caption = 'VSprite Bitmap Array'
             OnClick = AmigaPascalClick
+          end
+        end
+        object MenuItem13: TMenuItem
+          Caption = 'Amiga QuickBasic AQB'
+          object AqbPsetBitMap: TMenuItem
+            Caption = 'PSet BitMap Data'
+            OnClick = AqbPsetBitMapClick
           end
         end
         object FreeBASIC: TMenuItem
@@ -1263,17 +1271,20 @@ object RMMainForm: TRMMainForm
   end
   object OpenDialog1: TOpenDialog
     Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
+    Options = [ofFileMustExist, ofEnableSizing, ofViewDetail]
     Left = 1624
     Top = 304
   end
   object SaveDialog1: TSaveDialog
     Title = 'Save'
-    Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
+    Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|*.lbm|Amiga ILBM|*.ilbm|Amiga ILBM|All Files|*.*'
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
     Left = 1624
     Top = 400
   end
   object ExportDialog: TSaveDialog
     Title = 'Export'
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
     Left = 1624
     Top = 488
   end

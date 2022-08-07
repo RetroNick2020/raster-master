@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,lclintf;
 
 Const
-  ProgramName ='Raster Master v1.2 R60';
+  ProgramName ='Raster Master v1.3 R61';
   ProgramLicense = 'Released under MIT License';
 
 type

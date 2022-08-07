@@ -5,8 +5,8 @@ object MapExportForm: TMapExportForm
   Width = 400
   BorderStyle = bsDialog
   Caption = 'Map Export Properties'
-  ClientHeight = 318
-  ClientWidth = 400
+  ClientHeight = 0
+  ClientWidth = 0
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
   object EditName: TEdit

@@ -219,6 +219,18 @@ begin
                            ComboImage.ItemIndex:=EO.Image;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
+
+                   AQBLan:begin
+                           ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
+                           ComboImage.Items.Add('None');
+                           ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Bob Image');
+                           ComboImage.Items.Add('Sprite Image');
+                           ComboImage.ItemIndex:=EO.Image;
+                           ComboPalette.ItemIndex:=EO.Palette;
+                         end;
+
                    QPLan:begin
                             ComboImage.Items.Clear;
                             ComboMask.Items.Clear;
@@ -299,6 +311,7 @@ begin
    ComboCompiler.Items.Add('AmigaBASIC');
    ComboCompiler.Items.Add('Amiga Pascal');
    ComboCompiler.Items.Add('Amiga C');
+   ComboCompiler.Items.Add('Amiga QuickBasic AQB');
    ComboCompiler.Items.Add('Quick Pascal');
    ComboCompiler.Items.Add('gcc');
    ComboCompiler.ItemIndex:=0;
@@ -317,7 +330,7 @@ begin
    ComboPalette.Items.Add('Amiga - 4 Bit');
    ComboPalette.Items.Add('PC - 6 Bit');
    ComboPalette.Items.Add('8 Bit');
-   ComboPalette.Items.Add('AmigaBASIC -4 Bit');
+   ComboPalette.Items.Add('AmigaBASIC/AQB -4 Bit');
 
    ComboPalette.ItemIndex:=0;
    EditWidth.Text:='0';

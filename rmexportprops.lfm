@@ -5,8 +5,8 @@ object ImageExportForm: TImageExportForm
   Width = 421
   BorderStyle = bsDialog
   Caption = 'Image Export Properties'
-  ClientHeight = 429
-  ClientWidth = 421
+  ClientHeight = 0
+  ClientWidth = 0
   DesignTimePPI = 120
   LCLVersion = '2.0.10.0'
   object EditName: TEdit

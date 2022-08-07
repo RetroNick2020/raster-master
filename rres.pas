@@ -4,7 +4,7 @@ Unit rres;
 
 Interface
    uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
-     wraylib;
+     wraylib,rwaqb;
 
 //Function RESInclude(filename:string):word;
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
@@ -191,6 +191,7 @@ begin
                                        3:size:=GetBobDataSize(width,height,nColors,true);  //vsprite
                      end;
                    end;
+             AQBLan:size:=width*height;
              APLan,ACLan:size:=GetAmigaBitMapSize(width,height,ncolors);
              gccLan:size:=ResRayLibImageSize(width,height,ImageType);
  end;
@@ -216,17 +217,24 @@ begin
   GetRESMapSize:=Size;
 end;
 
+Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
+begin
+  //we don't want GWLan  - it has line number already
+  case Lan of ABLan,AQBLan,FBinQBModeLan,FBLan,QBLan,QB64Lan,PBLan:Writeln(data.fText,LabelName,'Label:');
+  end;
+end;
+
 procedure WriteBasicVariable(var data : BufferRec;Lan : integer;vname,vsubname : string;value : longint);
 var
  DotOrUnderScore : String;
 begin
   DotOrUnderScore:='.';
 
-  if (Lan = FBinQBModeLan) or (Lan = FBLan) then
+  if (Lan=AQBLan) or (Lan = FBinQBModeLan) or (Lan = FBLan) then
   begin
     DotOrUnderScore:='_';
   end;
-  if (Lan = FBLan) then
+  if (Lan=AQBLan) or (Lan = FBLan) then
   begin
     writeln(data.fText,LineCountToStr(Lan),'Dim ',vname,DotOrUnderScore,vsubname,' As Integer = ',value);
   end
@@ -295,7 +303,39 @@ begin
   writeln(data.fText,LineCountToStr(Lan),'  Next x');
   writeln(data.fText,LineCountToStr(Lan),'Next y');
   writeln(data.fText,LineCountToStr(Lan),'_Dest prevdest');
+end;
 
+
+
+procedure WriteAQBImageStub(var data : BufferRec;Lan,Image : integer; name : string;size : longint);
+begin
+ writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+ writeln(data.fText,LineCountToStr(Lan),'Dim As BITMAP_t PTR ',name,'BitMap = NULL');
+ if Image = 2 then
+ begin
+   writeln(data.fText,LineCountToStr(Lan),'Dim As BOB_t PTR ',name,'Bob');
+ end
+ else if Image = 3 then
+ begin
+   writeln(data.fText,LineCountToStr(Lan),'Dim As SPRITE_t PTR ',name,'Sprite');
+ end;
+ writeln(data.fText,LineCountToStr(Lan),name,'BitMap = BITMAP(',name,'_Width,',name,'_Height,',name,'_Depth,TRUE)');
+ writeln(data.fText,LineCountToStr(Lan),'BITMAP OUTPUT ',name,'BitMap');
+ writeln(data.fText,LineCountToStr(Lan),'For _rmj=0 to ',name,'_Height-1');
+ writeln(data.fText,LineCountToStr(Lan),'   For _rmi=0 to ',name,'_Width-1');
+ writeln(data.fText,LineCountToStr(Lan),'      Read _rma');
+ writeln(data.fText,LineCountToStr(Lan),'      Pset(_rmi,_rmj),_rma');
+ writeln(data.fText,LineCountToStr(Lan),'   Next _rmi');
+ writeln(data.fText,LineCountToStr(Lan),'Next _rmj');
+ if Image = 2 then
+  begin
+    writeln(data.fText,LineCountToStr(Lan),name,'Bob = BOB(',name,'BitMap)');
+  end
+  else if Image = 3 then
+  begin
+    writeln(data.fText,LineCountToStr(Lan),name,'Sprite = SPRITE(',name,'BitMap)');
+  end;
+  writeln(data.fText,LineCountToStr(Lan),'WINDOW OUTPUT 1');
 end;
 
 procedure WriteAmigaBasicBobVSprite(var data : BufferRec;Lan : integer; name : string;size : longint);
@@ -310,13 +350,17 @@ begin
 end;
 
 procedure WriteAmigaBasicPaletteReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+var
+ fv : string;
 begin
+  fv:='i';
+  if Lan = AQBLan then fv:='_rmi';
   writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
 
   writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'!(',size,')');
-  writeln(data.fText,LineCountToStr(Lan),'For i=0 to ',size-1);
-  writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'!(i)');
-  writeln(data.fText,LineCountToStr(Lan),'Next i');
+  writeln(data.fText,LineCountToStr(Lan),'For ',fv,'=0 to ',size-1);
+  writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'!(',fv,')');
+  writeln(data.fText,LineCountToStr(Lan),'Next ',fv);
 end;
 
 
@@ -355,13 +399,13 @@ begin
      end;
 
 
-     if (EO.LAN = ABLan) or (EO.LAN = GWLan) or (EO.LAN = QBLan) or (EO.LAN = QB64Lan) or (EO.LAN = FBinQBModeLan) or (EO.LAN = FBLan) or (EO.LAN = PBLan) then
+     if (EO.LAN = ABLan) or (EO.LAN = AQBLan) or (EO.LAN = GWLan) or (EO.LAN = QBLan) or (EO.LAN = QB64Lan) or (EO.LAN = FBinQBModeLan) or (EO.LAN = FBLan) or (EO.LAN = PBLan) then
      begin
        if DefIntFlag then
        begin
-          if (EO.Lan=FBLan) then
+          if (EO.Lan=AQBLan) or (EO.Lan=FBLan) then
           begin
-            writeln(data.fText,LineCountToStr(EO.Lan),'Dim As Integer _rmx,_rmy,_rmr,_rmg,_rmb,_rma,_rmi');
+            writeln(data.fText,LineCountToStr(EO.Lan),'Dim As Integer _rmx,_rmy,_rmr,_rmg,_rmb,_rma,_rmi,_rmj');
           end
           else
           begin
@@ -377,7 +421,7 @@ begin
          WriteBasicVariable(data,EO.Lan,EO.Name+'Pal','Size',PalSize);
          WriteBasicVariable(data,EO.Lan,EO.Name+'Pal','Colors',nColors);
          WriteBasicVariable(data,EO.Lan,EO.Name+'Pal','Id',i);
-         if (EO.Lan=ABLan) and  (EO.Palette=5) then   // uses SINGLE(!) variable for palette in n.nn format
+         if ((EO.Lan=ABLan) or (EO.Lan=AQBLan)) and  (EO.Palette=5) then   // uses SINGLE(!) variable for palette in n.nn format
          begin
            WriteAmigaBasicPaletteReadStub(data,EO.Lan,EO.Name+'Pal',PalSize);
          end
@@ -389,7 +433,7 @@ begin
 
        if (EO.Image > 0) then  //we have an image
        begin
-          if EO.Image = 1 then size := size div 2;  //we writing basic integers for Image format 1
+          if (EO.Image = 1) and ((EO.Lan = FBinQBModeLan) or (EO.Lan = ABLan) or (EO.Lan = QBLan) or (EO.Lan = GWLan) or (EO.Lan = PBLan)) then size := size div 2;  //we writing basic integers for Image format 1
           WriteBasicVariable(data,EO.Lan,EO.Name,'Size',size);
           if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) and ((EO.Image > 0) and (EO.Image < 4)) then
           begin
@@ -406,6 +450,11 @@ begin
           if (EO.Lan=ABLan) and ((EO.Image=2) or (EO.Image=3)) then   //these are stored in strings so we need a diffent way
           begin
             WriteAmigaBasicBobVSprite(data,EO.Lan,EO.Name,size);
+          end
+          else if (EO.Lan=AQBLan) then
+          begin
+            WriteBasicVariable(data,EO.Lan,EO.Name,'Depth',nColorsToBitPlanes(nColors));
+            WriteAQBImageStub(data,EO.Lan,EO.Image,EO.Name,size);
           end
           else if (EO.Lan=FBLan) and ((EO.Image>0) and (EO.Image<4)) then
           begin
@@ -444,7 +493,7 @@ begin
    mheight:=MapCoreBase.GetExportHeight(i);
    size:=mwidth*mheight+4;
 
-   if ((MPE.Lan=BasicLan) or (MPE.Lan=FBBasicLan) or (MPE.Lan=QB64BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then   //hack alert - fix FBBasicLan
+   if ((MPE.Lan=BasicLan) or (MPE.Lan=AQBBasicLan) or  (MPE.Lan=FBBasicLan) or (MPE.Lan=QB64BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then   //hack alert - fix FBBasicLan
    begin
      Lan:=QBLan;
      if MPE.Lan = BasicLnLan then
@@ -454,6 +503,10 @@ begin
      else if MPE.Lan = FBBasicLan then
      begin
        Lan:=FBLan;
+     end
+     else if MPE.Lan = AQBBasicLan then
+     begin
+       Lan:=AQBLan;
      end;
 
      WriteBasicVariable(data,Lan,MPE.Name+'Map','Size',size);
@@ -462,7 +515,7 @@ begin
      WriteBasicVariable(data,Lan,MPE.Name+'Map','TileWidth',MP.tilewidth);
      WriteBasicVariable(data,Lan,MPE.Name+'Map','TileHeight',MP.tileheight);
      WriteBasicVariable(data,Lan,MPE.Name+'Map','Id',i);
-     if Lan = FBLan then
+     if (Lan = FBLan) or (Lan = AQBLan) then
      begin
         WriteFBBasicDimReadStub(data,Lan,MPE.Name+'Map',size);
      end
@@ -474,12 +527,7 @@ begin
  end;
 end;
 
-Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
-begin
-  //we don't want GWLan  - it has line number already
-  case Lan of ABLan,FBinQBModeLan,FBLan,QBLan,QB64Lan,PBLan:Writeln(data.fText,LabelName,'Label:');
-  end;
-end;
+
 
 //exportonlyindex means export only the index, none of the other images.palette maps
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
@@ -588,6 +636,12 @@ begin
 
    if (EO.LAN=APLan) and (EO.Image = 1) then WriteAmigaPascalBobCodeToBuffer(0,0,height-1,width-1,EO.Name,data,false);        // bob
    if (EO.LAN=APLan) and (EO.Image = 2) then WriteAmigaPascalBobCodeToBuffer(0,0,height-1,width-1,EO.Name,data,true);  //vsprite
+
+   if (EO.LAN=AQBLan) and ((EO.Image > 0) and (EO.Image < 4)) then
+   begin
+     WriteBasicLabel(data,EO.Lan,EO.Name);
+     WriteAQBBitMapCodeToBuffer(data.fText,0,0,height-1,width-1,EO.Name);
+   end;
 
    //FP RayLib formats
    if (EO.Lan = FPLan) and (EO.Image > 1) and (EO.Image < 5) then

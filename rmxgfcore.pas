@@ -8,6 +8,7 @@ interface
 type
   GetMaxColorProc = function : integer;
   GetPixelProc    = function(x,y : integer) : integer;
+  PutPixelProc    = procedure(x,y,color : integer);
   GetColorProc    = procedure(index : integer;var cr : TRMColorRec);
   SetColorProc    = procedure(index : integer;var cr : TRMColorRec);
 
@@ -18,7 +19,10 @@ function ThumbGetMaxColor : integer;
 function CoreGetPixel(x,y : integer) : integer;
 function ThumbGetPixel(x,y : integer) : integer;
 procedure SetMaxColorProc(MC : GetMaxColorProc);
+
 procedure SetGetPixelProc(GP : GetPixelProc);
+procedure SetPutPixelProc(PP : PutPixelProc);
+
 procedure SetGetColorProc(GC : GetColorProc);
 procedure SetSetColorProc(SC : SetColorProc);
 
@@ -27,6 +31,7 @@ Procedure SetThumbActive;
 Procedure InitXGFProcs;
 
 function GetPixel(x,y : integer) : integer;
+procedure PutPixel(x,y,color : integer);
 function  GetMaxColor : integer;
 procedure GetColor(index : integer;var cr : TRMColorRec);
 procedure SetColor(index : integer;var cr : TRMColorRec);
@@ -38,6 +43,8 @@ implementation
 var
  XThumbIndex  : integer;
  XGetPixel    : GetPixelProc;
+ XPutPixel    : PutPixelProc;
+
  XGetMaxColor : GetMaxColorProc;
  XGetColor    : GetColorProc;
  XSetColor    : SetColorProc;
@@ -87,6 +94,12 @@ begin
   CoreGetPixel:=RMCoreBase.getPixel(x,y);
 end;
 
+procedure CorePutPixel(x,y,color : integer);
+begin
+  RMCoreBase.PutPixel(x,y,color);
+end;
+
+
 procedure CoreGetColor(index : integer;var cr : TRMColorRec);
 begin
   RMCoreBase.palette.getcolor(index,cr);
@@ -108,8 +121,6 @@ begin
 end;
 
 
-
-
 function ThumbGetPixel(x,y : integer) : integer;
 var
   index : integer;
@@ -117,6 +128,15 @@ begin
   index:=GetThumbIndex;
   ThumbGetPixel:=ImageThumbBase.GetPixel(index,x,y);
 end;
+
+procedure ThumbPutPixel(x,y,color : integer);
+var
+  index : integer;
+begin
+  index:=GetThumbIndex;
+  ImageThumbBase.PutPixel(index,x,y,color);
+end;
+
 
 procedure ThumbGetColor(colorindex : integer;var cr : TRMColorRec);
 var
@@ -145,6 +165,11 @@ begin
   XGetPixel:=GP;
 end;
 
+procedure SetPutPixelProc(PP : PutPixelProc);
+begin
+  XPutPixel:=PP;
+end;
+
 procedure SetGetColorProc(GC : GetColorProc);
 begin
   XGetColor:=GC;
@@ -160,7 +185,10 @@ Procedure SetCoreActive;
 begin
  SetMaskMode(0);
  SetMaxColorProc(@CoreGetMaxColor);
+
  SetGetPixelProc(@CoreGetPixel);
+ SetPutPixelProc(@CorePutPixel);
+
  SetGetColorProc(@CoreGetColor);
  SetSetColorProc(@CoreSetColor);
  SetThumbIndex(ImageThumbBase.GetCurrent);
@@ -170,7 +198,10 @@ Procedure SetThumbActive;
 begin
  SetMaskMode(0);
  SetMaxColorProc(@ThumbGetMaxColor);
+
  SetGetPixelProc(@ThumbGetPixel);
+ SetPutPixelProc(@ThumbPutPixel);
+
  SetGetColorProc(@ThumbGetColor);
  SetSetColorProc(@ThumbGetColor);
  SetThumbIndex(0);
@@ -191,6 +222,11 @@ begin
     if pixColor = 0 then pixColor:=GetMaxColor else pixColor:=0;  // in 16 color mode any pixel color 0 become 15 (white) and any other color becomes 0
  end;
  GetPixel:=pixColor;
+end;
+
+procedure PutPixel(x,y,color : integer);
+begin
+ XPutPixel(x,y,color);
 end;
 
 begin

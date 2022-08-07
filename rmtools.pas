@@ -250,6 +250,12 @@ begin
      ClipArea.y:=y;
      ClipArea.y2:=y2;
    end;
+
+   if ClipArea.x < 0 then ClipArea.x:=0;
+   if ClipArea.x2 > RMCoreBase.GetWidth then ClipArea.x2:=RMCoreBase.GetWidth-1;
+   if ClipArea.y < 0 then ClipArea.y:=0;
+   if ClipArea.y2 > RMCoreBase.GetHeight then ClipArea.y2:=RMCoreBase.GetHeight-1;
+
 end;
 
 procedure TRMDrawTools.DrawClipArea(Image : TCanvas;color : TColor; mode : integer);

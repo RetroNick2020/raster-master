@@ -9,7 +9,8 @@ uses
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
   rmabout,rwpal,rwraw,rwpcx,rwbmp,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib;
+  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib,
+  rwilbm,rwaqb;
 
 
 type
@@ -69,6 +70,8 @@ type
     fbRayLibIndex0: TMenuItem;
     fbRayLibRGB: TMenuItem;
     MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    AqbPsetBitMap: TMenuItem;
     qbRayLibRGB: TMenuItem;
     qbRayLibIndex0: TMenuItem;
     qbRayLibFuchsia: TMenuItem;
@@ -269,6 +272,7 @@ type
     procedure AmigaCPaletteClick(Sender: TObject);
     procedure AmigaPascalClick(Sender: TObject);
     procedure AmigaPascalPaletteClick(Sender: TObject);
+    procedure AqbPsetBitMapClick(Sender: TObject);
 
 
     procedure ColorBoxMouseEnter(Sender: TObject);
@@ -279,6 +283,7 @@ type
     procedure EditClearClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
 
 
     procedure FormCreate(Sender: TObject);
@@ -1766,7 +1771,8 @@ end;
 
 procedure TRMMainForm.FileExitMenuClick(Sender: TObject);
 begin
-   Close;
+   if MessageDlg('Exiting Raster Master', 'Are you sure you want to Exit?', mtConfirmation,
+     [mbYes, mbNo],0) = mrYes    then  Close;
 end;
 
 procedure TRMMainForm.HorizScrollChange(Sender: TObject);
@@ -1930,7 +1936,7 @@ var
  x,y,x2,y2 : integer;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
+   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush|*.pcx|DP-Amiga IFF LBM|*.lbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
@@ -1962,6 +1968,13 @@ begin
           ShowMessage('Error Saving GIF file!');
         end;
       end
+      else if (ext = '.ILBM') or (ext = '.LBM') then
+          begin
+            if WriteILBM(SaveDialog1.FileName,x,y,x2,y2,1) <> 0 then
+            begin
+              ShowMessage('Error Saving GIF file!');
+            end;
+          end
       else if ext = '.RAW' then
       begin
         if WriteRAW(x,y,x2,y2,SaveDialog1.FileName) <> 0 then
@@ -1984,7 +1997,7 @@ begin
    pm:=RMCoreBase.Palette.GetPaletteMode;
 
    if RMDrawTools.GetClipStatus = 1 then lp:=0;
-   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
+   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|DP-Amiga IFF LBM|*.lbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
 
    if OpenDialog1.Execute then
    begin
@@ -2002,6 +2015,14 @@ begin
         if ReadBMP(x,y,x2,y2,lp,pm,OpenDialog1.FileName) <> 0 then
         begin
           ShowMessage('Error Opening BMP file!');
+          exit;
+        end;
+      end
+      else if (ext = '.LBM') or (ext = '.BBM') or (ext = '.ILBM') or (ext = '.IFF') then
+      begin
+        if ReadILBM(OpenDialog1.FileName,x,y,x2,y2,lp) <> 0 then
+        begin
+          ShowMessage('Error Opening IFF/ILBM file!');
           exit;
         end;
       end
@@ -2476,7 +2497,7 @@ begin
  //update the current thumb image
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
 
- Case (Sender As TMenuItem).Name of 'ExportRESInclude' : ExportDialog.Filter := 'RES Include|*.inc';
+ Case (Sender As TMenuItem).Name of 'ExportRESInclude' : ExportDialog.Filter := 'RES Pascal Include|*.inc|RES Pascal Include|*.pas|RES C Include|*.h|RES C Include|*.c|RES BASIC Include|*.bi|RES BASIC Include|*.bas|All Files|*.*';
                                      'ExportRESBinary' : ExportDialog.Filter := 'RES Binary|*.res';
  end;
 
@@ -2886,6 +2907,36 @@ begin
   end;
 end;
 
+procedure TRMMainForm.AqbPsetBitMapClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ error : word;
+ validpm : boolean;
+begin
+   GetOpenSaveRegion(x,y,x2,y2);
+//   spritewidth:=x2-x+1;
+   ExportDialog.Filter := 'Amiga QuickBasic Pset Bittmap Array|*.bas';
+
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
+   if validpm = false then
+   begin
+      ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
+      exit;
+   end;
+
+   if ExportDialog.Execute then
+   begin
+      error:=WriteAQBBitMapCodeToFile(x,y,x2,y2,ExportDialog.FileName);
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var
  pm : integer;
@@ -3090,6 +3141,12 @@ begin
  begin
    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
  end;
+end;
+
+procedure TRMMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+ if MessageDlg('Exiting Raster Master', 'Are you sure you want to Exit?', mtConfirmation,
+     [mbYes, mbNo],0) = mrNo  then  CloseAction := caNone;
 end;
 
 Procedure TRMMainForm.CopyScrollPositionToCore;
@@ -3341,7 +3398,7 @@ var
 begin
  //update the current thumb image
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
- ExportDialog.Filter := 'RES Include|*.inc';
+ ExportDialog.Filter := 'RES Pascal Include|*.inc|RES Pascal Include|*.pas|RES C Include|*.h|RES C Include|*.c|RES BASIC Include|*.bi|RES BASIC Include|*.bas|All Files|*.*';
 
  if ExportDialog.Execute then
  begin
