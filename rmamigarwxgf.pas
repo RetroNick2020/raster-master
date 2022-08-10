@@ -3,7 +3,7 @@
 
 Unit rmamigarwxgf;
  Interface
-   uses rmcore,rwxgf,rwxgf2,rmxgfcore,SysUtils,LazFileUtils,bits;
+   uses rmcore,rwxgf,rmxgfcore,SysUtils,LazFileUtils,bits;
 
 
 function GetABXImageSize(width,height,ncolors : integer) : longint;

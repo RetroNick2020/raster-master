@@ -5,7 +5,7 @@ unit wraylib;
 interface
 
 uses
-  Classes, SysUtils,LazFileUtils,rmcore,rmcodegen,rmxgfcore,rwxgf2;
+  Classes, SysUtils,LazFileUtils,rmcore,rmcodegen,rmxgfcore,rwxgf;
 
 type
   raylibImageHeadRec = packed Record

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, MaskEdit,
-  rmthumb, rwxgf2;
+  rmthumb, rwxgf;
 
 type
 

@@ -3,7 +3,7 @@
 Unit rres;
 
 Interface
-   uses rmcore,rmthumb,rmxgfcore,rwxgf2,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
+   uses rmcore,rmthumb,rmxgfcore,rwxgf,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
      wraylib,rwaqb;
 
 //Function RESInclude(filename:string):word;

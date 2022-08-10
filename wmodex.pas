@@ -1,6 +1,6 @@
 unit wmodex;
 interface
- uses SysUtils,LazFileUtils,bits,rwxgf2,rmxgfcore;
+ uses SysUtils,LazFileUtils,bits,rwxgf,rmxgfcore;
 
  type
    linebuftype = array[0..2047] of byte;

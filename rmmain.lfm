@@ -526,9 +526,9 @@ object RMMainForm: TRMMainForm
         Caption = 'Save Project'
         OnClick = SaveProjectFileClick
       end
-      object SaveDelete: TMenuItem
+      object FileDelete: TMenuItem
         Caption = 'Delete'
-        OnClick = SaveDeleteClick
+        OnClick = FileDeleteClick
       end
       object DeleteAll: TMenuItem
         Caption = 'Delete All'

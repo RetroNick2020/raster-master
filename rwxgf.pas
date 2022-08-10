@@ -2,7 +2,7 @@
 {$mode objfpc}{$H+}
 {$PACKRECORDS 1}
 
-Unit rwxgf2;
+Unit rwxgf;
  Interface
    uses SysUtils,LazFileUtils,rmcore,rmthumb,rmxgfcore,bits,gwbasic;
 

@@ -9,7 +9,7 @@ uses
   StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
   LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
   rmabout,rwpal,rwraw,rwpcx,rwbmp,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf2,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib,
+  wmodex,rwgif,rwxgf,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib,
   rwilbm,rwaqb;
 
 
@@ -199,7 +199,7 @@ type
     PascalVSpriteBitmapArray: TMenuItem;
     TransparentImage: TMenuItem;
     NonTransparentImage: TMenuItem;
-    SaveDelete: TMenuItem;
+    FileDelete: TMenuItem;
     ToolEllipseMenu: TMenuItem;
     ToolFEllipseMenu: TMenuItem;
     PaletteExportQuickC: TMenuItem;
@@ -311,7 +311,7 @@ type
 
 
     procedure RESExportClick(Sender: TObject);
-    procedure SaveDeleteClick(Sender: TObject);
+    procedure FileDeleteClick(Sender: TObject);
     procedure SaveProjectFileClick(Sender: TObject);
     procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
@@ -3229,6 +3229,8 @@ procedure TRMMainForm.DeleteAllClick(Sender: TObject);
 var
   ImgWidth,ImgHeight : integer;
 begin
+ if MessageDlg('Delete All Images', 'Are you sure you want to do this?', mtConfirmation,
+   [mbYes, mbNo],0) = mrNo    then  Exit;
 
  ImgWidth:=256;
  ImgHeight:=256;
@@ -3529,18 +3531,36 @@ begin
   Listview1.Refresh;
 end;
 
-procedure TRMMainForm.SaveDeleteClick(Sender: TObject);
+procedure TRMMainForm.FileDeleteClick(Sender: TObject);
 var
   item  : TListItem;
   i,index : integer;
 begin
+
+
  if ImageThumbBase.GetCount = 1 then
  begin
-    Clear;
+    if (Listview1.SelCount > 0) then
+    begin
+      Clear;
+    end
+    else
+    begin
+      if MessageDlg('No Image Selected', 'Delete Current Image?', mtConfirmation,
+        [mbYes, mbNo],0) = mrNo  then  Exit;
+      Clear;
+    end;
      // display message to select clear as it is the only item
  end
- else if (Listview1.SelCount > 0)  then
+ else
  begin
+   if (Listview1.SelCount = 0)  then
+   begin
+     if MessageDlg('No Image Selected','Please Select Image to Delete', mtConfirmation, [mbOk],0) = mrOk  then exit;
+   end;
+
+   if MessageDlg('Delete Selected Image', 'Are you sure you want to do this?', mtConfirmation, [mbYes, mbNo],0) = mrNo  then exit;
+
    item:=ListView1.LastSelected;
    index:=item.index;
 
