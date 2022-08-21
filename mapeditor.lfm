@@ -4,8 +4,8 @@ object MapEdit: TMapEdit
   Top = 159
   Width = 1402
   Caption = 'Map Edititor'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 807
+  ClientWidth = 1402
   DesignTimePPI = 120
   Menu = MainMenu1
   OnClose = FormClose

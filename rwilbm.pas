@@ -243,7 +243,7 @@ var
  // mybmap  : longint;
   bwidth,bheight : word;
   Ln,j,k : integer;
-  a,b,c : byte;
+  b,c : byte;
   planarBuf,singleBuf : LineBufType;
   counter : word;
   n : integer;
@@ -256,6 +256,7 @@ begin
   mybytes:=rowbytes(bwidth);
   nplanes:=bmap.nplanes;
 //  mybmap:=mybytes*bheight;
+
     FOR Ln:=0 TO bheight-1 do
     begin
         counter:=0;
@@ -272,7 +273,7 @@ begin
             end
             ELSE
             begin *)
-              WHILE counter < (mybytes*bmap.nplanes-1) do
+              WHILE counter <= (mybytes*bmap.nplanes-1) do
                begin
                  Blockread(F,c,1);
                  if c > 127 then n:=c-256 else n:=c;  //using 16 bit integer like 8 bit integer
@@ -504,7 +505,7 @@ begin
                      255:GetNPlanes:=8;
  end;
 end;
-
+(*
 Function WriteBODY(var f : file; x,y,x2,y2 : word;cmp : byte) : longword;
 var
  i,j : integer;
@@ -534,13 +535,24 @@ begin
      inc(c);
    end;
 
-   spTOmp(singlePlane,multiPlane,w,RowBytes(w),nPlanes);
-
-   for p:=0 to nplanes -1 do
+   if nPlanes = 8 then
    begin
-     packedsize:=gPackRow(multiplane,p*rowbytes(w),imgpacked,RowBytes(w));
+     //blockwrite(f,singlePlane,rowbytes(w));
+     //inc(Bodysize,rowbytes(w));
+
+     packedsize:=gPackRow(singleplane,0,imgpacked,w);
      blockwrite(f,imgpacked,packedsize);
      inc(Bodysize,packedsize);
+   end
+   else
+   begin
+      spTOmp(singlePlane,multiPlane,w,RowBytes(w),nPlanes);
+      for p:=0 to nplanes -1 do
+      begin
+        packedsize:=gPackRow(multiplane,p*rowbytes(w),imgpacked,RowBytes(w));
+        blockwrite(f,imgpacked,packedsize);
+        inc(Bodysize,packedsize);
+      end;
    end;
  end;
 
@@ -552,45 +564,83 @@ begin
 
  WriteBody:=BodySize;
 end;
-(*
-Function WriteBODYbak(var f : file; x,y,x2,y2 : word;cmp : byte) : longword;
-var
- i,j : integer;
- singlePlane : LineBufType;
- multiPlane  : LineBufType;
- ImgPacked : LineBufType;
- PackedSize : integer;
+*)
 
- BodySize : longword;
- pad0 : byte;
-  NPlanes : Byte;
-  c : word;
-  w,h : word;
-  n : integer;
-  p : integer;
+
+Function WriteBODY(var f : file; x,y,x2,y2 : word;cmp : byte) : longword;
+var
+  singlePlane : LineBufType;
+  multiPlane  : LineBufType;
+  ImgPacked   : LineBufType;
+  PackedSize  : integer;
+  BodySize    : longword;
+
+  pad0        : byte;
+  NPlanes     : byte;
+  colorIndex  : word;
+
+  w           : word;
+  pcount      : integer;
+   i          : integer;
+  LinePos     : integer;
+
 begin
  w:=x2-x+1;
- h:=y2-y+1;
+// h:=y2-y+1;
  BodySize:=0;
  pad0:=0;
  nPlanes:=GetNPlanes;
- for j:=y to y2 do
+
+ for LinePos:=y to y2 do
  begin
-   c:=0;
+   colorIndex:=0;
+   //get a line of pixels and store them in singleplane array
    for i:=x to x2 do
    begin
-     singlePlane[c]:=GetPixel(i,j);
-     inc(c);
-//     putpixel(i,j,singleplane[i]);
+     singlePlane[colorIndex]:=GetPixel(i,LinePos);
+     inc(colorIndex);
    end;
 
-   spTOmp(singlePlane,multiPlane,w,RowBytes(w),nPlanes);
- //  spTOmp(singlePlane,multiPlane,320,nPlanes);
-   packedsize:=gPackRow(multiplane,0,imgpacked,RowBytes(w)*nplanes);
-   blockwrite(f,imgpacked,packedsize);
-   inc(Bodysize,packedsize);
+   if nPlanes = 8 then //we use the PBM format for this - everyhing else ILBM
+   begin
+     if cmp = 1 then
+     begin
+       packedsize:=nPackRow(singleplane,0,imgpacked,w);
+       blockwrite(f,imgpacked,packedsize);
+       inc(Bodysize,packedsize);
+     end
+     else
+     begin
+       blockwrite(f,singleplane,w);
+       inc(Bodysize,w);
+     end;
+   end
+   else
+   begin
+     //convert single plane color to multiple planes and store in array
+     spTOmp(singlePlane,multiPlane,w,RowBytes(w),nPlanes);
+     //cycle throuh planes and dump bit plane rows to be compressed
+     for pcount:=0 to nplanes-1 do
+     begin
+       if cmp = 1 then
+       begin
+         //compress each row bitplane seperately - Do Not compress all bitplanes in one packrow command!
+         packedsize:=nPackRow(multiplane,pcount*rowbytes(w),imgpacked,RowBytes(w));
+       //  packedsize:=nPackRow2(multiplane,pcount*rowbytes(w),imgpacked,RowBytes(w));
+       //  packedsize:=gPackRow(multiplane,pcount*rowbytes(w),imgpacked,RowBytes(w));
+       //  packedsize:=mPackRow(@multiplane[pcount*rowbytes(w)],imgpacked,RowBytes(w));
 
- end;
+         blockwrite(f,imgpacked,packedsize);
+         inc(Bodysize,packedsize);
+       end
+       else
+       begin
+         blockwrite(f,multiplane[pcount*rowbytes(w)],rowbytes(w));
+         inc(Bodysize,rowbytes(w));
+       end;
+     end;  //pcount loop
+   end; //nplanes if
+ end;  //j loop
 
  if Odd(BodySize) then  //if the BODY is odd Delexe Paint reports it mangled iff
  begin
@@ -598,9 +648,10 @@ begin
    BlockWrite(f,pad0,sizeof(pad0));
  end;
 
- WriteBodybak:=BodySize;
+ WriteBody:=BodySize;
 end;
- *)
+
+
 Procedure UpdateFormSize(var f : file);
 var
  size : longword;

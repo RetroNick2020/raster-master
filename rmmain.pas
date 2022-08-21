@@ -5,12 +5,12 @@ unit rmmain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, ComCtrls, Menus, ActnList, StdActns, ColorPalette, Types,
-  LResources,lclintf, rmtools, rmcore,rmcolor,rmcolorvga,rmamigaColor,
-  rmabout,rwpal,rwraw,rwpcx,rwbmp,flood,rmamigarwxgf,wjavascriptarray,rmthumb,
-  wmodex,rwgif,rwxgf,rmexportprops,rres,rwpng,wmouse,mapeditor,spriteimport,wraylib,
-  rwilbm,rwaqb;
+  Classes, SysUtils, FileUtil, uPSComponent, uPSRuntime, uPSComponent_Forms,
+  Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, ComCtrls, Menus,
+  ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore,
+  rmcolor, rmcolorvga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp, flood,
+  rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
+  rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi;
 
 
 type
@@ -72,6 +72,10 @@ type
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     AqbPsetBitMap: TMenuItem;
+    ScriptMenuLoad: TMenuItem;
+    ScriptMenuRun: TMenuItem;
+    ScriptMenu: TMenuItem;
+    RMScript: TPSScript;
     qbRayLibRGB: TMenuItem;
     qbRayLibIndex0: TMenuItem;
     qbRayLibFuchsia: TMenuItem;
@@ -298,6 +302,10 @@ type
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
     procedure RayLibExportClick(Sender: TObject);
+    procedure RMScriptCompile(Sender: TPSScript);
+    procedure RMScriptExecute(Sender: TPSScript);
+    procedure ScriptMenuLoadClick(Sender: TObject);
+    procedure ScriptMenuRunClick(Sender: TObject);
     procedure SpriteImportMenuClick(Sender: TObject);
     procedure ThumbPopUpMenuExportClick(Sender: TObject);
     procedure ThumbPopUpMenusaveClick(Sender: TObject);
@@ -422,6 +430,8 @@ type
        procedure InitThumbView;
        Procedure CopyScrollPositionToCore;
        Procedure CopyScrollPositionFromCore;
+       function getopenfilename(var filename,ext : string; filter : string) : boolean;
+       function getsavefilename(var filename,ext : string; filter : string) : boolean;
 
   public
 
@@ -437,6 +447,10 @@ implementation
 {$R *.lfm}
 
 { TRMMainForm }
+
+
+
+
 
 procedure TRMMainForm.PaletteToCore;
 var
@@ -1936,7 +1950,7 @@ var
  x,y,x2,y2 : integer;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush|*.pcx|DP-Amiga IFF LBM|*.lbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
+   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush|*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
@@ -1972,7 +1986,14 @@ begin
           begin
             if WriteILBM(SaveDialog1.FileName,x,y,x2,y2,1) <> 0 then
             begin
-              ShowMessage('Error Saving GIF file!');
+              ShowMessage('Error Saving IFF/ILBM file!');
+            end;
+          end
+      else if (ext = '.BBM')  then
+          begin
+            if WriteILBM(SaveDialog1.FileName,x,y,x2,y2,0) <> 0 then
+            begin
+              ShowMessage('Error Saving IFF/BBM Brush file!');
             end;
           end
       else if ext = '.RAW' then
@@ -1997,7 +2018,7 @@ begin
    pm:=RMCoreBase.Palette.GetPaletteMode;
 
    if RMDrawTools.GetClipStatus = 1 then lp:=0;
-   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|DP-Amiga IFF LBM|*.lbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
+   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
 
    if OpenDialog1.Execute then
    begin
@@ -3367,6 +3388,98 @@ begin
    end;
 end;
 
+function rm_getopenfilename(var filename,ext : string; filter : string) : boolean;
+begin
+ rm_getopenfilename:=RMMainForm.getopenfilename(filename,ext,filter);
+end;
+
+function rm_getsavefilename(var filename,ext : string; filter : string) : boolean;
+begin
+ rm_getsavefilename:=RMMainForm.getsavefilename(filename,ext,filter);
+end;
+
+procedure TRMMainForm.RMScriptCompile(Sender: TPSScript);
+begin
+  Sender.AddFunction(@rm_putpixel, 'procedure putpixel(x,y,color : integer)');
+  Sender.AddFunction(@rm_getpixel, 'function getpixel(x,y : integer) : integer');
+
+  Sender.AddFunction(@rm_getwidth,'function getwidth : integer');
+  Sender.AddFunction(@rm_getheight,'function getheight : integer');
+
+  Sender.AddFunction(@rm_getopenfilename, 'function getopenfilename(var filename,ext : string; filter : string) : boolean');
+  Sender.AddFunction(@rm_getsavefilename, 'function getsavefilename(var filename,ext : string; filter : string) : boolean');
+
+  Sender.AddFunction(@rm_showmessage,'procedure showmessage(const aMsg : string)');
+
+  Sender.AddFunction(@rm_cg_open,'function cgopen(filename : string) : boolean');
+  Sender.AddFunction(@rm_cg_options,'procedure cgoptions(name, value : string)');
+  Sender.AddFunction(@rm_cg_close,'procedure cgclose');
+  Sender.AddFunction(@rm_cg_write,'procedure cgwrite(Line : string)');
+  Sender.AddFunction(@rm_cg_writeln,'procedure cgwriteln');
+  Sender.AddFunction(@rm_cg_write_byte,'procedure cgwritebyte(value : byte)');
+  Sender.AddFunction(@rm_cg_write_integer,'procedure cgwriteinteger(value : integer)');
+
+  Sender.AddFunction(@rm_getselectarea,'procedure getselectarea(var active,x1,y1,x2,y2 : integer)');
+
+//FileCreate/FileWrite/FileClose lifted from Lazarus Pascal Script Example Page - don't seem to work - you let me know
+  Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer)');
+  Sender.AddFunction(@FileWrite, 'function FileWrite(Handle: Integer; const Buffer: pChar; Count: LongWord): Integer)');
+  Sender.AddFunction(@FileClose, 'Procedure FileClose(handle: integer)');
+
+// registering valiables but not assigning values
+//  Sender.AddRegisteredVariable('mynum','integer');
+//  Sender.AddRegisteredVariable('myname','string');
+end;
+
+procedure TRMMainForm.RMScriptExecute(Sender: TPSScript);
+begin
+ //future use
+ //set VALUES to variables that were registered
+ //VSetInt(Sender.GetVariable('mynum'), mynum);
+ //VSetString(Sender.GetVariable('myname'), 'nick');
+end;
+
+procedure TRMMainForm.ScriptMenuLoadClick(Sender: TObject);
+var
+ ext : string;
+begin
+ OpenDialog1.Filter := 'Pascal Script|*.pas|All Files|*.*' ;
+ if OpenDialog1.Execute then
+ begin
+   ext:=UpperCase(ExtractFileExt(OpenDialog1.FileName));
+   if ext = '.PAS' then  RMScript.Script.LoadFromFile(OpenDialog1.FileName);
+ end;
+end;
+
+procedure TRMMainForm.ScriptMenuRunClick(Sender: TObject);
+var
+  ErrorMsg : string;
+  i : integer;
+begin
+  if RMScript.compile then
+  begin
+    //ShowMessage('compiled!');
+    if not RMScript.execute then
+    begin
+      ShowMessage('Run-time error:' + RMScript.ExecErrorToString);
+    end
+    else
+    begin
+      UpdateActualArea;
+      UpdateZoomArea;
+      UpdateThumbview;
+    end;
+  end
+  else
+  begin
+   ErrorMsg:='';
+   if RMScript.CompilerMessageCount > 0 then
+   for i:= 0 to RMScript.CompilerMessageCount-1 do
+          ErrorMsg:=ErrorMsg+RMScript.CompilerErrorToStr(i)+sLineBreak ;
+    ShowMessage('Failed to compile!'+sLineBreak+ErrorMsg);
+  end;
+end;
+
 procedure TRMMainForm.SpriteImportMenuClick(Sender: TObject);
 var
   OldCount,NewCount : integer;
@@ -3680,6 +3793,37 @@ procedure TRMMainForm.EditClearClick(Sender: TObject);
 begin
  Clear;
 end;
+
+
+function TRMMainForm.getopenfilename(var filename,ext : string; filter : string) : boolean;
+begin
+ filename:='';
+ ext:='';
+// OpenDialog1.Filter := 'All Files|*.*';
+ OpenDialog1.Filter := filter;
+ getopenfilename:=OpenDialog1.Execute;
+ if getopenfilename then
+ begin
+     filename:=OpenDialog1.FileName;
+     ext:=ExtractFileExt(OpenDialog1.FileName)
+ end;
+end;
+
+
+function TRMMainForm.getsavefilename(var filename,ext : string; filter : string) : boolean;
+begin
+ filename:='';
+ ext:='';
+// OpenDialog1.Filter := 'All Files|*.*';
+ SaveDialog1.Filter := filter;
+ getsavefilename:=SaveDialog1.Execute;
+ if getsavefilename then
+ begin
+     filename:=SaveDialog1.FileName;
+     ext:=ExtractFileExt(SaveDialog1.FileName)
+ end;
+end;
+
 
 end.
 

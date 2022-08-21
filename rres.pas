@@ -307,7 +307,7 @@ end;
 
 
 
-procedure WriteAQBImageStub(var data : BufferRec;Lan,Image : integer; name : string;size : longint);
+procedure WriteAQBImageStub(var data : BufferRec;Lan,Image,Mask : integer; name : string;size : longint);
 begin
  writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
  writeln(data.fText,LineCountToStr(Lan),'Dim As BITMAP_t PTR ',name,'BitMap = NULL');
@@ -327,6 +327,7 @@ begin
  writeln(data.fText,LineCountToStr(Lan),'      Pset(_rmi,_rmj),_rma');
  writeln(data.fText,LineCountToStr(Lan),'   Next _rmi');
  writeln(data.fText,LineCountToStr(Lan),'Next _rmj');
+ if Mask = 1 then writeln(data.fText,LineCountToStr(Lan),'BITMAP MASK ',name,'BitMap');
  if Image = 2 then
   begin
     writeln(data.fText,LineCountToStr(Lan),name,'Bob = BOB(',name,'BitMap)');
@@ -454,7 +455,7 @@ begin
           else if (EO.Lan=AQBLan) then
           begin
             WriteBasicVariable(data,EO.Lan,EO.Name,'Depth',nColorsToBitPlanes(nColors));
-            WriteAQBImageStub(data,EO.Lan,EO.Image,EO.Name,size);
+            WriteAQBImageStub(data,EO.Lan,EO.Image,EO.Mask,EO.Name,size);
           end
           else if (EO.Lan=FBLan) and ((EO.Image>0) and (EO.Image<4)) then
           begin
@@ -470,14 +471,14 @@ begin
           end;
        end;
 
-       if (EO.Image = 1) and (EO.Mask > 0) then    //we have putimage mask
+       if (EO.Image = 1) and (EO.Mask > 0)  then    //we have putimage mask - except for
        begin
          WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Size',size);
          WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Width',width);
          WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Height',height);
          WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Colors',nColors);
          WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Id',i);
-         WriteBasicDimReadStub(data,EO.Lan,EO.Name+'Mask',size);
+         if (EO.LAN<>AQBLan) then WriteBasicDimReadStub(data,EO.Lan,EO.Name+'Mask',size);  //aqb does need this. it uses different format for mask
        end;
      end;
   end;
@@ -579,7 +580,7 @@ begin
             WriteBasicLabel(data,EO.Lan,EO.Name);  //checks if it's basic lan then writes lable - ignoes other lan
             WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,0,EO.Name);
           end;
-          if (EO.Image = 1) and (EO.Mask=1) then    //put image mask
+          if (EO.Image = 1) and (EO.Mask=1) and (EO.Lan<>AQBLan) then    //put image mask
           begin
             WriteBasicLabel(data,EO.Lan,EO.Name+'Mask');
             WriteXGFCodeToBuffer(data,0,0,width-1,height-1,EO.Lan,1,EO.Name+'Mask');

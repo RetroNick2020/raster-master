@@ -227,6 +227,9 @@ begin
                            ComboImage.Items.Add('Put Image');
                            ComboImage.Items.Add('Bob Image');
                            ComboImage.Items.Add('Sprite Image');
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Trans Mask &HE0');
+                           ComboMask.ItemIndex:=EO.Mask;
                            ComboImage.ItemIndex:=EO.Image;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;

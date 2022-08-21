@@ -7,10 +7,10 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor, rmcolorvga, rmabout,
-  rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif, rmexportprops, rmxgfcore,
-  rwpng, mapcore, MapEditor, rwmap, mapexiportprops, gwbasic, spriteimport,
-  wraylib, rmcodegen, rwaqb
+  Forms, pascalscript, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor,
+  rmcolorvga, rmabout, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
+  rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
+  gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi
      { you can add units after this };
 
 {$R *.res}

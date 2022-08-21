@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 108
+  Left = 91
   Height = 869
-  Top = 82
+  Top = 78
   Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
@@ -1242,6 +1242,17 @@ object RMMainForm: TRMMainForm
         OnClick = SpriteImportMenuClick
       end
     end
+    object ScriptMenu: TMenuItem
+      Caption = 'Script'
+      object ScriptMenuLoad: TMenuItem
+        Caption = 'Load from file'
+        OnClick = ScriptMenuLoadClick
+      end
+      object ScriptMenuRun: TMenuItem
+        Caption = 'Run'
+        OnClick = ScriptMenuRunClick
+      end
+    end
     object HelpMenu: TMenuItem
       Caption = 'Help'
       object RMAboutDialog: TMenuItem
@@ -1303,5 +1314,16 @@ object RMMainForm: TRMMainForm
       Caption = 'Properties'
       OnClick = PropertiesClick
     end
+  end
+  object RMScript: TPSScript
+    CompilerOptions = []
+    OnCompile = RMScriptCompile
+    OnExecute = RMScriptExecute
+    Plugins = <    
+      item
+      end>
+    UsePreProcessor = False
+    Left = 1528
+    Top = 24
   end
 end

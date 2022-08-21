@@ -1,4 +1,4 @@
-unit MapEditor;
+unit mapeditor;
 
 {$mode objfpc}{$H+}
 

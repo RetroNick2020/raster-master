@@ -7,8 +7,13 @@ interface
 
 type
   GetMaxColorProc = function : integer;
+
+  GetWidthProc = function : integer;
+  GetHeightProc = function : integer;
+
   GetPixelProc    = function(x,y : integer) : integer;
   PutPixelProc    = procedure(x,y,color : integer);
+
   GetColorProc    = procedure(index : integer;var cr : TRMColorRec);
   SetColorProc    = procedure(index : integer;var cr : TRMColorRec);
 
@@ -32,6 +37,9 @@ Procedure InitXGFProcs;
 
 function GetPixel(x,y : integer) : integer;
 procedure PutPixel(x,y,color : integer);
+function GetWidth : integer;
+function GetHeight : integer;
+
 function  GetMaxColor : integer;
 procedure GetColor(index : integer;var cr : TRMColorRec);
 procedure SetColor(index : integer;var cr : TRMColorRec);
@@ -44,6 +52,9 @@ var
  XThumbIndex  : integer;
  XGetPixel    : GetPixelProc;
  XPutPixel    : PutPixelProc;
+
+ XGetWidth    : GetWidthProc;
+ XGetHeight   : GetHeightProc;
 
  XGetMaxColor : GetMaxColorProc;
  XGetColor    : GetColorProc;
@@ -88,7 +99,6 @@ begin
   GetMaxColor:=XGetMaxColor();
 end;
 
-
 function CoreGetPixel(x,y : integer) : integer;
 begin
   CoreGetPixel:=RMCoreBase.getPixel(x,y);
@@ -97,6 +107,16 @@ end;
 procedure CorePutPixel(x,y,color : integer);
 begin
   RMCoreBase.PutPixel(x,y,color);
+end;
+
+function CoreGetWidth : integer;
+begin
+  CoreGetWidth:=RMCoreBase.GetWidth;
+end;
+
+function CoreGetHeight : integer;
+begin
+  CoreGetHeight:=RMCoreBase.GetHeight;
 end;
 
 
@@ -137,6 +157,21 @@ begin
   ImageThumbBase.PutPixel(index,x,y,color);
 end;
 
+function ThumbGetWidth : integer;
+var
+  index : integer;
+begin
+  index:=GetThumbIndex;
+  ThumbGetWidth:=ImageThumbBase.GetWidth(index);
+end;
+
+function ThumbGetHeight : integer;
+var
+  index : integer;
+begin
+  index:=GetThumbIndex;
+  ThumbGetHeight:=ImageThumbBase.GetHeight(index);
+end;
 
 procedure ThumbGetColor(colorindex : integer;var cr : TRMColorRec);
 var
@@ -180,6 +215,16 @@ begin
   XSetColor:=SC;
 end;
 
+procedure SetGetWidthProc(SW : GetWidthProc);
+begin
+  XGetWidth:=SW;
+end;
+
+procedure SetGetHeightProc(SH : GetHeightProc);
+begin
+  XGetHeight:=SH;
+end;
+
 
 Procedure SetCoreActive;
 begin
@@ -188,6 +233,9 @@ begin
 
  SetGetPixelProc(@CoreGetPixel);
  SetPutPixelProc(@CorePutPixel);
+
+ SetGetWidthProc(@CoreGetWidth);
+ SetGetHeightProc(@CoreGetHeight);
 
  SetGetColorProc(@CoreGetColor);
  SetSetColorProc(@CoreSetColor);
@@ -201,6 +249,9 @@ begin
 
  SetGetPixelProc(@ThumbGetPixel);
  SetPutPixelProc(@ThumbPutPixel);
+
+ SetGetWidthProc(@ThumbGetWidth);
+ SetGetHeightProc(@ThumbGetHeight);
 
  SetGetColorProc(@ThumbGetColor);
  SetSetColorProc(@ThumbGetColor);
@@ -228,6 +279,17 @@ procedure PutPixel(x,y,color : integer);
 begin
  XPutPixel(x,y,color);
 end;
+
+function GetWidth : integer;
+begin
+  GetWidth:=XGetWidth();
+end;
+
+function GetHeight : integer;
+begin
+  GetHeight:=XGetHeight();
+end;
+
 
 begin
    InitXGFProcs;

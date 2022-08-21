@@ -20,7 +20,7 @@ const
 
 type
   CodeGenRec = Record
-                     InDentSize      : integer; //how many characters to pad
+                      InDentSize      : integer; //how many characters to pad
                       IndentOnFirst   : Boolean; //indent on first line
                       ValuesPerLine   : integer; //# values seperated by comma
                       ValuesTotal     : longint; //#number of values we are going to write
@@ -28,7 +28,7 @@ type
 
                       VC              : integer;  //value counter - how many byte/integer written
                       VCL             : longint;  //value counter per line
-                      LineCount       : integer; //line counter
+                      LineCount       : integer;  //line counter
                       FTextPtr        : ^Text;     //text file handle
                       LanId           : integer;
   end;
@@ -40,6 +40,8 @@ procedure MWSetValueFormat(var mc : CodeGenRec;format : integer);
 procedure MWWriteInteger(var mc : CodeGenRec;value : integer);
 procedure MWWriteByte(var mc : CodeGenRec;value : byte);
 procedure MWSetValuesPerLine(var mc : CodeGenRec;amount : integer);
+procedure MWSetIndentOnFirstLine(var mc : CodeGenRec;indent : boolean);
+procedure MWSetIndent(var mc : CodeGenRec;isize : integer);
 
 implementation
 procedure MWSetIndent(var mc : CodeGenRec;isize : integer);
