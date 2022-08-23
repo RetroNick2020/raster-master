@@ -1788,8 +1788,9 @@ end;
 
 procedure TRMMainForm.FileExitMenuClick(Sender: TObject);
 begin
-   if MessageDlg('Exiting Raster Master', 'Are you sure you want to Exit?', mtConfirmation,
-     [mbYes, mbNo],0) = mrYes    then  Close;
+   //if MessageDlg('Exiting Raster Master', 'Are you sure you want to Exit?', mtConfirmation,
+   //  [mbYes, mbNo],0) = mrYes    then  Close;
+  close;            // I created extra work - i added prompt in close
 end;
 
 procedure TRMMainForm.HorizScrollChange(Sender: TObject);
