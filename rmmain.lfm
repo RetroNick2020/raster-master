@@ -193,13 +193,13 @@ object RMMainForm: TRMMainForm
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 784
+      Left = 744
       Height = 88
       Top = 8
       Width = 434
       Anchors = [akTop, akRight]
       BorderSpacing.Top = 7
-      BorderSpacing.Right = 10
+      BorderSpacing.Right = 50
       ClientHeight = 88
       ClientWidth = 434
       TabOrder = 0
@@ -407,6 +407,20 @@ object RMMainForm: TRMMainForm
       ParentColor = False
       WordWrap = True
     end
+    object TrackBar1: TTrackBar
+      Left = 1193
+      Height = 110
+      Top = 1
+      Width = 30
+      Min = 1
+      OnChange = TrackBar1Change
+      Orientation = trVertical
+      Position = 1
+      TickMarks = tmTopLeft
+      Align = alRight
+      BorderSpacing.Right = 5
+      TabOrder = 1
+    end
   end
   object RightPanel: TPanel
     AnchorSideLeft.Control = RightHSplitter
@@ -424,29 +438,34 @@ object RMMainForm: TRMMainForm
     ClientHeight = 844
     ClientWidth = 222
     TabOrder = 5
+    OnClick = RightPanelClick
     object RMPanel: TPanel
       AnchorSideRight.Control = RightPanel
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
-      Left = 38
-      Height = 136
-      Top = 692
-      Width = 168
+      Cursor = crNo
+      Left = 48
+      Height = 121
+      Top = 712
+      Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
-      BorderSpacing.Bottom = 15
-      ClientHeight = 136
-      ClientWidth = 168
-      TabOrder = 1
+      BorderSpacing.Bottom = 10
+      ClientHeight = 121
+      ClientWidth = 158
+      TabOrder = 0
+      OnClick = RMPanelClick
       object RMLogo: TImage
+        AnchorSideTop.Control = RMPanel
         Cursor = crHandPoint
         Left = 16
-        Height = 96
+        Height = 64
         Hint = 'Click Me! And Subscribe to my YouTube Channel!'
-        Top = 16
+        Top = 17
         Width = 128
         AutoSize = True
+        BorderSpacing.Top = 16
         OnClick = RMLogoClick
         ParentShowHint = False
         ShowHint = True
@@ -458,7 +477,7 @@ object RMMainForm: TRMMainForm
     object ColorBox: TShape
       Left = 8
       Height = 64
-      Top = 264
+      Top = 8
       Width = 60
       Brush.Color = clSkyBlue
       ParentShowHint = False
@@ -466,22 +485,10 @@ object RMMainForm: TRMMainForm
       OnMouseEnter = ColorBoxMouseEnter
       ShowHint = True
     end
-    object TrackBar1: TTrackBar
-      Left = 8
-      Height = 125
-      Top = 115
-      Width = 30
-      Min = 1
-      OnChange = TrackBar1Change
-      Orientation = trVertical
-      Position = 1
-      TickMarks = tmTopLeft
-      TabOrder = 0
-    end
     object ColorPalette1: TColorPalette
       Left = 8
       Height = 234
-      Top = 344
+      Top = 80
       Width = 60
       ButtonHeight = 30
       ButtonWidth = 30
@@ -1306,6 +1313,10 @@ object RMMainForm: TRMMainForm
   object ExportPropsMenu: TPopupMenu
     Left = 1624
     Top = 40
+    object NewImage: TMenuItem
+      Caption = 'New Image'
+      OnClick = NewClick
+    end
     object ExportInclude: TMenuItem
       Caption = 'Export Include'
       OnClick = ThumbPopUpMenuExportClick
@@ -1323,7 +1334,7 @@ object RMMainForm: TRMMainForm
       item
       end>
     UsePreProcessor = False
-    Left = 1528
-    Top = 24
+    Left = 1592
+    Top = 8
   end
 end

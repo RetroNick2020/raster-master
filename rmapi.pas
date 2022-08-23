@@ -26,6 +26,9 @@ procedure rm_cg_write_integer(value : integer);
 
 procedure rm_getselectarea(var active,x1,y1,x2,y2 : integer);
 
+function  rm_getmaxcolor : integer;
+procedure rm_getcolorrgb(index : integer;var r,g,b : byte);
+
 implementation
 
 var
@@ -99,20 +102,51 @@ begin
 
                                     'PASCALLAN': MWSetLan(cg,PascalLan);
                                          'CLAN': MWSetLan(cg,CLan);
-                                            else MWSetLan(cg,StrToInt(value));
+                                            else
+                                            begin
+                                               try
+                                                MWSetLan(cg,StrToInt(value));
+                                               except
+                                                 MWSetLan(cg,PascalLan);
+                                               end;
+                                             end;
+                        end;
                        end;
-                     end;
-                'VALUESPERLINE': MWSetValuesPerLine(cg,StrToInt(value));
-                  'VALUESTOTAL': MWSetValuesTotal(cg,StrToInt(value));
+                'VALUESPERLINE':begin
+                                   try
+                                     MWSetValuesPerLine(cg,StrToInt(value));
+                                    except
+                                     MWSetValuesPerLine(cg,20);
+                                    end;
+                                  end;
+                  'VALUESTOTAL':begin
+                                   try
+                                     MWSetValuesTotal(cg,StrToInt(value));
+                                    except
+                                     MWSetValuesTotal(cg,0);
+                                    end;
+                                  end;
                   'VALUEFORMAT': begin
                                    Case value of 'HEX': MWSetValueFormat(cg,ValueFormatHex);
                                              'DECIMAL': MWSetValueFormat(cg,ValueFormatDecimal);
-                                                   else MWSetValueFormat(cg,StrToInt(value));
                                    end;
                                  end;
-                       'INDENT': MWSetIndent(cg,StrToInt(value));
+                       'INDENT': begin
+                                   try
+                                     MWSetIndent(cg,StrToInt(value));
+                                    except
+                                     MWSetIndent(cg,10);
+                                    end;
+                                  end;
             'INDENTONFIRSTLINE': MWSetIndentOnFirstLine(cg,Value='YES');
-              'LINENUMBERSTART': SetGWStartLineNumber(StrToInt(value));
+              'LINENUMBERSTART':begin
+                                   try
+                                     SetGWStartLineNumber(StrToInt(value))
+                                    except
+                                      SetGWStartLineNumber(1000)
+                                    end;
+                                 end;
+
   end;
 end;
 

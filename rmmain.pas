@@ -10,7 +10,7 @@ uses
   ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore,
   rmcolor, rmcolorvga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp, flood,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
-  rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi;
+  rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore;
 
 
 type
@@ -72,6 +72,7 @@ type
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     AqbPsetBitMap: TMenuItem;
+    NewImage: TMenuItem;
     ScriptMenuLoad: TMenuItem;
     ScriptMenuRun: TMenuItem;
     ScriptMenu: TMenuItem;
@@ -302,6 +303,8 @@ type
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
     procedure RayLibExportClick(Sender: TObject);
+    procedure RightPanelClick(Sender: TObject);
+    procedure RMPanelClick(Sender: TObject);
     procedure RMScriptCompile(Sender: TPSScript);
     procedure RMScriptExecute(Sender: TPSScript);
     procedure ScriptMenuLoadClick(Sender: TObject);
@@ -3388,6 +3391,16 @@ begin
    end;
 end;
 
+procedure TRMMainForm.RightPanelClick(Sender: TObject);
+begin
+
+end;
+
+procedure TRMMainForm.RMPanelClick(Sender: TObject);
+begin
+  RMPanel.Hide;
+end;
+
 function rm_getopenfilename(var filename,ext : string; filter : string) : boolean;
 begin
  rm_getopenfilename:=RMMainForm.getopenfilename(filename,ext,filter);
@@ -3420,6 +3433,10 @@ begin
   Sender.AddFunction(@rm_cg_write_integer,'procedure cgwriteinteger(value : integer)');
 
   Sender.AddFunction(@rm_getselectarea,'procedure getselectarea(var active,x1,y1,x2,y2 : integer)');
+
+  Sender.AddFunction(@rm_getmaxcolor,'function  getmaxcolor : integer');
+  Sender.AddFunction(@rm_getcolorrgb,'procedure getcolorrgb(index : integer;var r,g,b : byte)');
+
 
 //FileCreate/FileWrite/FileClose lifted from Lazarus Pascal Script Example Page - don't seem to work - you let me know
   Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer)');
@@ -3459,6 +3476,7 @@ begin
   if RMScript.compile then
   begin
     //ShowMessage('compiled!');
+    SetCoreActive;
     if not RMScript.execute then
     begin
       ShowMessage('Run-time error:' + RMScript.ExecErrorToString);
