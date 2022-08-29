@@ -4,7 +4,7 @@ unit rmcore;
 
 interface
 uses
-  Classes, Graphics, SysUtils,GraphUtil,Math;
+  Classes, Graphics, SysUtils,GraphUtil,Math,bits;
 
 
 //const
@@ -662,10 +662,50 @@ begin
   end;
 end;
 
+
+procedure EGAToRGB(egaindex : byte; var r,g,b : byte);  //from wikipedia C algo
+begin
+ r:=85*(((egaindex SHR 1) AND 2) OR (egaindex SHR 5) AND 1);
+ g:=85*(((egaindex AND 2) OR (egaindex  SHR 4) AND 1));
+ b:=85*(((egaindex SHL 1) AND 2) OR (egaindex SHR 3) AND 1);
+end;
+
+procedure EGAToRGB2(egaindex : byte; var r,g,b : byte);  //in pascal simplified form to show which bits on being flipped
+begin
+ r:=0;
+ g:=0;
+ b:=0;
+ if biton(5,egaindex) then inc(r);
+ if biton(2,egaindex) then inc(r,2);
+
+ if biton(4,egaindex) then inc(g);
+ if biton(1,egaindex) then inc(g,2);
+
+ if biton(3,egaindex) then inc(b);
+ if biton(0,egaindex) then inc(b,2);
+end;
+
+function RGBToEGA(r,g,b : byte) : byte;
+var
+ egaindex : byte;
+begin
+ egaindex:=0;
+ if biton(0,r) then SetBit(5,1,egaindex);
+ if biton(1,r) then SetBit(2,1,egaindex);
+
+ if biton(0,g) then SetBit(4,1,egaindex);
+ if biton(1,g) then SetBit(1,1,egaindex);
+
+ if biton(0,b) then SetBit(3,1,egaindex);
+ if biton(1,b) then SetBit(0,1,egaindex);
+ RGBToEGA:=egaindex;
+end;
+
 function RGBToEGAIndex(r,g,b : integer) : integer;
 var
   i : integer;
 begin
+ (*
   for i:=0 to 63 do
   begin
     if (EGADefault64[i].r = r) AND(EGADefault64[i].g = g) AND (EGADefault64[i].b = b) then
@@ -675,6 +715,8 @@ begin
     end;
   end;
   RGBToEGAIndex:=RGBToEGAIndex2(r,g,b);     // not precise but we come up with a number
+  *)
+  RGBToEGAIndex:=RGBTOEGA(r,g,b);
 end;
 
 function RGBToEGAIndex2(r,g,b : integer) : integer;

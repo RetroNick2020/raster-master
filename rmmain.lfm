@@ -1,12 +1,12 @@
 object RMMainForm: TRMMainForm
-  Left = 91
+  Left = 94
   Height = 869
-  Top = 78
+  Top = 102
   Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 844
-  ClientWidth = 1729
+  ClientHeight = 0
+  ClientWidth = 0
   DefaultMonitor = dmDesktop
   DesignTimePPI = 120
   Menu = MainMenu1

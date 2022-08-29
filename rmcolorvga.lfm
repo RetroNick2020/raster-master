@@ -1,7 +1,7 @@
 object RMVgaColorDialog: TRMVgaColorDialog
-  Left = 579
+  Left = 685
   Height = 348
-  Top = 401
+  Top = 362
   Width = 632
   BorderStyle = bsDialog
   Caption = 'VGA Color'

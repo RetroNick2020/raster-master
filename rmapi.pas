@@ -5,7 +5,7 @@ unit rmapi;
 interface
 
 uses
-  Classes, SysUtils,Dialogs,rmxgfcore,rmcodegen,rmcore,rmtools,gwbasic;
+  Classes, SysUtils,Dialogs,rmxgfcore,mapcore, rmcodegen,rmcore,rmtools,rmthumb,gwbasic;
 
 procedure rm_putpixel(x,y,color : integer);
 function rm_getpixel(x,y : integer) : integer;
@@ -190,6 +190,59 @@ begin
     y2:=ca.y2;
   end;
 end;
+
+function rm_getmapwidth : integer;
+begin
+  rm_getmapwidth:=MapCoreBase.GetMapWidth(MapCoreBase.GetCurrentMap);
+end;
+
+function rm_getmapheight(index : integer) : integer;
+begin
+  rm_getmapheight:=MapCoreBase.GetMapHeight(MapCoreBase.GetCurrentMap);
+end;
+
+function rm_gettilewidth : integer;
+begin
+  rm_gettilewidth:=MapCoreBase.GetMapTileWidth(MapCoreBase.GetCurrentMap);
+end;
+
+function rm_gettileheight(index : integer) : integer;
+begin
+  rm_gettileheight:=MapCoreBase.GetMapTileHeight(MapCoreBase.GetCurrentMap);
+end;
+
+function rm_gettileproperty(x,y : integer;tilepropertyname : string) : string;
+var
+  Tile : TileRec;
+begin
+  if UpperCase(tilepropertyname) = 'IMAGEINDEX' then
+  begin
+    MapCoreBase.GetMapTile(MapCoreBase.GetCurrentMap,x,y,Tile);
+    rm_gettileproperty:=IntToStr(Tile.ImageIndex);
+  end
+  else
+  begin
+    rm_gettileproperty:='';
+  end;
+end;
+
+procedure rm_settileproperty(x,y : integer;tilepropertyname,value : string);
+var
+  Tile : TileRec;
+begin
+  if UpperCase(tilepropertyname) = 'IMAGEINDEX' then
+  begin
+    MapCoreBase.GetMapTile(MapCoreBase.GetCurrentMap,x,y,Tile);
+    try
+      Tile.ImageIndex :=StrToInt(value);
+    except
+     Tile.ImageIndex :=-1;
+    end;
+    if Tile.ImageIndex > -1 then Tile.ImageUID :=ImageThumbBase.GetUID(Tile.ImageIndex); //fetch the GUID
+    MapCoreBase.SetMapTile(MapCoreBase.GetCurrentMap,x,y,Tile);
+  end;
+end;
+
 
 procedure rm_showmessage(const aMsg : string);
 begin

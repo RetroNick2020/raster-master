@@ -1,12 +1,12 @@
 object RMEGAColorDialog: TRMEGAColorDialog
-  Left = 724
-  Height = 301
-  Top = 428
-  Width = 524
+  Left = 733
+  Height = 337
+  Top = 337
+  Width = 626
   BorderStyle = bsDialog
   Caption = 'EGA Palette'
-  ClientHeight = 301
-  ClientWidth = 524
+  ClientHeight = 337
+  ClientWidth = 626
   DesignTimePPI = 120
   OnCreate = FormCreate
   LCLVersion = '2.0.10.0'
@@ -15,9 +15,9 @@ object RMEGAColorDialog: TRMEGAColorDialog
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 417
+    Left = 519
     Height = 37
-    Top = 254
+    Top = 290
     Width = 97
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -31,7 +31,7 @@ object RMEGAColorDialog: TRMEGAColorDialog
     Left = 16
     Height = 26
     Top = 32
-    Width = 386
+    Width = 488
     ButtonHeight = 25
     ButtonWidth = 25
     ColumnCount = 16
@@ -49,11 +49,98 @@ object RMEGAColorDialog: TRMEGAColorDialog
     Width = 81
   end
   object EGAIndexLabel: TLabel
-    Left = 120
+    Left = 24
     Height = 20
-    Top = 192
+    Top = 152
     Width = 71
     Caption = 'EGA Index:'
+    ParentColor = False
+  end
+  object TrackBar1: TTrackBar
+    Left = 143
+    Height = 39
+    Top = 184
+    Width = 253
+    Max = 3
+    OnChange = TrackBar1Change
+    Position = 0
+    ShowSelRange = False
+    TickMarks = tmTopLeft
+    TickStyle = tsNone
+    TabOrder = 1
+  end
+  object TrackBar2: TTrackBar
+    Left = 143
+    Height = 39
+    Top = 216
+    Width = 253
+    Max = 3
+    OnChange = TrackBar2Change
+    Position = 0
+    ShowSelRange = False
+    TickMarks = tmTopLeft
+    TickStyle = tsNone
+    TabOrder = 2
+  end
+  object TrackBar3: TTrackBar
+    Left = 143
+    Height = 39
+    Top = 246
+    Width = 253
+    Max = 3
+    OnChange = TrackBar3Change
+    Position = 0
+    ShowSelRange = False
+    TickMarks = tmTopLeft
+    TickStyle = tsNone
+    TabOrder = 3
+  end
+  object Label1: TLabel
+    Left = 128
+    Height = 20
+    Top = 184
+    Width = 9
+    Caption = 'R'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 128
+    Height = 20
+    Top = 216
+    Width = 10
+    Caption = 'G'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 128
+    Height = 20
+    Top = 248
+    Width = 9
+    Caption = 'B'
+    ParentColor = False
+  end
+  object Label4: TLabel
+    Left = 407
+    Height = 20
+    Top = 184
+    Width = 9
+    Caption = 'R'
+    ParentColor = False
+  end
+  object Label5: TLabel
+    Left = 407
+    Height = 20
+    Top = 216
+    Width = 10
+    Caption = 'G'
+    ParentColor = False
+  end
+  object Label6: TLabel
+    Left = 407
+    Height = 20
+    Top = 248
+    Width = 9
+    Caption = 'B'
     ParentColor = False
   end
 end
