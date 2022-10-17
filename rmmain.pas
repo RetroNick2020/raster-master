@@ -3437,7 +3437,10 @@ begin
 
   Sender.AddFunction(@rm_getmaxcolor,'function  getmaxcolor : integer');
   Sender.AddFunction(@rm_getcolorrgb,'procedure getcolorrgb(index : integer;var r,g,b : byte)');
+  Sender.AddFunction(@rm_setcolorrgb,'procedure setcolorrgb(index : integer; r,g,b : byte)');
 
+  Sender.AddFunction(@rm_getpalettemode,'function getpalettemode : integer');
+  Sender.AddFunction(@rm_setpalettemode, 'procedure setpalettemode(mode : integer)');
 
 //FileCreate/FileWrite/FileClose lifted from Lazarus Pascal Script Example Page - don't seem to work - you let me know
   Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer)');

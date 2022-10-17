@@ -17,6 +17,9 @@ type
   GetColorProc    = procedure(index : integer;var cr : TRMColorRec);
   SetColorProc    = procedure(index : integer;var cr : TRMColorRec);
 
+  GetPaletteModeProc = function : integer;
+  SetPaletteModeProc = procedure(mode : integer);
+
 procedure SetThumbIndex(index : integer);
 function GetThumbIndex : integer;
 function CoreGetMaxColor : integer;
@@ -31,6 +34,11 @@ procedure SetPutPixelProc(PP : PutPixelProc);
 procedure SetGetColorProc(GC : GetColorProc);
 procedure SetSetColorProc(SC : SetColorProc);
 
+procedure SetGetPaletteModeProc(GPM : GetPaletteModeProc);
+procedure SetSetPaletteModeProc(SPM : SetPaletteModeProc);
+
+
+
 Procedure SetCoreActive;
 Procedure SetThumbActive;
 Procedure InitXGFProcs;
@@ -43,6 +51,13 @@ function GetHeight : integer;
 function  GetMaxColor : integer;
 procedure GetColor(index : integer;var cr : TRMColorRec);
 procedure SetColor(index : integer;var cr : TRMColorRec);
+
+procedure GetColorRGB(index : integer; var r,g,b : byte);
+procedure SetColorRGB(index : integer; r,g,b : byte);
+
+function GetPaletteMode : integer;
+procedure SetPaletteMode(mode : integer);
+
 
 procedure SetMaskMode(mode : integer);
 function GetMaskMode : integer;
@@ -57,6 +72,10 @@ var
  XGetHeight   : GetHeightProc;
 
  XGetMaxColor : GetMaxColorProc;
+
+ XGetPaletteMode : GetPaletteModeProc;
+ XSetPaletteMode : SetPaletteModeProc;
+
  XGetColor    : GetColorProc;
  XSetColor    : SetColorProc;
  XMaskMode    : integer;
@@ -99,6 +118,35 @@ begin
   GetMaxColor:=XGetMaxColor();
 end;
 
+
+function ThumbGetPaletteMode : integer;
+var
+ index : integer;
+begin
+  index:=GetThumbIndex;
+  ThumbGetPaletteMode:=ImageThumbBase.GetPaletteMode(index);
+end;
+
+procedure CoreSetPaletteMode(mode  : integer);
+begin
+ RMCoreBase.Palette.SetPaletteMode(mode);
+end;
+
+function CoreGetPaletteMode : integer;
+begin
+ CoreGetPaletteMode:=RMCoreBase.Palette.GetPaletteMode;
+end;
+
+procedure ThumbSetPaletteMode(mode  : integer);
+var
+ index : integer;
+begin
+  index:=GetThumbIndex;
+  ImageThumbBase.SetPaletteMode(index,mode);
+end;
+
+
+
 function CoreGetPixel(x,y : integer) : integer;
 begin
   CoreGetPixel:=RMCoreBase.getPixel(x,y);
@@ -139,6 +187,27 @@ procedure SetColor(index : integer;var cr : TRMColorRec);
 begin
   XSetcolor(index,cr);
 end;
+
+procedure GetColorRGB(index : integer;var r,g,b : byte);
+var
+ cr : TRMColorRec;
+begin
+ XGetcolor(index,cr);
+ r:=cr.r;
+ g:=cr.g;
+ b:=cr.b;
+end;
+
+procedure SetColorRGB(index : integer; r,g,b : byte);
+var
+ cr : TRMColorRec;
+begin
+ cr.r:=r;
+ cr.g:=g;
+ cr.b:=b;
+ XSetcolor(index,cr);
+end;
+
 
 
 function ThumbGetPixel(x,y : integer) : integer;
@@ -215,6 +284,17 @@ begin
   XSetColor:=SC;
 end;
 
+
+procedure SetGetPaletteModeProc(GPM : GetPaletteModeProc);
+begin
+  XGetPaletteMode:=GPM;
+end;
+
+procedure SetSetPaletteModeProc(SPM : SetPaletteModeProc);
+begin
+  XSetPaletteMode:=SPM;
+end;
+
 procedure SetGetWidthProc(SW : GetWidthProc);
 begin
   XGetWidth:=SW;
@@ -239,6 +319,10 @@ begin
 
  SetGetColorProc(@CoreGetColor);
  SetSetColorProc(@CoreSetColor);
+
+ SetGetPaletteModeProc(@CoreGetPaletteMode);
+ SetSetPaletteModeProc(@CoreSetPaletteMode);
+
  SetThumbIndex(ImageThumbBase.GetCurrent);
 end;
 
@@ -255,6 +339,10 @@ begin
 
  SetGetColorProc(@ThumbGetColor);
  SetSetColorProc(@ThumbGetColor);
+
+ SetGetPaletteModeProc(@ThumbGetPaletteMode);
+ SetSetPaletteModeProc(@ThumbSetPaletteMode);
+
  SetThumbIndex(0);
 end;
 
@@ -289,6 +377,17 @@ function GetHeight : integer;
 begin
   GetHeight:=XGetHeight();
 end;
+
+procedure SetPaletteMode(mode : integer);
+begin
+ XSetPaletteMode(mode);
+end;
+
+function GetPaletteMode : integer;
+begin
+ GetPaletteMode:=XGetPaletteMode();
+end;
+
 
 
 begin

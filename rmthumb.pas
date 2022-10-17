@@ -103,6 +103,7 @@ type
 
              procedure SetPalette(index : integer; P : TRMPaletteBuf);
              procedure SetPaletteMode(index, mode : integer);
+             function GetPaletteMode(index : integer ) : integer;
              procedure SetColorCount(index,colorcount : integer);
 
 
@@ -257,6 +258,11 @@ end;
 procedure TImageThumb.SetPaletteMode(index,mode : integer);
 begin
   ImageMain[index].Props.PaletteMode:=mode;
+end;
+
+function TImageThumb.GetPaletteMode(index : integer ) : integer;
+begin
+  GetPaletteMode:=ImageMain[index].Props.PaletteMode;
 end;
 
 procedure TImageThumb.SetColorCount(index,colorcount : integer);

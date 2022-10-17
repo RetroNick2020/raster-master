@@ -5,8 +5,8 @@ object RMMainForm: TRMMainForm
   Width = 1729
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 0
-  ClientWidth = 0
+  ClientHeight = 844
+  ClientWidth = 1729
   DefaultMonitor = dmDesktop
   DesignTimePPI = 120
   Menu = MainMenu1

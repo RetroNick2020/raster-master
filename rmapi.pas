@@ -27,7 +27,13 @@ procedure rm_cg_write_integer(value : integer);
 procedure rm_getselectarea(var active,x1,y1,x2,y2 : integer);
 
 function  rm_getmaxcolor : integer;
+
 procedure rm_getcolorrgb(index : integer;var r,g,b : byte);
+procedure rm_setcolorrgb(index : integer; r,g,b : byte);
+
+procedure rm_SetPaletteMode(mode : integer);
+function rm_GetPaletteMode : integer;
+
 
 implementation
 
@@ -61,14 +67,17 @@ begin
 end;
 
 procedure rm_getcolorrgb(index : integer;var r,g,b : byte);
-var
-  cr : TRMColorRec;
 begin
-  GetColor(index,cr);
-  r:=cr.r;
-  g:=cr.g;
-  b:=cr.b;
+  GetColorRGB(index,r,g,b);
 end;
+
+procedure rm_setcolorrgb(index : integer; r,g,b : byte);
+begin
+  SetColorRGB(index,r,g,b);
+end;
+
+
+
 
 function rm_cg_open(filename : string) : boolean;
 begin
@@ -247,6 +256,16 @@ end;
 procedure rm_showmessage(const aMsg : string);
 begin
   showmessage(aMsg);
+end;
+
+procedure rm_SetPaletteMode(mode : integer);
+begin
+  SetPaletteMode(mode);
+end;
+
+function rm_GetPaletteMode : integer;
+begin
+   rm_GetPaletteMode:=GetPaletteMode;
 end;
 
 
