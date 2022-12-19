@@ -1,143 +1,157 @@
 object ImageExportForm: TImageExportForm
   Left = 162
-  Height = 429
+  Height = 343
   Top = 301
-  Width = 421
+  Width = 337
   BorderStyle = bsDialog
   Caption = 'Image Export Properties'
-  ClientHeight = 429
-  ClientWidth = 421
-  DesignTimePPI = 120
+  ClientHeight = 343
+  ClientWidth = 337
   LCLVersion = '2.0.10.0'
   object EditName: TEdit
-    Left = 104
-    Height = 28
-    Top = 32
-    Width = 264
+    Left = 83
+    Height = 23
+    Top = 26
+    Width = 211
     MaxLength = 20
+    ParentFont = False
     TabOrder = 0
   end
   object imageName: TLabel
-    Left = 53
-    Height = 20
-    Top = 32
-    Width = 40
+    Left = 42
+    Height = 15
+    Top = 26
+    Width = 32
     Caption = 'Name'
     ParentColor = False
+    ParentFont = False
   end
   object ImageType: TLabel
-    Left = 16
-    Height = 20
-    Top = 128
-    Width = 77
+    Left = 13
+    Height = 15
+    Top = 102
+    Width = 60
     Caption = 'Image Type'
     ParentColor = False
+    ParentFont = False
   end
   object ComboImage: TComboBox
-    Left = 104
-    Height = 28
-    Top = 128
-    Width = 264
-    ItemHeight = 20
+    Left = 83
+    Height = 23
+    Top = 102
+    Width = 211
+    ItemHeight = 15
+    ParentFont = False
     Style = csDropDownList
     TabOrder = 2
   end
   object MaskType: TLabel
-    Left = 24
-    Height = 20
-    Top = 176
-    Width = 69
+    Left = 19
+    Height = 15
+    Top = 141
+    Width = 55
     Caption = 'Mask Type'
     ParentColor = False
+    ParentFont = False
   end
   object ComboMask: TComboBox
-    Left = 104
-    Height = 28
-    Top = 176
-    Width = 264
-    ItemHeight = 20
+    Left = 83
+    Height = 23
+    Top = 141
+    Width = 211
+    ItemHeight = 15
+    ParentFont = False
     Style = csDropDownList
     TabOrder = 3
   end
   object PaletteType: TLabel
-    Left = 13
-    Height = 20
-    Top = 224
-    Width = 80
+    Left = 10
+    Height = 15
+    Top = 179
+    Width = 63
     Caption = 'Palette Type'
     ParentColor = False
+    ParentFont = False
   end
   object ComboPalette: TComboBox
-    Left = 104
-    Height = 28
-    Top = 224
-    Width = 264
-    ItemHeight = 20
+    Left = 83
+    Height = 23
+    Top = 179
+    Width = 211
+    ItemHeight = 15
     OnChange = ComboPaletteChange
+    ParentFont = False
     Style = csDropDownList
     TabOrder = 4
   end
   object Button1: TButton
-    Left = 304
-    Height = 31
-    Top = 360
-    Width = 94
+    Left = 243
+    Height = 25
+    Top = 288
+    Width = 75
     Caption = 'OK'
     OnClick = Button1Click
+    ParentFont = False
     TabOrder = 7
   end
   object CompilerType: TLabel
-    Left = 32
-    Height = 20
-    Top = 80
-    Width = 61
+    Left = 26
+    Height = 15
+    Top = 64
+    Width = 49
     Caption = 'Compiler'
     ParentColor = False
+    ParentFont = False
   end
   object ComboCompiler: TComboBox
-    Left = 104
-    Height = 28
-    Top = 80
-    Width = 264
-    ItemHeight = 20
+    Left = 83
+    Height = 23
+    Top = 64
+    Width = 211
+    ItemHeight = 15
     OnChange = ComboCompilerChange
+    ParentFont = False
     Style = csDropDownList
     TabOrder = 1
   end
   object EditWidth: TEdit
-    Left = 104
-    Height = 28
-    Top = 272
-    Width = 48
+    Left = 83
+    Height = 23
+    Top = 218
+    Width = 38
     MaxLength = 3
     NumbersOnly = True
+    ParentFont = False
     TabOrder = 5
     Text = '0'
   end
   object WidthLabel: TLabel
-    Left = 53
-    Height = 20
-    Top = 272
-    Width = 40
+    Left = 42
+    Height = 15
+    Top = 218
+    Width = 32
     Caption = 'Width'
     ParentColor = False
+    ParentFont = False
   end
   object EditHeight: TEdit
-    Left = 104
-    Height = 28
-    Top = 312
-    Width = 48
+    Left = 83
+    Height = 23
+    Top = 250
+    Width = 38
     MaxLength = 3
     NumbersOnly = True
+    ParentFont = False
     TabOrder = 6
     Text = '0'
   end
   object HeightLabel: TLabel
-    Left = 48
-    Height = 20
-    Top = 312
-    Width = 45
+    Left = 38
+    Height = 15
+    Top = 250
+    Width = 36
     Caption = 'Height'
     ParentColor = False
+    ParentFont = False
   end
 end

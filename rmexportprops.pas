@@ -333,7 +333,8 @@ begin
    ComboPalette.Items.Add('Amiga - 4 Bit');
    ComboPalette.Items.Add('PC - 6 Bit');
    ComboPalette.Items.Add('8 Bit');
-   ComboPalette.Items.Add('AmigaBASIC/AQB -4 Bit');
+   ComboPalette.Items.Add('AmigaBASIC/AQB - 4 Bit');
+   ComboPalette.Items.Add('PC - 2 Bit');
 
    ComboPalette.ItemIndex:=0;
    EditWidth.Text:='0';

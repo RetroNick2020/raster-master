@@ -1,48 +1,49 @@
 object AboutDialog: TAboutDialog
   Left = 622
-  Height = 313
+  Height = 250
   Top = 454
-  Width = 600
+  Width = 480
   BorderStyle = bsDialog
   Caption = 'About'
-  ClientHeight = 313
-  ClientWidth = 600
-  DesignTimePPI = 120
+  ClientHeight = 250
+  ClientWidth = 480
   LCLVersion = '2.0.10.0'
   object ProgramNameLabel: TLabel
-    Left = 224
-    Height = 20
-    Top = 16
-    Width = 133
+    Left = 179
+    Height = 15
+    Top = 13
+    Width = 106
     Caption = 'ProgramNameLabel'
     ParentColor = False
+    ParentFont = False
   end
   object ProgramLicenseLabel: TLabel
-    Left = 208
-    Height = 20
-    Top = 48
-    Width = 141
+    Left = 166
+    Height = 15
+    Top = 38
+    Width = 113
     Caption = 'ProgramLicenseLabel'
     ParentColor = False
+    ParentFont = False
   end
   object Shape1: TShape
-    Left = 88
-    Height = 180
-    Top = 88
-    Width = 425
+    Left = 70
+    Height = 144
+    Top = 70
+    Width = 340
   end
   object Shape2: TShape
     Cursor = crHandPoint
-    Left = 104
-    Height = 58
-    Top = 104
-    Width = 184
+    Left = 83
+    Height = 46
+    Top = 83
+    Width = 147
     Brush.Color = clRed
   end
   object Image1: TImage
-    Left = 344
+    Left = 275
     Height = 138
-    Top = 112
+    Top = 90
     Width = 133
     AutoSize = True
     Picture.Data = {
@@ -139,15 +140,15 @@ object AboutDialog: TAboutDialog
   end
   object StaticText1: TStaticText
     Cursor = crHandPoint
-    Left = 128
-    Height = 38
-    Top = 112
-    Width = 142
+    Left = 102
+    Height = 31
+    Top = 90
+    Width = 115
     AutoSize = True
     Caption = 'SUBSCRIBE'
     Color = clNone
     Font.Color = clWhite
-    Font.Height = -27
+    Font.Height = -22
     Font.Style = [fsBold]
     OnClick = StaticText1Click
     ParentFont = False

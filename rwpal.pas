@@ -12,6 +12,7 @@ Const
   ColorSixBitFormat =3;
   ColorEightBitFormat =4;
   ColorOnePercentFormat = 5;
+  ColorTwoBitFormat = 6;
 
 
 Function ReadPAL(Filename : String;pm : integer) : Word;
@@ -49,6 +50,8 @@ begin
                     ColorSixBitFormat:ColorFormatToStr:='6 Bit';
                     ColorEightBitFormat:ColorFormatToStr:='8 Bit';
                     ColorOnePercentFormat:ColorFormatToStr:='1 Percent';
+                    ColorTwoBitFormat:ColorFormatToStr:='2 Bit';
+
   end;
 end;
 
@@ -61,6 +64,7 @@ begin
                    ColorSixBitFormat:ColorValueToStr:=IntToStr(EightToSixBit(InValue));
                    ColorEightBitFormat:ColorValueToStr:=IntToStr(InValue);
                    ColorOnePercentFormat:ColorValueToStr:=FormatFloat('0.00',EightToFourBit(InValue)*0.0669);
+                   ColorTwoBitFormat:ColorValueToStr:=IntToStr(EightToTwoBit(InValue));
  end;
 end;
 
