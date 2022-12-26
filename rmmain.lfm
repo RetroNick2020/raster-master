@@ -1,14 +1,13 @@
 object RMMainForm: TRMMainForm
-  Left = 94
-  Height = 869
-  Top = 102
-  Width = 1729
+  Left = -8
+  Height = 1177
+  Top = -8
+  Width = 1920
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 844
-  ClientWidth = 1729
+  ClientHeight = 1157
+  ClientWidth = 1920
   DefaultMonitor = dmDesktop
-  DesignTimePPI = 120
   Menu = MainMenu1
   OnClose = FormClose
   OnCreate = FormCreate
@@ -24,14 +23,14 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Control = RightHSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 267
-    Height = 732
+    Left = 296
+    Height = 1045
     Top = 112
-    Width = 1229
+    Width = 1366
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 732
-    ClientWidth = 1229
+    ClientHeight = 1045
+    ClientWidth = 1366
     TabOrder = 1
     object ScrollBox1: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
@@ -40,23 +39,23 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = MiddleBottomPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 732
+      Height = 1045
       Top = 0
-      Width = 1229
-      HorzScrollBar.Page = 113
+      Width = 1366
+      HorzScrollBar.Page = 90
       HorzScrollBar.Tracking = True
-      VertScrollBar.Page = 113
+      VertScrollBar.Page = 90
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
-      ClientHeight = 732
-      ClientWidth = 1229
+      ClientHeight = 1045
+      ClientWidth = 1366
       TabOrder = 0
       object ZoomBox: TImage
         Left = 0
-        Height = 732
+        Height = 1045
         Top = 0
-        Width = 1229
+        Width = 1366
         Align = alClient
         OnMouseDown = ZoomBoxMouseDown
         OnMouseMove = ZoomBoxMouseMove
@@ -73,13 +72,13 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 844
+    Height = 1157
     Top = 0
-    Width = 267
+    Width = 296
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 844
-    ClientWidth = 267
+    ClientHeight = 1157
+    ClientWidth = 296
     TabOrder = 0
     object LeftVSplitter: TSplitter
       AnchorSideLeft.Control = LeftPanel
@@ -91,8 +90,8 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 224
-      Width = 266
+      Top = 309
+      Width = 295
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -108,9 +107,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 607
-      Top = 237
-      Width = 256
+      Height = 835
+      Top = 322
+      Width = 285
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
       Color = 15790320
@@ -131,14 +130,14 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 224
+      Height = 309
       Top = 0
-      Width = 252
+      Width = 281
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 224
-      ClientWidth = 252
+      ClientHeight = 309
+      ClientWidth = 281
       TabOrder = 0
       object ActualBox: TImage
         Left = 16
@@ -153,8 +152,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 256
-    Height = 844
+    Left = 285
+    Height = 1157
     Top = 0
     Width = 11
     Align = alNone
@@ -167,8 +166,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1496
-    Height = 844
+    Left = 1662
+    Height = 1157
     Top = 0
     Width = 11
     Align = alNone
@@ -181,19 +180,19 @@ object RMMainForm: TRMMainForm
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightHSplitter
-    Left = 267
+    Left = 296
     Height = 112
     Top = 0
-    Width = 1229
+    Width = 1366
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 112
-    ClientWidth = 1229
+    ClientWidth = 1366
     TabOrder = 4
     object ToolPanel: TPanel
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 744
+      Left = 881
       Height = 88
       Top = 8
       Width = 434
@@ -408,7 +407,7 @@ object RMMainForm: TRMMainForm
       WordWrap = True
     end
     object TrackBar1: TTrackBar
-      Left = 1193
+      Left = 1330
       Height = 110
       Top = 1
       Width = 30
@@ -430,13 +429,13 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1507
-    Height = 844
+    Left = 1673
+    Height = 1157
     Top = 0
-    Width = 222
+    Width = 247
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 844
-    ClientWidth = 222
+    ClientHeight = 1157
+    ClientWidth = 247
     TabOrder = 5
     OnClick = RightPanelClick
     object RMPanel: TPanel
@@ -445,9 +444,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Cursor = crNo
-      Left = 48
+      Left = 73
       Height = 121
-      Top = 712
+      Top = 1025
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
@@ -639,6 +638,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Mouse Shape Data Statements'
             OnClick = MouseSaveClick
           end
+          object FBMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
+            OnClick = MouseSaveClick
+          end
         end
         object MenuItem8: TMenuItem
           Caption = 'FreeBASIC'
@@ -671,6 +674,10 @@ object RMMainForm: TRMMainForm
           end
           object FPMouseShapeArray: TMenuItem
             Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
+          end
+          object FPMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
             OnClick = MouseSaveClick
           end
           object fpRayLibFuchsia: TMenuItem
@@ -719,6 +726,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Mouse Shape Data Statements'
             OnClick = MouseSaveClick
           end
+          object GWMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
+            OnClick = MouseSaveClick
+          end
         end
         object JavaScript: TMenuItem
           Caption = 'JavaScript'
@@ -747,6 +758,10 @@ object RMMainForm: TRMMainForm
           end
           object QBMouseShapeData: TMenuItem
             Caption = 'Mouse Shape Data Statements'
+            OnClick = MouseSaveClick
+          end
+          object QBMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
             OnClick = MouseSaveClick
           end
         end
@@ -783,6 +798,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Mouse Shape Array'
             OnClick = MouseSaveClick
           end
+          object QCMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
+            OnClick = MouseSaveClick
+          end
         end
         object QuickPascal: TMenuItem
           Caption = 'Quick Pascal'
@@ -800,6 +819,10 @@ object RMMainForm: TRMMainForm
           end
           object QPMouseShapeArray: TMenuItem
             Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
+          end
+          object QPMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
             OnClick = MouseSaveClick
           end
         end
@@ -821,6 +844,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Mouse Shape Data Statements'
             OnClick = MouseSaveClick
           end
+          object TBMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
+            OnClick = MouseSaveClick
+          end
         end
         object TurboPascal: TMenuItem
           Caption = 'Turbo Pascal'
@@ -838,6 +865,10 @@ object RMMainForm: TRMMainForm
           end
           object TPMouseShapeArray: TMenuItem
             Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
+          end
+          object TPMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
             OnClick = MouseSaveClick
           end
           object TPDOSLBMArray: TMenuItem
@@ -873,6 +904,10 @@ object RMMainForm: TRMMainForm
           end
           object TCMouseShapeArray: TMenuItem
             Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
+          end
+          object TCMouseShapeFile: TMenuItem
+            Caption = 'Mouse Shape File'
             OnClick = MouseSaveClick
           end
           object TCDOSLBMArray: TMenuItem

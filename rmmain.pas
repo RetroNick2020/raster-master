@@ -72,6 +72,15 @@ type
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     AqbPsetBitMap: TMenuItem;
+    GWMouseShapeFile: TMenuItem;
+    FBMouseShapeFile: TMenuItem;
+    QBMouseShapeFile: TMenuItem;
+    TCMouseShapeFile: TMenuItem;
+    TBMouseShapeFile: TMenuItem;
+    TPMouseShapeFile: TMenuItem;
+    QPMouseShapeFile: TMenuItem;
+    QCMouseShapeFile: TMenuItem;
+    FPMouseShapeFile: TMenuItem;
     NewImage: TMenuItem;
     ScriptMenuLoad: TMenuItem;
     ScriptMenuRun: TMenuItem;
@@ -3112,6 +3121,15 @@ begin
                                       'FPMouseShapeArray' : ExportDialog.Filter := 'Pascal Mouse Shape Array|*.pas';
                                       'TCMouseShapeArray',
                                       'QCMouseShapeArray' : ExportDialog.Filter := 'C Mouse Shape Array|*.c';
+                                      'GWMouseShapeFile',
+                                      'FPMouseShapeFile',
+                                      'FBMouseShapeFile',
+                                      'TPMouseShapeFile',
+                                      'QPMouseShapeFile',
+                                      'QBMouseShapeFile',
+                                      'TBMouseShapeFile',
+                                      'TCMouseShapeFile',
+                                      'QCMouseShapeFile': ExportDialog.Filter := 'Mouse Shape File|*.mou';
    end;
 
 
@@ -3126,6 +3144,16 @@ begin
                                         'QPMouseShapeArray': error:=WriteMShapeToCode(x,y,TPLan,ExportDialog.FileName);
                                         'TCMouseShapeArray',
                                         'QCMouseShapeArray': error:=WriteMShapeToCode(x,y,TCLan,ExportDialog.FileName);
+                                        'GWMouseShapeFile',
+                                        'FPMouseShapeFile',
+                                        'FBMouseShapeFile',
+                                        'TPMouseShapeFile',
+                                        'QPMouseShapeFile',
+                                        'QBMouseShapeFile',
+                                        'TBMouseShapeFile',
+                                        'TCMouseShapeFile',
+                                        'QCMouseShapeFile':error:=WriteMShapeToFile(x,y,ExportDialog.FileName);
+
       end;
 
 

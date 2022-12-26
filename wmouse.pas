@@ -8,6 +8,7 @@ uses
   Classes, SysUtils,LazFileUtils,rmxgfcore,rwxgf,gwbasic;
 
 Function WriteMShapeToCode(x,y,LanType : word;filename:string):word;
+Function WriteMShapeToFile(x,y : word;filename:string):word;
 
 
 implementation
@@ -46,7 +47,7 @@ begin
   For j:=1 to 16 do
   begin
      MImage :='1111111111111111';
-     MMask :='0000000000000000';
+     MMask  :='0000000000000000';
 
      For i:=1 to 16 do
      begin
@@ -78,6 +79,35 @@ begin
    end;
 end;
 
+Function GetMouseShapeLineStr(x, y : word) : string;
+var
+  pixColor : integer;
+  TextImage : String[16];
+  i : integer;
+begin
+   TextImage:='                ';
+   for i:=1 to 16 do
+   begin
+      pixColor:=GetPixel(x+i-1,y);
+       If pixColor = 0 then   // 0 is black
+       begin
+         TextImage[i]:='*';
+       end
+       else if pixColor=3 then  //3 is white
+       begin
+         TextImage[i]:='#';
+        end
+       else if pixColor=2 then  // 2 pink / tranparent
+       begin
+         TextImage[i]:=' ';
+       end
+       else
+       begin                    // 1 is cyan   XOR the bits on this part of the mouse shape
+        TextImage[i]:='X';
+       end;
+   end;
+   GetMouseShapeLineStr:=TextImage;
+end;
 
 Function WriteBasicMShapeCodeToBuffer(var data :BufferRec;x,y,Lan : word; imagename:string):word;
 var
@@ -94,6 +124,11 @@ begin
  {$I-}
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
+
+ for i:=0 to 15 do
+ begin
+  writeln(data.ftext,LineCountToStr(Lan),#39,' ',GetMouseShapeLineStr(x,y+i));
+ end;
 
  writeln(data.ftext,LineCountToStr(Lan),#39,' BASIC, Size= ', Size div 2,' Width= 16 Height= 16');
  writeln(data.ftext,LineCountToStr(Lan),#39,' DOS Mouse Shape ');
@@ -127,6 +162,11 @@ begin
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
 
+ for i:=0 to 15 do
+ begin
+  writeln(data.ftext,'(* ',GetMouseShapeLineStr(x,y+i),' *)');
+ end;
+
  writeln(data.ftext,'(*',' Pascal, Size= ', Size ,' Width= 16 Height= 16  ','*)');
  writeln(data.ftext,'(*',' DOS Mouse Shape ','*)');
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
@@ -157,6 +197,11 @@ begin
  {$I-}
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
+
+ for i:=0 to 15 do
+ begin
+  writeln(data.ftext,'/* ',GetMouseShapeLineStr(x,y+i),' */');
+ end;
 
  writeln(data.ftext,'/*',' C, Size= ', Size ,' Width= 16 Height= 16  ','*/');
  writeln(data.ftext,'/*',' DOS Mouse Shape ','*/');
@@ -197,7 +242,20 @@ begin
  WriteMShapeToCode:=IOResult;
 end;
 
-
+Function WriteMShapeToFile(x,y : word;filename:string):word;
+var
+  F      : File;
+  MShape : MouseShapeType;
+begin
+ CreateMouseShape(x,y,MShape);
+ Assign(F,filename);
+{$I-}
+  Rewrite(F,1);
+  Blockwrite(F,MShape,sizeof(MShape));
+  Close(F);
+{$I+}
+WriteMShapeToFile:=IOResult;
+end;
 
 end.
 
