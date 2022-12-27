@@ -30,16 +30,20 @@ Const
 
 
    NoExportFormat = 0;
-   TPPutImageExportFormat = 1;
-   ABPutExportFormat = 1;
-   ABBOBExportFormat = 2;
-   ABVSpriteExportFormat = 3;
-   XLibLBMExportFormat = 4;
-   XLibPBMExportFormat = 5;
-   RayLibRGBAFuchsiaExportFormat = 1;
-   RayLibRGBAIndex0ExportFormat = 2;
-   RayLibRGBExportFormat = 3;
+   PutImageExportFormat = 1;  //for all compilers the use put/putimage
 
+   AmigaBOBExportFormat = 2;  //Amiga specific formats
+   AmigaVSpriteExportFormat = 3;
+   AmigaBitMap = 4;  //for Amiga C/Pascal
+
+   XLibLBMExportFormat = 5; //Xlib format for TC/TP
+   XLibPBMExportFormat = 6;
+
+   RGBAFuchsiaExportFormat = 7;  //originaly intended for just Raylib support - but also work in qb64/freebasic RGB formats
+   RGBAIndex0ExportFormat = 8;
+   RGBExportFormat = 9;
+
+   MouseImageExportFormat = 10;
 
 
 

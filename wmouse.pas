@@ -7,9 +7,12 @@ interface
 uses
   Classes, SysUtils,LazFileUtils,rmxgfcore,rwxgf,gwbasic;
 
-Function WriteMShapeToCode(x,y,LanType : word;filename:string):word;
+Function WriteMShapeToCode(x,y,LanType,imageid : word;filename:string):word;
 Function WriteMShapeToFile(x,y : word;filename:string):word;
+function GetMouseShapeSize : longint;
 
+Function WriteMShapeCodeToBuffer(var data :BufferRec;x,y,Lan,imageId : word; imagename:string):word;
+Function WriteMShapeToBuffer(x,y  : word;var F : File):word;
 
 implementation
 
@@ -146,7 +149,7 @@ begin
 end;
 
 
-Function WritePascalMShapeCodeToBuffer(var data :BufferRec;x,y,Lan : word; imagename:string):word;
+Function WritePascalMShapeCodeToBuffer(var data :BufferRec;x,y,Lan,imageId : word; imagename:string):word;
 var
   Size      : longword;
   BWriter   : BitPlaneWriterProc;
@@ -169,6 +172,12 @@ begin
 
  writeln(data.ftext,'(*',' Pascal, Size= ', Size ,' Width= 16 Height= 16  ','*)');
  writeln(data.ftext,'(*',' DOS Mouse Shape ','*)');
+  writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+ writeln(data.ftext,' ',Imagename,'_Width = 16',';');
+ writeln(data.ftext,' ',Imagename,'_Height = 16',';');
+ writeln(data.ftext,' ',Imagename,'_Colors = 4',';');
+ writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
+
  writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
  Move(MShape,MSData,sizeof(MSData));
  for i:=1 to 64 do
@@ -182,7 +191,7 @@ begin
  WritePascalMShapeCodeToBuffer:=IORESULT;
 end;
 
-Function WriteCMShapeCodeToBuffer(var data :BufferRec;x,y,Lan : word; imagename:string):word;
+Function WriteCMShapeCodeToBuffer(var data :BufferRec;x,y,Lan,imageId : word; imagename:string):word;
 var
   Size      : longword;
   BWriter   : BitPlaneWriterProc;
@@ -205,6 +214,11 @@ begin
 
  writeln(data.ftext,'/*',' C, Size= ', Size ,' Width= 16 Height= 16  ','*/');
  writeln(data.ftext,'/*',' DOS Mouse Shape ','*/');
+ writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+ writeln(data.ftext,' #define ',Imagename,'_Width ',16);
+ writeln(data.ftext,' #define ',Imagename,'_Height ',16);
+ writeln(data.ftext,' #define ',Imagename,'_Colors ',4);
+ Writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
  writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
  Move(MShape,MSData,sizeof(MSData));
  for i:=1 to 64 do
@@ -218,9 +232,16 @@ begin
  WriteCMShapeCodeToBuffer:=IORESULT;
 end;
 
+Function WriteMShapeCodeToBuffer(var data :BufferRec;x,y,Lan,imageId : word; imagename:string):word;
+begin
+   case Lan of TPLan,QPLan,FPLan: WriteMShapeCodeToBuffer:=WritePascalMShapeCodeToBuffer(data,x,y,Lan,Imageid,imagename);
+                   TCLan,QCLan: WriteMShapeCodeToBuffer:=WriteCMShapeCodeToBuffer(data,x,y,Lan,imageId,imagename);
+                   GWLan,QBLan,FBinQBModeLan,PBLan: WriteMShapeCodeToBuffer:=WriteBasicMShapeCodeToBuffer(data,x,y,Lan,imagename);
+   end;
+end;
 
 //write a single file
-Function WriteMShapeToCode(x,y,LanType : word;filename:string):word;
+Function WriteMShapeToCode(x,y,LanType,imageId : word;filename:string):word;
 var
  data      : BufferRec;
  imagename : String;
@@ -233,13 +254,25 @@ begin
 
  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
  case LanType of
-                 TPLan,QPLan,FPLan: WritePascalMShapeCodeToBuffer(data,x,y,LanType,imagename);
-                 TCLan,QCLan: WriteCMShapeCodeToBuffer(data,x,y,LanType,imagename);
+                 TPLan,QPLan,FPLan: WritePascalMShapeCodeToBuffer(data,x,y,LanType,imageid,imagename);
+                 TCLan,QCLan: WriteCMShapeCodeToBuffer(data,x,y,LanType,imageid,imagename);
                  GWLan,QBLan,FBinQBModeLan,PBLan: WriteBasicMShapeCodeToBuffer(data,x,y,LanType,imagename);
  end;
  close(data.fText);
  {$I+}
  WriteMShapeToCode:=IOResult;
+end;
+
+Function WriteMShapeToBuffer(x,y : word;var F : File):word;
+var
+   MShape    : MouseShapeType;
+
+begin
+  CreateMouseShape(x,y,MShape);
+ {$I-}
+  Blockwrite(F,MShape,sizeof(MShape));
+ {$I+}
+ WriteMShapeToBuffer:=IOResult;
 end;
 
 Function WriteMShapeToFile(x,y : word;filename:string):word;

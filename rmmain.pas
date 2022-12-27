@@ -3138,12 +3138,12 @@ begin
    begin
       Case (Sender As TMenuItem).Name of 'QBMouseShapeData',
                                          'FBMouseShapeData',
-                                         'TBMouseShapeData': error:=WriteMShapeToCode(x,y,QBLan,ExportDialog.FileName);
-                                         'GWMouseShapeData': error:=WriteMShapeToCode(x,y,GWLan,ExportDialog.FileName);
+                                         'TBMouseShapeData': error:=WriteMShapeToCode(x,y,QBLan,1,ExportDialog.FileName);
+                                         'GWMouseShapeData': error:=WriteMShapeToCode(x,y,GWLan,1,ExportDialog.FileName);
                                         'TPMouseShapeArray',
-                                        'QPMouseShapeArray': error:=WriteMShapeToCode(x,y,TPLan,ExportDialog.FileName);
+                                        'QPMouseShapeArray': error:=WriteMShapeToCode(x,y,TPLan,1,ExportDialog.FileName);
                                         'TCMouseShapeArray',
-                                        'QCMouseShapeArray': error:=WriteMShapeToCode(x,y,TCLan,ExportDialog.FileName);
+                                        'QCMouseShapeArray': error:=WriteMShapeToCode(x,y,TCLan,1,ExportDialog.FileName);
                                         'GWMouseShapeFile',
                                         'FPMouseShapeFile',
                                         'FBMouseShapeFile',

@@ -49,6 +49,9 @@ implementation
 
 {$R *.lfm}
 
+
+
+
 procedure TImageExportForm.Button1Click(Sender: TObject);
 begin
    modalresult:= mrOk;
@@ -69,6 +72,7 @@ begin
                            ComboImage.Items.Add('putimage');
                            ComboImage.Items.Add('Xlib LBM');
                            ComboImage.Items.Add('Xlib PBM');
+                           ComboImage.Items.Add('Mouse Image');
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
                            ComboImage.ItemIndex:=EO.Image;
@@ -82,6 +86,7 @@ begin
                            ComboImage.Items.Add('putimage');
                            ComboImage.Items.Add('Xlib LBM');
                            ComboImage.Items.Add('Xlib PBM');
+                           ComboImage.Items.Add('Mouse Image');
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
                            ComboImage.ItemIndex:=EO.Image;
@@ -93,6 +98,7 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('_putimage');
+                           ComboImage.Items.Add('Mouse Image');
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
                            ComboImage.ItemIndex:=EO.Image;
@@ -104,6 +110,7 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Mouse Image');
 
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
@@ -129,6 +136,7 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Mouse Image');
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
                            ComboImage.ItemIndex:=EO.Image;
@@ -140,6 +148,7 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Mouse Image');
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
                            ComboImage.ItemIndex:=EO.Image;
@@ -154,6 +163,7 @@ begin
                            ComboImage.Items.Add('RayLib RGBA Fuchsia');
                            ComboImage.Items.Add('RayLib RGBA Index 0');
                            ComboImage.Items.Add('RayLib RGB');
+                           ComboImage.Items.Add('Mouse Image');
 
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
@@ -167,6 +177,7 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Mouse Image');
 
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
@@ -239,6 +250,7 @@ begin
                             ComboMask.Items.Clear;
                             ComboImage.Items.Add('None');
                             ComboImage.Items.Add('putimage');
+                            ComboImage.Items.Add('Mouse Image');
                             ComboMask.Items.Add('None');
                             ComboMask.Items.Add('Inverted');
                             ComboImage.ItemIndex:=EO.Image;
