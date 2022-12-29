@@ -433,8 +433,9 @@ begin
  nColors:=GetMaxColor+1;
  BPL:=GetBPLSize(Width,nColors);
  BTW:=BPL;
- if nColors = 16 then BTW:=BPL*4;
 
+ if nColors = 16 then BTW:=BPL*4;
+ //BitplaneWriter(0,data,0);
  //patch correct widht height for language/compiler - Microsoft and Borland did some wierd things to a simple bitmap format
  FixHead(Head,Width,Height,LanType);
  Move(Head,tempBuf,sizeof(tempBuf));
@@ -1070,7 +1071,10 @@ SetCoreActive;   // we are getting data from core object RMCoreBase
 Assign(data.f,filename);
 {$I-}
  Rewrite(data.f,1);
- WriteXGFBuffer(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
+ //BitplaneWriterFile(0,data,0);
+ //WriteXGFBuffer(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
+
+ WriteXGFToBuffer(x,y,x2,y2,LanType,0,data);
  Close(data.f);
 {$I+}
  WriteXgfToFile:=IOResult;

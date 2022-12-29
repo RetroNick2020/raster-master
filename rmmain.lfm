@@ -1,12 +1,12 @@
 object RMMainForm: TRMMainForm
-  Left = -8
-  Height = 1177
-  Top = -8
-  Width = 1920
+  Left = 29
+  Height = 1118
+  Top = 0
+  Width = 1828
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 1157
-  ClientWidth = 1920
+  ClientHeight = 1098
+  ClientWidth = 1828
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
   OnClose = FormClose
@@ -14,7 +14,6 @@ object RMMainForm: TRMMainForm
   Position = poDefault
   LCLVersion = '2.0.10.0'
   Scaled = False
-  WindowState = wsFullScreen
   object MiddleBottomPanel: TPanel
     AnchorSideLeft.Control = LeftHSplitter
     AnchorSideLeft.Side = asrBottom
@@ -23,14 +22,14 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Control = RightHSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 296
-    Height = 1045
+    Left = 283
+    Height = 986
     Top = 112
-    Width = 1366
+    Width = 1299
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 1045
-    ClientWidth = 1366
+    ClientHeight = 986
+    ClientWidth = 1299
     TabOrder = 1
     object ScrollBox1: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
@@ -39,23 +38,23 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = MiddleBottomPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 1045
+      Height = 986
       Top = 0
-      Width = 1366
+      Width = 1299
       HorzScrollBar.Page = 90
       HorzScrollBar.Tracking = True
       VertScrollBar.Page = 90
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
-      ClientHeight = 1045
-      ClientWidth = 1366
+      ClientHeight = 986
+      ClientWidth = 1299
       TabOrder = 0
       object ZoomBox: TImage
         Left = 0
-        Height = 1045
+        Height = 986
         Top = 0
-        Width = 1366
+        Width = 1299
         Align = alClient
         OnMouseDown = ZoomBoxMouseDown
         OnMouseMove = ZoomBoxMouseMove
@@ -72,13 +71,13 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 1157
+    Height = 1098
     Top = 0
-    Width = 296
+    Width = 283
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 1157
-    ClientWidth = 296
+    ClientHeight = 1098
+    ClientWidth = 283
     TabOrder = 0
     object LeftVSplitter: TSplitter
       AnchorSideLeft.Control = LeftPanel
@@ -90,8 +89,8 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 309
-      Width = 295
+      Top = 293
+      Width = 281
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -107,9 +106,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 835
-      Top = 322
-      Width = 285
+      Height = 792
+      Top = 306
+      Width = 272
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
       Color = 15790320
@@ -130,14 +129,14 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 309
+      Height = 293
       Top = 0
-      Width = 281
+      Width = 268
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 309
-      ClientWidth = 281
+      ClientHeight = 293
+      ClientWidth = 268
       TabOrder = 0
       object ActualBox: TImage
         Left = 16
@@ -152,8 +151,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 285
-    Height = 1157
+    Left = 272
+    Height = 1098
     Top = 0
     Width = 11
     Align = alNone
@@ -166,8 +165,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1662
-    Height = 1157
+    Left = 1582
+    Height = 1098
     Top = 0
     Width = 11
     Align = alNone
@@ -180,19 +179,19 @@ object RMMainForm: TRMMainForm
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightHSplitter
-    Left = 296
+    Left = 283
     Height = 112
     Top = 0
-    Width = 1366
+    Width = 1299
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 112
-    ClientWidth = 1366
+    ClientWidth = 1299
     TabOrder = 4
     object ToolPanel: TPanel
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 881
+      Left = 814
       Height = 88
       Top = 8
       Width = 434
@@ -407,7 +406,7 @@ object RMMainForm: TRMMainForm
       WordWrap = True
     end
     object TrackBar1: TTrackBar
-      Left = 1330
+      Left = 1263
       Height = 110
       Top = 1
       Width = 30
@@ -429,13 +428,13 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1673
-    Height = 1157
+    Left = 1593
+    Height = 1098
     Top = 0
-    Width = 247
+    Width = 235
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 1157
-    ClientWidth = 247
+    ClientHeight = 1098
+    ClientWidth = 235
     TabOrder = 5
     OnClick = RightPanelClick
     object RMPanel: TPanel
@@ -444,9 +443,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Cursor = crNo
-      Left = 73
+      Left = 61
       Height = 121
-      Top = 1025
+      Top = 966
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15

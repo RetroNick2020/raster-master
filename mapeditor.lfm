@@ -1,12 +1,11 @@
 object MapEdit: TMapEdit
-  Left = 279
-  Height = 832
+  Left = 271
+  Height = 682
   Top = 159
-  Width = 1402
+  Width = 1130
   Caption = 'Map Edititor'
-  ClientHeight = 807
-  ClientWidth = 1402
-  DesignTimePPI = 120
+  ClientHeight = 662
+  ClientWidth = 1130
   Menu = MainMenu1
   OnClose = FormClose
   OnCreate = FormCreate
@@ -19,13 +18,14 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 807
+    Height = 662
     Top = 0
-    Width = 272
+    Width = 218
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'LeftPanel'
-    ClientHeight = 807
-    ClientWidth = 272
+    ClientHeight = 662
+    ClientWidth = 218
+    ParentFont = False
     TabOrder = 3
     object SelectedTilePanel: TPanel
       AnchorSideLeft.Control = LeftPanel
@@ -34,22 +34,23 @@ object MapEdit: TMapEdit
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVertSplitter
       Left = 1
-      Height = 207
+      Height = 169
       Top = 1
-      Width = 270
+      Width = 216
       Anchors = [akTop, akLeft, akRight, akBottom]
-      ClientHeight = 207
-      ClientWidth = 270
+      ClientHeight = 169
+      ClientWidth = 216
+      ParentFont = False
       TabOrder = 0
       object SelectedTileImage: TImage
         AnchorSideLeft.Control = SelectedTilePanel
         AnchorSideTop.Control = SelectedTilePanel
-        Left = 16
-        Height = 113
-        Top = 16
-        Width = 113
-        BorderSpacing.Left = 15
-        BorderSpacing.Top = 15
+        Left = 13
+        Height = 90
+        Top = 13
+        Width = 90
+        BorderSpacing.Left = 12
+        BorderSpacing.Top = 12
       end
     end
     object LeftVertSplitter: TSplitter
@@ -60,9 +61,9 @@ object MapEdit: TMapEdit
       AnchorSideRight.Side = asrBottom
       Cursor = crVSplit
       Left = 1
-      Height = 11
-      Top = 208
-      Width = 270
+      Height = 9
+      Top = 170
+      Width = 216
       Align = alNone
       Anchors = [akLeft, akRight]
       AutoSnap = False
@@ -79,25 +80,27 @@ object MapEdit: TMapEdit
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 587
-      Top = 219
-      Width = 270
+      Height = 482
+      Top = 179
+      Width = 216
       Anchors = [akTop, akLeft, akRight, akBottom]
       Caption = 'LeftBottomPanel'
-      ClientHeight = 587
-      ClientWidth = 270
+      ClientHeight = 482
+      ClientWidth = 216
+      ParentFont = False
       TabOrder = 2
       object TileListView: TListView
         Left = 1
-        Height = 585
+        Height = 480
         Top = 1
-        Width = 268
+        Width = 214
         Align = alClient
         Color = 15790320
         Columns = <>
         IconOptions.AutoArrange = True
         LargeImages = RMMainForm.ImageList1
         LargeImagesWidth = 128
+        ParentFont = False
         ReadOnly = True
         TabOrder = 0
         ViewStyle = vsIcon
@@ -113,23 +116,25 @@ object MapEdit: TMapEdit
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1170
-    Height = 807
+    Left = 942
+    Height = 662
     Top = 0
-    Width = 232
+    Width = 188
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'RightPanel'
-    ClientHeight = 807
-    ClientWidth = 232
+    ClientHeight = 662
+    ClientWidth = 188
+    ParentFont = False
     TabOrder = 0
     object MapListView: TListView
       Left = 1
-      Height = 805
+      Height = 660
       Top = 1
-      Width = 230
+      Width = 186
       Align = alClient
       Color = 15790320
       Columns = <>
+      ParentFont = False
       PopupMenu = ExportMapsPropsMenu
       ReadOnly = True
       TabOrder = 0
@@ -140,10 +145,10 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 272
-    Height = 807
+    Left = 218
+    Height = 662
     Top = 0
-    Width = 11
+    Width = 9
     Align = alNone
     Anchors = [akTop, akBottom]
     Color = 11625216
@@ -153,10 +158,10 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1159
-    Height = 807
+    Left = 933
+    Height = 662
     Top = 0
-    Width = 11
+    Width = 9
     Align = alNone
     Anchors = [akTop, akBottom]
     Color = 11625216
@@ -167,27 +172,29 @@ object MapEdit: TMapEdit
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightSplitter
-    Left = 283
-    Height = 128
+    Left = 227
+    Height = 102
     Top = 0
-    Width = 876
+    Width = 706
     Anchors = [akTop, akLeft, akRight]
-    ClientHeight = 128
-    ClientWidth = 876
+    ClientHeight = 102
+    ClientWidth = 706
+    ParentFont = False
     TabOrder = 4
     object MapInfoLabel: TLabel
-      Left = 16
-      Height = 20
-      Top = 16
-      Width = 92
+      Left = 13
+      Height = 15
+      Top = 13
+      Width = 73
       Caption = 'MapInfoLabel'
       ParentColor = False
+      ParentFont = False
     end
     object TileZoom: TTrackBar
-      Left = 832
-      Height = 109
-      Top = 8
-      Width = 31
+      Left = 671
+      Height = 87
+      Top = 6
+      Width = 25
       Max = 6
       Min = 1
       OnChange = TileZoomChange
@@ -195,35 +202,39 @@ object MapEdit: TMapEdit
       Position = 4
       TickMarks = tmTopLeft
       Anchors = [akTop, akRight]
+      ParentFont = False
       TabOrder = 0
     end
     object ToolPanel: TPanel
-      Left = 536
-      Height = 92
-      Top = 16
-      Width = 296
+      Left = 434
+      Height = 74
+      Top = 13
+      Width = 237
       Anchors = [akTop, akRight]
-      ClientHeight = 92
-      ClientWidth = 296
+      ClientHeight = 74
+      ClientWidth = 237
+      ParentFont = False
       TabOrder = 1
       object RadioDraw: TRadioButton
-        Left = 64
-        Height = 24
-        Top = 32
-        Width = 59
+        Left = 51
+        Height = 19
+        Top = 26
+        Width = 47
         Caption = 'Draw'
         Checked = True
         OnClick = RadioDrawClick
+        ParentFont = False
         TabOrder = 1
         TabStop = True
       end
       object RadioErase: TRadioButton
-        Left = 184
-        Height = 24
-        Top = 32
-        Width = 59
+        Left = 147
+        Height = 19
+        Top = 26
+        Width = 47
         Caption = 'Erase'
         OnClick = RadioEraseClick
+        ParentFont = False
         TabOrder = 0
       end
     end
@@ -236,36 +247,38 @@ object MapEdit: TMapEdit
     AnchorSideRight.Control = RightSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 283
-    Height = 679
-    Top = 128
-    Width = 876
+    Left = 227
+    Height = 560
+    Top = 102
+    Width = 706
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'MiddlePanel'
-    ClientHeight = 679
-    ClientWidth = 876
+    ClientHeight = 560
+    ClientWidth = 706
+    ParentFont = False
     TabOrder = 5
     object MapScrollBox: TScrollBox
       Left = 1
-      Height = 677
+      Height = 558
       Top = 1
-      Width = 874
-      HorzScrollBar.Page = 113
+      Width = 704
+      HorzScrollBar.Page = 90
       HorzScrollBar.Tracking = True
-      VertScrollBar.Page = 113
+      VertScrollBar.Page = 90
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
-      ClientHeight = 677
-      ClientWidth = 874
+      ClientHeight = 558
+      ClientWidth = 704
+      ParentFont = False
       TabOrder = 0
       object MapImage: TImage
         AnchorSideLeft.Control = MapScrollBox
         AnchorSideTop.Control = MapScrollBox
         Left = 0
-        Height = 113
+        Height = 90
         Top = 0
-        Width = 113
+        Width = 90
         OnMouseDown = MapImageMouseDown
         OnMouseLeave = MapImageMouseLeave
         OnMouseMove = MapImageMouseMove
@@ -274,12 +287,12 @@ object MapEdit: TMapEdit
     end
   end
   object ImageList1: TImageList
-    Left = 88
-    Top = 240
+    Left = 70
+    Top = 192
   end
   object MainMenu1: TMainMenu
-    Left = 88
-    Top = 344
+    Left = 70
+    Top = 275
     object FileMenuItem: TMenuItem
       Caption = 'File'
       object MenuNew: TMenuItem
@@ -402,16 +415,16 @@ object MapEdit: TMapEdit
     end
   end
   object SaveDialog1: TSaveDialog
-    Left = 80
-    Top = 440
+    Left = 64
+    Top = 352
   end
   object OpenDialog1: TOpenDialog
-    Left = 80
-    Top = 528
+    Left = 64
+    Top = 422
   end
   object ExportMapsPropsMenu: TPopupMenu
-    Left = 80
-    Top = 632
+    Left = 64
+    Top = 506
     object MenuMapProps: TMenuItem
       Caption = 'Properties'
       OnClick = MenuMapPropsClick
