@@ -74,6 +74,12 @@ type
     AqbPsetBitMap: TMenuItem;
     GWMouseShapeFile: TMenuItem;
     FBMouseShapeFile: TMenuItem;
+    MenuItem14: TMenuItem;
+    MenuItem15: TMenuItem;
+    OWPaletteCommands: TMenuItem;
+    OWPaletteArray: TMenuItem;
+    OWMouseShapeArray: TMenuItem;
+    OWPutImageFile: TMenuItem;
     OWPutImagePlusMaskArray: TMenuItem;
     OWPutImageArray: TMenuItem;
     OpenWatcom: TMenuItem;
@@ -315,6 +321,7 @@ type
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
     procedure OpenWatcomCClick(Sender: TObject);
+    procedure PaletteExportOWCClick(Sender: TObject);
     procedure RayLibExportClick(Sender: TObject);
     procedure RightPanelClick(Sender: TObject);
     procedure RMPanelClick(Sender: TObject);
@@ -2640,6 +2647,36 @@ begin
    end;
 end;
 
+procedure TRMMainForm.PaletteExportOWCClick(Sender: TObject);
+var
+  pm : integer;
+  ColorFormat : integer;
+  error : word;
+ begin
+    Case (Sender As TMenuItem).Name of 'OWPaletteArray' : ExportDialog.Filter := 'Open Watcom C Palette Array|*.c';
+                                      'OWPaletteCommands' : ExportDialog.Filter :='Open Watcom C Palette Commands|*.c';
+    end;
+
+    if ExportDialog.Execute then
+    begin
+       pm:=RMCoreBase.Palette.GetPaletteMode;
+       ColorFormat:=ColorSixBitFormat;
+       if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+       Case (Sender As TMenuItem).Name of 'OWPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,OWLan,ColorFormat);
+                                         'OWPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,OWLan,ColorFormat);
+       end;
+
+
+       if error<>0 then
+       begin
+         ShowMessage('Error Saving Palette file!');
+         exit;
+       end;
+    end;
+
+end;
+
 procedure TRMMainForm.QuickCClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -3150,7 +3187,8 @@ begin
                                       'QPMouseShapeArray',
                                       'FPMouseShapeArray' : ExportDialog.Filter := 'Pascal Mouse Shape Array|*.pas';
                                       'TCMouseShapeArray',
-                                      'QCMouseShapeArray' : ExportDialog.Filter := 'C Mouse Shape Array|*.c';
+                                      'QCMouseShapeArray',
+                                      'OWMouseShapeArray': ExportDialog.Filter := 'C Mouse Shape Array|*.c';
                                       'GWMouseShapeFile',
                                       'FPMouseShapeFile',
                                       'FBMouseShapeFile',
@@ -3159,7 +3197,8 @@ begin
                                       'QBMouseShapeFile',
                                       'TBMouseShapeFile',
                                       'TCMouseShapeFile',
-                                      'QCMouseShapeFile': ExportDialog.Filter := 'Mouse Shape File|*.mou';
+                                      'QCMouseShapeFile',
+                                      'OWMouseShapeFile': ExportDialog.Filter := 'Mouse Shape File|*.mou';
    end;
 
 
@@ -3173,7 +3212,8 @@ begin
                                         'TPMouseShapeArray',
                                         'QPMouseShapeArray': error:=WriteMShapeToCode(x,y,TPLan,1,ExportDialog.FileName);
                                         'TCMouseShapeArray',
-                                        'QCMouseShapeArray': error:=WriteMShapeToCode(x,y,TCLan,1,ExportDialog.FileName);
+                                        'QCMouseShapeArray',
+                                        'OWMouseShapeArray': error:=WriteMShapeToCode(x,y,TCLan,1,ExportDialog.FileName);
                                         'GWMouseShapeFile',
                                         'FPMouseShapeFile',
                                         'FBMouseShapeFile',
@@ -3182,7 +3222,8 @@ begin
                                         'QBMouseShapeFile',
                                         'TBMouseShapeFile',
                                         'TCMouseShapeFile',
-                                        'QCMouseShapeFile':error:=WriteMShapeToFile(x,y,ExportDialog.FileName);
+                                        'QCMouseShapeFile',
+                                        'OWMouseShapeFile':error:=WriteMShapeToFile(x,y,ExportDialog.FileName);
 
       end;
 

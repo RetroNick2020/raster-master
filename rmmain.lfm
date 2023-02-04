@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
-  Left = 29
-  Height = 1118
-  Top = 0
+  Left = 33
+  Height = 1027
+  Top = 66
   Width = 1828
   Anchors = [akTop, akLeft, akRight, akBottom]
   Caption = 'Raster Master'
-  ClientHeight = 1098
+  ClientHeight = 1007
   ClientWidth = 1828
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
@@ -23,12 +23,12 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 283
-    Height = 986
+    Height = 895
     Top = 112
     Width = 1299
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 986
+    ClientHeight = 895
     ClientWidth = 1299
     TabOrder = 1
     object ScrollBox1: TScrollBox
@@ -38,7 +38,7 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = MiddleBottomPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 986
+      Height = 895
       Top = 0
       Width = 1299
       HorzScrollBar.Page = 90
@@ -47,12 +47,12 @@ object RMMainForm: TRMMainForm
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
-      ClientHeight = 986
+      ClientHeight = 895
       ClientWidth = 1299
       TabOrder = 0
       object ZoomBox: TImage
         Left = 0
-        Height = 986
+        Height = 895
         Top = 0
         Width = 1299
         Align = alClient
@@ -71,12 +71,12 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 1098
+    Height = 1007
     Top = 0
     Width = 283
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 1098
+    ClientHeight = 1007
     ClientWidth = 283
     TabOrder = 0
     object LeftVSplitter: TSplitter
@@ -89,7 +89,7 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 293
+      Top = 268
       Width = 281
       Align = alNone
       Anchors = [akLeft, akRight]
@@ -106,8 +106,8 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 792
-      Top = 306
+      Height = 726
+      Top = 281
       Width = 272
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
@@ -129,13 +129,13 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 293
+      Height = 268
       Top = 0
       Width = 268
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 293
+      ClientHeight = 268
       ClientWidth = 268
       TabOrder = 0
       object ActualBox: TImage
@@ -152,7 +152,7 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 272
-    Height = 1098
+    Height = 1007
     Top = 0
     Width = 11
     Align = alNone
@@ -166,7 +166,7 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1582
-    Height = 1098
+    Height = 1007
     Top = 0
     Width = 11
     Align = alNone
@@ -429,11 +429,11 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1593
-    Height = 1098
+    Height = 1007
     Top = 0
     Width = 235
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 1098
+    ClientHeight = 1007
     ClientWidth = 235
     TabOrder = 5
     OnClick = RightPanelClick
@@ -445,7 +445,7 @@ object RMMainForm: TRMMainForm
       Cursor = crNo
       Left = 61
       Height = 121
-      Top = 966
+      Top = 875
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
@@ -750,6 +750,18 @@ object RMMainForm: TRMMainForm
           object OWPutImagePlusMaskArray: TMenuItem
             Caption = '_putimage+Mask array'
             OnClick = OpenWatcomCClick
+          end
+          object OWPutImageFile: TMenuItem
+            Caption = '_putimage File'
+            OnClick = OpenWatcomCClick
+          end
+          object OWMouseShapeArray: TMenuItem
+            Caption = 'Mouse Shape Array'
+            OnClick = MouseSaveClick
+          end
+          object MenuItem14: TMenuItem
+            Caption = 'Mouse Shape File'
+            OnClick = MouseSaveClick
           end
         end
         object QuickBasic: TMenuItem
@@ -1081,6 +1093,17 @@ object RMMainForm: TRMMainForm
           object GWPaletteCommands: TMenuItem
             Caption = 'Palette Commands'
             OnClick = PaletteExportGWBasicClick
+          end
+        end
+        object MenuItem15: TMenuItem
+          Caption = 'Open Watcom C'
+          object OWPaletteArray: TMenuItem
+            Caption = 'Palettte Array'
+            OnClick = PaletteExportOWCClick
+          end
+          object OWPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportOWCClick
           end
         end
         object PaletteExportQBasic: TMenuItem

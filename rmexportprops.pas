@@ -105,6 +105,18 @@ begin
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                           end;
+                   OWLan:begin
+                           ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
+                           ComboImage.Items.Add('None');
+                           ComboImage.Items.Add('_putimage');
+                           ComboImage.Items.Add('Mouse Image');
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+                           ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
+                           ComboPalette.ItemIndex:=EO.Palette;
+                         end;
                    QBLan:begin
                            ComboImage.Items.Clear;
                            ComboMask.Items.Clear;
@@ -329,8 +341,8 @@ begin
    ComboCompiler.Items.Add('Amiga QuickBasic AQB');
    ComboCompiler.Items.Add('Quick Pascal');
    ComboCompiler.Items.Add('gcc');
+   ComboCompiler.Items.Add('Open Watcom C');
    ComboCompiler.ItemIndex:=0;
-
    ComboImage.Items.Clear;
    ComboImage.Items.Add('None');
    ComboImage.ItemIndex:=0;

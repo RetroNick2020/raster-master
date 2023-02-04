@@ -240,6 +240,11 @@ begin
                                               3:format:=RGBExportFormat;
                            end;
                          end;
+                   OWLan:begin
+                           case ImageIndex of 1:format:=PutImageExportFormat;
+                                              2:format:=MouseImageExportFormat;
+                           end;
+                         end;
    end;
    ImageIndexToFormat:=format;
 end;
@@ -365,6 +370,12 @@ begin
                                            RGBExportFormat:size:=ResRayLibImageSize(width,height,3);
                       end;
                     end;
+             OWLan:begin
+                     Case ImageFormat of PutImageExportFormat:size:=GetXImageSizeOW(width,height,ncolors);
+                                         MouseImageExportFormat:size:=GetMouseShapeSize;
+                     end;
+                   end;
+
  end;
 
 GetRESImageSize:=size;
@@ -774,7 +785,7 @@ begin
      WritePalToArrayBuffer(data,EO.Name+'Pal',EO.Lan,EO.Palette);
    end;
 
-   case EO.Lan of TPLan,TCLan,FPLan,FBinQBModeLan,QBLan,GWLan,QCLan,QPLan,PBLan:
+   case EO.Lan of TPLan,TCLan,FPLan,FBinQBModeLan,QBLan,GWLan,QCLan,QPLan,PBLan,OWLan:
         begin
 //          if EO.Image = 1 then   //put image format
 
@@ -1092,7 +1103,7 @@ begin
 
    if EO.Palette > 0 then WritePalToBuffer(data,EO.Palette);
 
-   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan:
+   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan,OWLan:
                                     begin
                                       if (ImageExportFormat = PutImageExportFormat) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                       if (ImageExportFormat = PutImageExportFormat) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);

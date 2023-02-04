@@ -441,7 +441,7 @@ begin
  BitplaneWriter(0,data,2);  //flush it
 end;
 
-Procedure WriteXGFBufferOW(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
+Procedure WriteXGFBufferOW(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2 : word);
 Var
  sourcelinebuf : Linebuftype;
  destlinebuf   : Linebuftype;
@@ -833,7 +833,7 @@ begin
  Writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
 
  writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
- WriteXGFBufferOW(BWriter,data,x,y,x2,y2,OWLan);
+ WriteXGFBufferOW(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
 
 {$I+}
@@ -1123,6 +1123,17 @@ begin
   SetMaskMode(oMask);
 end;
 
+procedure WriteXgfToBufferOW(x,y,x2,y2,Mask : word;var data : BufferRec);
+var
+ omask : integer;
+begin
+  omask:=GetMaskMode;
+  SetMaskMode(Mask);
+  BitPlaneWriterFile(0,data,0);
+  WriteXGFBufferOW(@BitPlaneWriterFile,data,x,y,x2,y2);
+  SetMaskMode(oMask);
+end;
+
 
 //write a single file
 Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
@@ -1192,8 +1203,13 @@ Assign(data.f,filename);
  Rewrite(data.f,1);
  //BitplaneWriterFile(0,data,0);
  //WriteXGFBuffer(@BitPlaneWriterFile,data,x,y,x2,y2,LanType);
+ case LanType of         OWLan: WriteXGFToBufferOW(x,y,x2,y2,0,data);
+                 FBinQBModeLan: WriteXGFToBufferFB(x,y,x2,y2,0,data);
+                         FPLan: WriteXGFToBufferFP(x,y,x2,y2,0,data);
+      else
+         WriteXGFToBuffer(x,y,x2,y2,LanType,0,data);
+ end;
 
- WriteXGFToBuffer(x,y,x2,y2,LanType,0,data);
  Close(data.f);
 {$I+}
  WriteXgfToFile:=IOResult;

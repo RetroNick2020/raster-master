@@ -85,6 +85,7 @@ begin
               FBLan:LanToStr:='FreeBASIC';
               FBinQBModeLan:LanToStr:='FreeBASIC';
               FPLan:LanToStr:='FreePascal';
+              OWLan:LanToStr:='Open Watcom C';
 
   end;
 end;
@@ -108,7 +109,7 @@ begin
  begin
    PaletteCmdToStr:='SetRGBPalette(';
  end
- else if (Lan=QCLan) then
+ else if (Lan=QCLan) or (Lan=OWLan) then
  begin
   PaletteCmdToStr:='_remappalette(';
  end
@@ -127,7 +128,7 @@ function LineTrmToStr(Lan : integer) : string;
 begin
  LineTrmToStr:='';
  Case Lan of QPLan,TPLan,FPLan,APLan:LineTrmToStr:=');';
-             TCLan,QCLan,ACLan:LineTrmToStr:='};';
+             TCLan,QCLan,ACLan,OWLan:LineTrmToStr:='};';
  end;
 end;
 
@@ -135,7 +136,7 @@ function CommentBeginToStr(Lan : integer) : string;
 begin
  CommentBeginToStr:=#39;
  Case Lan of QPLan,TPLan,FPLan,APLan:CommentBeginToStr:='(*';
-             TCLan,QCLan,ACLan:CommentBeginToStr:='/*';
+             TCLan,QCLan,ACLan,OWLan:CommentBeginToStr:='/*';
  end;
 end;
 
@@ -143,7 +144,7 @@ function CommentEndToStr(Lan : integer) : string;
 begin
  CommentEndToStr:='';
  Case Lan of QPLan,TPLan,FPLan,APLan:CommentEndToStr:='*)';
-             TCLan,QCLan,ACLan:CommentEndToStr:='*/';
+             TCLan,QCLan,ACLan,OWLan:CommentEndToStr:='*/';
  end;
 end;
 
@@ -241,7 +242,7 @@ begin
   begin
    Writeln(F,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
   end
-  Else if (Lan = QCLan) or (Lan = TCLan)  then
+  Else if (Lan = QCLan) or (Lan = TCLan) or (Lan = OWLan) then
   begin
     Writeln(F,'char ',palettenamestr,'[',arraysize,'] = {');
   end
@@ -320,7 +321,7 @@ SetGWStartLineNumber(1000);
     g:=CR.g;
     b:=CR.b;
 
-    if ((Lan=QBLan) or (Lan=FBinQBModeLan) or (Lan=GWLan) or (Lan=PBLan) or (Lan=QCLan) or (Lan=QPLan)) and (rgbFormat = ColorSixBitFormat) then
+    if ((Lan=QBLan) or (Lan=FBinQBModeLan) or (Lan=GWLan) or (Lan=PBLan) or (Lan=QCLan) or (Lan=QPLan) or (Lan=OWLan)) and (rgbFormat = ColorSixBitFormat) then
     begin
       cistr:=IntToStr(EightToSixBit(r)+(EightToSixBit(g)*256)+(EightToSixBit(b)*65536));
       if (Lan=PBlan) then   PBasicEndBracket:=')' else   PBasicEndBracket:='';
@@ -638,7 +639,7 @@ begin
   begin
    Writeln(data.fText,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
   end
-  Else if (Lan = QCLan) or (Lan = TCLan)  then
+  Else if (Lan = QCLan) or (Lan = TCLan) or (Lan = OWLan) then
   begin
     Writeln(data.fText,'char ',palettenamestr,'[',arraysize,'] = {');
   end
@@ -688,7 +689,7 @@ end;
 procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
 begin
    case Lan of ABLan,AQBLan,QBLan,PBLan,GWLAN,FBinQBModeLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
-               TPLan,QPLan,APLan,FPLan,TCLan,QCLan,ACLan:WritePalCPascalBuffer(data,imagename,Lan,rgbFormat);
+               TPLan,QPLan,APLan,FPLan,TCLan,QCLan,ACLan,OWLan:WritePalCPascalBuffer(data,imagename,Lan,rgbFormat);
    end;
 end;
 
