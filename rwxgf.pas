@@ -27,6 +27,7 @@ Const
    AQBLan  = 14; //Amiga APQBasic support - once we figure out how to access t_BitMap memory and stuff it with bitplane data
    QPLan   = 15; //Quick Pascal
    gccLan  = 16;
+   OWLan   = 17; //Open Watcom C/C++ compiler
 
 
    NoExportFormat = 0;
@@ -100,6 +101,7 @@ type
  function GetXImageSize(width,height,ncolors : integer) : longint;
  function GetXImageSizeFB(width,height : integer) : longint;
  function GetXImageSizeFP(width,height : integer) : longint;
+ function GetXImageSizeOW(width,height,ncolors : integer) : longint;
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);
@@ -117,6 +119,13 @@ type
               Height : Word;
             End;
 
+ //Open Watcom XGF header - slightly different than borland/MS
+ XgfHeadOW = Packed Record
+              Width  : Word;
+              Height : Word;
+              Colors : Word; // 1 = Monochrome, 2 = 4 color/GGA modes, 4 = 16 color modes, 8 = 256 color modes
+             End;
+
  //free pascal graph - each pixel takes a Word
  XGFHeadFP = Packed Record
               Width,Height : LongInt;
@@ -130,10 +139,22 @@ type
 
 
 const
- BorlandColorMap : ColorMap = (0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15);
+ BorlandColorMap : ColorMap = (0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15); //Borland and Open Watcom 16 color remap
 // MSColorMap: ColorMap = (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
 
 
+function nColorsToColorBits(nColors : integer) : integer;
+var
+ CB : integer;
+begin
+ CB:=0;
+ Case nColors of 2:CB:=1;
+                 4:CB:=2;
+                16:CB:=4;
+                256:CB:=8;
+ end;
+ nColorsToColorBits:=CB;
+end;
 
 Procedure spTOmp(var singlePlane : LineBufType ;
                  var multiplane  : LineBufType;
@@ -314,6 +335,11 @@ begin
   end;
 end;
 
+function GetXImageSizeOW(width,height,ncolors : integer) : longint;
+begin
+  GetXImageSizeOW:=GetXImageSize(width,height,ncolors)+2; //OW header contains 2 more bytes to specy Color Bits
+end;
+
 function GetXImageSizeFP(width,height : integer) : longint;
 begin
   //all FP simulated Graph modes up 256 colors take word per pixel
@@ -414,6 +440,63 @@ begin
  end;
  BitplaneWriter(0,data,2);  //flush it
 end;
+
+Procedure WriteXGFBufferOW(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
+Var
+ sourcelinebuf : Linebuftype;
+ destlinebuf   : Linebuftype;
+ Head     : XgfHeadOW;
+ width    : word;
+ height   : word;
+ BPL        : Word;  //bytes per line for one bitplane
+ BTW        : word; //bytes to write to buffer
+ i,j,n      : Word;
+ nColors  : Word;
+ tempBuf    : array[1..6] of byte;
+begin
+ width:=x2-x+1;
+ Height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ BPL:=GetBPLSize(Width,nColors);
+ BTW:=BPL;
+
+ if nColors = 16 then BTW:=BPL*4;
+
+ Head.Width:=width;
+ Head.Height:=height;
+ Head.Colors:=nColorsToColorBits(nColors);
+ Move(Head,tempBuf,sizeof(tempBuf));
+
+ for n:=1 to 6 do
+ begin
+    BitplaneWriter(tempBuf[n],data,1);
+ end;
+
+ for j:=0 to height-1 do
+ begin
+   for i:=0 to Width-1 do
+   begin
+       sourceLineBuf[i]:=GetPixel(x+i,y+j);
+   end;
+   case nColors of   2:spTOmp(sourcelinebuf,destlinebuf,BPL,1);
+                     4:spToPacked(sourcelinebuf,destlinebuf,BPL);
+                    16:begin
+                         RemapToBorland(sourcelinebuf,Width);  //OW uses the same bit plane format as Borland for 16 colors
+                         spTOmp(sourcelinebuf,destlinebuf,BPL,4);
+                       end;
+                   256:destlinebuf:=sourcelinebuf;
+   end;
+   for n:=0 to BTW-1 do
+   begin
+     BitplaneWriter(destlinebuf[n],data,1);
+   end;
+ end;
+
+ BitplaneWriter(0,data,2);  //flush it
+end;
+
+
+
 
 Procedure WriteXGFBuffer(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
 Var
@@ -724,6 +807,40 @@ begin
 end;
 
 
+Function WriteOWCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageId : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longint;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+begin
+ BWriter:=@BitplaneWriterCCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSizeOW(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'/* Open Watcom C _putimage Bitmap Code Created By Raster Master */');
+ writeln(data.ftext,'/* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' */');
+ writeln(data.ftext,' #define ',Imagename,'_Size ',size);
+ writeln(data.ftext,' #define ',Imagename,'_Width ',width);
+ writeln(data.ftext,' #define ',Imagename,'_Height ',height);
+ writeln(data.ftext,' #define ',Imagename,'_Colors ',nColors);
+ Writeln(data.ftext,' #define ',ImageName,'_Id ',imageId);
+
+ writeln(data.ftext,' ','char ',Imagename, '[',size,']  = {');
+ WriteXGFBufferOW(BWriter,data,x,y,x2,y2,OWLan);
+ writeln(data.ftext);
+
+{$I+}
+ WriteOWCodeToBuffer:=IORESULT;
+end;
+
+
 Function WriteTCCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageId : word; imagename:string):word;
 var
   Width,Height : Word;
@@ -1030,6 +1147,8 @@ begin
                  QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
                  QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
+                 OWLan: WriteOWCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
                  PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
 
                  FBinQBModeLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename);
@@ -1097,6 +1216,8 @@ begin
 
                   QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
                   QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imageId,imagename);
+
+                  OWLan: WriteOWCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
                   PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
 

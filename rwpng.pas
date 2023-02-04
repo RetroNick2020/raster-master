@@ -55,10 +55,25 @@ function FindPaletteIndex(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nCo
 implementation
 
 function TColorToStr(Color : TColor) : string;
+(*
+var
+ r,g,b : integer;*)
 begin
+   (*
+   r:=SixToEightBit(EightToSixBit(Red(Color)));
+   g:=SixToEightBit(EightToSixBit(Green(Color)));
+   b:=SixToEightBit(EightToSixBit(Blue(Color)));
+
+   TColorToStr := AddChar('0',IntToStr(r),3)+
+   AddChar('0',IntToStr(g),3)+
+   AddChar('0',IntToStr(b), 3);
+  *)
+
+
    TColorToStr := AddChar('0',IntToStr(Red(Color)),3)+
    AddChar('0',IntToStr(Green(Color)),3)+
    AddChar('0',IntToStr(Blue(Color)), 3);
+
 end;
 
 
@@ -231,15 +246,17 @@ begin
  end
  else if (pm=PaletteModeVGA) or (pm=paletteModeVGA256) then
  begin
-  (*  r:=SixToEightBit(EightToSixBit(r));
+
+    r:=SixToEightBit(EightToSixBit(r));
     g:=SixToEightBit(EightToSixBit(g));
     b:=SixToEightBit(EightToSixBit(b));
-    *)
 
+
+   (*
    r:=TwoToEightBit(EightToTwoBit(r));
    g:=TwoToEightBit(EightToTwoBit(g));
    b:=TwoToEightBit(EightToTwoBit(b));
-
+     *)
 
     ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
     if (pm=PaletteModeVGA) and (ColorIndex > 15) then ColorIndex:=ColorIndex Mod 15;
@@ -441,6 +458,7 @@ end;
 
 Procedure TEasyPNG.LoadFromFile(filename : string);
 begin
+// Picture1.Bitmap.PixelFormat:=pf4bit;
  Picture1.LoadFromFile(filename);
 end;
 

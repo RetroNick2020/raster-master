@@ -74,6 +74,9 @@ type
     AqbPsetBitMap: TMenuItem;
     GWMouseShapeFile: TMenuItem;
     FBMouseShapeFile: TMenuItem;
+    OWPutImagePlusMaskArray: TMenuItem;
+    OWPutImageArray: TMenuItem;
+    OpenWatcom: TMenuItem;
     QBMouseShapeFile: TMenuItem;
     TCMouseShapeFile: TMenuItem;
     TBMouseShapeFile: TMenuItem;
@@ -311,6 +314,7 @@ type
     procedure ListView1Click(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
+    procedure OpenWatcomCClick(Sender: TObject);
     procedure RayLibExportClick(Sender: TObject);
     procedure RightPanelClick(Sender: TObject);
     procedure RMPanelClick(Sender: TObject);
@@ -2609,6 +2613,32 @@ procedure TRMMainForm.PaletteExportTurboCClick(Sender: TObject);
         end;
      end;
   end;
+
+procedure TRMMainForm.OpenWatcomCClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ error : word;
+begin
+   GetOpenSaveRegion(x,y,x2,y2);
+   Case (Sender As TMenuItem).Name of 'OWPutImageArray' :ExportDialog.Filter := 'Open Watcom C _putimage Array|*.c';
+                              'OWPutImagePlusMaskArray' :ExportDialog.Filter := 'Open Watcom C _putimage+Mask Array|*.c';
+                                       'OWPutImageFile' :ExportDialog.Filter := 'Open Watcom C _putimage File|*.xgf';
+   End;
+
+   if ExportDialog.Execute then
+   begin
+      Case (Sender As TMenuItem).Name of 'OWPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,OWLan,ExportDialog.FileName);
+                                 'OWPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,OWLan,ExportDialog.FileName);
+                                         'OWPutImageFile'  : error:=WriteXGFToFile(x,y,x2,y2,OWLan,ExportDialog.FileName);
+      End;
+
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
 
 procedure TRMMainForm.QuickCClick(Sender: TObject);
 var

@@ -741,6 +741,17 @@ object RMMainForm: TRMMainForm
             OnClick = javaScriptArrayClick
           end
         end
+        object OpenWatcom: TMenuItem
+          Caption = 'Open Watcom C'
+          object OWPutImageArray: TMenuItem
+            Caption = '_putimage array'
+            OnClick = OpenWatcomCClick
+          end
+          object OWPutImagePlusMaskArray: TMenuItem
+            Caption = '_putimage+Mask array'
+            OnClick = OpenWatcomCClick
+          end
+        end
         object QuickBasic: TMenuItem
           Caption = 'QBasic\QuickBasic'
           object QBPutData: TMenuItem

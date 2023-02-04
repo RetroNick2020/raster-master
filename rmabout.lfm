@@ -41,9 +41,9 @@ object AboutDialog: TAboutDialog
     Brush.Color = clRed
   end
   object Image1: TImage
-    Left = 275
+    Left = 264
     Height = 138
-    Top = 90
+    Top = 72
     Width = 133
     AutoSize = True
     Picture.Data = {
