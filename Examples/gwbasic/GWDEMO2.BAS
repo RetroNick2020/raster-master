@@ -11,7 +11,7 @@
 100 FOR I = 1 TO 186
 110   READ Rcar(I)
 120 NEXT I
-130 SCREEN 3                        'SCREEN 13 for 256 color images
+130 SCREEN 7                        
 135 LINE (0, 0)-(6, 0), 4, BF
 140 rem LINE (0, 0)-(159, 199), 1, BF
 145 rem GET (0,0)-(28,0),Rcar
