@@ -1,5 +1,5 @@
 /* ************************************************************ */
-/* owdemo1.c For Open Watcom                                    */
+/* owdemo2.c For Open Watcom                                    */
 /*                                                              */
 /* cross was created by Exporting image as _putimage+Mask array */
 /* from Raster Master.                                          */

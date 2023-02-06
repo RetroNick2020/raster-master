@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <io.h>
+#include <conio.h>
+
 
 void main()
 {
