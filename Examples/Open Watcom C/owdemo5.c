@@ -4,7 +4,7 @@
 /* compile with: wcl /l=dos owdemo5.c                              */
 /*                                                                 */
 /* _remappalette commands were created by Exporting palette from   */
-/* Raster Master. Palette->Export->Open Watcom C->Palette Commands */                                               */
+/* Raster Master. Palette->Export->Open Watcom C->Palette Commands */
 /* *************************************************************** */
 
 #include <graph.h>
