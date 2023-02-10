@@ -1,7 +1,7 @@
 /* ************************************************************ */
 /* tcdemo1.c For Turbo C                                        */
 /*                                                              */
-/* TC.XGF was created by Exporting image as _putimage file      */
+/* TC.XGF was created by Exporting image as putimage file      */
 /* from Raster Master.                                          */
 /* ************************************************************ */
 
