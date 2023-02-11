@@ -103,11 +103,11 @@ begin
  end
   else if (Lan=TCLan) and (ColorFormat=ColorIndexFormat) then
  begin
-   PaletteCmdToStr:='SetPalette(';
+   PaletteCmdToStr:='setpalette(';
  end
  else if (Lan=TCLan) then
  begin
-   PaletteCmdToStr:='SetRGBPalette(';
+   PaletteCmdToStr:='setrgbpalette(';
  end
  else if (Lan=QCLan) or (Lan=OWLan) then
  begin
