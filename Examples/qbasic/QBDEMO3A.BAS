@@ -4,7 +4,6 @@
 '* QBMouse was created by Exporting image as Mouse Shape data statements *
 '* from Raster Master.                                                   *
 '*                                                                       *
-'* Start QB with QB.EXE /L                                               *
 '* ********************************************************************* *
 
 DECLARE SUB Mouse (m1%, m2%, m3%, m4%)
