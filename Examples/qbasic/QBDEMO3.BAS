@@ -1,3 +1,4 @@
+DECLARE SUB MouseShape (m1%, m2%, m3%, m4%)
 DECLARE SUB Mouse (m1%, m2%, m3%, m4%)
 DECLARE SUB MouseShow ()
 DECLARE FUNCTION MouseInit% ()
@@ -26,11 +27,7 @@ FOR I = 0 TO 15
   LINE (I * 20, 20)-(I * 20 + 19, 180), I, BF
 NEXT I
 
-m1 = 9
-m2 = 7
-m3 = 7
-m4 = VARPTR(QBMouse(0))
-CALL Mouse(m1, m2, m3, m4)
+CALL MouseShape(7, 7, VARPTR(QBMouse(0)), VARSEG(QBMouse(0)))
 MouseShow
 INPUT a$
 
@@ -84,6 +81,16 @@ FUNCTION MouseInit
    CALL Mouse(m1, m2, m3, m4)
    MouseInit = m1
 END FUNCTION
+
+SUB MouseShape (m1, m2, m3, m4)
+  DIM InRegs AS RegTypeX
+  InRegs.ax = 9
+  InRegs.bx = m1
+  InRegs.cx = m2
+  InRegs.dx = m3
+  InRegs.ES = m4
+  CALL INTERRUPTX(&H33, InRegs, InRegs)
+END SUB
 
 SUB MouseShow
   m1 = 1
