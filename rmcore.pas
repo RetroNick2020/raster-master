@@ -138,6 +138,8 @@ Type
      PaletteModeAmiga8 = 9;
      PaletteModeAmiga16 = 10;
      PaletteModeAmiga32 = 11;
+     PaletteModeXGA     = 12; //like VGA but we can edit full 8 bits of Palette (no shifting from 6 bit values to 8 bit values)
+     PaletteModeXGA256  = 13; //like PaletteModeXGA but with 256 colors
 
 
     MonoDefault : array[0..1] of TRMColorRec = ((r:0;g:0;b:0),
@@ -565,8 +567,8 @@ begin
   ColorsInPalette:=0;
   Case pm of  PaletteModeMono, PaletteModeAmiga2:ColorsInPalette:=2;
               PaletteModeCGA0,PaletteModeCGA1,PaletteModeAmiga4:ColorsInPalette:=4;
-              PaletteModeEGA,PaletteModeVGA,PaletteModeAmiga16:ColorsInPalette:=16;
-              PaletteModeVGA256:ColorsInPalette:=256;
+              PaletteModeEGA,PaletteModeVGA,PaletteModeAmiga16,PaletteModeXGA:ColorsInPalette:=16;
+              PaletteModeVGA256,PaletteModeXGA256:ColorsInPalette:=256;
               PaletteModeAmiga8:ColorsInPalette:=8;
               PaletteModeAmiga32:ColorsInPalette:=32;
   end;
@@ -624,6 +626,11 @@ begin
      RMCoreBase.Palette.GetColor(colindex,cr);
      ColIndexstr:=ColIndexStr+#13#10+'R:'+IntToStr(EightToSixBit(cr.r))+' G:'+IntToStr(EightToSixBit(cr.g))+' B:'+IntToStr(EightToSixBit(cr.b));
   end
+  else if (pm=PaletteModeXGA) or (pm=PaletteModeXGA256) then
+    begin
+       RMCoreBase.Palette.GetColor(colindex,cr);
+       ColIndexstr:=ColIndexStr+#13#10+'R:'+IntToStr(cr.r)+' G:'+IntToStr(cr.g)+' B:'+IntToStr(cr.b);
+    end
  else if isAmigaPaletteMode(pm) then
   begin
      RMCoreBase.Palette.GetColor(colindex,cr);
@@ -1009,8 +1016,15 @@ begin
       cr.b:=SixToEightBit(EightToSixBit(cr.b));
       SetColor(i,cr);
    end;
+  end
+  else if (pm=PaletteModeXGA) or (pm=PaletteModeXGA256) then               //Frb 9/2023 is the future and we have a real 8 bit color mode
+  begin
+    for i:=0 to convertColors-1 do
+    begin
+      GetCBColor(i,cr); //no bit shifting required
+      SetColor(i,cr);
+   end;
   end;
-
 end;
 
 

@@ -94,6 +94,8 @@ object SpriteImportForm: TSpriteImportForm
         'EGA Palette'
         'VGA Palette'
         'VGA Palette 256'
+        'XGA Palette'
+        'XGA Palette 256'
       )
       OnChange = PaletteComboBoxChange
       ParentFont = False

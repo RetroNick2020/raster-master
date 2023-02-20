@@ -355,7 +355,18 @@ begin
       RMCoreBase.Palette.SetColor(i,cr);
      end;
    end
-   else    //most liekly vga or vga256 - no modifications needed
+   else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
+   begin
+     for i:=0 to myColNum-1 do
+     begin
+       cr.r:=SixToEightBit(EightToSixBit(bmpPal[i].red));   //we bitshift because if palette was saved when PaletteModeXga or PaletteModeXga256
+       cr.g:=SixToEightBit(EightToSixBit(bmpPal[i].green));   //we will have invalid values
+       cr.b:=SixToEightBit(EightToSixBit(bmpPal[i].blue));
+       RMCoreBase.Palette.SetColor(i,cr);
+//       SetColor(i,cr);
+      end;
+   end
+   else if (pm=PaletteModeXGA) or (pm=PaletteModeXGA256) then
    begin
      for i:=0 to myColNum-1 do
      begin
@@ -363,6 +374,7 @@ begin
        cr.g:=bmpPal[i].green;
        cr.b:=bmpPal[i].blue;
        RMCoreBase.Palette.SetColor(i,cr);
+//       SetColor(i,cr);
      end;
    end;
  end;

@@ -4,7 +4,7 @@ unit rwpal;
 
 interface
 uses
-  SysUtils,FileUtil,StrUtils,RMCore,rmxgfcore,rwxgf,gwbasic;
+  SysUtils,FileUtil,RMCore,rmxgfcore,rwxgf,gwbasic;
 
 Const
   ColorIndexFormat = 1;
@@ -115,13 +115,12 @@ begin
  end
  else if (Lan=QPLan) then
  begin
-  PaletteCmdToStr:='_RemapPalette(';
+  PaletteCmdToStr:='result:=_RemapPalette('; //need to have a variable result defined in QuickPascal programs
  end
  else if (Lan=PBLan)  and (ColorFormat=ColorSixBitFormat) then  //Turbo/PB do not support additional palette information for VGA rgb formula
  begin                                                     //maybe in future will replacement function for PB
-  PaletteCmdToStr:='Call PaletteX(';
+  PaletteCmdToStr:='Call PaletteX(';   //PaletteX is wrapper function - PB does not support palettes in VGA - see channel code on replacement function
  end;
-
 end;
 
 function LineTrmToStr(Lan : integer) : string;
@@ -364,9 +363,9 @@ SetCoreActive;
  For i:=0 to 255 do
 begin
   GetColor(i,CR);
-  myPal[i,0]:=CR.r;;
+  myPal[i,0]:=CR.r;
   myPal[i,1]:=CR.g;
-  myPal[i,2]:=CR.g;
+  myPal[i,2]:=CR.b;
 end;
 
  Assign(F,FileName);
@@ -432,10 +431,20 @@ begin
       cr.b:=FourToEightBit(EightToFourBit(mypal[i,2]));
 //      RMCoreBase.Palette.SetColor(i,cr);
       SetColor(i,cr);
-
      end;
    end
-   else    //most liekly vga or vga256 - no modifications needed
+   else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
+   begin
+     for i:=0 to Colors-1 do
+     begin
+       cr.r:=SixToEightBit(EightToSixBit(mypal[i,0]));   //we bitshift because if palette was saved when PaletteModeXga or PaletteModeXga256
+       cr.g:=SixToEightBit(EightToSixBit(mypal[i,1]));   //we will have invalid values
+       cr.b:=SixToEightBit(EightToSixBit(mypal[i,2]));
+//       RMCoreBase.Palette.SetColor(i,cr);
+       SetColor(i,cr);
+      end;
+   end
+   else if (pm=PaletteModeXGA) or (pm=PaletteModeXGA256) then
    begin
      for i:=0 to Colors-1 do
      begin
@@ -444,11 +453,9 @@ begin
        cr.b:=mypal[i,2];
 //       RMCoreBase.Palette.SetColor(i,cr);
        SetColor(i,cr);
-
      end;
    end;
-
-end;
+ end;
 end;
 
 

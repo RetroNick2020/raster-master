@@ -1201,6 +1201,14 @@ object RMMainForm: TRMMainForm
         Caption = 'VGA Palette 256'
         OnClick = PaletteVGA256Click
       end
+      object PaletteXGA: TMenuItem
+        Caption = 'XGA Palette'
+        OnClick = PaletteXGAClick
+      end
+      object PaletteXGA256: TMenuItem
+        Caption = 'XGA Palette 256'
+        OnClick = PaletteXGA256Click
+      end
       object PaletteAmiga: TMenuItem
         Caption = 'Amiga'
         object PaletteAmiga2: TMenuItem

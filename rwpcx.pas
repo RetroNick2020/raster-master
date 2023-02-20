@@ -1,5 +1,5 @@
 {$mode TP}
-Unit RwPcx;
+Unit rwpcx;
 
 Interface
 uses
@@ -680,7 +680,18 @@ Begin
       RMCoreBase.Palette.SetColor(i,cr);
      end;
    end
-   else    //most liekly vga or vga256 - no modifications needed
+   else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
+   begin
+     for i:=0 to Colors-1 do
+     begin
+       cr.r:=SixToEightBit(EightToSixBit(PcxPal[i,0]));   //we bitshift because if palette was saved when PaletteModeXga or PaletteModeXga256
+       cr.g:=SixToEightBit(EightToSixBit(PcxPal[i,1]));   //we will have invalid values
+       cr.b:=SixToEightBit(EightToSixBit(PcxPal[i,2]));
+       RMCoreBase.Palette.SetColor(i,cr);
+    //   SetColor(i,cr);
+      end;
+   end
+   else if (pm=PaletteModeXGA) or (pm=PaletteModeXGA256) then
    begin
      for i:=0 to Colors-1 do
      begin
@@ -688,6 +699,7 @@ Begin
        cr.g:=PcxPal[i,1];
        cr.b:=PcxPal[i,2];
        RMCoreBase.Palette.SetColor(i,cr);
+//       SetColor(i,cr);
      end;
    end;
  end;

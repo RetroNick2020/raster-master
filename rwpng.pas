@@ -261,6 +261,11 @@ begin
     ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
     if (pm=PaletteModeVGA) and (ColorIndex > 15) then ColorIndex:=ColorIndex Mod 15;
  end
+ else if (pm=PaletteModeXGA) or (pm=paletteModeXGA256) then
+ begin
+    ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
+    if (pm=PaletteModeXGA) and (ColorIndex > 15) then ColorIndex:=ColorIndex Mod 15;
+ end
  else if isAmigaPaletteMode(pm) then
  begin
  (*  r:=FourToEightBit(EightToFourBit(r));
@@ -345,7 +350,27 @@ begin
           end;
         end;
     end;
+ end
+ else if (PaletteMode = PaletteModeXGA256) or (PaletteMode = PaletteModeXGA) then
+ begin
+    For i:=0 to TopNColors-1 do
+    begin
+        r:=TopPalette[i].r;
+        g:=TopPalette[i].g;
+        b:=TopPalette[i].b;
 
+        FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
+        if (FindInPalette=-1) then      //not found
+        begin
+          if palCounter < (nColors-1) then
+          begin
+            BasePalette[palCounter].r:=r;
+            BasePalette[palCounter].g:=g;
+            BasePalette[palCounter].b:=b;
+            inc(palCounter);
+          end;
+        end;
+    end;
  end
  else if (PaletteMode = PaletteModeEGA) then
  begin

@@ -138,6 +138,15 @@ begin
   begin
     PaletteMode:=PaletteModeVGA256;
     ColorCount:=256;
+  end
+  else if NewPaletteMode = 3 then
+  begin
+    PaletteMode:=PaletteModeXGA;
+  end
+  else if NewPaletteMode = 4 then
+  begin
+    PaletteMode:=PaletteModeXGA256;
+    ColorCount:=256;
   end;
 
   ImageThumbBase.AddImportImage(SpriteWidth,SpriteHeight);

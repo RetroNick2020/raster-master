@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, FileUtil, uPSComponent, uPSRuntime, uPSComponent_Forms,
   Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, ComCtrls, Menus,
   ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore,
-  rmcolor, rmcolorvga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp, flood,
+  rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp, flood,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore;
 
@@ -76,6 +76,8 @@ type
     FBMouseShapeFile: TMenuItem;
     MenuItem14: TMenuItem;
     MenuItem15: TMenuItem;
+    PaletteXGA256: TMenuItem;
+    PaletteXGA: TMenuItem;
     OWPaletteCommands: TMenuItem;
     OWPaletteArray: TMenuItem;
     OWMouseShapeArray: TMenuItem;
@@ -322,6 +324,8 @@ type
     procedure MapEditMenuClick(Sender: TObject);
     procedure OpenWatcomCClick(Sender: TObject);
     procedure PaletteExportOWCClick(Sender: TObject);
+    procedure PaletteXGA256Click(Sender: TObject);
+    procedure PaletteXGAClick(Sender: TObject);
     procedure RayLibExportClick(Sender: TObject);
     procedure RightPanelClick(Sender: TObject);
     procedure RMPanelClick(Sender: TObject);
@@ -1039,6 +1043,8 @@ begin
   PaletteEGA.Checked:=false;
   PaletteVGA.Checked:=false;
   PaletteVGA256.Checked:=false;
+  PaletteXGA.Checked:=false;
+  PaletteXGA256.Checked:=false;
   PaletteAmiga.Checked:=false;
   PaletteAmiga2.Checked:=false;
   PaletteAmiga4.Checked:=false;
@@ -1264,6 +1270,22 @@ begin
     ColorPalette1.ButtonWidth:=30;
     PaletteToCore;  //copy valaues from Component pallete to internal core palette
   end
+  else if pm = PaletteModeXGA256 then
+  begin
+    RMDrawTools.AddVGAPalette256(ColorPalette1);
+    ColorPalette1.ColumnCount:=32;
+    ColorPalette1.ButtonHeight:=17;
+    ColorPalette1.ButtonWidth:=17;
+    PaletteToCore;
+  end
+  else if pm = PaletteModeXGA then
+  begin
+    RMDrawTools.AddVGAPalette(ColorPalette1);       //Add to Visual Compononet Palette
+    ColorPalette1.ColumnCount:=8;
+    ColorPalette1.ButtonHeight:=50;
+    ColorPalette1.ButtonWidth:=30;
+    PaletteToCore;  //copy valaues from Component pallete to internal core palette
+  end
   else if pm = PaletteModeEGA then
   begin
    RMDrawTools.AddEGAPalette(ColorPalette1);
@@ -1345,7 +1367,7 @@ begin
 //  pm:=GetPaletteMode;
  pm:=RMCoreBase.Palette.GetPaletteMode;
 
-  if pm = PaletteModeVGA256 then
+  if (pm = PaletteModeVGA256) or (pm=PaletteModeXGA256) then
   begin
 //    RMDrawTools.AddVGAPalette256(ColorPalette1);
     ColorPalette1.ColumnCount:=32;
@@ -1353,7 +1375,7 @@ begin
     ColorPalette1.ButtonWidth:=17;
   //  PaletteToCore;
   end
-  else if pm = PaletteModeVGA then
+  else if (pm = PaletteModeVGA) or (pm = PaletteModeXGA) then
   begin
 //    RMDrawTools.AddVGAPalette(ColorPalette1);       //Add to Visual Compononet Palette
     ColorPalette1.ColumnCount:=8;
@@ -2430,6 +2452,31 @@ begin
        end;
     end;
   end
+  else If (pm = PaletteModeXGA) OR (pm = PaletteModeXGA256) then
+      begin
+       if pm = PaletteModeXGA then RMXGAColorDialog.InitColorBox16
+       else RMXGAColorDialog.InitColorBox256;
+
+       if RMXGAColorDialog.ShowModal = mrOK then
+       begin
+          PI:=RMXGAColorDialog.GetPickedIndex;
+          RMCoreBase.SetCurColor(PI);
+          ColorPalette1.PickedIndex:=PI;
+
+          ColorBox.Brush.Color:=RMXGAColorDialog.GetPickedColor;
+          RMXGAColorDialog.PaletteToCore;
+          CoreToPalette;       //onscreen palette - not copying back to dialog
+
+          UpdateActualArea;
+          UpdateZoomArea;
+          UpdateThumbview;
+
+          if RMDrawTools.GetClipStatus = 1 then
+          begin
+            RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
+          end;
+       end;
+     end
   else if (pm = PaletteModeEGA) then
   begin
      RMEGAColorDialog.InitColorBox;
@@ -2675,6 +2722,44 @@ var
        end;
     end;
 
+end;
+
+procedure TRMMainForm.PaletteXGA256Click(Sender: TObject);
+begin
+ ClearSelectedPaletteMenu;
+ PaletteXGA256.Checked:=true;
+ RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA256);
+
+ LoadDefaultPalette;
+ RMCoreBase.SetCurColor(1);
+ UpdateColorBox;
+ UpdateActualArea;
+// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ UpdateZoomArea;
+ UpdateThumbview;
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
+ end;
+end;
+
+procedure TRMMainForm.PaletteXGAClick(Sender: TObject);
+begin
+ ClearSelectedPaletteMenu;
+ PaletteXGA.Checked:=true;
+ RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA);
+
+ LoadDefaultPalette;
+ RMCoreBase.SetCurColor(1);
+ UpdateColorBox;
+ UpdateActualArea;
+// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ UpdateZoomArea;
+ UpdateThumbview;
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
+ end;
 end;
 
 procedure TRMMainForm.QuickCClick(Sender: TObject);
