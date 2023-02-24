@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  StdCtrls, ExtDlgs,rwpng,rmcore,rmthumb;
+  StdCtrls, ExtDlgs,Clipbrd,LCLIntf,LCLType,rwpng,rmcore,rmthumb;
 
 type
 
@@ -15,6 +15,7 @@ type
   TSpriteImportForm = class(TForm)
     InfoLabel: TLabel;
     OpenDialog1: TOpenDialog;
+    ImportFromClipboard: TButton;
     SpriteSizeComboBox: TComboBox;
     NewPaletteComboBox: TComboBox;
     PaletteComboBox: TComboBox;
@@ -26,6 +27,7 @@ type
     ScrollBox1: TScrollBox;
     ZoomTrackBar: TTrackBar;
     procedure FormCreate(Sender: TObject);
+    procedure ImportFromClipboardClick(Sender: TObject);
     procedure NewPaletteComboBoxChange(Sender: TObject);
     procedure OpenSpriteSheetClick(Sender: TObject);
     procedure PaletteComboBoxChange(Sender: TObject);
@@ -93,11 +95,48 @@ begin
   end;
 end;
 
+procedure TSpriteImportForm.ImportFromClipboardClick(Sender: TObject);
+var
+  pwidth,pheight : integer;
+begin
+  if Clipboard.HasFormat(PredefinedClipboardFormat(pcfBitmap)) then
+  begin
+   lastx:=-1;
+   lasty:=-1;
+
+   EasyPNG.Picture1.Bitmap.LoadFromClipboardFormat(PredefinedClipboardFormat(pcfBitmap));
+   pwidth:=EasyPNG.Picture1.Width;
+   pheight:=EasyPNG.Picture1.Height;
+   SourceImage.AutoSize:=true;
+   SourceImage.Picture.Bitmap.SetSize(1,1);
+   SourceImage.Picture.Bitmap.SetSize(pwidth*ZoomSize,pheight*ZoomSize);
+   SourceImage.Canvas.CopyRect(Rect(0,0,pwidth*ZoomSize,pheight*ZoomSize),EasyPNG.Picture1.Bitmap.Canvas,Rect(0,0,pwidth,pheight));
+   SourceImage.AutoSize:=false;
+   EasyPNG.BuildHashes(0,0,pwidth-1,pheight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
+   TopColorCount:=EasyPNG.BuildTopColors(TopColors);
+  end;
+end;
+
 procedure TSpriteImportForm.PaletteComboBoxChange(Sender: TObject);
 var
   pwidth,pheight : integer;
 begin
   NewPaletteMode:=PaletteComboBox.ItemIndex;
+  if NewPaletteFrom = 1 then
+  begin
+     pwidth:=EasyPNG.Picture1.Width;
+     pheight:=EasyPNG.Picture1.Height;
+
+     EasyPNG.BuildHashes(0,0,pwidth-1,pheight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
+     TopColorCount:=EasyPNG.BuildTopColors(TopColors);
+  end;
+end;
+
+procedure TSpriteImportForm.NewPaletteComboBoxChange(Sender: TObject);
+var
+  pwidth,pheight : integer;
+begin
+  NewPaletteFrom:=NewPaletteComboBox.ItemIndex;
   if NewPaletteFrom = 1 then
   begin
      pwidth:=EasyPNG.Picture1.Width;
@@ -125,33 +164,77 @@ begin
   TempSprite:=TBitMap.Create;
   TempSprite.SetSize(SpriteWidth,SpriteHeight);
   ZoomToReal(LastX,LastY,ClipX,ClipY);
+
   ColorCount:=16;
+
   if NewPaletteMode = 0 then
   begin
-     PaletteMode:=PaletteModeEGA;
+     PaletteMode:=PaletteModeMono;
+     ColorCount:=2;
   end
   else if NewPaletteMode = 1 then
   begin
-    PaletteMode:=PaletteModeVGA;
+    PaletteMode:=PaletteModeCGA0;
+    ColorCount:=4;
   end
   else if NewPaletteMode = 2 then
+  begin
+    PaletteMode:=PaletteModeCGA1;
+    ColorCount:=4;
+  end
+  else if NewPaletteMode = 3 then
+  begin
+     PaletteMode:=PaletteModeEGA;
+  end
+  else if NewPaletteMode = 4 then
+  begin
+    PaletteMode:=PaletteModeVGA;
+  end
+  else if NewPaletteMode = 5 then
   begin
     PaletteMode:=PaletteModeVGA256;
     ColorCount:=256;
   end
-  else if NewPaletteMode = 3 then
+  else if NewPaletteMode = 6 then
   begin
     PaletteMode:=PaletteModeXGA;
   end
-  else if NewPaletteMode = 4 then
+  else if NewPaletteMode = 7 then
   begin
     PaletteMode:=PaletteModeXGA256;
     ColorCount:=256;
+  end
+  else if NewPaletteMode = 8 then
+  begin
+     PaletteMode:=PaletteModeAmiga32;
+     ColorCount:=32;
+   end
+  else if NewPaletteMode = 9 then
+  begin
+    PaletteMode:=PaletteModeAmiga16;
+    ColorCount:=16;
+  end
+  else if NewPaletteMode = 10 then
+  begin
+    PaletteMode:=PaletteModeAmiga8;
+    ColorCount:=8;
+  end
+  else if NewPaletteMode = 11 then
+  begin
+    PaletteMode:=PaletteModeAmiga4;
+    ColorCount:=4;
+  end
+  else if NewPaletteMode = 12 then
+  begin
+    PaletteMode:=PaletteModeAmiga2;
+    ColorCount:=2;
   end;
+
+  LoadPaletteBuf(OurPalette,PaletteMode);
 
   ImageThumbBase.AddImportImage(SpriteWidth,SpriteHeight);
   ImageCount:=ImageThumbBase.GetCount;
-  OurPalette:=VGADefault256;
+
 
   if NewPaletteFrom = 0 then  //clip area
   begin
@@ -317,24 +400,13 @@ begin
   ClipWidth:=ZoomSize*SpriteWidth;
   ClipHeight:=ZoomSize*SpriteHeight;
 
-  NewPaletteFrom:=1;
-  NewPaletteMode:=1;
+  NewPaletteFrom:=1;   //new palette from entire image
+  NewPaletteMode:=4;   //vga
 end;
 
-procedure TSpriteImportForm.NewPaletteComboBoxChange(Sender: TObject);
-var
-  pwidth,pheight : integer;
-begin
-  NewPaletteFrom:=NewPaletteComboBox.ItemIndex;
-  if NewPaletteFrom = 1 then
-  begin
-     pwidth:=EasyPNG.Picture1.Width;
-     pheight:=EasyPNG.Picture1.Height;
 
-     EasyPNG.BuildHashes(0,0,pwidth-1,pheight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
-     TopColorCount:=EasyPNG.BuildTopColors(TopColors);
-  end;
-end;
+
+
 
 procedure TSpriteImportForm.ZoomToReal(zx,zy : integer;var rx,ry : integer);
 begin

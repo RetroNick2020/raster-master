@@ -121,13 +121,57 @@ begin
  error:=LoadGif(filename);
  if (error = 0) and (Lp = 1) and (pm <>PaletteModeMono ) and (pm<>PaletteModeCGA0) and (pm<>PaletteModeCGA1) and (pm<> PaletteModeEGA) then
  begin
-   For i:=0 to myNumCols-1 do
-   begin
-       cr.r:=GifPalette[i*3];
-       cr.g:=GifPalette[i*3+1];
-       cr.b:=GifPalette[i*3+2];
-       RMCoreBase.Palette.SetColor(i,cr);
-   end;
+  // For i:=0 to myNumCols-1 do
+  // begin
+  //     cr.r:=GifPalette[i*3];
+  //     cr.g:=GifPalette[i*3+1];
+  //     cr.b:=GifPalette[i*3+2];
+  //     RMCoreBase.Palette.SetColor(i,cr);
+  // end;
+
+   if pm=PaletteModeEGA then       //if we are in ega palette mode we need to be able to remap rgb color ega64 palette
+      begin                           //if not we skip setting that color
+        for i:=0 to myNumCols-1 do
+        begin
+          cr.r:=GifPalette[i*3];
+          cr.g:=GifPalette[i*3+1];
+          cr.b:=GifPalette[i*3+2];
+          MakeRGBToEGACompatible(cr.r,cr.g,cr.b,cr.r,cr.g,cr.b);
+          RMCoreBase.Palette.SetColor(i,cr);
+        end;
+      end
+      else if isAmigaPaletteMode(pm) then
+      begin
+        for i:=0 to myNumCols-1 do
+        begin
+         cr.r:=FourToEightBit(EightToFourBit(GifPalette[i*3]));
+         cr.g:=FourToEightBit(EightToFourBit(GifPalette[i*3+1]));
+         cr.b:=FourToEightBit(EightToFourBit(GifPalette[i*3+2]));
+         RMCoreBase.Palette.SetColor(i,cr);
+        end;
+      end
+      else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
+      begin
+        for i:=0 to myNumCols-1 do
+        begin
+          cr.r:=SixToEightBit(EightToSixBit(GifPalette[i*3]));   //we bitshift because if palette was saved when PaletteModeXga or PaletteModeXga256
+          cr.g:=SixToEightBit(EightToSixBit(GifPalette[i*3+1]));   //we will have invalid values
+          cr.b:=SixToEightBit(EightToSixBit(GifPalette[i*3+2]));
+          RMCoreBase.Palette.SetColor(i,cr);
+       //   SetColor(i,cr);
+         end;
+      end
+      else if (pm=PaletteModeXGA) or (pm=PaletteModeXGA256) then
+      begin
+        for i:=0 to myNumCols-1 do
+        begin
+          cr.r:=GifPalette[i*3];
+          cr.g:=GifPalette[i*3+1];
+          cr.b:=GifPalette[i*3+2];
+          RMCoreBase.Palette.SetColor(i,cr);
+   //       SetColor(i,cr);
+        end;
+      end;
  end;
  RGif:=error;
 end;

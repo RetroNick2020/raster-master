@@ -3,7 +3,7 @@ object MapEdit: TMapEdit
   Height = 682
   Top = 159
   Width = 1130
-  Caption = 'Map Edititor'
+  Caption = 'Map Editor'
   ClientHeight = 662
   ClientWidth = 1130
   Menu = MainMenu1

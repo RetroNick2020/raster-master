@@ -264,7 +264,6 @@ begin
       RMCoreBase.PutPixel(x+i-1,y+j-1,Uline[i-1]);
     end;
  end;
-
  end
  else if myBmp.Bits=4 then
  begin
@@ -331,7 +330,7 @@ begin
 
 
   If (lp=1) and (CanLoadPaletteFile(pm)) and (myColNum > 0) then     //we do not load palette for mono and cga or if we are select/clip open mode pal=0
-   begin
+  begin
    if pm=PaletteModeEGA then       //if we are in ega palette mode we need to be able to remap rgb color ega64 palette
    begin                           //if not we skip setting that color
      for i:=0 to myColNum-1 do
@@ -339,10 +338,8 @@ begin
        cr.r:=bmpPal[i].red;
        cr.g:=bmpPal[i].green;
        cr.b:=bmpPal[i].blue;
-       if RGBToEGAIndex(cr.r,cr.g,cr.b) > -1 then    //if this returns an index to EGA color we can accept it
-       begin
-        RMCoreBase.Palette.SetColor(i,cr);
-       end;
+       MakeRGBToEGACompatible(cr.r,cr.g,cr.b,cr.r,cr.g,cr.b);
+       RMCoreBase.Palette.SetColor(i,cr);
      end;
    end
    else if isAmigaPaletteMode(pm) then

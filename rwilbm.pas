@@ -37,7 +37,7 @@ Type
 
 
 function WriteILBM(filename : string; x,y,x2,y2 : word;cmp  :byte) : word;
-function ReadILBM(filename : string; x,y,x2,y2,lp : integer) : word;
+function ReadILBM(filename : string; x,y,x2,y2,lp,pm : integer) : word;
 
 Implementation
 
@@ -310,7 +310,7 @@ begin
     end;  //next i
 end;
 
-Procedure ProcessCMAP(var F: File;cmapsize : longword; lp : integer);
+Procedure ProcessCMAP(var F: File;cmapsize : longword; lp,pm : integer);
 var
  numColors,i : integer;
  cmap        : ColorMapRec;
@@ -322,10 +322,41 @@ begin
    BlockRead(F,cmap,sizeof(cmap));
    if lp = 1 then
    begin
-     cr.r:=cmap.red;
-     cr.g:=cmap.green;
-     cr.b:=cmap.blue;
-     SetColor(i,cr);
+   //  cr.r:=cmap.red;
+   //  cr.g:=cmap.green;
+   //  cr.b:=cmap.blue;
+   //  SetColor(i,cr);
+     if pm=PaletteModeEGA then       //if we are in ega palette mode we need to be able to remap rgb color ega64 palette
+     begin                           //if not we skip setting that color
+       cr.r:=cmap.red;
+       cr.g:=cmap.green;
+       cr.b:=cmap.blue;
+       MakeRGBToEGACompatible(cr.r,cr.g,cr.b,cr.r,cr.g,cr.b);
+       RMCoreBase.Palette.SetColor(i,cr);
+     end
+     else if isAmigaPaletteMode(pm) then
+     begin
+       cr.r:=FourToEightBit(EightToFourBit(cmap.red));
+       cr.g:=FourToEightBit(EightToFourBit(cmap.green));
+       cr.b:=FourToEightBit(EightToFourBit(cmap.blue));
+       RMCoreBase.Palette.SetColor(i,cr);
+     end
+     else if (pm=PaletteModeVGA) or (pm=PaletteModeVGA256) then
+     begin
+       cr.r:=SixToEightBit(EightToSixBit(cmap.red));   //we bitshift because if palette was saved when PaletteModeXga or PaletteModeXga256
+       cr.g:=SixToEightBit(EightToSixBit(cmap.green));   //we will have invalid values
+       cr.b:=SixToEightBit(EightToSixBit(cmap.blue));
+       RMCoreBase.Palette.SetColor(i,cr);
+           //   SetColor(i,cr);
+     end
+     else if (pm=PaletteModeXGA) or (pm=PaletteModeXGA256) then
+     begin
+       cr.r:=cmap.red;
+       cr.g:=cmap.green;
+       cr.b:=cmap.blue;
+       RMCoreBase.Palette.SetColor(i,cr);
+       //       SetColor(i,cr);
+     end;
    end;
 //    SetRGBPalette(i,cmap.red ,cmap.green ,cmap.blue );  //todo
  end;
@@ -347,7 +378,7 @@ begin
     chunkname[chunknamelength]:=chr(newbyte);
 end;
 
-Procedure Process(var F : File;x,y,x2,y2,lp : integer);
+Procedure Process(var F : File;x,y,x2,y2,lp,pm : integer);
 var
   chunkname : chunknamerec;
   chunknamelength : integer;
@@ -392,7 +423,7 @@ begin
     begin
       BlockRead(F,cmapsize,sizeof(cmapsize));
       cmapsize:=LongToLE(cmapsize);
-      ProcessCMAP(F,cmapsize,lp);
+      ProcessCMAP(F,cmapsize,lp,pm);
     end
     else if (chunkname ='BODY') And FoundBMap   then
     begin
@@ -728,7 +759,7 @@ assign(f,filename);
 end;
 
 
-function ReadILBM(filename : string; x,y,x2,y2,lp : integer) : word;
+function ReadILBM(filename : string; x,y,x2,y2,lp,pm : integer) : word;
 var
  f : file;
 begin
@@ -736,7 +767,7 @@ begin
   Assign(F,filename);
 {$I-}
   Reset(F,1);
-  Process(F,x,y,x2,y2,lp);
+  Process(F,x,y,x2,y2,lp,pm);
   Close(f);
 {$I+}
 ReadILBM:=IORESULT;

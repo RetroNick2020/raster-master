@@ -12,7 +12,7 @@ object RMVgaColorDialog: TRMVgaColorDialog
     AnchorSideRight.Side = asrBottom
     Left = 13
     Height = 120
-    Top = -3
+    Top = 8
     Width = 474
     ButtonHeight = 60
     ButtonWidth = 60

@@ -20,17 +20,17 @@ object SpriteImportForm: TSpriteImportForm
     ParentFont = False
     TabOrder = 0
     object SpriteImage: TImage
-      Left = 19
-      Height = 102
-      Top = 13
-      Width = 102
+      Left = 8
+      Height = 123
+      Top = 8
+      Width = 136
     end
     object OpenSpriteSheet: TButton
-      Left = 147
+      Left = 160
       Height = 25
       Top = 13
       Width = 166
-      Caption = 'Open Sprite Sheet'
+      Caption = 'Import Sprite Sheet'
       OnClick = OpenSpriteSheetClick
       ParentFont = False
       TabOrder = 0
@@ -66,9 +66,9 @@ object SpriteImportForm: TSpriteImportForm
       Text = '32 X 32'
     end
     object NewPaletteComboBox: TComboBox
-      Left = 550
+      Left = 728
       Height = 23
-      Top = 15
+      Top = 13
       Width = 237
       ItemHeight = 15
       ItemIndex = 1
@@ -84,18 +84,26 @@ object SpriteImportForm: TSpriteImportForm
       Text = 'New Palette(From Entire Image)'
     end
     object PaletteComboBox: TComboBox
-      Left = 813
+      Left = 552
       Height = 23
       Top = 13
       Width = 134
       ItemHeight = 15
-      ItemIndex = 1
+      ItemIndex = 4
       Items.Strings = (
+        'Mono Palette'
+        'CGA0 Palette'
+        'CGA1 Palette'
         'EGA Palette'
         'VGA Palette'
         'VGA Palette 256'
         'XGA Palette'
         'XGA Palette 256'
+        'Amiga Palette 32'
+        'Amiga Palette 16'
+        'Amiga Palette 8'
+        'Amiga Palette 4'
+        'Amiga Palette 2'
       )
       OnChange = PaletteComboBoxChange
       ParentFont = False
@@ -112,6 +120,16 @@ object SpriteImportForm: TSpriteImportForm
       Caption = 'InfoLabel'
       ParentColor = False
       ParentFont = False
+    end
+    object ImportFromClipboard: TButton
+      Left = 160
+      Height = 25
+      Top = 48
+      Width = 166
+      Caption = 'Import From Clipboard'
+      OnClick = ImportFromClipboardClick
+      ParentFont = False
+      TabOrder = 4
     end
   end
   object ScrollBox1: TScrollBox

@@ -559,6 +559,8 @@ function CanLoadPaletteFile(PaletteMode : integer) : boolean;
 function isAmigaPaletteMode(pm : integer) : boolean;
 function ColIndexToHoverInfo(colIndex : integer; pm : integer) : string;
 
+procedure LoadPaletteBuf(var PalBuf : TRMPaletteBuf; PaletteMode : integer);
+Procedure MakeRGBToEGACompatible(r,g,b : integer;var er,eg,eb : integer);
 
 implementation
 
@@ -712,7 +714,6 @@ function RGBToEGAIndex(r,g,b : integer) : integer;
 var
   i : integer;
 begin
- (*
   for i:=0 to 63 do
   begin
     if (EGADefault64[i].r = r) AND(EGADefault64[i].g = g) AND (EGADefault64[i].b = b) then
@@ -721,9 +722,32 @@ begin
        exit;
     end;
   end;
-  RGBToEGAIndex:=RGBToEGAIndex2(r,g,b);     // not precise but we come up with a number
-  *)
-  RGBToEGAIndex:=RGBTOEGA(r,g,b);
+  RGBToEGAIndex:=RGBToEGA(EightToTwoBit(r),EightToTwoBit(g),EightToTwoBit(b));
+  //RGBToEGAIndex:=RGBToEGAIndex2(r,g,b);     // not precise but we come up with a number
+
+ // RGBToEGAIndex:=RGBTOEGA(r,g,b);
+end;
+
+Procedure MakeRGBToEGACompatible(r,g,b : integer;var er,eg,eb : integer);
+var
+  i : integer;
+begin
+  for i:=0 to 63 do
+  begin
+    if (EGADefault64[i].r = r) AND(EGADefault64[i].g = g) AND (EGADefault64[i].b = b) then
+    begin
+       er:=r;
+       eg:=g;
+       eb:=b;
+       exit;
+    end;
+  end;
+  er:=EightToTwoBit(r);
+  er:=TwoToEightBit(er);
+  eg:=EightToTwoBit(g);
+  eg:=TwoToEightBit(eg);
+  eb:=EightToTwoBit(b);
+  eb:=TwoToEightBit(eb);
 end;
 
 function RGBToEGAIndex2(r,g,b : integer) : integer;
@@ -755,6 +779,35 @@ end;
 procedure GetDefaultRGBVGA(index : integer;var cr : TRMColorREc);
 begin
   cr:=VGADefault256[index];
+end;
+
+
+procedure LoadPaletteBuf(var PalBuf : TRMPaletteBuf; PaletteMode : integer);
+begin
+  if PaletteMode = PaletteModeMono then
+  begin
+    Move(MonoDefault,PalBuf,sizeof(MonoDefault));
+  end
+  else if PaletteMode = PaletteModeCGA0 then
+  begin
+   Move(CGADefault0,PalBuf,sizeof(CGADefault0));
+  end
+  else if PaletteMode = PaletteModeCGA1 then
+  begin
+   Move(CGADefault1,PalBuf,sizeof(CGADefault1));
+  end
+  else if isAmigaPaletteMode(PaletteMode) then
+  begin
+   Move(AmigaDefault32,PalBuf,sizeof(AmigaDefault32));
+  end
+  else if PaletteMode = PaletteModeEGA then
+  begin
+    Move(EGADefault16,PalBuf,sizeof(EGADefault16));
+  end
+  else
+  begin
+    Move(VGADefault256,PalBuf,sizeof(VGADefault256));
+  end;
 end;
 
 Constructor TRMPalette.create;

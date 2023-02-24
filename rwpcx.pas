@@ -664,10 +664,8 @@ Begin
        cr.r:=PcxPal[i,0];
        cr.g:=PcxPal[i,1];
        cr.b:=PcxPal[i,2];
-       if RGBToEGAIndex(cr.r,cr.g,cr.b) > -1 then    //if this returns an index to EGA color we can accept it
-       begin
-        RMCoreBase.Palette.SetColor(i,cr);
-       end;
+       MakeRGBToEGACompatible(cr.r,cr.g,cr.b,cr.r,cr.g,cr.b);
+       RMCoreBase.Palette.SetColor(i,cr);
      end;
    end
    else if isAmigaPaletteMode(pm) then

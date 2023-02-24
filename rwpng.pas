@@ -237,21 +237,21 @@ begin
 
  if pm = PaletteModeEGA then
  begin
-   r:=TwoToEightBit(EightToTwoBit(r));
-   g:=TwoToEightBit(EightToTwoBit(g));
-   b:=TwoToEightBit(EightToTwoBit(b));
+  // r:=TwoToEightBit(EightToTwoBit(r));
+ //  g:=TwoToEightBit(EightToTwoBit(g));
+ //  b:=TwoToEightBit(EightToTwoBit(b));
 
    ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);
    if ColorIndex > 15 then ColorIndex:=ColorIndex Mod 15; //just picks a color base mod 15 - we need something
  end
  else if (pm=PaletteModeVGA) or (pm=paletteModeVGA256) then
  begin
-
+        (*
     r:=SixToEightBit(EightToSixBit(r));
     g:=SixToEightBit(EightToSixBit(g));
     b:=SixToEightBit(EightToSixBit(b));
 
-
+          *)
    (*
    r:=TwoToEightBit(EightToTwoBit(r));
    g:=TwoToEightBit(EightToTwoBit(g));
@@ -273,9 +273,9 @@ begin
    b:=FourToEightBit(EightToFourBit(b));
    *)
 
-   r:=TwoToEightBit(EightToTwoBit(r));
-   g:=TwoToEightBit(EightToTwoBit(g));
-   b:=TwoToEightBit(EightToTwoBit(b));
+ //  r:=TwoToEightBit(EightToTwoBit(r));
+  // g:=TwoToEightBit(EightToTwoBit(g));
+  // b:=TwoToEightBit(EightToTwoBit(b));
 
    ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
    if  (ColorIndex > (nColors-1)) then ColorIndex:=ColorIndex Mod (nColors-1);
@@ -326,22 +326,16 @@ begin
 
  if (PaletteMode = PaletteModeVGA256) or (PaletteMode = PaletteModeVGA) then
  begin
-         (*
-        r:=SixToEightBit(EightToSixBit(r));
-        g:=SixToEightBit(EightToSixBit(g));
-        b:=SixToEightBit(EightToSixBit(b));
-           *)
-
     For i:=0 to TopNColors-1 do
     begin
-        r:=TwoToEightBit(EightToTwoBit(TopPalette[i].r));
-        g:=TwoToEightBit(EightToTwoBit(TopPalette[i].g));
-        b:=TwoToEightBit(EightToTwoBit(TopPalette[i].b));
+        r:=TopPalette[i].r;
+        g:=TopPalette[i].g;
+        b:=TopPalette[i].b;
 
         FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
         if (FindInPalette=-1) then      //not found
         begin
-          if palCounter < (nColors-1) then
+          if palCounter < nColors then   //was nColors-1
           begin
             BasePalette[palCounter].r:=r;
             BasePalette[palCounter].g:=g;
@@ -349,6 +343,13 @@ begin
             inc(palCounter);
           end;
         end;
+    end;
+
+    For i:=0 to TopNColors-1 do
+    begin
+      BasePalette[i].r:=SixToEightBit(EightToSixBit(BasePalette[i].r));
+      BasePalette[i].g:=SixToEightBit(EightToSixBit(BasePalette[i].g));
+      BasePalette[i].b:=SixToEightBit(EightToSixBit(BasePalette[i].b));
     end;
  end
  else if (PaletteMode = PaletteModeXGA256) or (PaletteMode = PaletteModeXGA) then
@@ -362,7 +363,7 @@ begin
         FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
         if (FindInPalette=-1) then      //not found
         begin
-          if palCounter < (nColors-1) then
+          if palCounter < nColors then     //was nColors-1
           begin
             BasePalette[palCounter].r:=r;
             BasePalette[palCounter].g:=g;
@@ -376,42 +377,42 @@ begin
  begin
    For i:=0 to TopNColors-1 do
    begin
-        r:=TwoToEightBit(EightToTwoBit(TopPalette[i].r));
-        g:=TwoToEightBit(EightToTwoBit(TopPalette[i].g));
-        b:=TwoToEightBit(EightToTwoBit(TopPalette[i].b));
+        r:=TopPalette[i].r;
+        g:=TopPalette[i].g;
+        b:=TopPalette[i].b;
+
 
         FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
         if (FindInPalette=-1) then   //not found or found in index higher than 15
         begin
-          EGAIndex:=RGBToEGAIndex(r,g,b);
-          if EGAIndex < 64 then
+          if palCounter < nColors then
           begin
-            BasePalette[palCounter].r:=EGADefault64[EGAIndex].r;
-            BasePalette[palCounter].g:=EGADefault64[EGAIndex].g;
-            BasePalette[palCounter].b:=EGADefault64[EGAIndex].b;
+            BasePalette[palCounter].r:=r;
+            BasePalette[palCounter].g:=g;
+            BasePalette[palCounter].b:=b;
             inc(palCounter);
           end;
         end;
+    end;
+
+    For i:=0 to TopNColors-1 do
+    begin
+      MakeRGBToEGACompatible(BasePalette[i].r,BasePalette[i].g,BasePalette[i].b,
+                             BasePalette[i].r,BasePalette[i].g,BasePalette[i].b);
     end;
  end
  else if isAmigaPaletteMode(PaletteMode) then
  begin
    For i:=0 to TopNColors-1 do
    begin
-      (*
-      r:=FourToEightBit(EightToFourBit(r));
-      g:=FourToEightBit(EightToFourBit(g));
-      b:=FourToEightBit(EightToFourBit(b));
-        *)
-
-      r:=TwoToEightBit(EightToTwoBit(TopPalette[i].r));  // this gives better results than the above
-      g:=TwoToEightBit(EightToTwoBit(TopPalette[i].g));
-      b:=TwoToEightBit(EightToTwoBit(TopPalette[i].b));
+      r:=TopPalette[i].r;
+      g:=TopPalette[i].g;
+      b:=TopPalette[i].b;
 
       FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
       if (FindInPalette=-1) then
       begin
-          if palCounter < (nColors-1) then
+          if palCounter < nColors then  //was nColors-1
           begin
             BasePalette[palCounter].r:=r;
             BasePalette[palCounter].g:=g;
@@ -419,6 +420,12 @@ begin
             inc(palCounter);
           end;
       end;
+    end;
+    For i:=0 to TopNColors-1 do
+    begin
+      BasePalette[i].r:=FourToEightBit(EightToFourBit(BasePalette[i].r));
+      BasePalette[i].g:=FourToEightBit(EightToFourBit(BasePalette[i].g));
+      BasePalette[i].b:=FourToEightBit(EightToFourBit(BasePalette[i].b));
     end;
   end;
 end;
@@ -460,7 +467,7 @@ end;
 procedure TEasyPNG.CopyPaletteToCore(NewPalette : TRMPaletteBuf;PaletteMode : integer);
 begin
 // pm:=RMCoreBAse.Palette.GetPaletteMode;
- if (PaletteMode = PaletteModeVGA256) or (PaletteMode = PaletteModeVGA) or (PaletteMode = PaletteModeEGA) or (isAmigaPaletteMode(PaletteMode)) then
+ if (PaletteMode in [PaletteModeXGA256,PaletteModeXGA,PaletteModeVGA256,PaletteModeVGA,PaletteModeEGA]) or (isAmigaPaletteMode(PaletteMode)) then
  begin
    RMCoreBase.Palette.SetPalette(NewPalette);
  end;

@@ -1467,6 +1467,8 @@ begin
   PaletteEGA.Checked:=false;
   PaletteVGA.Checked:=false;
   PaletteVGA256.Checked:=false;
+  PaletteXGA.Checked:=false;
+  PaletteXGA256.Checked:=false;
   PaletteAmiga.Checked:=false;
   PaletteAmiga2.Checked:=false;
   PaletteAmiga4.Checked:=false;
@@ -1482,6 +1484,14 @@ begin
   else if pm = PaletteModeVGA then
   begin
      PaletteVGA.Checked:=true;
+  end
+  else if pm = PaletteModeXGA256 then
+  begin
+     PaletteXGA256.Checked:=true;
+  end
+  else if pm = PaletteModeXGA then
+  begin
+     PaletteXGA.Checked:=true;
   end
   else if pm = PaletteModeEGA then
   begin
@@ -2087,7 +2097,7 @@ begin
       end
       else if (ext = '.LBM') or (ext = '.BBM') or (ext = '.ILBM') or (ext = '.IFF') then
       begin
-        if ReadILBM(OpenDialog1.FileName,x,y,x2,y2,lp) <> 0 then
+        if ReadILBM(OpenDialog1.FileName,x,y,x2,y2,lp,pm) <> 0 then
         begin
           ShowMessage('Error Opening IFF/ILBM file!');
           exit;
