@@ -1,5 +1,5 @@
 (* ************************************************************ *)
-(* fpdemo1.pas For Freepacal Pascal 8086                        *)
+(* fpdemo1.pas For Freepacal  8086                              *)
 (*                                                              *)
 (* compile with: ppcross8086 -WmLarge FPDEMO1.PAS               *)
 (*                                                              *)
