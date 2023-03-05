@@ -1,5 +1,5 @@
 (* ************************************************************ *)
-(* fpdemo5.pas putimage link to exe demo For Turbo Pascal       *)
+(* fpdemo5.pas putimage link to exe demo For freepascal 8086    *)
 (*                                                              *)
 (* FP.XGF was created by Exporting image as putimage file       *)
 (* from Raster Master. Borland's Turbo C BGIOBJ was used to     *)
