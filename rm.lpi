@@ -136,7 +136,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="28">
+    <Units Count="29">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -276,8 +276,15 @@
         <Filename Value="rmcolorxga.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="RMXgaColorDialog"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit27>
+      <Unit28>
+        <Filename Value="fileprops.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FileProperties"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit28>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

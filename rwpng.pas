@@ -10,6 +10,13 @@ uses
 
 
 type
+  PngRGBASettingsRec = Record
+    ColorIndex : integer;
+    UseColorIndex : boolean;
+    UseFuschia    : boolean;
+    UseCustom     : boolean;
+    R,G,B,A       : integer;
+  end;
 
   { TForm1 }
 
@@ -37,7 +44,7 @@ type
 
     Procedure LoadFromFile(filename : string);
     procedure CopyPictureToCanvas(canvas : TCanvas;x,y,x2,y2 : integer);
-    procedure CopyCoreToImage(x,y,x2,y2 : integer);
+    procedure CopyCoreToImage(x,y,x2,y2 : integer;PngRGBA : PngRGBASettingsRec);
     Procedure SaveToFile(filename : string);
 
     procedure GetPalette(var Pal : TRMPaletteBuf);
@@ -48,7 +55,7 @@ type
   end;
 
 function ReadPNG(x,y,x2,y2 : integer;filename : string; LoadPalette : Boolean) : integer;
-function SavePNG(x,y,x2,y2 : integer;filename : string) : integer;
+function SavePNG(x,y,x2,y2 : integer;filename : string; PngRGBA : PngRGBASettingsRec) : integer;
 function FindPaletteIndex(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nColors : integer) : integer;
 
 
@@ -553,7 +560,7 @@ begin
 end;
  *)
 
-procedure TEasyPNG.CopyCoreToImage(x,y,x2,y2 : integer);
+procedure TEasyPNG.CopyCoreToImage(x,y,x2,y2 : integer;PngRGBA : PngRGBASettingsRec); // 0=none,1=transparent color=0, 2=transparent color=fuschia,
 var
  width,height : integer;
  i,j   : integer;
@@ -579,14 +586,24 @@ begin
      pixeldata[pixelpos]:=cr.b;     // Blue
      pixeldata[pixelpos+1]:=cr.g;   // Green
      pixeldata[pixelpos+2]:=cr.r;   // Red
-     if (cr.r = 255) and (cr.b=255) and (cr.g=0) then   //if fuschia
+     pixeldata[pixelpos+3]:=255;    // Alpha     255 = solid
+
+     if (PngRGBA.UseColorIndex) and (PngRGBA.ColorIndex=ci) then
      begin
        pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
-     end
-     else
-     begin
-      pixeldata[pixelpos+3]:=255; // Alpha     255 = solid
      end;
+
+     if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.b=255) and (cr.g=0) then   //use fuschia
+     begin
+       pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
+     end;
+
+     if (PngRGBA.UseCustom) and (cr.r = PngRGBA.R) and (cr.b=PngRGBA.B) and (cr.g=PngRGBA.G) then   //use fuschia
+     begin
+       pixeldata[pixelpos+3]:=PngRGBA.A;  // use Custom Alpha level for transperancy
+     end;
+
+
      inc(pixelpos,4);
    end;
  end;
@@ -603,12 +620,12 @@ begin
 end;
 
 
-function SavePNG(x,y,x2,y2 : integer;filename : string) : integer;
+function SavePNG(x,y,x2,y2 : integer;filename : string; PngRGBA : PngRGBASettingsRec) : integer;
 var
  EasyPNG : TEasyPNG;
 begin
  EasyPNG:=TEasyPNG.Create;
- EasyPNG.CopyCoreToImage(x,y,x2,y2);
+ EasyPNG.CopyCoreToImage(x,y,x2,y2,PngRGBA);
  EasyPNG.SaveToFile(filename);
  EasyPNG.Free;
  SavePNG:=0;

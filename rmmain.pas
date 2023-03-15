@@ -10,7 +10,7 @@ uses
   ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore,
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp, flood,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
-  rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore;
+  rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,fileprops;
 
 
 type
@@ -76,6 +76,7 @@ type
     FBMouseShapeFile: TMenuItem;
     MenuItem14: TMenuItem;
     MenuItem15: TMenuItem;
+    PropertiesFileDialog: TMenuItem;
     PaletteXGA256: TMenuItem;
     PaletteXGA: TMenuItem;
     OWPaletteCommands: TMenuItem;
@@ -326,6 +327,7 @@ type
     procedure PaletteExportOWCClick(Sender: TObject);
     procedure PaletteXGA256Click(Sender: TObject);
     procedure PaletteXGAClick(Sender: TObject);
+    procedure PropertiesFileDialogClick(Sender: TObject);
     procedure RayLibExportClick(Sender: TObject);
     procedure RightPanelClick(Sender: TObject);
     procedure RMPanelClick(Sender: TObject);
@@ -2004,6 +2006,7 @@ procedure TRMMainForm.SaveFileClick(Sender: TObject);
 var
  ext : string;
  x,y,x2,y2 : integer;
+ PngRGBA : PngRGBASettingsRec;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
    SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush|*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
@@ -2026,7 +2029,8 @@ begin
       end
       else if ext = '.PNG' then
       begin
-        if SavePNG(x,y,x2,y2,SaveDialog1.FileName) <> 0 then
+        FilePropertiesDialog.GetProps(PngRGBA);
+        if SavePNG(x,y,x2,y2,SaveDialog1.FileName,PngRGBA) <> 0 then
          begin
            ShowMessage('Error Saving PNG file!');
          end;
@@ -2769,6 +2773,18 @@ begin
  if RMDrawTools.GetClipStatus = 1 then
  begin
    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
+ end;
+end;
+
+procedure TRMMainForm.PropertiesFileDialogClick(Sender: TObject);
+var
+ PngRGBA : PngRGBASettingsRec;
+begin
+ FilePropertiesDialog.GetProps(PngRGBA);  //get values before change
+ if FilePropertiesDialog.ShowModal <> mrOK then
+ begin
+    FilePropertiesDialog.SetProps(PngRGBA); //restore values because close/cancel was selected
+    FilePropertiesDialog.UpdateValues;
  end;
 end;
 

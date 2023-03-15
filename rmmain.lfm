@@ -950,6 +950,10 @@ object RMMainForm: TRMMainForm
           end
         end
       end
+      object PropertiesFileDialog: TMenuItem
+        Caption = 'Properties'
+        OnClick = PropertiesFileDialogClick
+      end
       object MenuItem11: TMenuItem
         Caption = 'Exit'
         OnClick = FileExitMenuClick

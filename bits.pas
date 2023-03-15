@@ -1,5 +1,5 @@
 {$mode TP}
-Unit Bits;
+Unit bits;
 
 Interface
 Function BitOn(Position,Testbyte : Byte) : Boolean;
