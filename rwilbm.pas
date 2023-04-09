@@ -1,5 +1,5 @@
 unit rwilbm;
-
+{$PACKRECORDS 1}
 Interface
   uses bits,gPacker,npacker,packer,rmxgfcore,rmcore;
 Type
@@ -172,10 +172,13 @@ end;
 Function RowBytes(w : Word): word;
 BEGIN
   RowBytes:= ((((w + 15) DIV 16) * 2));
+//   RowBytes:= ((((w + 16) DIV 16) * 2));
 END;
 Function RowBytes2(w: Word): word;
 BEGIN
   RowBytes2:= (w + 15) div 8;
+//  RowBytes2:= (w + 16) div 8;
+
 END;
 
 Procedure DrawImgLine(Ln : word;var singleBuf : linebuftype; width : word;x,y,x2,y2 : integer);
@@ -191,7 +194,7 @@ begin
 end;
 
 
-Procedure ProcessUBODY(var F : File;bmap : BitMapHeaderRec;pbm,ilbm : boolean;x,y,x2,y2 : integer);
+Procedure ProcessUBODY(var F : File;bmap : BitMapHeaderRec;pbm : boolean;x,y,x2,y2 : integer);
 var
   mybytes : longint;
   bwidth,bheight : word;
@@ -221,7 +224,7 @@ begin
       FOR k:=0 TO rbytes-1 do
       begin
          Blockread(F,a,sizeof(a));
-           planarBuf[k]:=a;
+         planarBuf[k]:=a;
       end;
 
       if pbm then
@@ -236,11 +239,60 @@ begin
    end;  //next ln
 end;
 
+//for PC 8 bit - 256 color format
+Procedure ProcessBODY_PBM(var F : File;bmap : BitMapHeaderRec;x,y,x2,y2 : integer);
+var
+  evenwidth : longint;
+  bwidth,bheight : word;
+  Ln,k : integer;
+  b,c : byte;
+  planarBuf : LineBufType;
+  counter : word;
+  n : integer;
+begin
+  fillchar(planarBuf,sizeof(planarBuf),0);
+  bwidth:=WordToLE(bmap.w);
+  bheight:=WordToLE(bmap.h);
 
-Procedure ProcessBODY(var F : File;bmap : BitMapHeaderRec;pbm,ilbm : boolean;x,y,x2,y2 : integer);
+  evenwidth:=bwidth;
+  if odd(evenwidth) then inc(evenwidth);
+
+  FOR Ln:=0 TO bheight-1 do
+  begin
+    counter:=0;
+    WHILE counter < (evenwidth) do
+    begin
+      Blockread(F,c,1);
+      if c > 127 then n:=c-256 else n:=c;  //using 16 bit integer like 8 bit integer
+      //trying to avoid using freepascal int8 and still making code look like C algorithm
+      IF   (n >=0) and (n<=127)  THEN
+      begin
+        FOR k:=0 TO n do
+        begin
+          Blockread(F,b,1);
+          planarBuf[counter+k]:=b;
+        end;
+        inc(counter,n+1);
+      end
+      ELSE IF (n>=-127) and (n<0) THEN
+      begin
+        Blockread(F,b,1);
+        FOR k:=0 TO abs(n) do
+        begin
+          planarBuf[counter+k]:=b;
+        end;
+        inc(counter,abs(n)+1);
+      END;  //if
+     END;   //while
+     DrawImgLine(Ln,planarBuf,bwidth,x,y,x2,y2)
+   end;  //next i
+end;
+
+
+//normal bitplanes - for colors 2 to 32
+Procedure ProcessBODY(var F : File;bmap : BitMapHeaderRec;x,y,x2,y2 : integer);
 var
   mybytes : longint;
- // mybmap  : longint;
   bwidth,bheight : word;
   Ln,j,k : integer;
   b,c : byte;
@@ -252,62 +304,42 @@ begin
   fillchar(planarBuf,sizeof(planarBuf),0);
   bwidth:=WordToLE(bmap.w);
   bheight:=WordToLE(bmap.h);
-
   mybytes:=rowbytes(bwidth);
   nplanes:=bmap.nplanes;
-//  mybmap:=mybytes*bheight;
 
-    FOR Ln:=0 TO bheight-1 do
+  FOR Ln:=0 TO bheight-1 do
+  begin
+    counter:=0;
+    FOR j:=0 TO bmap.nplanes-1 do
     begin
-        counter:=0;
-        FOR j:=0 TO bmap.nplanes-1 do
+      WHILE counter <= (mybytes*bmap.nplanes-1) do
+      begin
+        Blockread(F,c,1);
+        if c > 127 then n:=c-256 else n:=c;  //using 16 bit integer like 8 bit integer
+        //trying to avoid using freepascal int8 and still making code look like C algorithm
+        IF (n >=0) and (n<=127)  THEN
         begin
-          (*
-            IF bmap.compression=0 THEN
-            BEGIN
-               FOR k:=0 TO mybytes-1 do
-               begin
-                 Blockread(F,a,sizeof(a));
-                 planarBuf[k]:=a;
-               END;
-            end
-            ELSE
-            begin *)
-              WHILE counter <= (mybytes*bmap.nplanes-1) do
-               begin
-                 Blockread(F,c,1);
-                 if c > 127 then n:=c-256 else n:=c;  //using 16 bit integer like 8 bit integer
-                 //trying to avoid using freepascal int8 and still making code look like C algorithm
-                 IF (n >=0) and (n<=127)  THEN
-                 begin
-                    FOR k:=0 TO n do
-                     begin
-                       Blockread(F,b,1);
-                       planarBuf[counter+k]:=b;
-                     end;
-                     inc(counter,n+1);
-                  end
-                  ELSE IF (n<0) and (n>-128) THEN
-                  begin
-                     Blockread(F,b,1);
-                     FOR k:=0 TO abs(n) do
-                     begin
-                       planarBuf[counter+k]:=b;
-                     end;
-                     inc(counter,abs(n)+1);
-                  END;  //if
-                END;   //while
-           // END;  //if
-          End;   // next j
-
-          if pbm then
-             DrawImgLine(Ln,planarBuf,bwidth,x,y,x2,y2)
-          else
+          FOR k:=0 TO n do
           begin
-             mptosp(planarBuf,singleBuf,mybytes,nplanes);
-             DrawImgLine(Ln,singleBuf,bwidth,x,y,x2,y2);
+            Blockread(F,b,1);
+            planarBuf[counter+k]:=b;
           end;
-    end;  //next i
+          inc(counter,n+1);
+        end
+        ELSE IF (n>=-127) and (n<0) THEN      //(n<0) and (n>-127) THEN
+        begin
+          Blockread(F,b,1);
+          FOR k:=0 TO abs(n) do
+          begin
+            planarBuf[counter+k]:=b;
+          end;
+          inc(counter,abs(n)+1);
+        END;  //if
+      END;   //while
+    End;   // next j
+    mptosp(planarBuf,singleBuf,mybytes,nplanes);
+    DrawImgLine(Ln,singleBuf,bwidth,x,y,x2,y2);
+  end;  //next ln
 end;
 
 Procedure ProcessCMAP(var F: File;cmapsize : longword; lp,pm : integer);
@@ -428,8 +460,21 @@ begin
     else if (chunkname ='BODY') And FoundBMap   then
     begin
       BlockRead(F,bodysize,sizeof(bodysize));
-      if bmap.compression=1 then ProcessBODY(F,bmap,pbmFile,ILBMFile,x,y,x2,y2)
-      else ProcessUBODY(F,bmap,pbmFile,ILBMFile,x,y,x2,y2);
+      if bmap.compression=1 then
+      begin
+        if ILBMFile then
+        begin
+          ProcessBODY(F,bmap,x,y,x2,y2);
+        end
+        else if PBMFile then
+        begin
+          ProcessBODY_PBM(F,bmap,x,y,x2,y2);
+        end;
+      end
+      else
+      begin
+         ProcessUBODY(F,bmap,pbmFile,x,y,x2,y2);
+      end;
     end;
   end;
 end;
@@ -448,33 +493,33 @@ begin
    fillchar(unpackedbuf,sizeof(unpackedbuf),0);
    WHILE counter < unpackedSize do
    begin
-                 c:=packedBuf[pcounter];
-                 //writeln('c=',c);
-                 inc(pcounter);
-                 if c > 127 then n:=c-256 else n:=c;  //using 16 bit integer like 8 bit integer
-                 //trying to avoid using freepascal int8 and still making code look like C algorithm
-                 //writeln('n=',n);
-                 IF (n >=0) and (n<=127)  THEN
-                 begin
-                    FOR k:=0 TO n do
-                     begin
-                       b:=packedBuf[pcounter+k];
-                       unpackedBuf[counter+k]:=b;
-                     end;
-                     inc(counter,n+1);
-                     inc(pcounter,n+1);
-                  end
-                  ELSE IF (n<0) and (n>-128) THEN
-                  begin
-                     b:=packedBuf[pcounter];
-                     inc(pcounter);
-                     FOR k:=0 TO abs(n) do
-                     begin
-                       unPackedBuf[counter+k]:=b;
-                     end;
-                     inc(counter,abs(n)+1);
-                  END;  //if
-                END;   //while
+     c:=packedBuf[pcounter];
+     //writeln('c=',c);
+     inc(pcounter);
+     if c > 127 then n:=c-256 else n:=c;  //using 16 bit integer like 8 bit integer
+     //trying to avoid using freepascal int8 and still making code look like C algorithm
+     //writeln('n=',n);
+     IF (n >=0) and (n<=127)  THEN
+     begin
+       FOR k:=0 TO n do
+       begin
+         b:=packedBuf[pcounter+k];
+         unpackedBuf[counter+k]:=b;
+       end;
+       inc(counter,n+1);
+       inc(pcounter,n+1);
+     end
+     ELSE IF (n<0) and (n>-128) THEN          //(n>=-127) and (n<0)
+     begin
+       b:=packedBuf[pcounter];
+       inc(pcounter);
+       FOR k:=0 TO abs(n) do
+       begin
+         unPackedBuf[counter+k]:=b;
+       end;
+       inc(counter,abs(n)+1);
+     END;  //if
+   END;   //while
 end;
 
 
@@ -502,12 +547,11 @@ begin
  GetCMAPSize:=size;
 end;
 
-Procedure WriteCMAP(var f : file);
+Procedure WriteCMAP(var F : File);
 var
  cmap  : array[0..255] of ColorMapRec;
  cr    : TRMColorRec;
  i     : integer;
-
  pad0  : byte;
 begin
  pad0:=0;
@@ -519,7 +563,7 @@ begin
    cmap[i].green:=cr.g;
    cmap[i].blue:=cr.b;
  end;
- blockwrite(f,cmap,(GetMaxColor+1)*3);
+ blockwrite(F,cmap,(GetMaxColor+1)*3);
  if ((GetMaxColor+1)*3)< GetCMAPSize then Blockwrite(f,pad0,sizeof(pad0));
 end;
 
@@ -605,19 +649,16 @@ var
   ImgPacked   : LineBufType;
   PackedSize  : integer;
   BodySize    : longword;
-
   pad0        : byte;
   NPlanes     : byte;
   colorIndex  : word;
-
-  w           : word;
+  LineWidth   : word;
   pcount      : integer;
-   i          : integer;
   LinePos     : integer;
+  i           : integer;
 
 begin
- w:=x2-x+1;
-// h:=y2-y+1;
+ LineWidth:=x2-x+1;
  BodySize:=0;
  pad0:=0;
  nPlanes:=GetNPlanes;
@@ -634,40 +675,41 @@ begin
 
    if nPlanes = 8 then //we use the PBM format for this - everyhing else ILBM
    begin
+     if odd(LineWidth) then inc(LineWidth);  //Deluxe Paint for Dos wants even pixels even though header lists actual width
      if cmp = 1 then
      begin
-       packedsize:=nPackRow(singleplane,0,imgpacked,w);
+       packedsize:=nPackRow(singleplane,0,imgpacked,LineWidth);
        blockwrite(f,imgpacked,packedsize);
        inc(Bodysize,packedsize);
      end
      else
      begin
-       blockwrite(f,singleplane,w);
-       inc(Bodysize,w);
+       blockwrite(f,singleplane,LineWidth);
+       inc(Bodysize,LineWidth);
      end;
    end
    else
    begin
      //convert single plane color to multiple planes and store in array
-     spTOmp(singlePlane,multiPlane,w,RowBytes(w),nPlanes);
+     spTOmp(singlePlane,multiPlane,LineWidth,RowBytes(LineWidth),nPlanes);
      //cycle throuh planes and dump bit plane rows to be compressed
      for pcount:=0 to nplanes-1 do
      begin
        if cmp = 1 then
        begin
          //compress each row bitplane seperately - Do Not compress all bitplanes in one packrow command!
-         packedsize:=nPackRow(multiplane,pcount*rowbytes(w),imgpacked,RowBytes(w));
-       //  packedsize:=nPackRow2(multiplane,pcount*rowbytes(w),imgpacked,RowBytes(w));
-       //  packedsize:=gPackRow(multiplane,pcount*rowbytes(w),imgpacked,RowBytes(w));
-       //  packedsize:=mPackRow(@multiplane[pcount*rowbytes(w)],imgpacked,RowBytes(w));
+         packedsize:=nPackRow(multiplane,pcount*rowbytes(LineWidth),imgpacked,RowBytes(LineWidth));
+       //  packedsize:=nPackRow2(multiplane,pcount*rowbytes(LineWidth),imgpacked,RowBytes(LineWidth));
+       //  packedsize:=gPackRow(multiplane,pcount*rowbytes(LineWidth),imgpacked,RowBytes(LineWidth));
+       //  packedsize:=mPackRow(@multiplane[pcount*rowbytes(LineWidth)],imgpacked,RowBytes(LineWidth));
 
          blockwrite(f,imgpacked,packedsize);
          inc(Bodysize,packedsize);
        end
        else
        begin
-         blockwrite(f,multiplane[pcount*rowbytes(w)],rowbytes(w));
-         inc(Bodysize,rowbytes(w));
+         blockwrite(f,multiplane[pcount*rowbytes(LineWidth)],rowbytes(LineWidth));
+         inc(Bodysize,rowbytes(LineWidth));
        end;
      end;  //pcount loop
    end; //nplanes if
@@ -694,66 +736,53 @@ end;
 
 function WriteILBM(filename : string; x,y,x2,y2 : word;cmp  :byte) : word;
 var
- f : File;
- bmhd : BitMapHeaderRec;
- BodyFP : longint;
+ F        : File;
+ bmhd     : BitMapHeaderRec;
+ BodyFP   : longint;
  BodySize : longword;
 begin
-SetCoreActive;
-
-assign(f,filename);
+ SetCoreActive;
+ Assign(F,filename);
 {$I-}
- rewrite(f,1);
+ Rewrite(F,1);
 
- WriteChunkName(f,'FORM');
- WriteChunkSize(f,0); //we don't know the final size yet - we will update below
+ WriteChunkName(F,'FORM');
+ WriteChunkSize(F,0); //we don't know the final size yet - we will update below
  If GetNPlanes = 8 then
-   WriteChunkName(f,'PBM ')
+   WriteChunkName(F,'PBM ')
  else
-   WriteChunkName(f,'ILBM');
+   WriteChunkName(F,'ILBM');
 
-
- WriteChunkName(f,'BMHD');
- WriteChunkSize(f,LongToLE(20));
+ WriteChunkName(F,'BMHD');
+ WriteChunkSize(F,LongToLE(20));
 
  bmhd.w:=WordToLE(x2-x+1);
-
  bmhd.h:=WordToLE(y2-y+1);
-
  bmhd.x:=WordToLE(0);
-
  bmhd.y:=WordToLE(0);
-
  bmhd.nplanes:=GetNPlanes;
-
  bmhd.masking:=0;
-
  bmhd.compression:=cmp;
-
  bmhd.pad1 :=0;
-
  bmhd.transparentColor:=WordToLE(GetMaxColor);
-
  bmhd.xaspect:= 4;
-
  bmhd.yaspect:= 5;
-
  bmhd.pagewidth:=bmhd.w;      // WordToLE(GetMaxX+1);
-
  bmhd.pageheight:=bmhd.h;            // WordToLE(GetMaxY+1);
- WriteBMHD(f,bmhd);
- WriteChunkName(f,'CMAP');
- WriteChunkSize(f,LongToLE(GetCMAPSize));
- WriteCMAP(f);
 
- WriteChunkName(f,'BODY');
- BodyFP:=FilePos(f); //save position where Body size should be updated
- WriteChunkSize(f,LongToLE(0)); //we don't know yet - update below
- BodySize:=LongToLE(WriteBODY(f,x,y,x2,y2,cmp));
+ WriteBMHD(f,bmhd);
+ WriteChunkName(F,'CMAP');
+ WriteChunkSize(F,LongToLE(GetCMAPSize));
+ WriteCMAP(F);
+
+ WriteChunkName(F,'BODY');
+ BodyFP:=FilePos(F); //save position where Body size should be updated
+ WriteChunkSize(F,LongToLE(0)); //we don't know yet - update below
+ BodySize:=LongToLE(WriteBODY(F,x,y,x2,y2,cmp));
  Seek(F,BodyFP);
- Blockwrite(f,bodysize,sizeof(bodysize));  //update body size
- UpdateFormSize(f);
- close(f);
+ Blockwrite(F,bodysize,sizeof(bodysize));  //update body size
+ UpdateFormSize(F);
+ close(F);
  {$I+}
  WriteILBM:=IORESULT;
 end;

@@ -283,6 +283,7 @@
         <Filename Value="fileprops.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FileProperties"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit28>
     </Units>

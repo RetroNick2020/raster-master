@@ -47,7 +47,7 @@ object FileProperties: TFileProperties
     Height = 19
     Top = 80
     Width = 165
-    Caption = 'Fuschia (R=255 G=255 B=0)'
+    Caption = 'Fuschia (R=255 G=0 B=255)'
     Checked = True
     OnChange = ValueChange
     State = cbChecked

@@ -3369,6 +3369,8 @@ begin
  GetOpenSaveRegion(x,y,x2,y2);
  RMDrawTools.Paste(x,y,x2,y2);
 
+ ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
  UpdateActualArea;
  UpdateZoomArea;
  UpdateThumbView;

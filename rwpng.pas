@@ -593,7 +593,7 @@ begin
        pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
      end;
 
-     if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.b=255) and (cr.g=0) then   //use fuschia
+     if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.g=0) and (cr.b=255) then   //use fuschia
      begin
        pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
      end;
