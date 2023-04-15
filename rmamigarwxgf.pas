@@ -5,7 +5,7 @@ Unit rmamigarwxgf;
  Interface
    uses rmcore,rwxgf,rmxgfcore,SysUtils,LazFileUtils,bits;
 
-
+procedure InitBufferRec(var Buffer : BufferRec);
 function GetABXImageSize(width,height,ncolors : integer) : longint;
 function GetBobDataSize(width,height,nColors: integer;vsprite : boolean) : longint;
 function GetAmigaBitMapSize(width,height,ncolors : integer) : longint;
@@ -128,6 +128,12 @@ begin
  bitplanes:=nColorsToBitplanes(nColors);
  GetBobDataSize:=(((width+15) div 16)*2)*height*bitplanes+sizeof(ABBobHeader);
  if vsprite then inc(GetBobDataSize,sizeof(ABSpritePalette));
+end;
+
+procedure InitBufferRec(var Buffer : BufferRec);
+begin
+  buffer.bufCount:=0;
+  buffer.error:=0;
 end;
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
@@ -1078,6 +1084,7 @@ SetCoreActive;  //pull data from RMCore
 Assign(data.f,filename);
 {$I-}
 Rewrite(data.f,1);
+InitBufferRec(data);  //init the data record
 WriteAmigaBobBuffer(x,y,x2,y2,data,SaveAsSprite);
 if data.error <> 0 then
 begin

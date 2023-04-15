@@ -600,15 +600,31 @@ object RMMainForm: TRMMainForm
             Caption = 'VSprite Bitmap Array'
             OnClick = AmigaCClick
           end
+          object ACBobFile: TMenuItem
+            Caption = 'Bob Bitmap File'
+            OnClick = AmigaCClick
+          end
+          object ACVSpriteFile: TMenuItem
+            Caption = 'VSprite Bitmap File'
+            OnClick = AmigaCClick
+          end
         end
         object AmigaPascal: TMenuItem
           Caption = 'Amiga Pascal'
           object PascalBOBBitmapArray: TMenuItem
-            Caption = 'BOB Bitmap Array'
+            Caption = 'Bob Bitmap Array'
             OnClick = AmigaPascalClick
           end
           object PascalVSpriteBitmapArray: TMenuItem
             Caption = 'VSprite Bitmap Array'
+            OnClick = AmigaPascalClick
+          end
+          object PascalBOBBitmapFile: TMenuItem
+            Caption = 'Bob Bitmap File'
+            OnClick = AmigaPascalClick
+          end
+          object PascalVSpriteBitmapFile: TMenuItem
+            Caption = 'VSprite Bitmap File'
             OnClick = AmigaPascalClick
           end
         end

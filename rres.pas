@@ -1043,7 +1043,6 @@ begin
        Blockwrite(data.f,RR,sizeof(RR));
      end;
 
-
      {$I+}
      Error:=IORESULT;
      if Error<>0 then
@@ -1085,12 +1084,11 @@ begin
           RESBinary:=Error;
           exit;
         end;
-
       end;
   end;
 
 
-
+ InitBufferRec(data);
  //convert and dump image
  for i:=0 to count-1 do
  begin

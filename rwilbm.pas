@@ -36,7 +36,7 @@ Type
  End;
 
 
-function WriteILBM(filename : string; x,y,x2,y2 : word;cmp  :byte) : word;
+function WriteILBM(filename : string; x,y,x2,y2 : word;cmp  :byte;UsePBM : boolean) : word;
 function ReadILBM(filename : string; x,y,x2,y2,lp,pm : integer) : word;
 
 Implementation
@@ -124,6 +124,9 @@ var
  BitPlane3 : Word;
  BitPlane4 : Word;
  BitPlane5 : Word;
+ BitPlane6 : Word;
+ BitPlane7 : Word;
+ BitPlane8 : Word;
  cp,cl,x,
  xoff,j    : Word;
 
@@ -136,6 +139,11 @@ begin
  BitPlane3:=BytesPerPlane*2;
  BitPlane4:=BytesPerPlane*3;
  BitPlane5:=BytesPerPlane*4;
+ BitPlane6:=BytesPerPlane*5;
+ BitPlane7:=BytesPerPlane*6;
+ BitPlane8:=BytesPerPlane*7;
+
+
 
  xoff:=0;
  cp:=0;
@@ -145,6 +153,9 @@ begin
    begin
       cl:=SinglePlane[xoff+j];
 
+      if biton(7,cl) then setbit((7-j),1,multiplane[BitPlane8+cp]);
+      if biton(6,cl) then setbit((7-j),1,multiplane[BitPlane7+cp]);
+      if biton(5,cl) then setbit((7-j),1,multiplane[BitPlane6+cp]);
       if biton(4,cl) then setbit((7-j),1,multiplane[BitPlane5+cp]);
       if biton(3,cl) then setbit((7-j),1,multiplane[BitPlane4+cp]);
       if biton(2,cl) then setbit((7-j),1,multiplane[BitPlane3+cp]);
@@ -642,7 +653,7 @@ end;
 *)
 
 
-Function WriteBODY(var f : file; x,y,x2,y2 : word;cmp : byte) : longword;
+Function WriteBODY(var f : file; x,y,x2,y2 : word;cmp : byte; UsePBM : boolean) : longword;
 var
   singlePlane : LineBufType;
   multiPlane  : LineBufType;
@@ -673,7 +684,7 @@ begin
      inc(colorIndex);
    end;
 
-   if nPlanes = 8 then //we use the PBM format for this - everyhing else ILBM
+   if (nPlanes = 8) and (UsePBM) then //we use the PBM format for this - everyhing else ILBM
    begin
      if odd(LineWidth) then inc(LineWidth);  //Deluxe Paint for Dos wants even pixels even though header lists actual width
      if cmp = 1 then
@@ -734,7 +745,7 @@ begin
  blockwrite(f,size,sizeof(size));
 end;
 
-function WriteILBM(filename : string; x,y,x2,y2 : word;cmp  :byte) : word;
+function WriteILBM(filename : string; x,y,x2,y2 : word;cmp  :byte; UsePBM : boolean) : word;
 var
  F        : File;
  bmhd     : BitMapHeaderRec;
@@ -748,7 +759,7 @@ begin
 
  WriteChunkName(F,'FORM');
  WriteChunkSize(F,0); //we don't know the final size yet - we will update below
- If GetNPlanes = 8 then
+ If (GetNPlanes = 8) and (UsePBM) then
    WriteChunkName(F,'PBM ')
  else
    WriteChunkName(F,'ILBM');
@@ -778,7 +789,7 @@ begin
  WriteChunkName(F,'BODY');
  BodyFP:=FilePos(F); //save position where Body size should be updated
  WriteChunkSize(F,LongToLE(0)); //we don't know yet - update below
- BodySize:=LongToLE(WriteBODY(F,x,y,x2,y2,cmp));
+ BodySize:=LongToLE(WriteBODY(F,x,y,x2,y2,cmp,UsePBM));
  Seek(F,BodyFP);
  Blockwrite(F,bodysize,sizeof(bodysize));  //update body size
  UpdateFormSize(F);

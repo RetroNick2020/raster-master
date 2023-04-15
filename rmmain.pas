@@ -76,6 +76,10 @@ type
     FBMouseShapeFile: TMenuItem;
     MenuItem14: TMenuItem;
     MenuItem15: TMenuItem;
+    ACBobFile: TMenuItem;
+    ACVSpriteFile: TMenuItem;
+    PascalBOBBitmapFile: TMenuItem;
+    PascalVSpriteBitmapFile: TMenuItem;
     PropertiesFileDialog: TMenuItem;
     PaletteXGA256: TMenuItem;
     PaletteXGA: TMenuItem;
@@ -2007,9 +2011,10 @@ var
  ext : string;
  x,y,x2,y2 : integer;
  PngRGBA : PngRGBASettingsRec;
+ UsePBM  : boolean;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush|*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
+   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush|*.pcx|DP-Amiga IFF|*.iff|DP-Amiga IFF Brush|*.brush|DP-PC IFF LBM(PBM)|*.lbm|DP-PC BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
@@ -2042,16 +2047,18 @@ begin
           ShowMessage('Error Saving GIF file!');
         end;
       end
-      else if (ext = '.ILBM') or (ext = '.LBM') then
+      else if (ext = '.ILBM') or (ext = '.LBM') or (ext = '.IFF') then
           begin
-            if WriteILBM(SaveDialog1.FileName,x,y,x2,y2,1) <> 0 then
+            if ext='.LBM' then UsePBM:=true else UsePBM:=false;
+            if WriteILBM(SaveDialog1.FileName,x,y,x2,y2,1,UsePBM) <> 0 then
             begin
               ShowMessage('Error Saving IFF/ILBM file!');
             end;
           end
-      else if (ext = '.BBM')  then
+      else if (ext = '.BBM') or (ext = '.BRUSH') then
           begin
-            if WriteILBM(SaveDialog1.FileName,x,y,x2,y2,0) <> 0 then
+            if ext='.BBM' then UsePBM:=true else UsePBM:=false;
+            if WriteILBM(SaveDialog1.FileName,x,y,x2,y2,0,UsePBM) <> 0 then
             begin
               ShowMessage('Error Saving IFF/BBM Brush file!');
             end;
@@ -2078,7 +2085,7 @@ begin
    pm:=RMCoreBase.Palette.GetPaletteMode;
 
    if RMDrawTools.GetClipStatus = 1 then lp:=0;
-   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
+   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF|*.iff|DP-Amiga IFF Brush|*.brush|DP-PC IFF LBM(PBM)|*.lbm|DP-PC BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
 
    if OpenDialog1.Execute then
    begin
@@ -2099,7 +2106,7 @@ begin
           exit;
         end;
       end
-      else if (ext = '.LBM') or (ext = '.BBM') or (ext = '.ILBM') or (ext = '.IFF') then
+      else if (ext = '.LBM') or (ext = '.BBM') or (ext = '.BRUSH') or (ext = '.ILBM') or (ext = '.IFF') then
       begin
         if ReadILBM(OpenDialog1.FileName,x,y,x2,y2,lp,pm) <> 0 then
         begin
@@ -2944,30 +2951,55 @@ var
  pm : integer;
  error : word;
  validpm : boolean;
+ VSprite : boolean;
+ spritewidth : integer;
 begin
-   pm:=RMCoreBase.Palette.GetPaletteMode;
-   validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
-   if validpm = false then
-   begin
-      ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
-      exit;
-   end;
+ GetOpenSaveRegion(x,y,x2,y2);
+ spritewidth:=x2-x+1;
+ VSprite:=false;
 
-   Case (Sender As TMenuItem).Name of 'ABPutData' :ExportDialog.Filter := 'AmigaBASIC Put Data Statements|*.bas';
-                                      'ABPutPlusMaskData' :ExportDialog.Filter := 'AmigaBASIC Put+Mask Data Statements|*.bas';
-                                      'ABBobData' : ExportDialog.Filter := 'AmigaBASIC Bob Data Statements|*.bas';
-                                      'ABVSpriteData' : ExportDialog.Filter := 'AmigaBASIC VSprite Data Statements|*.bas';
-                                      'ABPutFile' : ExportDialog.Filter := 'AmigaBASIC Put File|*.xgf';
-                                      'ABBobFile' : ExportDialog.Filter := 'AmigaBASIC Bob File|*.obj';
-                                      'ABVSpriteFile' : ExportDialog.Filter := 'AmigaBASIC VSprite File|*.vsp';
-   End;
-   GetOpenSaveRegion(x,y,x2,y2);
+ pm:=RMCoreBase.Palette.GetPaletteMode;
+ validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
+
+ if validpm = false then
+ begin
+   ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
+   exit;
+ end;
+
+
+ Case (Sender As TMenuItem).Name of 'ABPutData' :ExportDialog.Filter := 'AmigaBASIC Put Data Statements|*.bas';
+                                    'ABPutPlusMaskData' :ExportDialog.Filter := 'AmigaBASIC Put+Mask Data Statements|*.bas';
+                                    'ABBobData' : ExportDialog.Filter := 'AmigaBASIC Bob Data Statements|*.bas';
+                                    'ABVSpriteData' :begin
+                                                       VSprite:=true;
+                                                       ExportDialog.Filter := 'AmigaBASIC VSprite Data Statements|*.bas';
+                                                     end;
+                                    'ABPutFile' : ExportDialog.Filter := 'AmigaBASIC Put File|*.xgf';
+                                    'ABBobFile' : ExportDialog.Filter := 'AmigaBASIC Bob File|*.obj';
+                                    'ABVSpriteFile' :begin
+                                                       VSprite:=true;
+                                                       ExportDialog.Filter := 'AmigaBASIC VSprite File|*.vsp';
+                                                     end;
+ End;
+
+ if (vsprite=true) then
+ begin
+   if ((spritewidth<>16) or (pm<>PaletteModeAmiga4)) then
+   begin
+     ShowMessage('Sprite Width should be 16 pixels with Palette of 4 Colors');
+     exit;
+   end;
+ end;
+
+
+
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'ABPutData' : error:=WriteAmigaBasicXGFDataFile(x,y,x2,y2,ExportDialog.FileName);
                                          'ABPutPlusMaskData' : error:=WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2,ExportDialog.FileName);
                                          'ABBobData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,false);
-                                         'ABVSpriteData' : error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,true);
+                                         'ABVSpriteData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,true);
                                          'ABPutFile' :  error:=WriteAmigaBasicXGFFile(x,y,x2,y2,ExportDialog.FileName);
                                          'ABBobFile' : error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,false);
                                          'ABVSpriteFile' :  error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,true);
@@ -2981,50 +3013,7 @@ begin
    end;
 end;
 
-procedure TRMMainForm.AmigaCClick(Sender: TObject);
-var
- x,y,x2,y2 : integer;
- pm : integer;
- error : word;
- validpm : boolean;
- VSprite : boolean;
- spritewidth : integer;
-begin
-   GetOpenSaveRegion(x,y,x2,y2);
-   spritewidth:=x2-x+1;
-   ExportDialog.Filter := 'Amiga C Bob Bitmap Array|*.c';
-   VSprite:=false;
 
-   if (Sender As TMenuItem).Name = 'CVSpriteBitmapArray' then
-   begin
-     VSprite:=true;
-     ExportDialog.Filter := 'Amiga C VSprite Bitmap Array|*.c';
-   end;
-
-   pm:=RMCoreBase.Palette.GetPaletteMode;
-   validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
-   if validpm = false then
-   begin
-      ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
-      exit;
-   end;
-
-   if (vsprite=true) and (spritewidth<>16) and (pm<>PaletteModeAmiga4) then
-   begin
-      ShowMessage('Sprite Width should be 16 pixels with Palette of 4 Colors');
-      exit;
-   end;
-
-   if ExportDialog.Execute then
-   begin
-      error:=WriteAmigaCBobCodeToFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
-      if error<>0 then
-      begin
-        ShowMessage('Error Saving file!');
-        exit;
-      end;
-   end;
-end;
 
 procedure TRMMainForm.AmigaCPaletteClick(Sender: TObject);
 var
@@ -3050,6 +3039,67 @@ begin
    end;
 end;
 
+procedure TRMMainForm.AmigaCClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ pm : integer;
+ error : word;
+ validpm : boolean;
+ VSprite : boolean;
+ spritewidth : integer;
+begin
+   GetOpenSaveRegion(x,y,x2,y2);
+   spritewidth:=x2-x+1;
+   VSprite:=false;
+
+   case (Sender As TMenuItem).Name of      'CBOBBitmapArray':ExportDialog.Filter := 'Amiga C Bob Bitmap Array|*.c';
+                                      'CVSpriteBitmapArray' :begin
+                                                               VSprite:=true;
+                                                               ExportDialog.Filter := 'Amiga C VSprite Bitmap Array|*.c';
+                                                             end;
+                                                  'ACBobFile':ExportDialog.Filter := 'Amiga Bob Bitmap File|*.xgf';
+                                              'ACVSpriteFile':begin
+                                                                VSprite:=true;
+                                                                ExportDialog.Filter := 'Amiga VSprite Bitmap File|*.xgf';
+                                                              end;
+
+   end;
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
+   if validpm = false then
+   begin
+      ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
+      exit;
+   end;
+
+   if (vsprite=true) then
+   begin
+     if ((spritewidth<>16) or (pm<>PaletteModeAmiga4)) then
+     begin
+      ShowMessage('Sprite Width should be 16 pixels with Palette of 4 Colors');
+      exit;
+     end;
+   end;
+
+
+   if ExportDialog.Execute then
+   begin
+      case (Sender As TMenuItem).Name of 'CBOBBitmapArray',
+                                         'CVSpriteBitmapArray':error:=WriteAmigaCBobCodeToFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
+                                                   'ACBobFile',
+                                               'ACVSpriteFile':begin
+                                                                 error:=WriteAmigaBobFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
+                                                               end;
+
+      end;
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
 procedure TRMMainForm.AmigaPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -3062,15 +3112,21 @@ begin
    GetOpenSaveRegion(x,y,x2,y2);
    spritewidth:=x2-x+1;
 
-   ExportDialog.Filter := 'Amiga Pascal Bob Bitmap Array|*.pas';
    VSprite:=false;
-   if (Sender As TMenuItem).Name = 'PascalVSpriteBitmapArray' then
-   begin
-     VSprite:=true;
-     ExportDialog.Filter := 'Amiga Pascal VSprite Bitmap Array|*.pas';
+   case (Sender As TMenuItem).Name of      'PascalBOBBitmapArray':ExportDialog.Filter := 'Amiga Pascal Bob Bitmap Array|*.pas';
+                                       'PascalVSpriteBitmapArray':begin
+                                                                    VSprite:=true;
+                                                                    ExportDialog.Filter := 'Amiga Pascal VSprite Bitmap Array|*.pas';
+                                                                  end;
+                                            'PascalBOBBitmapFile':ExportDialog.Filter := 'Amiga Pascal Bob Bitmap File|*.xgf';
+                                        'PascalVSpriteBitmapFile':begin
+                                                                    VSprite:=true;
+                                                                    ExportDialog.Filter := 'Amiga Pascal VSprite Bitmap File|*.xgf';
+                                                                  end;
    end;
 
    pm:=RMCoreBase.Palette.GetPaletteMode;
+
    validpm:=(pm=PaletteModeAmiga2) OR (pm=PaletteModeAmiga4) OR (pm=PaletteModeAmiga8) OR (pm=PaletteModeAmiga16) OR (pm=PaletteModeAmiga32);
    if validpm = false then
    begin
@@ -3078,15 +3134,24 @@ begin
       exit;
    end;
 
-   if (vsprite=true) and (spritewidth<>16) and (pm<>PaletteModeAmiga4) then
+   if (vsprite=true) then
    begin
+     if ((spritewidth<>16) or (pm<>PaletteModeAmiga4)) then
+     begin
       ShowMessage('Sprite Width should be 16 pixels with Palette of 4 Colors');
       exit;
+     end;
    end;
+
 
    if ExportDialog.Execute then
    begin
-      error:=WriteAmigaPascalBobCodeToFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
+      case (Sender As TMenuItem).Name of  'PascalBOBBitmapArray',
+                                          'PascalVSpriteBitmapArray':error:=WriteAmigaPascalBobCodeToFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
+                                          'PascalBOBBitmapFile',
+                                          'PascalVSpriteBitmapFile':error:=WriteAmigaBobFile(x,y,x2,y2,ExportDialog.FileName,VSprite);
+      end;
+
       if error<>0 then
       begin
         ShowMessage('Error Saving file!');
