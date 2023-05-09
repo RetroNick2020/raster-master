@@ -1101,7 +1101,7 @@ begin
 
    if EO.Palette > 0 then WritePalToBuffer(data,EO.Palette);
 
-   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan,OWLan:
+   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan:
                                     begin
                                       if (ImageExportFormat = PutImageExportFormat) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                       if (ImageExportFormat = PutImageExportFormat) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
@@ -1159,6 +1159,13 @@ begin
                                                                    RGBAIndex0ExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,2);
                                                                           RGBExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,3);
                                        end;
+                                    end;
+
+                             OWLan:
+                                    begin
+                                      if (ImageExportFormat = PutImageExportFormat) then WriteXgfToBufferOW(0,0,width-1,height-1,0,data);
+                                      if (ImageExportFormat = PutImageExportFormat) and (EO.Mask=1) then WriteXgfToBufferOW(0,0,width-1,height-1,1,data);
+                                      if (ImageExportFormat = MouseImageExportFormat) then WriteMShapeToBuffer(0,0,data.f);
                                     end;
 
    end;

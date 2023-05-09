@@ -95,6 +95,7 @@ type
  procedure WriteXgfToBuffer(x,y,x2,y2,LanType,Mask : word;var data : BufferRec);  // to binary file
  procedure WriteXgfToBufferFP(x,y,x2,y2,Mask : word;var data : BufferRec);
  procedure WriteXgfToBufferFB(x,y,x2,y2,Mask : word;var data : BufferRec);
+ procedure WriteXgfToBufferOW(x,y,x2,y2,Mask : word;var data : BufferRec);
 
  function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 
