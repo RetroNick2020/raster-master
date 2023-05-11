@@ -1,12 +1,11 @@
-// OWRES.C demonstrates how to access palettes and image data exported from 
-// raster master. OWIMG.RES was exported from Raster Master using RES Binary 
-// File option. This was converted from OWIMG.RES to OWIMG.OBJ using RtBinObj 
-// utility. Rhe following res functions below allow access to all the data in 
-// the original OWIMG.RES file
-//
-// wcl /ml owres.c owimg.obj
-// or
-// wcl386 owres.c owimg.obj
+/* QCRES.C demonstrates how to access palettes and image data exported from 
+   raster master. QCIMG.RES was exported from Raster Master using RES Binary 
+   File option. This was converted from QCIMG.RES to QCIMG.OBJ using RtBinObj 
+   utility. The following res functions below allow access to all the data in 
+   the original QCIMG.RES file
+   
+   qcl /AL qcres.c qcimg.obj
+*/
 
 #include <conio.h>
 #include <dos.h>
@@ -15,7 +14,7 @@
 #include <string.h>
 #pragma pack(1)
 
-extern char far owimg; 
+extern char far qcimg; 
 
 typedef struct {
   char sig[3];
@@ -101,7 +100,7 @@ void setrgb(int index, int  r,  int g,  int b){
 
 void setrespal() {
   typedef  unsigned char  * paltype;
-  paltype pal = GetResImagePtr(&owimg, GetResIndex(&owimg, "squarePal"));
+  paltype pal = GetResImagePtr(&qcimg, GetResIndex(&qcimg, "squarePal"));
   int i, c;
 
   c = 0;
@@ -123,14 +122,14 @@ int main() {
   setrespal();
   getch();
 
-  _putimage(200, 20, GetResImagePtr(&owimg, GetResIndex(&owimg, "squareMask")), _GAND);
-  _putimage(200, 20, GetResImagePtr(&owimg, GetResIndex(&owimg, "square")), _GOR);
+  _putimage(200, 20, GetResImagePtr(&qcimg, GetResIndex(&qcimg, "squareMask")), _GAND);
+  _putimage(200, 20, GetResImagePtr(&qcimg, GetResIndex(&qcimg, "square")), _GOR);
 
-  _putimage(100, 20, GetResImagePtr(&owimg, GetResIndex(&owimg, "circleMask")), _GAND);
-  _putimage(100, 20, GetResImagePtr(&owimg, GetResIndex(&owimg, "circle")), _GOR);
+  _putimage(100, 20, GetResImagePtr(&qcimg, GetResIndex(&qcimg, "circleMask")), _GAND);
+  _putimage(100, 20, GetResImagePtr(&qcimg, GetResIndex(&qcimg, "circle")), _GOR);
 
-  _putimage(150, 20, GetResImagePtr(&owimg, GetResIndex(&owimg, "crossMask")), _GAND);
-  _putimage(150, 20, GetResImagePtr(&owimg, GetResIndex(&owimg, "cross")), _GOR);
+  _putimage(150, 20, GetResImagePtr(&qcimg, GetResIndex(&qcimg, "crossMask")), _GAND);
+  _putimage(150, 20, GetResImagePtr(&qcimg, GetResIndex(&qcimg, "cross")), _GOR);
 
   getch();
   _setvideomode(_DEFAULTMODE);
