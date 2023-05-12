@@ -1,8 +1,9 @@
-(* shapes2.inc was exported from Raster Master using RES Binary File
-// and converted from shapes.res to shapes2.inc using bin2obj command
-// the following res functions allow access to all the data in the
-// original shapes.res file
-// see video for example usage
+(* QPIMG.RES was exported from Raster Master using RES Binary File
+   and converted from QPIMG.RES to QPIMG.OBJ using RtBinObj utility.
+   The following res functions allow access to all the data in the
+   original QPIMG.RES file.
+
+   see video for example usage
 *)
 
 Program QPRES;
@@ -30,6 +31,7 @@ type
 
 {$L QPIMG.OBJ}
 procedure QPIMG; EXTERNAL;
+
 
 {$R-}
 Function GetResImagePtr(ResPtr : Pointer; index : integer) : pointer;
