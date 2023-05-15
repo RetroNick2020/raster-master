@@ -52,7 +52,7 @@ begin
    end;
   inc(ImgPtr,Size);
 
-  GetResImagePtr:=Ptr(seg(ResPtr^),ofs(ResPtr^)+size);
+  GetResImagePtr:=ImgPtr;
 end;
 
 procedure DelSpaces(var s : string);
