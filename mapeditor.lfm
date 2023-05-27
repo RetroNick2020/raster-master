@@ -7,6 +7,7 @@ object MapEdit: TMapEdit
   ClientHeight = 662
   ClientWidth = 1130
   Menu = MainMenu1
+  OnActivate = FormActivate
   OnClose = FormClose
   OnCreate = FormCreate
   OnShow = FormShow
@@ -87,6 +88,7 @@ object MapEdit: TMapEdit
       Caption = 'LeftBottomPanel'
       ClientHeight = 482
       ClientWidth = 216
+      ParentColor = False
       ParentFont = False
       TabOrder = 2
       object TileListView: TListView
@@ -124,6 +126,7 @@ object MapEdit: TMapEdit
     Caption = 'RightPanel'
     ClientHeight = 662
     ClientWidth = 188
+    ParentColor = False
     ParentFont = False
     TabOrder = 0
     object MapListView: TListView
@@ -255,6 +258,7 @@ object MapEdit: TMapEdit
     Caption = 'MiddlePanel'
     ClientHeight = 560
     ClientWidth = 706
+    ParentColor = False
     ParentFont = False
     TabOrder = 5
     object MapScrollBox: TScrollBox
@@ -262,9 +266,11 @@ object MapEdit: TMapEdit
       Height = 558
       Top = 1
       Width = 704
-      HorzScrollBar.Page = 90
+      HorzScrollBar.Increment = 10
+      HorzScrollBar.Page = 105
       HorzScrollBar.Tracking = True
-      VertScrollBar.Page = 90
+      VertScrollBar.Increment = 10
+      VertScrollBar.Page = 105
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
@@ -272,17 +278,19 @@ object MapEdit: TMapEdit
       ClientWidth = 704
       ParentFont = False
       TabOrder = 0
-      object MapImage: TImage
+      object MapPaintBox: TPaintBox
         AnchorSideLeft.Control = MapScrollBox
         AnchorSideTop.Control = MapScrollBox
         Left = 0
-        Height = 90
+        Height = 105
         Top = 0
-        Width = 90
+        Width = 105
+        Color = clRed
+        ParentColor = False
         OnMouseDown = MapImageMouseDown
-        OnMouseLeave = MapImageMouseLeave
         OnMouseMove = MapImageMouseMove
         OnMouseUp = MapImageMouseUp
+        OnPaint = MapPaintBoxPaint
       end
     end
   end
@@ -429,5 +437,11 @@ object MapEdit: TMapEdit
       Caption = 'Properties'
       OnClick = MenuMapPropsClick
     end
+  end
+  object TileImageList: TImageList
+    Height = 256
+    Width = 256
+    Left = 156
+    Top = 210
   end
 end

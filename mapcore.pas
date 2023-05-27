@@ -15,6 +15,10 @@ Const
 
   RMMapSig = 'RMM';
   RMMapVersion = 2;
+
+  TileClear = -1;
+  TileMissing = -2;
+
 type
 
   TileRec = packed Record
@@ -230,7 +234,7 @@ begin
  begin
    For i:=0 to DefMaxMapHeight-1 do
   begin
-//       Map[index].Tile[i,j].ImageUID:=0;
+//       Map[index].Tile[i,j].ImageUID:='';
        Map[index].Tile[i,j].ImageIndex:=value;
    end;
  end;

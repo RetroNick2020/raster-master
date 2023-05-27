@@ -4,7 +4,7 @@ unit rwpal;
 
 interface
 uses
-  SysUtils,FileUtil,RMCore,rmxgfcore,rwxgf,gwbasic;
+  SysUtils,LazFileUtils,RMCore,rmxgfcore,rwxgf,gwbasic;
 
 Const
   ColorIndexFormat = 1;
@@ -231,15 +231,15 @@ begin
   palettenamestr:=filenametoPalettename(filename);
   if rgbformat =ColorIndexFormat then
   begin
-    arraysize:=NColors-1;
+    arraysize:=NColors;
   end
   else
   begin
-    arraysize:=Ncolors*3-1;
+    arraysize:=Ncolors*3;
   end;
   If (Lan=TPlan) OR (Lan =FPLan) OR (Lan=QPlan) OR (Lan = APLan) then
   begin
-   Writeln(F,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
+   Writeln(F,palettenamestr, ' : array[0..',arraysize-1,'] of byte = (');
   end
   Else if (Lan = QCLan) or (Lan = TCLan) or (Lan = OWLan) then
   begin
@@ -636,15 +636,15 @@ begin
   palettenamestr:=imagename;
   if rgbformat =ColorIndexFormat then
   begin
-    arraysize:=NColors-1;
+    arraysize:=NColors;
   end
   else
   begin
-    arraysize:=Ncolors*3-1;
+    arraysize:=Ncolors*3;
   end;
   If (Lan = TPlan) OR (Lan = QPlan) OR (Lan =FPLan) OR (Lan = APLan) then
   begin
-   Writeln(data.fText,palettenamestr, ' : array[0..',arraysize,'] of byte = (');
+   Writeln(data.fText,palettenamestr, ' : array[0..',arraysize-1,'] of byte = (');
   end
   Else if (Lan = QCLan) or (Lan = TCLan) or (Lan = OWLan) then
   begin

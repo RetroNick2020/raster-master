@@ -3577,9 +3577,11 @@ procedure TRMMainForm.MapEditMenuClick(Sender: TObject);
 begin
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
  MapEdit.UpdateTileView;
- if  MapEdit.ShowModal = mrOK then
- begin
- end;
+// if  MapEdit.ShowModal = mrOK then
+// begin
+// end;
+ MapEdit.Show;
+ MapEdit.WindowState:=wsNormal;
 end;
 
 procedure TRMMainForm.RayLibExportClick(Sender: TObject);

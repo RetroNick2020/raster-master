@@ -5,18 +5,14 @@ unit mapeditor;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,LMessages,Types,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,
   ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen;
 
 type
- (* TScrollBox = class(Forms.TScrollBox)
-     procedure WMHScroll(var Message : TLMHScroll); message LM_HScroll;
-     procedure WMVScroll(var Message : TLMVScroll); message LM_VScroll;
-   end;
-   *)
   { TMapEdit }
 
   TMapEdit = class(TForm)
+    TileImageList: TImageList;
     MenuItem10: TMenuItem;
     Clear: TMenuItem;
     MenuItem11: TMenuItem;
@@ -31,6 +27,7 @@ type
     MenuNew: TMenuItem;
     OpenDialog1: TOpenDialog;
     ExportMapsPropsMenu: TPopupMenu;
+    MapPaintBox: TPaintBox;
     RadioDraw: TRadioButton;
     RadioErase: TRadioButton;
     SaveDialog1: TSaveDialog;
@@ -46,7 +43,6 @@ type
     MenuToolErase: TMenuItem;
     SelectedTileImage: TImage;
     MainMenu1: TMainMenu;
-    MapImage: TImage;
     ImageList1: TImageList;
     MapInfoLabel: TLabel;
     FileMenuItem: TMenuItem;
@@ -76,6 +72,7 @@ type
     RightSplitter: TSplitter;
     TileZoom: TTrackBar;
 
+    procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -89,6 +86,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure ClearMapClick(Sender: TObject);
     procedure MapListViewClick(Sender: TObject);
+    procedure MapPaintBoxPaint(Sender: TObject);
 
     procedure MenuDeleteClick(Sender: TObject);
     procedure MenuExportBasicLNMapData(Sender: TObject);
@@ -120,20 +118,28 @@ type
     CTile      : TileRec;
     CTileBitMap : TBitMap;
     CTool       : integer;
+    FormShowActivate : boolean;
 
     procedure PlotTileAt(x,y : integer; TTile : TileRec);
     procedure PlotTile(mx,my : integer; TTile : TileRec);
+    procedure ImageListPlotTile(mx,my : integer;var TTile : TileRec);
+
     procedure ClearTile(mx,my : integer);
     procedure PlotMissingTile(mx,my : integer);
     Procedure SetMapTool(Tool : integer);
 
+    procedure APlotTile(x,y : integer;var TTile : TileRec);   //convert to grid format and store on array
+    procedure AClearTile(x,y : integer);
+    procedure CPlotTile(ColX,ColY : integer;var TTile : TileRec); //draw to canvas - do not store
+    procedure CClearTile(ColX,ColY : integer);
+
     procedure LoadTile(index : integer);
+    procedure LoadTilesToTileImageList;
+    procedure VerifyTileImageList;
 
     procedure UpdateTileView;
     procedure UpdateCurrentTile;
-
     procedure UpdateMapInfo(x,y : integer);
-
     procedure UpdateMapView;
     Procedure UpdateMapListView;
     procedure UpdatePageSize;
@@ -144,22 +150,6 @@ var
 
 implementation
 
-(*
-procedure TScrollBox.WMHScroll(var Message : TLMHScroll);
-
-
-begin
-   inherited WMHScroll(Message);
-//   Form1.WMHScroll(Message);
-end;
-
-procedure TScrollBox.WMVScroll(var Message : TLMVScroll);
-begin
-    inherited WMVScroll(Message);
- //   Form1.WMVScroll(Message);
-end;
-
-  *)
 
 {$R *.lfm}
 
@@ -170,32 +160,26 @@ begin
  SetMapTool(1);  //draw
  CurrentMap:=MapCoreBase.GetCurrentMap;
  MapCoreBase.SetZoomSize(CurrentMap,4);
- //TileZoom.Position:=4;
 
  MapCoreBase.SetMapTileSize(CurrentMap,32,32);
 
- CTileBitmap:=TBitMAp.Create;
-
- MapImage.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap);
- MapImage.height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap);
+ CTileBitmap:=TBitMap.Create;
 
  TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
  TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
 
  MDownLeft:=False;
  MDownRight:=False;
- CTile.ImageIndex:=-1;
+ CTile.ImageIndex:=TileMissing;
+ FormShowActivate:=false;
 end;
 
 procedure TMapEdit.FormShow(Sender: TObject);
 begin
- //bug fix scrollbox scrollbars not displaying correctly after onshow event
-  MapImage.AutoSize:=true;
-  MapImage.Picture.Bitmap.SetSize(1,1);
-  MapImage.Picture.Bitmap.SetSize(MapCoreBase.GetZoomMapPageWidth(CurrentMap),MapCoreBase.GetZoomMapPageHeight(CurrentMap));
-  MapImage.AutoSize:=false;
-  //end big fix
-  if CTile.ImageIndex = -1 then
+  LoadTilesToTileImageList;
+  VerifyTileImageList;
+
+  if CTile.ImageIndex = TileMissing then
   begin
     LoadTile(0);     // first time opening MApEdit Window
   end
@@ -203,15 +187,53 @@ begin
   begin
     LoadTile(CTile.ImageIndex);   // Follow up open windows - reload current tile incase it was edited
   end;
+
   UpdateCurrentTile;
   UpdateMapListView;
-  UpdateMapView;
+
+  MapPaintBox.Width:=0;   //this hack updated the scrollbars properly after the 2nd and following attempts
+  MapPaintBox.Height:=0;
+  MapPaintBox.Invalidate;
+  MapPaintBox.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap);
+  MapPaintBox.Height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap);
+  MapPaintBox.Invalidate;  //forces a paint which draws the map
+
+  MapScrollBox.HorzScrollBar.Position:=hpos;
+  MapScrollBox.VertScrollBar.Position:=vpos;
+
+  FormShowActivate:=true; //this is going to also trigger an onfocus even - letting event handler know it was because of onopen
 end;
 
 procedure TMapEdit.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
  hpos:=MapScrollBox.HorzScrollBar.Position;
  vpos:=MapScrollBox.VertScrollBar.Position;
+end;
+
+procedure TMapEdit.FormActivate(Sender: TObject);
+begin
+  if FormShowActivate then
+  begin
+    FormShowActivate:=false;  //next on focus will be real onfocus
+  end;
+
+  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+  LoadTilesToTileImageList;
+  VerifyTileImageList;
+
+  if CTile.ImageIndex = TileMissing then
+  begin
+     LoadTile(0);     // first time opening MApEdit Window
+  end
+  else
+  begin
+    LoadTile(CTile.ImageIndex);   // Follow up open windows - reload current tile incase it was edited
+  end;
+  UpdateCurrentTile;
+
+  UpdateTileView;
+  MapPaintBox.Invalidate;
 end;
 
 procedure TMapEdit.PlotTile(mx,my : integer; TTile : TileRec);
@@ -223,115 +245,156 @@ begin
 
  gx:=mx*TileWidth;
  gy:=my*TileHeight;
- MapImage.canvas.CopyRect(Rect(gx, gy, gx+TileWidth, gy+TileHeight), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
+ MapPaintBox.canvas.CopyRect(Rect(gx, gy, gx+TileWidth, gy+TileHeight), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
+end;
+
+procedure TMapEdit.ImageListPlotTile(mx,my : integer;var TTile : TileRec);
+var
+  gx,gy : integer;
+begin
+ gx:=mx*TileWidth;
+ gy:=my*TileHeight;
+// MapPaintBox.canvas.CopyRect(Rect(gx, gy, gx+TileWidth, gy+TileHeight), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
+ TileImageList.Draw(MapPaintBox.Canvas,gx,gy,TTile.ImageIndex,true);
 end;
 
 procedure TMapEdit.ClearTile(mx,my : integer);
 var
-  gx,gy : integer;
   T : TileRec;
 begin
  if (mx < 0) or (my<0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
- T.ImageIndex:=-1;
+ T.ImageIndex:=TileClear;
  MapCoreBase.SetMapTile(CurrentMap,mx,my,T);
-
- gx:=mx*TileWidth;
- gy:=my*TileHeight;
-
- MapImage.Canvas.Brush.Color:=clBlack;
- MapImage.Canvas.FillRect(gx,gy,gx+TileWidth,gy+TileHeight);
 end;
 
 procedure TMapEdit.PlotMissingTile(mx,my : integer);
 var
   gx,gy : integer;
 begin
- if (mx < 0) or (my<0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
-
  gx:=mx*TileWidth;
  gy:=my*TileHeight;
 
  //red circle on white background
- MapImage.Canvas.Brush.Color:=clWhite;
- MapImage.Canvas.FillRect(gx,gy,gx+TileWidth,gy+TileHeight);
- MapImage.Canvas.Brush.Color:=clRed;
- MapImage.Canvas.Ellipse(gx,gy,gx+TileWidth,gy+TileHeight);
+ MapPaintBox.Canvas.Brush.Color:=clWhite;
+ MapPaintBox.Canvas.FillRect(gx,gy,gx+TileWidth,gy+TileHeight);
+ MapPaintBox.Canvas.Brush.Color:=clRed;
+ MapPaintBox.Canvas.Ellipse(gx,gy,gx+TileWidth,gy+TileHeight);
 end;
-
 
 procedure TMapEdit.PlotTileAt(x,y : integer;TTile : TileRec);
 var
   mx,my : integer;
 begin
- mx:=x div TileWidth;
- my:=y div TileHeight;
- PlotTile(mx,my,TTile);
+  mx:=x div TileWidth;
+  my:=y div TileHeight;
+  PlotTile(mx,my,TTile);
 end;
 
-procedure TMapEdit.MapImageMouseMove(Sender: TObject; Shift: TShiftState; X,
-  Y: Integer);
-var
-  mx,my : integer;
+procedure TMapEdit.MapImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
  UpdateMapInfo(x,y);
 
- mx:=x div TileWidth;
- my:=y div TileHeight;
-
  if MDOwnLeft and (CTool=1) then
  begin
-   PlotTileAt(x,y,CTile);
+   APlotTile(x,y,CTile);
+   //MapCoreBase.SetMapTile(CurrentMap,mx,my,CTile);
  end
  else if (MDOwnRight=true) or ((MDownLeft=true) and (CTool=0)) then
  begin
-   ClearTile(mx,my);
+   AClearTile(x,y);
  end;
+ MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.APlotTile(x,y : integer;var TTile : TileRec);
+var
+  mx,my : integer;
+begin
+  mx:=(x div TileWidth);
+  if (mx < 0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) then exit;
+  my:=(y div TileHeight);
+  if (my<0) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
+  MapCoreBase.SetMapTile(CurrentMap,mx,my,TTile);
+end;
+
+procedure TMapEdit.AClearTile(x,y : integer);
+var
+  mx,my : integer;
+  T : TileRec;
+begin
+ mx:=(x div TileWidth);
+ if (mx < 0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) then exit;
+ my:=(y div TileHeight);
+ if (my<0) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
+ T.ImageIndex:=TileClear;
+ MapCoreBase.SetMapTile(CurrentMap,mx,my,T);
+end;
+
+//called from onpaint
+procedure TMapEdit.CPlotTile(ColX,ColY : integer;var TTile : TileRec); //draw to canvas - do not store
+var
+  gx,gy : integer;
+begin
+ if (ColX < 0) or (ColY<0) or (ColX >= MapCoreBase.GetMapWidth(CurrentMap)) or (ColY >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
+ //MapCoreBase.SetMapTile(CurrentMap,mx,my,CTile);
+
+ gx:=ColX*TileWidth;
+ gy:=ColY*TileHeight;
+ MapPaintBox.canvas.CopyRect(Rect(gx, gy, gx+TileWidth, gy+TileHeight), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
+end;
+
+//called from onpaint
+procedure TMapEdit.CClearTile(ColX,ColY : integer);
+var
+  gx,gy : integer;
+begin
+  if (ColX < 0) or (ColY<0) or (ColX >= MapCoreBase.GetMapWidth(CurrentMap)) or (ColY >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
+  gx:=ColX*TileWidth;
+  gy:=ColY*TileHeight;
+
+  MapPaintBox.Canvas.Brush.Color:=clBlack;
+  MapPaintBox.Canvas.FillRect(gx,gy,gx+TileWidth,gy+TileHeight);
 end;
 
 procedure TMapEdit.MapImageMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
-var
-  mx,my : integer;
 begin
  MDownLeft:=False;
  MDownRight:=False;
 
- mx:=(x div TileWidth);
- my:=(y div TileHeight);
-
  if Button = mbRight then
  begin
    MDownRight:=True;
-   ClearTile(mx,my);
+   AClearTile(x,y);
  end
  else if Button = mbLeft then
  begin
     MDownLeft:=True;
     if CTool = 1 then
     begin
-      PlotTileAt(x,y,CTile);
+      APlotTile(x,y,CTile);
     end
     else if CTool = 0 then
     begin
-      ClearTile(mx,my);
+      AClearTile(x,y);
     end;
  end;
+ MapPaintbox.Invalidate
 end;
-
 
 procedure TMapEdit.MapImageMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   MDownLeft:=False;
   MDownRight:=False;
+  MapPaintBox.Invalidate;
 end;
 
 procedure TMapEdit.ClearMapClick(Sender: TObject);
 begin
-  MapCoreBase.ClearMap(CurrentMap,-1);
-  MapImage.Canvas.Brush.Color:=clBlack;
-  MapImage.Canvas.FillRect(0,0,MapImage.Width,MApImage.HEight);
-//  UpdateMapView;
+  MapCoreBase.ClearMap(CurrentMap,TileClear);
+  VerifyTileImageList;
+  MapPaintBox.Invalidate;
 end;
 
 procedure TMapEdit.MapListViewClick(Sender: TObject);
@@ -344,11 +407,15 @@ begin
      MapCoreBase.SetCurrentMap(item.Index);
      CurrentMap:=MapCoreBase.GetCurrentMap;
      UpdatePageSize;
-     UpdateMapView;
+     //UpdateMapView;
+     MapPaintBox.Invalidate;
    end;
 end;
 
-
+procedure TMapEdit.MapPaintBoxPaint(Sender: TObject);
+begin
+  UpdateMapView;
+end;
 
 procedure TMapEdit.MenuDeleteClick(Sender: TObject);
 begin
@@ -363,14 +430,16 @@ begin
       end;
       UpdateMapListView;
       UpdatePageSize;
-      UpdateMapView;
+      //UpdateMapView;
+      MapPaintBox.Invalidate;
     end;
   end
   else
   begin
-    MapCoreBase.ClearMap(0,-1);  // if there is only one map we just clear it
+    MapCoreBase.ClearMap(0,TileClear);  // if there is only one map we just clear it
     UpdatePageSize;
-    UpdateMapView;
+    //UpdateMapView;
+    MapPaintBox.Invalidate;
   end;
 end;
 
@@ -388,7 +457,7 @@ begin
  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
  if SaveDialog1.Execute then
  begin
-  ExportMap(SaveDialog1.FileName,BasicLan);
+   ExportMap(SaveDialog1.FileName,BasicLan);
  end;
 end;
 
@@ -397,7 +466,7 @@ begin
  SaveDialog1.Filter := 'c|*.c|All Files|*.*';
  if SaveDialog1.Execute then
  begin
-  ExportMap(SaveDialog1.FileName,CLan);
+   ExportMap(SaveDialog1.FileName,CLan);
  end;
 end;
 
@@ -417,7 +486,6 @@ var
 begin
   index:=MapListView.ItemIndex;
   if index = -1 then index:=0;
- // ShowMessage(IntToStr(index));
   MapCoreBase.GetMapExportProps(index,EO);
   MapExportForm.InitComboBoxes;
   MapExportForm.SetExportProps(EO);
@@ -435,7 +503,8 @@ begin
   CurrentMap:=MapCoreBase.GetCurrentMap;
   UpdateMapListView;
   UpdatePageSize;
-  UpdateMapView;
+  //UpdateMapView;
+  MapPaintBox.Invalidate;
 end;
 
 procedure TMapEdit.MenuOpenClick(Sender: TObject);
@@ -445,10 +514,10 @@ begin
   begin
    ReadMap(OpenDialog1.FileName);
    UpdatePageSize;
-   UpdateMapView;
+   //UpdateMapView;
+   MapPaintBox.Invalidate;
   end;
 end;
-
 
 procedure TMapEdit.MenuSaveClick(Sender: TObject);
 begin
@@ -484,7 +553,8 @@ begin
 // TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
 // TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
  UpdatePageSize;
- UpdateMapView;
+// UpdateMapView;
+ MapPaintBox.Invalidate;
 end;
 
 procedure TMapEdit.MenuToolDrawClick(Sender: TObject);
@@ -541,8 +611,7 @@ begin
                                                      th:=256;
                                                      zs:=6;
                                                    end;
-   End;
-
+  End;
 
   MapCoreBase.SetZoomSize(CurrentMap,zs);
   TileZoom.Position:=zs;
@@ -550,9 +619,10 @@ begin
   TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
   TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
   UpdatePageSize;
-  UpdateMapView;
+  LoadTilesToTileImageList;
+  //UpdateMapView;
+  MapPaintBox.Invalidate;
 end;
-
 
 
 //0 erase 1 draw tile
@@ -603,6 +673,73 @@ begin
  end;
 end;
 
+
+procedure TMapEdit.LoadTilesToTileImageList;
+var
+  index,i,j,awidth,aheight : integer;
+  SrcBitMap,DstBitMap : TBitMap;
+begin
+ TileImageList.Width:=TileWidth;
+ TileImageList.Height:=TileHeight;
+ TileImageList.Clear;
+
+ DstBitMap:=TBitMap.Create;
+ DstBitMap.SetSize(TileWidth,TileHeight);
+
+ for index:=0 to ImageThumbBase.GetCount-1 do
+ begin
+   awidth:=ImageThumbBase.GetWidth(index);
+   aheight:=ImageThumbBase.GetHeight(index);
+
+   SrcBitMap:=TBitMap.Create;
+   SrcBitMap.SetSize(awidth,aheight);
+   For j:=0 to aheight-1 do
+   begin
+     For i:=0 to awidth-1 do
+     begin
+       SrcBitMap.Canvas.Pixels[i,j]:=ImageThumbBase.GetPixelTColor(Index,i,j);
+     end;
+   end;
+
+   DstBitMap.Canvas.Clear;
+   DstBitMap.Canvas.CopyRect( Rect(0, 0, TileWidth, TileHeight), SrcBitMap.Canvas, Rect(0, 0,aWidth, aHeight));
+
+   TileImageList.Add(DstBitMap,NIL);
+   SrcBitMap.Free;
+ end;
+
+ DstBitMap.Free;
+end;
+
+Procedure TMapEdit.VerifyTileImageList;
+var
+  i,j    : integer;
+  T      : TileRec;
+  FIndex : integer;
+begin
+ for j:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
+  begin
+    for i:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
+    begin
+      MapCoreBase.GetMapTile(CurrentMap,i,j,T);
+      if (T.ImageIndex<>TileMissing) and (T.ImageIndex<>TileClear)  then
+      begin
+        FIndex:=ImageThumbBase.FindUID(T.ImageUID);
+        if  FIndex = -1 then             // if -1 it was deleted lets update map info
+        begin
+          T.ImageIndex:=TileMissing;
+          MapCoreBase.SetMapTile(CurrentMap,i,j,T);
+        end
+        else if Findex<>T.ImageIndex then  //oh oh image is in a different index now - lets update
+        begin
+          T.ImageIndex:=FIndex;
+          MapCoreBase.SetMapTile(CurrentMap,i,j,T);
+        end;
+      end;
+    end;
+  end;
+end;
+
 procedure TMapEdit.TileListViewClick(Sender: TObject);
 var
   item  : TListItem;
@@ -620,15 +757,6 @@ begin
     SelectedTilePanel.AutoSize:=false;
     SelectedTileImage.AutoSize:=false;
 
- (*   SelectedTileImage.Canvas.Clear;
-    For j:=0 to aheight-1 do
-    begin
-      For i:=0 to awidth-1 do
-      begin
-        SelectedTileImage.Canvas.Pixels[i,j]:=ImageThumbBase.GetPixelTColor(item.Index,i,j);
-      end;
-    end;
-   *)
     LoadTile(item.Index);
     UpdateCurrentTile;
  end;
@@ -647,61 +775,32 @@ begin
   TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
   TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
   UpdatePageSize;
-  UpdateMapView;
+  //UpdateMapView;
+  LoadTilesToTileImageList;
+  MapPaintBox.Invalidate;
 end;
+
 
 procedure TMapEdit.UpdateMapView;
 var
   i,j : integer;
   T   : TileRec;
-  LastTile : TileRec;
-  STile    : integer;
-  FIndex   : integer;
 begin
- STile:=CTile.ImageIndex;
- LastTile.ImageIndex:=-255;
  for j:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
   begin
     for i:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
     begin
       MapCoreBase.GetMapTile(CurrentMap,i,j,T);
-      if T.ImageIndex > -1 then
-      begin
-         //(LastTile.ImageIndex<>T.ImageIndex) and  IsEqualGUID(LastTile.ImageUID,T.ImageUID)=false then   //skip reloading if the same time
-         if IsEqualGUID(LastTile.ImageUID,T.ImageUID)=false then   //skip reloading if the same time
-         begin
-           FIndex:=ImageThumbBase.FindUID(T.ImageUID);
-           if  FIndex > -1 then     // check if image exist - it might have been deleted
-           begin
-             T.ImageIndex:=FIndex;
-             LoadTile(T.ImageIndex);
-             PlotTile(i,j,T);
-             LastTile.ImageIndex:=T.ImageIndex;
-             LastTile.ImageUID:=T.ImageUID;
-           end
-           else
-           begin
-             PlotMissingTile(i,j);
-           end;
-         end
-         else
-         begin
-           PlotTile(i,j,T);
-         end;
-      end;
+      if T.ImageIndex = TileMissing then PlotMissingTile(i,j)
+      else if T.ImageIndex <> TileClear then ImageListPlotTile(i,j,T);
     end;
   end;
-  LoadTile(STile); //load the tile that is currently selected
 end;
 
 procedure TMapEdit.UpdateTileView;
 var
   i,count : integer;
 begin
- (*
- ImageList1.Clear;
- ImageThumbBase.UpdateAllThumbImages(imagelist1);
- *)
  count:=ImageThumbBase.GetCount;
  TileListView.items.Clear;
 
@@ -732,39 +831,32 @@ begin
  For i:=0 to MapListView.Items.Count-1 do
  begin
    MapListView.Items[i].Caption:='Map '+IntToStr(i+1);
-  // MapListView.Items[i].ImageIndex:=i;
  end;
 end;
 
 procedure TMapEdit.UpdatePageSize;
 begin
- MapImage.AutoSize:=true;
- MapImage.Picture.Bitmap.SetSize(1,1);
- MapImage.Picture.Bitmap.SetSize(MapCoreBase.GetZoomMapPageWidth(CurrentMap),MapCoreBase.GetZoomMapPageHeight(CurrentMap));
- MapImage.AutoSize:=false;
+ MapPaintBox.Width:=0;
+ MapPaintBox.height:=0;
+ MapPaintBox.Invalidate;
+ MapPaintBox.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap);
+ MapPaintBox.height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap);
+ MapPaintBox.Invalidate;
 end;
 
 procedure TMapEdit.UpdateCurrentTile;
 begin
   SelectedTileImage.Picture.Bitmap.SetSize(CTileBitMap.Width, CTileBitMap.Height);
   SelectedTileImage.canvas.CopyRect(Rect(0, 0, CTileBitMap.Width, CTileBitMap.Height), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
- (*   For j:=0 to aheight-1 do
-    begin
-      For i:=0 to awidth-1 do
-      begin
-        SelectedTileImage.Canvas.Pixels[i,j]:=ImageThumbBase.GetPixelTColor(item.Index,i,j);
-      end;
-    end;
-   *)
 end;
 
 procedure TMapEdit.UpdateMapInfo(x,y : integer);
 var
  mx,my : integer;
 begin
- mx:=x div TileWidth;
- my:=y div TileHeight;
- MapInfoLabel.Caption:='X = '+IntToStr(mx)+'  Y = '+IntToStr(my);
+  mx:=x div TileWidth;
+  my:=y div TileHeight;
+  MapInfoLabel.Caption:='X = '+IntToStr(mx)+'  Y = '+IntToStr(my);
 end;
 
 end.
