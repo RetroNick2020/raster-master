@@ -1,12 +1,12 @@
 object RMMainForm: TRMMainForm
-  Left = 38
-  Height = 1027
-  Top = 43
-  Width = 1828
-  Anchors = [akTop, akLeft, akRight, akBottom]
+  Left = -8
+  Height = 1177
+  Top = -8
+  Width = 1920
+  Align = alClient
   Caption = 'Raster Master'
-  ClientHeight = 1007
-  ClientWidth = 1828
+  ClientHeight = 1157
+  ClientWidth = 1920
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
   OnClose = FormClose
@@ -14,6 +14,87 @@ object RMMainForm: TRMMainForm
   Position = poDefault
   LCLVersion = '2.0.10.0'
   Scaled = False
+  object RightPanel: TPanel
+    AnchorSideLeft.Control = RightHSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 1585
+    Height = 1157
+    Top = 0
+    Width = 335
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ClientHeight = 1157
+    ClientWidth = 335
+    TabOrder = 5
+    object RMPanel: TPanel
+      AnchorSideRight.Control = RightPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = RightPanel
+      AnchorSideBottom.Side = asrBottom
+      Cursor = crNo
+      Left = 161
+      Height = 121
+      Top = 1025
+      Width = 158
+      Anchors = [akRight, akBottom]
+      BorderSpacing.Right = 15
+      BorderSpacing.Bottom = 10
+      ClientHeight = 121
+      ClientWidth = 158
+      TabOrder = 0
+      OnClick = RMPanelClick
+      object RMLogo: TImage
+        AnchorSideTop.Control = RMPanel
+        Cursor = crHandPoint
+        Left = 16
+        Height = 64
+        Hint = 'Click Me! And Subscribe to my YouTube Channel!'
+        Top = 17
+        Width = 128
+        AutoSize = True
+        BorderSpacing.Top = 16
+        OnClick = RMLogoClick
+        ParentShowHint = False
+        ShowHint = True
+        StretchOutEnabled = False
+        StretchInEnabled = False
+        Transparent = True
+      end
+    end
+    object ColorBox: TShape
+      Left = 8
+      Height = 64
+      Top = 8
+      Width = 60
+      Brush.Color = clSkyBlue
+      ParentShowHint = False
+      OnMouseDown = ColorBoxMouseDown
+      OnMouseEnter = ColorBoxMouseEnter
+      ShowHint = True
+    end
+    object ColorPalette1: TColorPalette
+      Left = 8
+      Height = 234
+      Top = 80
+      Width = 60
+      ButtonHeight = 30
+      ButtonWidth = 30
+      ColumnCount = 8
+      Flipped = True
+      PickedIndex = 0
+      SelectionColor = clWhite
+      SelectionKind = pskThickInverted
+      OnColorPick = ColorPalette1ColorPick
+      OnGetHintText = ColorPalette1GetHintText
+      ParentColor = False
+      ParentShowHint = False
+      ShowHint = True
+    end
+  end
   object MiddleBottomPanel: TPanel
     AnchorSideLeft.Control = LeftHSplitter
     AnchorSideLeft.Side = asrBottom
@@ -22,44 +103,45 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Control = RightHSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 283
-    Height = 895
+    Left = 297
+    Height = 1045
     Top = 112
-    Width = 1299
+    Width = 1277
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 895
-    ClientWidth = 1299
+    ClientHeight = 1045
+    ClientWidth = 1277
     TabOrder = 1
     object ScrollBox1: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
-      AnchorSideRight.Control = MiddleBottomPanel
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = MiddleBottomPanel
-      AnchorSideBottom.Side = asrBottom
+      AnchorSideTop.Control = MiddleBottomPanel
       Left = 0
-      Height = 895
+      Height = 1045
       Top = 0
-      Width = 1299
-      HorzScrollBar.Page = 90
+      Width = 1277
+      HorzScrollBar.Increment = 93
+      HorzScrollBar.Page = 862
       HorzScrollBar.Tracking = True
-      VertScrollBar.Page = 90
+      VertScrollBar.Increment = 69
+      VertScrollBar.Page = 670
       VertScrollBar.Tracking = True
       Align = alClient
+      Anchors = [akRight, akBottom]
       BorderStyle = bsNone
-      ClientHeight = 895
-      ClientWidth = 1299
+      ClientHeight = 1045
+      ClientWidth = 1277
       TabOrder = 0
-      object ZoomBox: TImage
+      object ZoomPaintBox: TPaintBox
+        AnchorSideLeft.Control = ScrollBox1
+        AnchorSideTop.Control = ScrollBox1
         Left = 0
-        Height = 895
+        Height = 670
         Top = 0
-        Width = 1299
-        Align = alClient
-        OnMouseDown = ZoomBoxMouseDown
-        OnMouseMove = ZoomBoxMouseMove
-        OnMouseUp = ZoomBoxMouseUp
-        OnMouseWheel = ZoomBoxMouseWheel
+        Width = 862
+        OnMouseDown = ZPaintBoxMouseDown
+        OnMouseMove = ZPaintBoxMouseMove
+        OnMouseUp = ZPaintBoxMouseUp
+        OnPaint = ZoomPaintBoxPaint
       end
     end
   end
@@ -71,13 +153,13 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 1007
+    Height = 1157
     Top = 0
-    Width = 283
+    Width = 297
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 1007
-    ClientWidth = 283
+    ClientHeight = 1157
+    ClientWidth = 297
     TabOrder = 0
     object LeftVSplitter: TSplitter
       AnchorSideLeft.Control = LeftPanel
@@ -89,8 +171,8 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 268
-      Width = 281
+      Top = 309
+      Width = 295
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -106,9 +188,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 726
-      Top = 281
-      Width = 272
+      Height = 835
+      Top = 322
+      Width = 286
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
       Color = 15790320
@@ -129,20 +211,20 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 268
+      Height = 309
       Top = 0
-      Width = 268
+      Width = 282
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 268
-      ClientWidth = 268
+      ClientHeight = 309
+      ClientWidth = 282
       TabOrder = 0
       object ActualBox: TImage
         Left = 16
-        Height = 256
+        Height = 144
         Top = 8
-        Width = 256
+        Width = 104
       end
     end
   end
@@ -151,8 +233,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 272
-    Height = 1007
+    Left = 286
+    Height = 1157
     Top = 0
     Width = 11
     Align = alNone
@@ -165,8 +247,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1582
-    Height = 1007
+    Left = 1574
+    Height = 1157
     Top = 0
     Width = 11
     Align = alNone
@@ -179,19 +261,19 @@ object RMMainForm: TRMMainForm
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightHSplitter
-    Left = 283
+    Left = 297
     Height = 112
     Top = 0
-    Width = 1299
+    Width = 1277
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 112
-    ClientWidth = 1299
-    TabOrder = 4
+    ClientWidth = 1277
+    TabOrder = 3
     object ToolPanel: TPanel
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 814
+      Left = 792
       Height = 88
       Top = 8
       Width = 434
@@ -406,7 +488,7 @@ object RMMainForm: TRMMainForm
       WordWrap = True
     end
     object TrackBar1: TTrackBar
-      Left = 1263
+      Left = 1241
       Height = 110
       Top = 1
       Width = 30
@@ -418,88 +500,6 @@ object RMMainForm: TRMMainForm
       Align = alRight
       BorderSpacing.Right = 5
       TabOrder = 1
-    end
-  end
-  object RightPanel: TPanel
-    AnchorSideLeft.Control = RightHSplitter
-    AnchorSideLeft.Side = asrBottom
-    AnchorSideTop.Control = Owner
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
-    Left = 1593
-    Height = 1007
-    Top = 0
-    Width = 235
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 1007
-    ClientWidth = 235
-    TabOrder = 5
-    OnClick = RightPanelClick
-    object RMPanel: TPanel
-      AnchorSideRight.Control = RightPanel
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = RightPanel
-      AnchorSideBottom.Side = asrBottom
-      Cursor = crNo
-      Left = 61
-      Height = 121
-      Top = 875
-      Width = 158
-      Anchors = [akRight, akBottom]
-      BorderSpacing.Right = 15
-      BorderSpacing.Bottom = 10
-      ClientHeight = 121
-      ClientWidth = 158
-      TabOrder = 0
-      OnClick = RMPanelClick
-      object RMLogo: TImage
-        AnchorSideTop.Control = RMPanel
-        Cursor = crHandPoint
-        Left = 16
-        Height = 64
-        Hint = 'Click Me! And Subscribe to my YouTube Channel!'
-        Top = 17
-        Width = 128
-        AutoSize = True
-        BorderSpacing.Top = 16
-        OnClick = RMLogoClick
-        ParentShowHint = False
-        ShowHint = True
-        StretchOutEnabled = False
-        StretchInEnabled = False
-        Transparent = True
-      end
-    end
-    object ColorBox: TShape
-      Left = 8
-      Height = 64
-      Top = 8
-      Width = 60
-      Brush.Color = clSkyBlue
-      ParentShowHint = False
-      OnMouseDown = ColorBoxMouseDown
-      OnMouseEnter = ColorBoxMouseEnter
-      ShowHint = True
-    end
-    object ColorPalette1: TColorPalette
-      Left = 8
-      Height = 234
-      Top = 80
-      Width = 60
-      ButtonHeight = 30
-      ButtonWidth = 30
-      ColumnCount = 8
-      Flipped = True
-      PickedIndex = 0
-      SelectionColor = clWhite
-      SelectionKind = pskThickInverted
-      OnColorPick = ColorPalette1ColorPick
-      OnGetHintText = ColorPalette1GetHintText
-      ParentColor = False
-      ParentShowHint = False
-      ShowHint = True
     end
   end
   object MainMenu1: TMainMenu
@@ -1300,7 +1300,6 @@ object RMMainForm: TRMMainForm
       end
       object ToolGridMenu: TMenuItem
         Caption = 'Grid'
-        Checked = True
         OnClick = ToolGridMenuClick
       end
       object ToolFlipMenu: TMenuItem
@@ -1425,7 +1424,6 @@ object RMMainForm: TRMMainForm
   object RMScript: TPSScript
     CompilerOptions = []
     OnCompile = RMScriptCompile
-    OnExecute = RMScriptExecute
     Plugins = <    
       item
       end>

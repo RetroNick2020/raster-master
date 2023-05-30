@@ -7,8 +7,8 @@ interface
 uses
   Classes, SysUtils, FileUtil, uPSComponent, uPSRuntime, uPSComponent_Forms,
   Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, ComCtrls, Menus,
-  ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore,
-  rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp, flood,
+  ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore, flood,
+  rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,fileprops;
 
@@ -91,6 +91,9 @@ type
     OWPutImageArray: TMenuItem;
     OpenWatcom: TMenuItem;
     QBMouseShapeFile: TMenuItem;
+    ScrollBox1: TScrollBox;
+    ZoomPaintBox: TPaintBox;
+    ZoomScrollBox: TScrollBox;
     TCMouseShapeFile: TMenuItem;
     TBMouseShapeFile: TMenuItem;
     TPMouseShapeFile: TMenuItem;
@@ -111,7 +114,6 @@ type
     RightPanel: TPanel;
     RMLogo: TImage;
     RMPanel: TPanel;
-    ScrollBox1: TScrollBox;
     RightHSplitter: TSplitter;
     ToolCircleIcon: TImage;
     ToolEllipseIcon: TImage;
@@ -295,7 +297,8 @@ type
     FileExitMenu: TMenuItem;
     OpenFile: TMenuItem;
     SaveFile: TMenuItem;
-    ZoomBox: TImage;
+
+
 
     procedure AmigaBasicClick(Sender: TObject);
     procedure AmigaCClick(Sender: TObject);
@@ -317,7 +320,6 @@ type
 
 
     procedure FormCreate(Sender: TObject);
-    procedure FormShow(Sender: TObject);
     procedure FreeBASICClick(Sender: TObject);
     procedure FreePascalClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
@@ -333,10 +335,8 @@ type
     procedure PaletteXGAClick(Sender: TObject);
     procedure PropertiesFileDialogClick(Sender: TObject);
     procedure RayLibExportClick(Sender: TObject);
-    procedure RightPanelClick(Sender: TObject);
     procedure RMPanelClick(Sender: TObject);
     procedure RMScriptCompile(Sender: TPSScript);
-    procedure RMScriptExecute(Sender: TPSScript);
     procedure ScriptMenuLoadClick(Sender: TObject);
     procedure ScriptMenuRunClick(Sender: TObject);
     procedure SpriteImportMenuClick(Sender: TObject);
@@ -404,33 +404,30 @@ type
     procedure TurboPowerBasicClick(Sender: TObject);
     procedure TurboCClick(Sender: TObject);
     procedure TurboPascalClick(Sender: TObject);
-    procedure ZoomBoxClick(Sender: TObject);
-    procedure ZoomBoxMouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
-    procedure ZoomBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
-      );
-    procedure ZoomBoxMouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+
     procedure ZoomBoxMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-    procedure ToolCircleIconClick(Sender: TObject);
     procedure FileExitMenuClick(Sender: TObject);
     procedure OpenFileClick(Sender: TObject);
-    procedure HorizScrollChange(Sender: TObject);
-    procedure VirtScrollChange(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
+    procedure ZoomPaintBoxPaint(Sender: TObject);
+    procedure ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure ZPaintBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure ZPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
-       FX,FY,FX2,FY2 : Integer;
-       ZoomX,ZoomY : integer;
+       ZoomX,ZoomY,ZoomX2,ZoomY2 : integer;
+       OldZoomX,OldZoomY : integer;
        ZoomSize : Integer;
        DrawMode : Boolean;
        DrawFirst : Boolean;
        MaxXOffset : Integer;
        MaxYOffset : Integer;
-       XOffset    : Integer;
-       YOffset    : Integer;
 
-
+       RenderBitMap  : TBitMap;
+       RenderBitMap2 : TBitMap;
 
        procedure UpdateZoomArea;
        procedure UpdateZoomScroller;
@@ -441,7 +438,7 @@ type
        procedure UpdateToolFlipScrollMenu;
 
        procedure UpdateColorBox;
-       procedure UpdateInfoBarXY;
+       procedure UpdateInfoBarXY(x,y : integer);
        procedure UpdateInfoBarDetail;
        procedure UpdateThumbview;
 
@@ -453,10 +450,7 @@ type
        procedure ClearSelectedPaletteMenu;
        procedure ClearClipAreaOutline;
        procedure LoadResourceIcons;
-       procedure FreezeScrollAndZoom;
-       procedure UnFreezeScrollAndZoom;
        procedure ShowSelectAreaTools;
-       procedure HideSelectAreaTools;
        procedure GetOpenSaveRegion(var x,y,x2,y2 : integer);  //if we are in select/clip area use those coords
        procedure EditColors;
        procedure Clear;
@@ -465,6 +459,15 @@ type
        Procedure CopyScrollPositionFromCore;
        function getopenfilename(var filename,ext : string; filter : string) : boolean;
        function getsavefilename(var filename,ext : string; filter : string) : boolean;
+
+       procedure UpdateRenderBitMap;
+       procedure ZPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
+       procedure ZPaintBoxMouseMoveXYTool(Sender: TObject; Shift: TShiftState;  X, Y: Integer);
+       procedure ZPaintBoxMouseUpXYTool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
+       procedure ZPaintBoxMouseDownXYX2Y2Tool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
+       procedure ZPaintBoxMouseMoveXYX2Y2Tool(Sender: TObject; Shift: TShiftState;  X, Y: Integer);
+       procedure ZPaintBoxMouseUpXYX2Y2Tool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
+
 
   public
 
@@ -508,78 +511,59 @@ var
   tc      : TColor;
 begin
   count:= RMCoreBase.Palette.GetColorCount;
-//  ShowMessage('Count='+inttostr(count));
   ColorPalette1.ClearColors;
   for i:=0 to Count-1 do
   begin
-     RMCoreBase.Palette.GetColor(i,cr);
-     tc:=RGBToColor(cr.r,cr.g,cr.b);
-  //   ColorPalette1.Colors[i]:=tc;
+    RMCoreBase.Palette.GetColor(i,cr);
+    tc:=RGBToColor(cr.r,cr.g,cr.b);
     ColorPalette1.AddColor(tc);
   end;
 end;
 
 procedure TRMMainForm.FormCreate(Sender: TObject);
 begin
-ZoomSize:=RMDrawTools.GetZoomMode;
-DrawMode:=False;
-DrawFirst:=False;
-ActualBox.Width:=256;
-ActualBox.Height:=256;
-ActualBox.Canvas.Brush.Style := bsSolid;
-ActualBox.Canvas.Brush.Color := clblack;
-ActualBox.Canvas.FillRect(0,0,256,256);
+ RenderBitMap:=TBitMap.Create;
+ RenderBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
+ RenderBitMap2:=TBitMap.Create;
+ RenderBitMap2.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
 
+ ZoomSize:=RMDrawTools.GetZoomMode;
+ DrawMode:=False;
+ DrawFirst:=False;
+ ActualBox.Width:=256;
+ ActualBox.Height:=256;
+ ActualBox.Canvas.Brush.Style := bsSolid;
+ ActualBox.Canvas.Brush.Color := clblack;
+ ActualBox.Canvas.FillRect(0,0,256,256);
 
-ZoomBox.Width:=RMDrawTools.GetZoomPageWidth;
-ZoomBox.Height:=RMDrawTools.GetZoomPageHeight;
-ZoomBox.Canvas.Brush.Style := bsSolid;
-ZoomBox.Canvas.Brush.Color := clwhite;
+ RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
+ RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
 
+ LoadResourceIcons;
+ MaxXOffset:=0;
+ MaxYOffset:=0;
 
-//RMDrawTools.SetZoomMaxX(ZoomBox.Width);
-//RMDrawTools.SetZoomMaxY(ZoomBox.Height);
-RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
-RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
+ Trackbar1.Position:=RMDrawTools.getZoomSize;
 
+ RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
+ LoadDefaultPalette;
 
-RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-LoadResourceIcons;
-//check MaxImagePixel
-//mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-MaxXOffset:=0;
+ ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
+ ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor;
 
-// mod RM4 HorizScroll.Max:=MaxXOffset;
+ RMDrawTools.SetDrawTool(DrawShapePencil);
+ ClearSelectedToolsMenu;
+ PaletteVGA.Checked:=true; // set vga palette
+ UpdateToolSelectionIcons;
+ ToolPencilMenu.Checked:=true; //enable pencil tool in SpriteImportMenu
+ InitThumbView;
 
-
-// mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-MaxYOffset:=0;
-
-//mod RM4 VirtScroll.Max:=MaxYOffset;
-
-XOffset:=0;
-YOffset:=0;
-Trackbar1.Position:=RMDrawTools.getZoomSize;
-
-//SetPaletteMode(PaletteModeVGA);
-RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
-LoadDefaultPalette;
-
-ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
-ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor;
-
-RMDrawTools.SetDrawTool(DrawShapePencil);
-ClearSelectedToolsMenu;
-PaletteVGA.Checked:=true; // set vga palette
-HideSelectAreaTools;
-UpdateToolSelectionIcons;
-ToolPencilMenu.Checked:=true; //enable pencil tool in SpriteImportMenu
-InitThumbView;
-end;
-
-procedure TRMMainForm.FormShow(Sender: TObject);
-begin
-
+ ZoomX:=0;
+ ZoomY:=0;
+ ZoomX2:=0;
+ ZoomY2:=0;
+ OldZoomX:=-1;
+ OldZoomY:=-1;
 end;
 
 procedure TRMMainForm.RMAboutDialogClick(Sender: TObject);
@@ -588,52 +572,32 @@ begin
  AboutDialog.ShowModal;
 end;
 
-
-
 procedure TRMMainForm.RMLogoClick(Sender: TObject);
 begin
-    OpenUrl('https://www.youtube.com/channel/UCLak9dN2fgKU9keY2XEBRFQ');
+  OpenUrl('https://www.youtube.com/channel/UCLak9dN2fgKU9keY2XEBRFQ');
 end;
-
-
 
 procedure TRMMainForm.ToolFlipHorizMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
- clipstatus : integer;
 begin
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
+  //will return cliparea if clipped or entire area if not clipped
   RMDrawTools.GetClipAreaCoords(ca);
-  ClearClipAreaOutline;
-  RMDrawTools.HFlip(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
+  RMDrawTools.HFlip(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-  RMDrawTools.SetClipStatus(clipstatus);
-  if clipstatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
 end;
 
 procedure TRMMainForm.ToolFlipVirtMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
- clipstatus : integer;
 begin
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
   RMDrawTools.GetClipAreaCoords(ca);
-  ClearClipAreaOutline;
-  RMDrawTools.VFlip(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
+  RMDrawTools.VFlip(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-
-  RMDrawTools.SetClipStatus(clipstatus);
-  if clipstatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
 end;
 
 procedure TRMMainForm.ToolGridMenuClick(Sender: TObject);
@@ -641,34 +605,18 @@ begin
   UpdateGridDisplay;
 end;
 
-procedure TRMMainForm.ClearClipAreaOutline;
-begin
-   if (RMDRAWTools.GetDrawTool=DrawShapeClip) AND (RMDrawTools.GetClipStatus = 1) then
-    begin
-      RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-      RMDrawTools.SetClipStatus(0);
-      RMDrawTools.SetClipSizedStatus(0);
-    end;
-end;
-
 procedure TRMMainForm.ToolPencilMenuClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
-  ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapePencil);
   UpdateToolSelectionIcons;
   ToolPencilMenu.Checked:=true;
- // ToolPencilIcon.Picture.LoadFromResourceName(HInstance,'PEN2');
 end;
 
 procedure TRMMainForm.ToolLineMenuClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
   ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapeLine);
   UpdateToolSelectionIcons;
   ToolLineMenu.Checked:=true;
@@ -677,9 +625,7 @@ end;
 procedure TRMMainForm.ToolRectangleMenuClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
   ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapeRectangle);
   UpdateToolSelectionIcons;
   ToolRectangleMenu.Checked:=true;
@@ -688,106 +634,70 @@ end;
 procedure TRMMainForm.ToolScrollDownMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
- clipstatus : integer;
 begin
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
   RMDrawTools.GetClipAreaCoords(ca);
   ClearClipAreaOutline;
-  RMDrawTools.ScrollDown(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
+  RMDrawTools.ScrollDown(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-
-  RMDrawTools.SetClipStatus(clipstatus);
-  if clipstatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
 end;
 
 procedure TRMMainForm.ToolScrollLeftMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
- clipstatus : integer;
 begin
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
   RMDrawTools.GetClipAreaCoords(ca);
   ClearClipAreaOutline;
-  RMDrawTools.ScrollLeft(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
+  RMDrawTools.ScrollLeft(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-
-  RMDrawTools.SetClipStatus(clipstatus);
-  if clipstatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
 end;
 
 procedure TRMMainForm.ToolScrollRightMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
- clipstatus : integer;
 begin
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
   RMDrawTools.GetClipAreaCoords(ca);
-  ClearClipAreaOutline;
-  RMDrawTools.ScrollRight(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
+  RMDrawTools.ScrollRight(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-
-  RMDrawTools.SetClipStatus(clipstatus);
-  if clipstatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
 end;
 
-procedure TRMMainForm.ToolScrollUpMenuClick(Sender: TObject);
+procedure TRMMainForm.ClearClipAreaOutline;
+begin
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+   RMDrawTools.SetClipStatus(0);
+   UpdateZoomArea;
+ end;
+end;
+
+ procedure TRMMainForm.ToolScrollUpMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
- clipstatus : integer;
 begin
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
   RMDrawTools.GetClipAreaCoords(ca);
-  ClearClipAreaOutline;
-  RMDrawTools.ScrollUp(ca.x+Xoffset,ca.y+YOffset,ca.x2+XOffset,ca.y2+YOffset);
+  RMDrawTools.ScrollUp(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-
-  RMDrawTools.SetClipStatus(clipstatus);
-  if clipstatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
 end;
 
 procedure TRMMainForm.ToolUndoIconClick(Sender: TObject);
-var
- clipstatus : integer;
 begin
   RMCoreBase.Undo;
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
-  ClearClipAreaOutline;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-  RMDrawTools.SetClipStatus(clipstatus);
-  if clipstatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-  end;
 end;
 
 procedure TRMMainForm.ToolFRectangleMenuClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
   ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapeFRectangle);
   UpdateToolSelectionIcons;
   ToolFRectangleMenu.Checked:=true;
@@ -796,9 +706,7 @@ end;
 procedure TRMMainForm.ToolCircleMenuClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
   ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapeCircle);
   UpdateToolSelectionIcons;
   ToolCircleMenu.Checked:=true;
@@ -807,9 +715,7 @@ end;
 procedure TRMMainForm.ToolFCircleMenuClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
   ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapeFCircle);
   UpdateToolSelectionIcons;
   ToolFCircleMenu.Checked:=true;
@@ -818,9 +724,7 @@ end;
 procedure TRMMainForm.ToolEllipseMenuClick(Sender: TObject);
 begin
  ClearClipAreaOutline;
- UnFreezeScrollAndZoom;
  ClearSelectedToolsMenu;
- HideSelectAreaTools;
  RMDrawTools.SetDrawTool(DrawShapeEllipse);
  UpdateToolSelectionIcons;
  ToolEllipseMenu.Checked:=true;
@@ -829,9 +733,7 @@ end;
 procedure TRMMainForm.ToolFEllipseMenuClick(Sender: TObject);
 begin
  ClearClipAreaOutline;
- UnFreezeScrollAndZoom;
  ClearSelectedToolsMenu;
- HideSelectAreaTools;
  RMDrawTools.SetDrawTool(DrawShapeFEllipse);
  UpdateToolSelectionIcons;
  ToolFEllipseMenu.Checked:=true;
@@ -840,21 +742,16 @@ end;
 procedure TRMMainForm.ToolMenuPaintClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
   ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapePaint);
   UpdateToolSelectionIcons;
   ToolMenuPaint.Checked:=true;
 end;
 
-
 procedure TRMMainForm.ToolMenuSprayPaintClick(Sender: TObject);
 begin
   ClearClipAreaOutline;
-  UnFreezeScrollAndZoom;
   ClearSelectedToolsMenu;
-  HideSelectAreaTools;
   RMDrawTools.SetDrawTool(DrawShapeSpray);
   UpdateToolSelectionIcons;
   ToolMenuSprayPaint.Checked:=true;
@@ -863,9 +760,7 @@ end;
 procedure TRMMainForm.ToolMenuSelectAreaMenuClick(Sender: TObject);
 begin
    ClearClipAreaOutline;
-   UnFreezeScrollAndZoom;
    ClearSelectedToolsMenu;
-   HideSelectAreaTools;
    RMDrawTools.SetDrawTool(DrawShapeClip);
    UpdateToolSelectionIcons;
    ToolSelectAreaMenu.Checked:=True;
@@ -875,9 +770,7 @@ procedure TRMMainForm.PaletteMonoClick(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteMono.Checked:=true;
-//  SetPaletteMode(PaletteModeMono);
   RMCoreBase.Palette.SetPaletteMode(PaletteModeMono);
-
   LoadDefaultPalette;
 
   RMCoreBase.SetCurColor(1);
@@ -885,18 +778,12 @@ begin
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-//  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-  if RMDrawTools.GetClipStatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-  end;
 end;
 
 procedure TRMMainForm.PaletteCGA0Click(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteCGA0.Checked:=true;
-//  SetPaletteMode(PaletteModeCGA0);
   RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA0);
 
   LoadDefaultPalette;
@@ -905,18 +792,12 @@ begin
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-//  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-  if RMDrawTools.GetClipStatus = 1 then
-  begin
-     RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-  end;
 end;
 
 procedure TRMMainForm.PaletteCGA1Click(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteCGA1.Checked:=true;
-//  SetPaletteMode(PaletteModeCGA1);
   RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA1);
 
   LoadDefaultPalette;
@@ -925,56 +806,37 @@ begin
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-  //RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-  if RMDrawTools.GetClipStatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-  end;
 end;
 
 
 procedure TRMMainForm.PaletteAmiga2Click(Sender: TObject);
 begin
- ClearSelectedPaletteMenu;
- PaletteAmiga.Checked:=true;
- PaletteAmiga2.Checked:=true;
- //SetPaletteMode(PaletteModeAmiga2);
+  ClearSelectedPaletteMenu;
+  PaletteAmiga.Checked:=true;
+  PaletteAmiga2.Checked:=true;
   RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga2);
 
- LoadDefaultPalette;
- RMCoreBase.SetCurColor(1);
- UpdateColorBox;
- UpdateActualArea;
-// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
- UpdateZoomArea;
- UpdateThumbview;
- if RMDrawTools.GetClipStatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
- end;
+  LoadDefaultPalette;
+  RMCoreBase.SetCurColor(1);
+  UpdateColorBox;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
 end;
-
-
 
 procedure TRMMainForm.PaletteAmiga4Click(Sender: TObject);
 begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
  PaletteAmiga4.Checked:=true;
-// SetPaletteMode(PaletteModeAmiga4);
  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga4);
 
  LoadDefaultPalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
-// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  UpdateThumbview;
- if RMDrawTools.GetClipStatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
- end;
 end;
 
 procedure TRMMainForm.PaletteAmiga8Click(Sender: TObject);
@@ -982,20 +844,14 @@ begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
  PaletteAmiga8.Checked:=true;
-// SetPaletteMode(PaletteModeAmiga8);
  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga8);
 
  LoadDefaultPalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
-// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  UpdateThumbview;
- if RMDrawTools.GetClipStatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
- end;
 end;
 
 procedure TRMMainForm.PaletteAmiga16Click(Sender: TObject);
@@ -1003,20 +859,14 @@ begin
   ClearSelectedPaletteMenu;
   PaletteAmiga.Checked:=true;
   PaletteAmiga16.Checked:=true;
-//  SetPaletteMode(PaletteModeAmiga16);
   RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga16);
 
   LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
-//  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
   UpdateThumbview;
- if RMDrawTools.GetClipStatus = 1 then
-  begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-  end;
 end;
 
 procedure TRMMainForm.PaletteAmiga32Click(Sender: TObject);
@@ -1024,20 +874,14 @@ begin
  ClearSelectedPaletteMenu;
  PaletteAmiga.Checked:=true;
  PaletteAmiga32.Checked:=true;
-// SetPaletteMode(PaletteModeAmiga32);
  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga32);
 
  LoadDefaultPalette;
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
-// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  UpdateThumbview;
- if RMDrawTools.GetClipStatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
- end;
 end;
 
 
@@ -1063,39 +907,27 @@ procedure TRMMainForm.PaletteVGAClick(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteVGA.Checked:=true;
-//  SetPaletteMode(PaletteModeVGA);
   RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
 
   LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
- // RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
   UpdateThumbview;
-  if RMDrawTools.GetClipStatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-  end;
 end;
 
 procedure TRMMainForm.PaletteVGA256Click(Sender: TObject);
 begin
   ClearSelectedPaletteMenu;
   PaletteVGA256.Checked:=true;
-//  SetPaletteMode(PaletteModeVGA256);
   RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA256);
   LoadDefaultPalette;
   RMCoreBase.SetCurColor(1);
   UpdateColorBox;
   UpdateActualArea;
- // RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
   UpdateZoomArea;
   UpdateThumbview;
-  if RMDrawTools.GetClipStatus = 1 then
-  begin
-    RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-  end;
 end;
 
 procedure TRMMainForm.PaletteEGAClick(Sender: TObject);
@@ -1110,10 +942,6 @@ begin
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
-  if RMDrawTools.GetClipStatus = 1 then
-  begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-  end;
 end;
 
 procedure TRMMainForm.PencilDrawChange(Sender: TObject);
@@ -1127,66 +955,6 @@ begin
   EditColors;
 end;
 
-procedure TRMMainForm.FreezeScrollAndZoom;
-begin
-   //mod RM4 VirtScroll.Enabled:=false;
-   //mod RM4 HorizScroll.Enabled:=false;
-   TrackBar1.Enabled:=false;
-   EditResizeTo.Enabled:=false;
-end;
-
-procedure TRMMainForm.UnFreezeScrollAndZoom;
-begin
-  //mod RM4 VirtScroll.Enabled:=true;
-  //mod RM5 HorizScroll.Enabled:=true;
-  TrackBar1.Enabled:=true;
-  EditResizeTo.Enabled:=true;
-end;
-
-
-procedure TRMMainForm.VirtScrollChange(Sender: TObject);
-begin
-   //mod RM4 YOffset:=VirtScroll.Position;
-   updatezoomarea;
-end;
-
-procedure TRMMainForm.UpdateInfoBarXY;
-var
-  XYStr   : string;
-  ClipStr : string;
-  ColIndexStr : string;
-  ca      : TClipAreaRec;
-begin
- XYStr:='Zoom X = '+IntToStr(ZoomX)+' Zoom Y = '+IntToStr(ZoomY)+#13#10+
-        'X = '+IntToStr(ZoomX+XOffset)+' Y = '+IntToStr(ZoomY + YOffset)+#13#10;
- ColIndexStr:='';
- if (zoomX >= 0) and (zoomy >= 0) then
- begin
-   ColIndexStr:='Color Index: '+IntToStr(RMCoreBase.GetPixel(xoffset+ZoomX,yoffset+ZoomY))
- end;
- ClipStr:='';
- if RMDrawTools.GetClipStatus = 1 then
- begin
-      RMDrawTools.GetClipAreaCoords(ca);
-      ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
-               'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
- end;
- InfoBarLabel.Caption:=XYStr+ClipStr+ColIndexStr;
-end;
-
-procedure TRMMainForm.UpdateInfoBarDetail;
-var
-  XYStr   : string;
-begin
- XYStr:='Zoom X = '+IntToStr(FX)+' Zoom Y = '+IntToStr(FY)+#13#10+
-        'Zoom X2 = '+IntToStr(FX2)+' Zoom Y2 = '+IntToStr(FY2)+#13#10+
-        'X = '+IntToStr(FX+XOffset)+' Y = '+IntToStr(FY+YOffset)+
-        'X2 = '+IntToStr(FX2+XOffset)+' Y2 = '+IntToStr(FY2+YOffset)+#13#10+
-        'Width = '+IntToStr(ABS(FX2-FX+1))+' Height = '+IntToStr(ABS(FY2-FY+1));
- InfoBarLabel.Caption:=XYStr;
-end;
-
-
 procedure TRMMainForm.UpdateActualArea;
 var
   i,j : integer;
@@ -1195,7 +963,6 @@ var
 begin
    zoommode:=RMDrawTools.GetZoomMode;
    RMDrawTools.SetZoomMode(0);
-   //check MaxImagePixel
    for i:=0 to RMCoreBase.GetWidth -1 do
    begin
      for j:=0 to RMCoreBase.GetHeight-1 do
@@ -1208,43 +975,14 @@ begin
 end;
 
 procedure TRMMainForm.updateZoomArea;
-var
-i,j,w,h,xoff,yoff : integer;
-tc : TColor;
-clipstatus : integer;
 begin
-   // mod RM4 xoff:=HorizScroll.Position;
-   // mod RM4 yoff:=VirtScroll.Position;
-
-   xoff:=0;
-   yoff:=0;
-
-
-
-   w:=RMDrawTools.GetCellsPerRow(ZoomBox.Width);
-   h:=RMDrawTools.GetCellsPerCol(ZoomBox.Height);
-
-   clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
-
-   for i:=0 to w do
-   begin
-     for j:=0 to h do
-     begin
-        tc:=ColorPalette1.Colors[RMCoreBase.GetPixel(xoff+i,yoff+j)];
-        RMDrawTools.PutPixel(ZoomBox.Canvas,i,j,tc,0);
-     end;
-   end;
-
-   if ClipStatus = 1 then
-   begin
-      RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.Brush.color,1);
-   end;
-
+  UpdateRenderBitMap;
+  ZoomPaintBox.Invalidate;
 end;
 
 procedure TRMMainForm.updateZoomScroller;
 begin
-   Trackbar1.Position:=ZoomSize;
+  Trackbar1.Position:=ZoomSize;
 end;
 
 procedure TRMMainForm.UpdateColorBox;
@@ -1255,9 +993,8 @@ end;
 
 procedure TRMMainForm.LoadDefaultPalette;
 var
-pm : integer;
+ pm : integer;
 begin
-//  pm:=GetPaletteMode;
  pm:=RMCoreBase.Palette.GetPaletteMode;
 
   if pm = PaletteModeVGA256 then
@@ -1370,96 +1107,72 @@ procedure TRMMainForm.UpdatePalette;
 var
 pm : integer;
 begin
-//  pm:=GetPaletteMode;
- pm:=RMCoreBase.Palette.GetPaletteMode;
-
+  pm:=RMCoreBase.Palette.GetPaletteMode;
   if (pm = PaletteModeVGA256) or (pm=PaletteModeXGA256) then
   begin
-//    RMDrawTools.AddVGAPalette256(ColorPalette1);
     ColorPalette1.ColumnCount:=32;
     ColorPalette1.ButtonHeight:=17;
     ColorPalette1.ButtonWidth:=17;
-  //  PaletteToCore;
   end
   else if (pm = PaletteModeVGA) or (pm = PaletteModeXGA) then
   begin
-//    RMDrawTools.AddVGAPalette(ColorPalette1);       //Add to Visual Compononet Palette
     ColorPalette1.ColumnCount:=8;
     ColorPalette1.ButtonHeight:=50;
     ColorPalette1.ButtonWidth:=30;
- //   PaletteToCore;  //copy valaues from Component pallete to internal core palette
   end
   else if pm = PaletteModeEGA then
   begin
-//   RMDrawTools.AddEGAPalette(ColorPalette1);
    ColorPalette1.ColumnCount:=8;
    ColorPalette1.ButtonHeight:=50;
    ColorPalette1.ButtonWidth:=30;
-//   PaletteToCore;
   end
   else if pm = PaletteModeCGA0 then
   begin
-//   RMDrawTools.AddCGAPalette0(ColorPalette1);
    ColorPalette1.ColumnCount:=2;
    ColorPalette1.ButtonHeight:=50;
    ColorPalette1.ButtonWidth:=30;
-//   PaletteToCore;
   end
   else if pm = PaletteModeCGA1 then
   begin
-//   RMDrawTools.AddCGAPalette1(ColorPalette1);
    ColorPalette1.ColumnCount:=2;
    ColorPalette1.ButtonHeight:=50;
    ColorPalette1.ButtonWidth:=30;
-//   PaletteToCore;
   end
   else if pm = PaletteModeMono then
   begin
-  // RMDrawTools.AddMonoPalette(ColorPalette1);
    ColorPalette1.ColumnCount:=1;
    ColorPalette1.ButtonHeight:=50;
    ColorPalette1.ButtonWidth:=30;
-//   PaletteToCore;
   end
   else if pm = PaletteModeAmiga32 then
    begin
-  //  RMDrawTools.AddAmigaPalette(ColorPalette1,32);
     ColorPalette1.ColumnCount:=16;
     ColorPalette1.ButtonHeight:=25;
     ColorPalette1.ButtonWidth:=30;
- //   PaletteToCore;
    end
    else if pm = PaletteModeAmiga16 then
    begin
-//    RMDrawTools.AddAmigaPalette(ColorPalette1,16);
     ColorPalette1.ColumnCount:=8;
     ColorPalette1.ButtonHeight:=50;
     ColorPalette1.ButtonWidth:=30;
-//    PaletteToCore;
    end
    else if pm = PaletteModeAmiga8 then
     begin
-  //   RMDrawTools.AddAmigaPalette(ColorPalette1,8);
      ColorPalette1.ColumnCount:=4;
      ColorPalette1.ButtonHeight:=50;
      ColorPalette1.ButtonWidth:=30;
- //    PaletteToCore;
     end
    else if pm = PaletteModeAmiga4 then
    begin
-//    RMDrawTools.AddAmigaPalette(ColorPalette1,4);
     ColorPalette1.ColumnCount:=2;
     ColorPalette1.ButtonHeight:=50;
     ColorPalette1.ButtonWidth:=30;
-  //  PaletteToCore;
    end
    else if pm = PaletteModeAmiga2 then
    begin
- //   RMDrawTools.AddAmigaPalette(ColorPalette1,2);
     ColorPalette1.ColumnCount:=1;
     ColorPalette1.ButtonHeight:=50;
     ColorPalette1.ButtonWidth:=30;
- //   PaletteToCore;
    end;
 end;
 
@@ -1544,7 +1257,6 @@ end;
 
 procedure TRMMainForm.UpdateToolFlipScrollMenu;
 begin
-
  if RMDrawTools.GetClipStatus = 1  then
  begin
     ToolFlipMenu.Enabled:=true;
@@ -1558,55 +1270,30 @@ begin
 end;
 
 Procedure TRMMainForm.UpdateGridDisplay;
-var
- clipstatus : integer;
 begin
-  clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
-  ClearClipAreaOutline;
   if RMDrawTools.GetGridMode = 0 then
-     begin
-       RMDrawTools.SetGridMode(1);
-       //Button2.Caption:='Grid Off';
-       ToolGridMenu.Checked:=true;
-     end
-     else
-     begin
-       RMDrawTools.SetGridMode(0);
-      // Button2.Caption:='Grid On';
-       ToolGridMenu.Checked:=false;
+  begin
+    RMDrawTools.SetGridMode(1);
+    ToolGridMenu.Checked:=true;
+  end
+  else
+  begin
+    RMDrawTools.SetGridMode(0);
+    ToolGridMenu.Checked:=false;
+  end;
 
-     end;
-     //check MaxImagePixel
-
-    //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-    //mod RM4 HorizScroll.Max:=MaxXOffset;
-    //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-    //mod RM4 VirtScroll.Max:=MaxYOffset;
-
-    UpdateActualArea;
-    RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-    UpdateZoomArea;
-
-    RMDrawTools.SetClipStatus(clipstatus);
-    if RMDrawTools.GetClipStatus = 1 then
-    begin
-       RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-    end;
+  UpdateActualArea;
+  UpdateZoomArea;
 end;
-
-
 
 procedure TRMMainForm.ColorBoxMouseEnter(Sender: TObject);
 begin
-//  ColorBox.Hint:='Color Index: '+IntToStr(RMCoreBase.GetCurColor);
- ColorBox.Hint:=ColIndexToHoverInfo(RMCoreBase.GetCurColor,RMCoreBase.Palette.GetPaletteMode);
+  ColorBox.Hint:=ColIndexToHoverInfo(RMCoreBase.GetCurColor,RMCoreBase.Palette.GetPaletteMode);
 end;
-
 
 procedure TRMMainForm.ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
   var AText: String);
 begin
-//  AText:='Color Index: '+IntToStr(ColorPalette1.MouseIndex);
   if ColorPalette1.MouseIndex > -1 then
   begin
     AText:=ColIndexToHoverInfo(ColorPalette1.MouseIndex,RMCoreBase.Palette.GetPaletteMode);
@@ -1617,8 +1304,6 @@ begin
   end;
 end;
 
-
-
 procedure TRMMainForm.ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
   Shift: TShiftState);
 begin
@@ -1626,202 +1311,10 @@ begin
   RMCoreBase.SetCurColor(ColorPalette1.PickedIndex);
 end;
 
-procedure TRMMainForm.ZoomBoxClick(Sender: TObject);
-var
-  PT : TPoint;
-begin
-    PT := Mouse.CursorPos;
-  // now have SCREEN position
- // Label1.Caption := 'X = '+IntToStr(pt.x)+', Y = '+IntToStr(pt.y);
-  pt := ScreenToClient(pt);
-  // now have FORM position
- // Label2.Caption := 'X = '+IntToStr(pt.x)+', Y = '+IntToStr(pt.y);
-end;
-
-procedure TRMMainForm.ZoomBoxMouseDown(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-
- var
-  DT : integer;
-begin
-   DT:=RMDrawTools.GetDrawTool;                                             //if there is a clip area and we are no longer in clip mode - remove it
-   if (DT<>DrawShapeClip) AND (RMDrawTools.GetClipStatus = 1) then
-   begin
-     RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-     RMDrawTools.SetClipStatus(0);
-     RMDrawTools.SetClipSizedStatus(0);
-   end;
-
-   DrawMode:=True;
- //  XOffset:=HorizScroll.Position;
- //  YOffset:=VirtScroll.Position;
-  //ZoomX:=X div CellWidth;
-  //ZoomY:=Y div CellHeight;
- // ZoomX:=X div (CellWidth+GridYThick);
- // ZoomY:=Y div (CellHeight+GridXThick);
- ZoomX:=RMDrawTools.GetZoomX(x);
- ZoomY:=RMDrawTools.GetZoomY(y);
-
-  FX:=ZoomX;
-  FY:=ZoomY;
-  FX2:=FX;
-  FY2:=FY;
-  UpdateInfoBarXY;
-  If DT = DrawShapePencil then
-  begin
-    RMCoreBase.CopyToUndoBuf;
-    RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,0,DT,0);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,0,DT,0);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,2,DT,0);       // to internal buffer
-    exit;
-  end
-  else if DT = DrawShapePaint then
-  begin
-    RMCoreBase.CopyToUndoBuf;
-    Fill(FX+XOffset,FY+YOffset,RMCoreBase.GetCurColor);
-    UpdateActualArea;
-    UpdateZoomArea;
-    exit;
-  end
-  else if DT = DrawShapeSpray then
-  begin
-    RMCoreBase.CopyToUndoBuf;
-    RMDrawTools.CreateRandomSprayPoints;
-    RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,0,DT,0);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,0,DT,0);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,2,DT,0);       // to internal buffer
-    exit;
-  end
-  else if DT = DrawShapeClip then
-   begin
-     if RMDrawTools.GetClipStatus = 1 then                              //remove the previous clip
-     begin
-      RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-     end;
-     RMDrawTools.SetClipStatus(0);
-     RMDrawTools.SetClipSizedStatus(0);
-   end;
-end;
-
-procedure TRMMainForm.ZoomBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
-  Y: Integer);
-var
- DT : integer;
-begin
- DT:=RMDRAWTools.GetDrawTool;
- ZoomX:=RMDrawTools.GetZoomX(x);
- ZoomY:=RMDrawTools.GetZoomY(y);
- UpdateInfoBarXY;
- //InfoBarLabel.Caption:= 'MaxXOff = '+IntToStr(MaxXoffset)+' ZoomX ='+IntToStr(ZoomX)+' ZoomY ='+IntToStr(ZoomY);
- //Label8.Caption:= 'XOffset = '+IntToStr(Xoffset)+'YOffset = '+IntToStr(Yoffset);
-
- if DrawMode = False then exit;
-
-
- If (DT = DrawShapePencil) OR (DT = DrawShapeSpray) then
-  begin
-    FX:=ZoomX;
-    FY:=ZoomY;
-    FX2:=ZoomX;
-    FY2:=ZoomY;
-    //RMCoreBase.CopyToUndoBuf;
-    RMDrawTools.CreateRandomSprayPoints;
-    RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,0,DT,0);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,0,DT,0);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,2,DT,0);
-    exit;
-  end;
-
- if DrawFirst = True then
- begin
-  //RMDrawTools.ARectangle(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,1);
-  //RMDrawTools.Rect(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1);
-
-  RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,1,DT,0);
-  RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1,DT,0);
- end;
-
-
- FX2:=ZoomX;
- FY2:=ZoomY;
- UpdateInfoBarDetail;
-
- //RMDrawTools.ARectangle(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,1);
- //RMDrawTools.Rect(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1);
- RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,1,DT,0);
- RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1,DT,0);
-
- DrawFirst:=True;
- RMDrawTools.SetClipSizedStatus(1); // yes we have some sizing co-ordinates
-end;
-
-procedure TRMMainForm.ZoomBoxMouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-var
- DT : integer;
-begin
- DT:=RMDRAWTools.GetDrawTool;
- if (DT =DrawShapePencil) OR (DT = DrawShapeSpray) Or (DT = DrawShapePaint) then               //we draw pencil on mouse move events only
- begin
-   DrawFirst:=FALSE;
-   DrawMode:=False;
-   UpdateThumbView;
-   exit;
- end
- else if  DT = DrawShapeClip then        //move event was not triggered so we don't have a clip area - user clicked really fast
- begin                                   // we haven't drawn a clip area so lets just exit
-   if RMDrawTools.GetClipSizedStatus = 0 then
-   begin
-     DrawFirst:=FALSE;
-     DrawMode:=False;
-     exit;
-   end;
- end;
-
- //erase the old
-  //RMDrawTools.ARectangle(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,1);
-  //RMDrawTools.Rect(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1);
-  RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,1,DT,0);
-  RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1,DT,0);
-
-  DrawFirst:=FALSE;
-  DrawMode:=False;
-
- //Draw the real image
-//  RMDrawTools.SetZoomMode(0);
-//  RMDrawTools.Rect(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,0);
-//  RMDrawTools.SetZoomMode(1);
-//  RMDrawTools.Rect(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,0);
-
-  if DT = DrawShapeClip then
-  begin
-//    if fx2 > (_MaxImagePixelWidth-1) then fx2:=_MaxImagePixelWidth-1;
-//    if fy2 > (_MaxImagePixelHeight-1) then fy2:=_MaxImagePixelHeight-1;
-    if fx2 > (RMDrawTools.GetZoomMaxX)-1 then fx2:=RMDrawTools.GetZoomMaxX-1;
-
-    if fy2 > (RMDrawTools.GetZoomMaxY)-1 then fy2:=RMDrawTools.GetZoomMaxY-1;
-
-
-    RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,1,DT,1);
-    RMDrawTools.SaveClipCoords(fx,fy,fx2,fy2);
-    RMDrawTools.SetClipStatus(1); //on
-    FreezeScrollAndZoom;
-    ShowSelectAreaTools;
-   end
-  else
-  begin
-    RMCoreBase.CopyToUndoBuf;
-    RMDrawTools.ADrawShape(ActualBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,0,DT,1);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,fx,fy,fx2,fy2,ColorBox.Brush.Color,0,DT,1);
-    RMDrawTools.DrawShape(ZoomBox.Canvas,FX+XOffset,FY+YOffset,FX2+XOffset,FY2+YOffset,ColorBox.Brush.Color,2,DT,1);
-    UpdateThumbView;
-  end;
-end;
-
+//disable - not happy with zoom in with mouse wheel
 procedure TRMMainForm.ZoomBoxMouseWheel(Sender: TObject; Shift: TShiftState;
   WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
 begin
-//   if ToggleBox1.Checked then exit;
    if RMDrawTools.GetClipStatus = 1 then exit;
 
    ZoomSize:=RMDrawTools.GetZoomSize;
@@ -1829,77 +1322,289 @@ begin
    else if WheelDelta > 0 then inc(ZoomSize);
 
    RMDrawTools.SetZoomSize(ZoomSize);
-   RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-   //check MaxImagePixel
-   //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-   //mod RM4 HorizScroll.Max:=MaxXOffset;
-   //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-   //mod RM4 VirtScroll.Max:=MaxYOffset;
+   RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
    TrackBar1.Position:=RMDrawTools.GetZoomSize;
    UpdateZoomArea;
 end;
 
-procedure TRMMainForm.ToolCircleIconClick(Sender: TObject);
-begin
-  ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRCLE_BLACK');
-end;
-
 procedure TRMMainForm.FileExitMenuClick(Sender: TObject);
 begin
-   //if MessageDlg('Exiting Raster Master', 'Are you sure you want to Exit?', mtConfirmation,
-   //  [mbYes, mbNo],0) = mrYes    then  Close;
   close;            // I created extra work - i added prompt in close
-end;
-
-procedure TRMMainForm.HorizScrollChange(Sender: TObject);
-begin
-  //mod RM4 XOffset:=HorizScroll.Position;
-  updatezoomarea;
 end;
 
 procedure TRMMainForm.TrackBar1Change(Sender: TObject);
 begin
-  //Label4.Caption := 'Position = '+IntToStr(TrackBar1.Position);
   RMDrawTools.SetZoomSize(TrackBar1.Position);
+  ZoomPaintBox.Width:=1;
+  ZoomPaintBox.Height:=1;
+  ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+  ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+  ZoomPaintBox.Canvas.Clear;
+  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+  RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
+  RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
 
-  ZoomBox.AutoSize:=true;
-  ZoomBox.Picture.Bitmap.SetSize(1,1);
-  ZoomBox.Picture.Bitmap.SetSize(RMDrawTools.GetZoomPageWidth,RMDrawTools.GetZoomPageHeight);
-  ZoomBox.AutoSize:=false;
-  ZoomBox.Canvas.Clear;
-  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-  //check MaxImagePixel
-
-  RMDrawTools.SetZoomMaxX(ZoomBox.Width);
-  RMDrawTools.SetZoomMaxY(ZoomBox.Height);
-
-  //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-  //mod RM4 HorizScroll.Max:=MaxXOffset;
-  //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-  //mod RM4 VirtScroll.Max:=MaxYOffset;
   ZoomSize:=RMDrawTools.GetZoomSize;
   UpdateZoomArea;
 end;
 
+//updates RenderBitMap from core buf pixels
+procedure TRMMainForm.UpdateRenderBitMap;
+var
+ i,j : integer;
+begin
+ RenderBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
+ for j:=0 to RMCoreBase.GetHeight do
+ begin
+   for i:=0 to RMCoreBase.GetWidth do
+   begin
+       RenderBitMap.Canvas.Pixels[i,j]:=RMCoreBase.GetPixelTColor(i,j);
+   end;
+ end;
+end;
+
+procedure TRMMainForm.UpdateInfoBarXY(x,y : integer);
+var
+  XYStr   : string;
+  ClipStr : string;
+  ColIndexStr : string;
+  ca      : TClipAreaRec;
+  zx,zy : integer;
+begin
+ zx:=RMDrawTools.GetZoomX(x);
+ zy:=RMDrawTools.GetZoomy(y);
+ XYStr:='Zoom X = '+IntToStr(ZX)+' Zoom Y = '+IntToStr(ZY)+#13#10;
+ ColIndexStr:='';
+ if (zx >= 0) and (zy >= 0) then
+ begin
+   ColIndexStr:='Color Index: '+IntToStr(RMCoreBase.GetPixel(ZX,ZY))
+ end;
+ ClipStr:='';
+ if RMDrawTools.GetClipStatus = 1 then
+ begin
+      RMDrawTools.GetClipAreaCoords(ca);
+      ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
+               'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
+ end;
+ InfoBarLabel.Caption:=XYStr+ClipStr+ColIndexStr;
+end;
+
+procedure TRMMainForm.UpdateInfoBarDetail;
+var
+  XYStr   : string;
+begin
+ XYStr:='Zoom X = '+IntToStr(ZoomX)+' Zoom Y = '+IntToStr(ZoomY)+#13#10+
+        'Zoom X2 = '+IntToStr(ZoomX2)+' Zoom Y2 = '+IntToStr(ZoomY2)+#13#10+
+        'Width = '+IntToStr(ABS(ZoomX2-ZoomX+1))+' Height = '+IntToStr(ABS(ZoomY2-ZoomY+1));
+ InfoBarLabel.Caption:=XYStr;
+end;
+
+// xy mouse down event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
+procedure TRMMainForm.ZPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+  ZoomX:=RMDrawTools.GetZoomX(x);
+  ZoomY:=RMDrawTools.GetZoomY(y);
+  if (ZoomX=OldZoomX) and (ZoomY=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
+
+  OldZoomX:=ZoomX;
+  OldZoomY:=ZoomY;
+  DrawTool:=RMDRAWTools.GetDrawTool;
+
+  if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
+  begin
+    Fill(ZoomX,ZoomY,RMCoreBase.GetCurColor);
+    UpdateRenderBitMap;
+    ZoomPaintBox.Invalidate;
+    UpdateActualArea;
+  end
+  else
+  begin
+    UpdateRenderBitMap;
+    RMDrawTools.CreateRandomSprayPoints;
+    RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+    RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+    ZoomPaintBox.Invalidate;
+    RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
+  end;
+end;
+
+// xy mouse move event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
+procedure TRMMainForm.ZPaintBoxMouseMoveXYTool(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+  ZoomX:=RMDrawTools.GetZoomX(x);
+  ZoomY:=RMDrawTools.GetZoomY(y);
+
+  UpdateInfoBarXY(x,y);
+  if not ((ssLeft in Shift) or (ssRight in Shift)) then exit;
+
+  if (ZoomX=OldZoomX) and (ZoomY=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
+  OldZoomX:=ZoomX;
+  OldZoomY:=ZoomY;
+  DrawTool:=RMDRAWTools.GetDrawTool;
+
+  RMDrawTools.CreateRandomSprayPoints;
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+  ZoomPaintBox.Invalidate;
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
+end;
+
+// xy mouse up event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
+procedure TRMMainForm.ZPaintBoxMouseUpXYTool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  OldZoomX:=-1;
+  OldZoomX:=-1;
+end;
+
+
+// xyx2y2 mouse down event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
+procedure TRMMainForm.ZPaintBoxMouseDownXYX2Y2Tool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+  ZoomX:=RMDrawTools.GetZoomX(x);
+  ZoomY:=RMDrawTools.GetZoomY(y);
+  ZoomX2:=ZoomX;
+  ZoomY2:=ZoomY;
+  UpdateInfoBarDetail;
+  OldZoomX:=ZoomX;
+  OldZoomY:=ZoomY;
+  DrawTool:=RMDRAWTools.GetDrawTool;
+
+  if DrawTool = DrawShapeClip then
+  begin
+    RMDrawTools.SaveClipCoords(ZoomX,ZoomY,ZoomX2,ZoomY2);
+    RMDrawTools.SetClipStatus(1);
+    ZoomPaintBox.Invalidate;
+    exit;
+  end;
+
+  UpdateRenderBitMap;
+  RenderBitMap2.Canvas.CopyRect(rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height),RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+  ZoomPaintBox.Invalidate;
+end;
+
+// xyx2y2 mouse move event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
+procedure TRMMainForm.ZPaintBoxMouseMoveXYX2Y2Tool(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+  if not ((ssLeft in Shift) or (ssRight in Shift)) then UpdateInfoBarXY(x,y);    // update info when button is up
+  if (OldZoomX=-1) or (OldZoomY=-1) then exit;
+  if not ((ssLeft in Shift) or (ssRight in Shift)) then exit;
+
+  ZoomX2:=RMDrawTools.GetZoomX(x);
+  ZoomY2:=RMDrawTools.GetZoomY(y);
+  if (ZoomX2=OldZoomX) and (ZoomY2=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
+
+  //new spot
+  OldZoomX:=ZoomX2;
+  OldZoomY:=ZoomY2;
+  DrawTool:=RMDRAWTools.GetDrawTool;
+
+  UpdateInfoBarDetail; // update info when button is down
+  if DrawTool = DrawShapeClip then
+  begin
+    RMDrawTools.SaveClipCoords(ZoomX,ZoomY,ZoomX2,ZoomY2);
+    RMDrawTools.SetClipStatus(1);
+    ZoomPaintBox.Invalidate;
+    exit;
+  end;
+  //UpdateRenderBitMap;
+  RenderBitMap.Canvas.CopyRect(rect(0,0,RenderBitMap.Width,RenderBitMap.Height),RenderBitMap2.Canvas,rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height));
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+  ZoomPaintBox.Invalidate;
+end;
+
+// xyx2y2 mouse up event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
+procedure TRMMainForm.ZPaintBoxMouseUpXYX2Y2Tool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+  if (OldZoomX=-1) or (OldZoomY=-1) then exit;       //prevent right clicking from outsize of zoom area while moving into zoom area creates unwanted event - checking the coors allows to jump out with out drawing garbage
+  OldZoomX:=-1;
+  OldZoomY:=-1;
+  DrawTool:=RMDRAWTools.GetDrawTool;
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,1);
+  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+end;
+
+procedure TRMMainForm.ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+ RMDrawTools.SetClipStatus(0);  //turn it off - we turn on again when new area is selected
+ DrawTool:=RMDRAWTools.GetDrawTool;
+ if DrawTool<>DrawShapeClip then RMCoreBase.CopyToUndoBuf;
+ Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:ZPaintBoxMouseDownXYTool(Sender,Button,Shift,X,Y);
+                                  DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
+               DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:ZPaintBoxMouseDownXYX2Y2Tool(Sender,Button,Shift,X,Y);
+ end;
+end;
+
+procedure TRMMainForm.ZPaintBoxMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+ //UpdateInfoBarXY;
+ DrawTool:=RMDRAWTools.GetDrawTool;
+ Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:ZPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
+               DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
+               DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:ZPaintBoxMouseMoveXYX2Y2Tool(Sender,Shift,X,Y);
+
+ end;
+end;
+
+procedure TRMMainForm.ZPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+ DrawTool : integer;
+begin
+ DrawTool:=RMDRAWTools.GetDrawTool;
+ Case DrawTool of DrawShapePencil,DrawShapeSpray:ZPaintBoxMouseUpXYTool(Sender,Button,Shift,X,Y);
+               DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
+               DrawShapeEllipse,DrawShapeFEllipse:ZPaintBoxMouseUpXYX2Y2Tool(Sender,Button,Shift,X,Y);
+
+ end;
+ UpdateThumbview;
+end;
+
+procedure TRMMainForm.ZoomPaintBoxPaint(Sender: TObject);
+begin
+  ZoomPaintBox.Canvas.CopyRect(rect(0,0,ZoomPaintBox.Width,ZoomPaintBox.Height),
+               RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
+  RMDrawTools.DrawOverlayGrid(ZoomPaintBox.Canvas,clWhite);
+  RMDrawTools.DrawOverlayOnClipArea(ZoomPaintBox.Canvas,clYellow,0); //mode 0 is copy
+end;
+
+
 procedure TRMMainForm.ClearSelectedToolsMenu;
 begin
-     ToolFRectangleMenu.Checked:=false;
-     ToolRectangleMenu.Checked:=false;
-     ToolLineMenu.Checked:=false;
-     ToolSelectAreaMenu.Checked:=false;
+  ToolFRectangleMenu.Checked:=false;
+  ToolRectangleMenu.Checked:=false;
+  ToolLineMenu.Checked:=false;
+  ToolSelectAreaMenu.Checked:=false;
 
-     ToolMenuSprayPaint.Checked:=false;
-     ToolMenuPaint.Checked:=false;
-     ToolCircleMenu.Checked:=false;
-     ToolFCircleMenu.Checked:=false;
-     ToolEllipseMenu.Checked:=false;
-     ToolFEllipseMenu.Checked:=false;
+  ToolMenuSprayPaint.Checked:=false;
+  ToolMenuPaint.Checked:=false;
+  ToolCircleMenu.Checked:=false;
+  ToolFCircleMenu.Checked:=false;
+  ToolEllipseMenu.Checked:=false;
+  ToolFEllipseMenu.Checked:=false;
 
-     ToolPencilMenu.Checked:=false;
-
-     //menus - we disable menus instead of making them invisible
-     ToolFlipMenu.Enabled:=false;
-     ToolScrollMenu.Enabled:=false;
+  ToolPencilMenu.Checked:=false;
 end;
 
 Procedure TRMMainForm.LoadResourceIcons;
@@ -1946,8 +1651,8 @@ begin
   ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT1');
   ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT1');
 
- DT:=RMDRAWTools.GetDrawTool;
- case DT of DrawShapePencil:ToolPencilIcon.Picture.LoadFromResourceName(HInstance,'PEN2');
+  DT:=RMDRAWTools.GetDrawTool;
+  case DT of DrawShapePencil:ToolPencilIcon.Picture.LoadFromResourceName(HInstance,'PEN2');
               DrawShapeLine:ToolLineIcon.Picture.LoadFromResourceName(HInstance,'LINE2');
             DrawShapeCircle:ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRC2');
            DrawShapeFCircle:ToolFCircleIcon.Picture.LoadFromResourceName(HInstance,'FCIRC2');
@@ -1959,7 +1664,7 @@ begin
              DrawShapePaint:ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT2');
               DrawShapeClip:ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT2');
 
- end;
+  end;
 end;
 
 procedure TRMMainForm.ShowSelectAreaTools;
@@ -1976,17 +1681,6 @@ begin
   ToolScrollMenu.Enabled:=true;
 end;
 
-procedure TRMMainForm.HideSelectAreaTools;
-begin
-  ToolVFLIPButton.Visible:=false;
-  ToolHFLIPButton.Visible:=false;
-  ToolScrollUpIcon.Visible:=false;
-  ToolScrollDownIcon.Visible:=false;
-  ToolScrollLeftIcon.Visible:=false;
-  ToolScrollRightIcon.Visible:=false;
-end;
-
-
 procedure TRMMainForm.GetOpenSaveRegion(var x,y,x2,y2 : integer);
 var
   ca   : TClipAreaRec;
@@ -1999,10 +1693,10 @@ begin
    if RMDrawTools.GetClipStatus = 1 then
    begin
      RMDrawTools.GetClipAreaCoords(ca);
-     x:=ca.x+XOffset;
-     y:=ca.y+Yoffset;
-     x2:=ca.x2+XOffset;
-     y2:=ca.y2+YOffset;
+     x:=ca.x;
+     y:=ca.y;
+     x2:=ca.x2;
+     y2:=ca.y2;
    end;
 end;
 
@@ -2143,10 +1837,6 @@ begin
       UpdateColorBox;
       UpDateZoomArea;
       UpdateThumbView;
-      if RMDrawTools.GetClipStatus = 1 then
-      begin
-        RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
-      end;
    end;
 end;
 
@@ -2191,8 +1881,6 @@ end;
 procedure TRMMainForm.QBasicDataClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
  begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2204,13 +1892,6 @@ var
 
    if ExportDialog.Execute then
    begin
-    //  sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-    //  pm:=RMCoreBase.Palette.GetPaletteMode;
-    //  case pm of         PaletteModeMono:sourcemode:=Source2;
-    //       PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-    //         PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-    //  end;
-
       Case (Sender As TMenuItem).Name of 'QBPutData' : error:=WriteXGFToCode(x,y,x2,y2,QBLan,ExportDialog.FileName);
                                  'QBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QBLan,ExportDialog.FileName);
                                          'QBPutFile' : error:=WriteXGFToFile(x,y,x2,y2,QBLan,ExportDialog.FileName);
@@ -2227,8 +1908,6 @@ var
 procedure TRMMainForm.TurboPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
 begin
   GetOpenSaveRegion(x,y,x2,y2);
@@ -2245,13 +1924,6 @@ begin
   End;
   if ExportDialog.Execute then
    begin
-//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-//      pm:=RMCoreBase.Palette.GetPaletteMode;
-//      case pm of         PaletteModeMono:sourcemode:=Source2;
-//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-//     end;
-
       Case (Sender As TMenuItem).Name of 'TPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
                                  'TPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
                                          'TPPutImageFile' : error:=WriteXGFToFile(x,y,x2,y2,TPLan,ExportDialog.FileName);
@@ -2273,8 +1945,6 @@ end;
 procedure TRMMainForm.FreePascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2285,13 +1955,6 @@ begin
 
    if ExportDialog.Execute then
    begin
-//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-//      pm:=RMCoreBase.Palette.GetPaletteMode;
-//      case pm of         PaletteModeMono:sourcemode:=Source2;
-//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-//      end;
-
       Case (Sender As TMenuItem).Name of 'FPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,FPLan,ExportDialog.FileName);
                                  'FPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FPLan,ExportDialog.FileName);
                                          'FPPutImageFile'  : error:=WriteXGFToFile(x,y,x2,y2,FPLan,ExportDialog.FileName);
@@ -2308,8 +1971,6 @@ end;
 procedure TRMMainForm.GWBASICClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2320,12 +1981,6 @@ begin
 
    if ExportDialog.Execute then
    begin
-//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-//      pm:=RMCoreBase.Palette.GetPaletteMode;
-//      case pm of         PaletteModeMono:sourcemode:=Source2;
-//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-//      end;
       Case (Sender As TMenuItem).Name of 'GWPutData' : error:=WriteXGFToCode(x,y,x2,y2,GWLan,ExportDialog.FileName);
                                  'GWPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,GWLan,ExportDialog.FileName);
                                          'GWPutFile' : error:=WriteXGFToFile(x,y,x2,y2,GWLan,ExportDialog.FileName);
@@ -2377,34 +2032,14 @@ begin
   ActualBox.Height:=ImgHeight;
   RMCoreBase.SetWidth(ImgWidth);
   RMCoreBase.SetHeight(ImgHeight);
-
-
-  // ZoomBox.Canvas.Brush.Style := bsSolid;
-  // ZoomBox.Canvas.Brush.Color := clGray;
-  //  ZoomBox.Canvas.FillRect(0,0,ZoomBox.Width,ZoomBox.Height);
-
-
   RMDrawTools.SetZoomSize(1);
 
-  ZoomBox.AutoSize:=true;
-  ZoomBox.Picture.Bitmap.SetSize(RMDrawTools.GetZoomPageWidth,RMDrawTools.GetZoomPageHeight);
-  ZoomBox.AutoSize:=false;
-  ZoomBox.Canvas.Clear;
-  RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-
-   //check MaxImagePixel
+  ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+  ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
 
   RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
   RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
-
-
-
-
-
-  //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-  //mod RM4 HorizScroll.Max:=MaxXOffset;
-  //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-  //mod RM4 VirtScroll.Max:=MaxYOffset;
+  RMDrawTools.SetClipStatus(0); // turn off in case clip area is bigger than work area
   ZoomSize:=RMDrawTools.GetZoomSize;
 
   UpdateActualArea;
@@ -2438,8 +2073,6 @@ var
    end;
 end;
 
-
-
 Procedure TRMMainForm.EditColors;
 var
   PI : integer;
@@ -2466,11 +2099,6 @@ begin
        UpdateActualArea;
        UpdateZoomArea;
        UpdateThumbview;
-
-       if RMDrawTools.GetClipStatus = 1 then
-       begin
-         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-       end;
     end;
   end
   else If (pm = PaletteModeXGA) OR (pm = PaletteModeXGA256) then
@@ -2492,16 +2120,11 @@ begin
           UpdateZoomArea;
           UpdateThumbview;
 
-          if RMDrawTools.GetClipStatus = 1 then
-          begin
-            RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-          end;
        end;
      end
   else if (pm = PaletteModeEGA) then
   begin
      RMEGAColorDialog.InitColorBox;
-   //  RMEGAColorDialog.Left:= RMMainForm.Left+ColorBox.Left;
      if RMEGAColorDialog.ShowModal = mrOK then
      begin
        PI:=RMEGAColorDialog.GetPickedIndex;
@@ -2515,10 +2138,6 @@ begin
           UpdateActualArea;
           UpdateZoomArea;
           UpdateThumbview;
-           if RMDrawTools.GetClipStatus = 1 then
-           begin
-              RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-           end;
        end;
      end;
   end
@@ -2543,13 +2162,8 @@ begin
        UpdateActualArea;
        UpdateZoomArea;
        UpdateThumbview;
-       if RMDrawTools.GetClipStatus = 1 then
-       begin
-         RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
-       end;
    end;
  end;
-
 end;
 
 procedure TRMMainForm.PaletteEditColors(Sender: TObject);
@@ -2564,7 +2178,6 @@ var
 begin
   index:=ListView1.ItemIndex;
   if index = -1 then index:=0;
- // ShowMessage(IntToStr(index));
   ImageThumbBase.GetExportOptions(index,EO);
   ImageExportForm.InitComboBoxes;
   ImageExportForm.SetExportProps(EO);
@@ -2755,13 +2368,8 @@ begin
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
-// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  UpdateThumbview;
- if RMDrawTools.GetClipStatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
- end;
 end;
 
 procedure TRMMainForm.PaletteXGAClick(Sender: TObject);
@@ -2774,13 +2382,8 @@ begin
  RMCoreBase.SetCurColor(1);
  UpdateColorBox;
  UpdateActualArea;
-// RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
  UpdateThumbview;
- if RMDrawTools.GetClipStatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,0);
- end;
 end;
 
 procedure TRMMainForm.PropertiesFileDialogClick(Sender: TObject);
@@ -2798,8 +2401,6 @@ end;
 procedure TRMMainForm.QuickCClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2810,13 +2411,6 @@ begin
 
    if ExportDialog.Execute then
    begin
-//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-//      pm:=RMCoreBase.Palette.GetPaletteMode;
-//      case pm of         PaletteModeMono:sourcemode:=Source2;
-//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-//      end;
-
       Case (Sender As TMenuItem).Name of 'QCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,QCLan,ExportDialog.FileName);
                                  'QCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QCLan,ExportDialog.FileName);
                                          'QCPutImageFile'  : error:=WriteXGFToFile(x,y,x2,y2,QCLan,ExportDialog.FileName);
@@ -2833,8 +2427,6 @@ end;
 procedure TRMMainForm.TurboCClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2849,13 +2441,6 @@ begin
    End;
    if ExportDialog.Execute then
    begin
-//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-//      pm:=RMCoreBase.Palette.GetPaletteMode;
-//      case pm of         PaletteModeMono:sourcemode:=Source2;
-//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-//      end;
-
       Case (Sender As TMenuItem).Name of 'TCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                  'TCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
                                           'TCPutImageFile' : error:=WriteXGFToFile(x,y,x2,y2,TCLan,ExportDialog.FileName);
@@ -2877,8 +2462,6 @@ end;
 procedure TRMMainForm.TurboPowerBasicClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2890,13 +2473,6 @@ begin
 
    if ExportDialog.Execute then
    begin
-//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-//      pm:=RMCoreBase.Palette.GetPaletteMode;
-//      case pm of         PaletteModeMono:sourcemode:=Source2;
-//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-//      end;
-
       Case (Sender As TMenuItem).Name of 'TBPutData' : error:=WriteXGFToCode(x,y,x2,y2,PBLan,ExportDialog.FileName);
                                  'TBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,PBLan,ExportDialog.FileName);
                                       'TBPutFile' : WriteXGFToFile(x,y,x2,y2,PBLan,ExportDialog.FileName);
@@ -2913,8 +2489,6 @@ end;
 procedure TRMMainForm.FreeBASICClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
-// pm : integer;
-// sourcemode : word;
  error : word;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
@@ -2925,13 +2499,6 @@ begin
 
    if ExportDialog.Execute then
    begin
-//      sourcemode:=source256;  //PaletteModeVGA256 - this will still work if we are in amiga palette modes
-//      pm:=RMCoreBase.Palette.GetPaletteMode;
-//      case pm of         PaletteModeMono:sourcemode:=Source2;
-//           PaletteModeCGA0,PaletteModeCGA1:sourcemode:=Source4;
-//             PaletteModeEGA,PaletteModeVGA:sourcemode:=Source16;
-//      end;
-
       Case (Sender As TMenuItem).Name of 'FBPutData' : error:=WriteXGFToCode(x,y,x2,y2,FBinQBModeLan,ExportDialog.FileName);
                                  'FBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FBinQBModeLan,ExportDialog.FileName);
                                          'FBPutFile' : error:=WriteXGFToFile(x,y,x2,y2,FBinQBModeLan,ExportDialog.FileName);
@@ -2991,8 +2558,6 @@ begin
      exit;
    end;
  end;
-
-
 
    if ExportDialog.Execute then
    begin
@@ -3192,7 +2757,6 @@ var
  validpm : boolean;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-//   spritewidth:=x2-x+1;
    ExportDialog.Filter := 'Amiga QuickBasic Pset Bittmap Array|*.bas';
 
    pm:=RMCoreBase.Palette.GetPaletteMode;
@@ -3402,10 +2966,6 @@ begin
                                         'OWMouseShapeFile':error:=WriteMShapeToFile(x,y,ExportDialog.FileName);
 
       end;
-
-
-
-
       if error<>0 then
       begin
         ShowMessage('Error Saving file!');
@@ -3427,10 +2987,7 @@ end;
 procedure TRMMainForm.EditPasteClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
- clipstatus : integer;
 begin
- clipstatus:= RMDrawTools.GetClipStatus; // capture clip status before UpdateZoomArea
-
  GetOpenSaveRegion(x,y,x2,y2);
  RMDrawTools.Paste(x,y,x2,y2);
 
@@ -3439,10 +2996,6 @@ begin
  UpdateActualArea;
  UpdateZoomArea;
  UpdateThumbView;
- if clipstatus = 1 then
- begin
-   RMDrawTools.DrawClipArea(ZoomBox.Canvas,ColorBox.brush.color,1);
- end;
 end;
 
 procedure TRMMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -3455,12 +3008,8 @@ Procedure TRMMainForm.CopyScrollPositionToCore;
 var
  sp : TScrollPosRec;
 begin
-  //mod RM4 sp.HorizPos:=HorizScroll.Position;
-  //mod RM4 sp.VirtPos:=VirtScroll.Position;
-
   sp.HorizPos:=ScrollBox1.HorzScrollBar.Position;
   sp.VirtPos:=ScrollBox1.VertScrollBar.Position;
-
   RMDrawTools.SetScrollPos(sp);
 end;
 
@@ -3469,13 +3018,8 @@ var
  sp : TScrollPosRec;
 begin
   RMDrawTools.GetScrollPos(sp);
-
-  //mod RM4 HorizScroll.Position:=sp.HorizPos;
-  //mod RM4 VirtScroll.Position:=sp.VirtPos;
   ScrollBox1.HorzScrollBar.Position:=sp.HorizPos;
   ScrollBox1.VertScrollBar.Position:=sp.VirtPos;
-
-
 end;
 
 procedure TRMMainForm.ListView1Click(Sender: TObject);
@@ -3485,7 +3029,6 @@ begin
  if (Listview1.SelCount > 0)  then
  begin
    item:=ListView1.LastSelected;
-   //save  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
    CopyScrollPositionToCore;
    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
    ImageThumbBase.CopyIndexImageToCore(Item.Index);
@@ -3494,21 +3037,14 @@ begin
    ActualBox.Width:=RMCoreBase.GetWidth;
    ActualBox.Height:=RMCoreBase.GetHeight;
 
-   ZoomBox.AutoSize:=true;
-   ZoomBox.Picture.Bitmap.SetSize(RMDrawTools.GetZoomPageWidth,RMDrawTools.GetZoomPageHeight);
-   ZoomBox.AutoSize:=false;
-   ZoomBox.Canvas.Clear;
+   ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+   ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+   ZoomPaintBox.Canvas.Clear;
 
-  // RMDrawTools.SetZoomSize(1);
-   RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-   RMDrawTools.SetZoomMaxX(ZoomBox.Width);
-   RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+   RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+   RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
+   RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
 
-   //load  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
-   //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-   //mod RM4 HorizScroll.Max:=MaxXOffset;
-   //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-   //mod RM4 VirtScroll.Max:=MaxYOffset;
    ZoomSize:=RMDrawTools.GetZoomSize;
    CopyScrollPositionFromCore;
 
@@ -3521,9 +3057,6 @@ begin
    UpdateZoomArea;
    UpdateZoomScroller;
    UpdateThumbView;
-   if RMDrawTools.GetDrawTool = DrawShapeClip then FreezeScrollAndZoom
-   else UnFreezeScrollAndZoom;
-   UpdateToolFlipScrollMenu;
  end;
 end;
 
@@ -3550,12 +3083,9 @@ begin
  UpdateActualArea;
  RMDrawTools.SetClipStatus(0);
  RMDrawTools.SetZoomSize(2);
- RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
  UpdateZoomArea;
- UnFreezeScrollAndZoom;
  Trackbar1.Position:=RMDrawTools.getZoomSize;
- ScrollBox1.HorzScrollBar.Position:=0;
- ScrollBox1.HorzScrollBar.Position:=0;
 
  ImageThumbBase.SetCount(1);
  ImageThumbBase.SetCurrent(0);
@@ -3577,9 +3107,6 @@ procedure TRMMainForm.MapEditMenuClick(Sender: TObject);
 begin
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
  MapEdit.UpdateTileView;
-// if  MapEdit.ShowModal = mrOK then
-// begin
-// end;
  MapEdit.Show;
  MapEdit.WindowState:=wsNormal;
 end;
@@ -3671,11 +3198,6 @@ begin
    end;
 end;
 
-procedure TRMMainForm.RightPanelClick(Sender: TObject);
-begin
-
-end;
-
 procedure TRMMainForm.RMPanelClick(Sender: TObject);
 begin
   RMPanel.Hide;
@@ -3725,19 +3247,8 @@ begin
   Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer)');
   Sender.AddFunction(@FileWrite, 'function FileWrite(Handle: Integer; const Buffer: pChar; Count: LongWord): Integer)');
   Sender.AddFunction(@FileClose, 'Procedure FileClose(handle: integer)');
-
-// registering valiables but not assigning values
-//  Sender.AddRegisteredVariable('mynum','integer');
-//  Sender.AddRegisteredVariable('myname','string');
 end;
 
-procedure TRMMainForm.RMScriptExecute(Sender: TPSScript);
-begin
- //future use
- //set VALUES to variables that were registered
- //VSetInt(Sender.GetVariable('mynum'), mynum);
- //VSetString(Sender.GetVariable('myname'), 'nick');
-end;
 
 procedure TRMMainForm.ScriptMenuLoadClick(Sender: TObject);
 var
@@ -3758,7 +3269,6 @@ var
 begin
   if RMScript.compile then
   begin
-    //ShowMessage('compiled!');
     SetCoreActive;
     if not RMScript.execute then
     begin
@@ -3892,16 +3402,10 @@ begin
       ActualBox.Width:=RMCoreBase.GetWidth;
       ActualBox.Height:=RMCoreBase.GetHeight;
 
-      // RMDrawTools.SetZoomSize(1);
-      RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-      RMDrawTools.SetZoomMaxX(ZoomBox.Width);
-      RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+      RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+      RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
+      RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
 
-      //load  MaxOffset,MaxyOffset,HorizSccroll,VirtScroll
-      //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-      //mod RM4 HorizScroll.Max:=MaxXOffset;
-      //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-      //mod RM4 VirtScroll.Max:=MaxYOffset;
       ZoomSize:=RMDrawTools.GetZoomSize;
       CopyScrollPositionFromCore;
 
@@ -3914,8 +3418,6 @@ begin
       UpdateZoomArea;
       UpdateZoomScroller;
       UpdateThumbView;
-      if RMDrawTools.GetDrawTool = DrawShapeClip then FreezeScrollAndZoom
-      else UnFreezeScrollAndZoom;
       UpdateToolFlipScrollMenu;
     end;
 end;
@@ -4002,14 +3504,10 @@ begin
       ActualBox.Height:=RMCoreBase.GetHeight;
 
       RMDrawTools.SetZoomSize(1);
-      RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
-      RMDrawTools.SetZoomMaxX(ZoomBox.Width);
-      RMDrawTools.SetZoomMaxY(ZoomBox.Height);
+      RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+      RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
+      RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
 
-      //mod RM4 MaxXOffset:=RMDrawTools.GetMaxXOffset(RMCoreBase.GetWidth,ZoomBox.Width);
-      //mod RM4 HorizScroll.Max:=MaxXOffset;
-      //mod RM4 MaxYOffset:=RMDrawTools.GetMaxYOffset(RMCoreBase.GetHeight,ZoomBox.Height);
-      //mod RM4 VirtScroll.Max:=MaxYOffset;
       ZoomSize:=RMDrawTools.GetZoomSize;
 
       CoreToPalette;
@@ -4037,27 +3535,22 @@ begin
 
  CopyScrollPositionToCore;
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
- //ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCurrent,imagelist1,4);
 
  RMCoreBase.ClearBuf(0);
  RMCoreBase.SetCurColor(1);
  RMDrawTools.SetDrawTool(DrawShapePencil);
  RMDrawTools.SetClipStatus(0);
- HideSelectAreaTools;
  UpdateToolSelectionIcons;
 
  UpdateColorBox;
  UpdateActualArea;
-
- RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
  UpdateZoomArea;
- UnFreezeScrollAndZoom;
+
  Trackbar1.Position:=RMDrawTools.getZoomSize;
  ScrollBox1.HorzScrollBar.Position:=0;
  ScrollBox1.VertScrollBar.Position:=0;
 
  ImageThumbBase.AddImage;
-// ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCount-1);
  ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
 
  with ListView1.Items.Add do
@@ -4081,9 +3574,9 @@ begin
  UpdateColorBox;
  UpdateActualArea;
  RMDrawTools.SetClipStatus(0);
- RMDrawTools.DrawGrid(ZoomBox.Canvas,0,0,ZoomBox.Width,ZoomBox.Height,0);
+ RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
  UpdateZoomArea;
- UnFreezeScrollAndZoom;
+// UnFreezeScrollAndZoom;
  Trackbar1.Position:=RMDrawTools.getZoomSize;
  ScrollBox1.HorzScrollBar.Position:=0;
  ScrollBox1.VertScrollBar.Position:=0;
@@ -4095,12 +3588,10 @@ begin
  Clear;
 end;
 
-
 function TRMMainForm.getopenfilename(var filename,ext : string; filter : string) : boolean;
 begin
  filename:='';
  ext:='';
-// OpenDialog1.Filter := 'All Files|*.*';
  OpenDialog1.Filter := filter;
  getopenfilename:=OpenDialog1.Execute;
  if getopenfilename then
@@ -4110,12 +3601,10 @@ begin
  end;
 end;
 
-
 function TRMMainForm.getsavefilename(var filename,ext : string; filter : string) : boolean;
 begin
  filename:='';
  ext:='';
-// OpenDialog1.Filter := 'All Files|*.*';
  SaveDialog1.Filter := filter;
  getsavefilename:=SaveDialog1.Execute;
  if getsavefilename then
@@ -4124,7 +3613,6 @@ begin
      ext:=ExtractFileExt(SaveDialog1.FileName)
  end;
 end;
-
 
 end.
 

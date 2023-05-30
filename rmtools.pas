@@ -25,6 +25,10 @@ const
 
   MaxSprayPoints = 3;
 
+  DrawShapeModeCopy = 0;
+  DrawShapeModeXor  = 1;
+  DrawShapeModeCopyToBuf = 2;
+
 Type
   TClipAreaRec = Record
                     x,y,x2,y2 : integer;
@@ -121,7 +125,7 @@ Type
              procedure  SetGridArea(var ga : TGridAreaRec);
 
              procedure SaveClipCoords(x,y,x2,y2 : integer);
-             procedure DrawClipArea(Image : TCanvas;color : TColor; mode : integer);
+             procedure DrawOverlayOnClipArea(Image : TCanvas;color : TColor; mode : integer);
 
 
 
@@ -130,6 +134,8 @@ Type
              function GetDrawTool : integer;
 
              procedure DrawGrid(Image : TCanvas;x,y,gWidth,gHeight,mode : integer);
+             procedure DrawOverlayGrid(Image : TCanvas;gcolor : TColor);
+
              procedure SetZoomMode(mode : integer);   //0 = off 1 = on
              function  GetZoomMode : integer;
              procedure SetZoomSize(size : integer);
@@ -196,7 +202,20 @@ end;
 
 procedure  TRMDrawTools.GetClipAreaCoords(var ca : TClipAreaRec);
 begin
+
+ if ClipArea.status = 1 then
+ begin
    ca:=ClipArea;
+   ca.sized:=1;
+ end
+ else
+ begin
+   ca.sized:=1;
+   ca.x:=0;
+   ca.y:=0;
+   ca.x2:=RMCoreBase.GetWidth-1;
+   ca.y2:=RMCoreBase.GetHeight-1;
+ end;
 end;
 
 procedure  TRMDrawTools.SetClipAreaCoords(var ca : TClipAreaRec);
@@ -258,8 +277,9 @@ begin
 
 end;
 
-procedure TRMDrawTools.DrawClipArea(Image : TCanvas;color : TColor; mode : integer);
+procedure TRMDrawTools.DrawOverlayOnClipArea(Image : TCanvas;color : TColor; mode : integer);
 begin
+  if ClipArea.status = 0 then exit;
   DClip(Image,ClipArea.x,ClipArea.y,ClipArea.x2,ClipArea.y2,color,mode);
 end;
 
@@ -407,7 +427,8 @@ procedure TRMDrawTools.SprayPaint(Image : TCanvas; x,y : integer;color : TColor;
 var
  i : integer;
 begin
-  for i:=1 to MaxSprayPoints do
+
+ for i:=1 to MaxSprayPoints do
   begin
     PutPixel(Image,x+SprayPoints[i].x,y+SprayPoints[i].y,color,mode);
   end;
@@ -871,16 +892,14 @@ begin
    begin
      PutPixel(Image,x,y,color,mode);
    end
-    else if shape = DrawShapeSpray then
-     begin
-       SprayPaint(Image,x,y,color,mode);
-     end
-  else if shape = DrawShapeClip then
+   else if shape = DrawShapeSpray then
+   begin
+     SprayPaint(Image,x,y,color,mode);
+   end
+   else if shape = DrawShapeClip then
    begin
      DClip(Image,x,y,x2,y2,color,mode);
    end;
-
-
 end;
 
 procedure TRMDrawTools.SetGridThickX(amount : integer);
@@ -957,6 +976,32 @@ begin
    Image.FillRect(0, 0, Image.Width, Image.Height);
 end;
 
+procedure TRMDrawTools.DrawOverlayGrid(Image : TCanvas;gcolor : TColor);
+var
+ i: integer;
+ count : integer;
+ cw,ch : integer;
+begin
+ if GridArea.GridMode = 0 then exit;
+
+ cw:=GridArea.CellWidth;
+ ch:=GridArea.CellHeight;
+ count:=0;
+
+ Image.Pen.Color := gcolor;
+ for i:=0 to RMCoreBase.GetWidth-1 do
+ begin
+  Image.line(count, 0, count, Image.Height*ch);
+  inc(count,cw);
+ end;
+ count:=0;
+ for i:=0 to RMCoreBase.GetHeight-1 do
+ begin
+  Image.line(0,count, Image.Width*cw, count);
+  inc(count,ch);
+ end;
+
+end;
 
 procedure TRMDrawTools.SetZoomMode(mode : integer);
 begin
