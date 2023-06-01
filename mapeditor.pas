@@ -12,6 +12,7 @@ type
   { TMapEdit }
 
   TMapEdit = class(TForm)
+    CheckBoxDisplayGrid: TCheckBox;
     TileImageList: TImageList;
     MenuItem10: TMenuItem;
     Clear: TMenuItem;
@@ -72,6 +73,7 @@ type
     RightSplitter: TSplitter;
     TileZoom: TTrackBar;
 
+    procedure CheckBoxDisplayGridChange(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -143,6 +145,8 @@ type
     procedure UpdateMapView;
     Procedure UpdateMapListView;
     procedure UpdatePageSize;
+
+    procedure DrawGrid;
   end;
 
 var
@@ -194,8 +198,8 @@ begin
   MapPaintBox.Width:=0;   //this hack updated the scrollbars properly after the 2nd and following attempts
   MapPaintBox.Height:=0;
   MapPaintBox.Invalidate;
-  MapPaintBox.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap);
-  MapPaintBox.Height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap);
+  MapPaintBox.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap)+1;    //do not remove the +1 - hack to display right and bottom corner of grid
+  MapPaintBox.Height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap)+1;
   MapPaintBox.Invalidate;  //forces a paint which draws the map
 
   MapScrollBox.HorzScrollBar.Position:=hpos;
@@ -233,6 +237,12 @@ begin
   UpdateCurrentTile;
 
   UpdateTileView;
+
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.CheckBoxDisplayGridChange(Sender: TObject);
+begin
   MapPaintBox.Invalidate;
 end;
 
@@ -412,9 +422,35 @@ begin
    end;
 end;
 
+Procedure TMapEdit.DrawGrid;
+var
+  x,y : integer;
+begin
+  MapPaintBox.Canvas.Brush.Style:=bsClear;
+  MapPaintBox.Canvas.Pen.Style := psSolid;
+  MapPaintBox.Canvas.Pen.Mode :=pmXor;
+  MapPaintBox.Canvas.Pen.Width :=1;
+  MapPaintBox.Canvas.Pen.Color := clWhite;
+
+  x:=0;
+  While x <= MapPaintBox.Width do
+  begin
+    MapPaintBox.Canvas.Line(x,0,x,MapPaintBox.Height);
+    inc(x,TileWidth);
+  end;
+  y:=0;
+  While y <= MapPaintBox.Height do
+  begin
+    MapPaintBox.Canvas.Line(0,y,MapPaintBox.Width,y);
+    inc(y,TileHeight);
+  end;
+
+end;
+
 procedure TMapEdit.MapPaintBoxPaint(Sender: TObject);
 begin
   UpdateMapView;
+  if CheckBoxDisplayGrid.Checked then DrawGrid;
 end;
 
 procedure TMapEdit.MenuDeleteClick(Sender: TObject);
@@ -706,8 +742,8 @@ begin
 
    TileImageList.Add(DstBitMap,NIL);
    SrcBitMap.Free;
- end;
 
+ end;
  DstBitMap.Free;
 end;
 
@@ -839,8 +875,8 @@ begin
  MapPaintBox.Width:=0;
  MapPaintBox.height:=0;
  MapPaintBox.Invalidate;
- MapPaintBox.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap);
- MapPaintBox.height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap);
+ MapPaintBox.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap)+1;
+ MapPaintBox.height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap)+1;
  MapPaintBox.Invalidate;
 end;
 

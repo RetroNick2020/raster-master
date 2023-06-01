@@ -91,7 +91,7 @@ type
     OWPutImageArray: TMenuItem;
     OpenWatcom: TMenuItem;
     QBMouseShapeFile: TMenuItem;
-    ScrollBox1: TScrollBox;
+  //  ZoomScrollBox: TScrollBox;
     ZoomPaintBox: TPaintBox;
     ZoomScrollBox: TScrollBox;
     TCMouseShapeFile: TMenuItem;
@@ -442,6 +442,7 @@ type
        procedure UpdateInfoBarDetail;
        procedure UpdateThumbview;
 
+
        procedure PaletteToCore;
        procedure CoreToPalette;
        procedure ClearSelectedToolsMenu;
@@ -470,6 +471,7 @@ type
 
 
   public
+       procedure UpdateImportedImage;
 
   end;
 
@@ -3008,8 +3010,8 @@ Procedure TRMMainForm.CopyScrollPositionToCore;
 var
  sp : TScrollPosRec;
 begin
-  sp.HorizPos:=ScrollBox1.HorzScrollBar.Position;
-  sp.VirtPos:=ScrollBox1.VertScrollBar.Position;
+  sp.HorizPos:=ZoomScrollBox.HorzScrollBar.Position;
+  sp.VirtPos:=ZoomScrollBox.VertScrollBar.Position;
   RMDrawTools.SetScrollPos(sp);
 end;
 
@@ -3018,8 +3020,8 @@ var
  sp : TScrollPosRec;
 begin
   RMDrawTools.GetScrollPos(sp);
-  ScrollBox1.HorzScrollBar.Position:=sp.HorizPos;
-  ScrollBox1.VertScrollBar.Position:=sp.VirtPos;
+  ZoomScrollBox.HorzScrollBar.Position:=sp.HorizPos;
+  ZoomScrollBox.VertScrollBar.Position:=sp.VirtPos;
 end;
 
 procedure TRMMainForm.ListView1Click(Sender: TObject);
@@ -3291,30 +3293,21 @@ begin
   end;
 end;
 
-procedure TRMMainForm.SpriteImportMenuClick(Sender: TObject);
+procedure TRMMainForm.UpdateImportedImage;
 var
-  OldCount,NewCount : integer;
-  NewItems          : integer;
-  i : integer;
+  count : integer;
 begin
- OldCount:=ImageThumbBase.GetCount;
- SpriteImportForm.ShowModal;
- NewCount:=ImageThumbBase.GetCount;
- if OldCount = NewCount then exit; //nothing changed - no imports
- NewItems:=NewCount-OldCount;
-
  ImageThumbBase.UpdateAllThumbImages(imagelist1);
- for i:=1 to NewItems do
- begin
-   ListView1.Items.Add;
- end;
+ ListView1.Items.Add;
+ Count:=ListView1.Items.Count;
+ Listview1.Items[count-1].Caption:='Image '+IntToStr(count);
+ Listview1.Items[count-1].ImageIndex:=count-1;
+end;
 
- //we could update just the new items but this is fast enough
- For i:=0 to ListView1.Items.Count-1 do
- begin
-   Listview1.Items[i].Caption:='Image '+IntToStr(i+1);
-   Listview1.Items[i].ImageIndex:=i;
- end;
+procedure TRMMainForm.SpriteImportMenuClick(Sender: TObject);
+begin
+  SpriteImportForm.Show;
+  SpriteImportForm.WindowState:=wsNormal;
 end;
 
 procedure TRMMainForm.ThumbPopUpMenuExportClick(Sender: TObject);
@@ -3547,8 +3540,8 @@ begin
  UpdateZoomArea;
 
  Trackbar1.Position:=RMDrawTools.getZoomSize;
- ScrollBox1.HorzScrollBar.Position:=0;
- ScrollBox1.VertScrollBar.Position:=0;
+ ZoomScrollBox.HorzScrollBar.Position:=0;
+ ZoomScrollBox.VertScrollBar.Position:=0;
 
  ImageThumbBase.AddImage;
  ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
@@ -3578,8 +3571,8 @@ begin
  UpdateZoomArea;
 // UnFreezeScrollAndZoom;
  Trackbar1.Position:=RMDrawTools.getZoomSize;
- ScrollBox1.HorzScrollBar.Position:=0;
- ScrollBox1.VertScrollBar.Position:=0;
+ ZoomScrollBox.HorzScrollBar.Position:=0;
+ ZoomScrollBox.VertScrollBar.Position:=0;
  UpdateThumbView;
 end;
 

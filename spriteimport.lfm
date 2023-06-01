@@ -9,7 +9,7 @@ object SpriteImportForm: TSpriteImportForm
   OnCreate = FormCreate
   LCLVersion = '2.0.10.0'
   object TopPanel: TPanel
-    AnchorSideBottom.Control = ScrollBox1
+    AnchorSideBottom.Control = SpriteSheetScrollBox
     Left = 0
     Height = 147
     Top = 0
@@ -21,9 +21,9 @@ object SpriteImportForm: TSpriteImportForm
     TabOrder = 0
     object SpriteImage: TImage
       Left = 8
-      Height = 123
+      Height = 128
       Top = 8
-      Width = 136
+      Width = 128
     end
     object OpenSpriteSheet: TButton
       Left = 160
@@ -131,8 +131,29 @@ object SpriteImportForm: TSpriteImportForm
       ParentFont = False
       TabOrder = 4
     end
+    object CheckBoxDisplayGrid: TCheckBox
+      Left = 416
+      Height = 19
+      Top = 54
+      Width = 83
+      Caption = 'Display Grid'
+      Checked = True
+      OnChange = CheckBoxDisplayGridChange
+      State = cbChecked
+      TabOrder = 5
+    end
+    object CheckBoxSnapToGrid: TCheckBox
+      Left = 416
+      Height = 19
+      Top = 88
+      Width = 85
+      Caption = 'Snap to Grid'
+      Checked = True
+      State = cbChecked
+      TabOrder = 6
+    end
   end
-  object ScrollBox1: TScrollBox
+  object SpriteSheetScrollBox: TScrollBox
     AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -142,24 +163,25 @@ object SpriteImportForm: TSpriteImportForm
     Height = 473
     Top = 147
     Width = 1106
-    HorzScrollBar.Page = 634
+    HorzScrollBar.Page = 105
     HorzScrollBar.Tracking = True
-    VertScrollBar.Page = 403
+    VertScrollBar.Page = 105
     VertScrollBar.Tracking = True
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 469
-    ClientWidth = 1102
+    BorderStyle = bsNone
+    ClientHeight = 473
+    ClientWidth = 1106
     ParentFont = False
     TabOrder = 1
-    object SourceImage: TImage
-      AnchorSideLeft.Control = ScrollBox1
-      AnchorSideTop.Control = ScrollBox1
+    object SpriteSheetPaintBox: TPaintBox
+      Cursor = crCross
       Left = 0
-      Height = 403
+      Height = 105
       Top = 0
-      Width = 634
-      OnClick = SourceImageClick
-      OnMouseMove = SourceImageMouseMove
+      Width = 105
+      OnClick = SpriteSheetPaintBoxClick
+      OnMouseMove = SpriteSheetPaintBoxMouseMove
+      OnPaint = SpriteSheetPaintBoxPaint
     end
   end
   object ZoomTrackBar: TTrackBar
