@@ -19,6 +19,7 @@ Const
   TileClear = -1;
   TileMissing = -2;
 
+
 type
 
   TileRec = packed Record
@@ -26,11 +27,28 @@ type
               ImageIndex : integer;
   end;
 
+  MapClipBoardRec = Record
+                   width,height : integer;  //width of copy / paste buffer
+                   Status       : integer;  // 1 = data has been copied to buffer - do not paste if status is 0
+                   Tile         : array[0..255,0..255] of TileRec;
+                 end;
+
   MapHeaderRec = packed Record
                     SIG      : array[1..3] of char;
                     version  : word;
                     MapCount : word;
   end;
+
+
+   MapClipAreaRec = Record
+                     x,y,x2,y2 : integer;
+                     status    : integer;
+   end;
+
+   MapScrollPosRec = Record
+                     HorizPos : integer;
+                     VirtPos  : integer;
+   end;
 
   MapPropsRec = packed Record
              width : integer;
@@ -40,7 +58,16 @@ type
              ZoomTilewidth : integer;
              ZoomTileheight : integer;
              ZoomSize : integer;
+
+             DrawTool : integer;
+             TileMode : integer;
+             GridStatus : integer; //0 = 0ff - 1=on
+             ClipArea   : MapClipAreaRec;
+             ScrollPos  : MapScrollPosRec;
   end;
+
+
+
 
   MapExportFormatRec = Packed Record
              Name            : String[20]; // user = RES file used in name/description, in Text output used in array name, for palettes we add pal to name
@@ -58,17 +85,45 @@ type
 
   TMapCoreBase = Class
                     Map        : array of MapRec;
+                    UndoMap    : array of MapRec;
+                    ClipBoard  : MapClipBoardRec;
+
                     CurrentMap : integer;
                     MapCount   : integer;
                     constructor Create;
 
 
                     procedure SetListSize(size : integer);
-
                     procedure SetMapSize(index, mwidth,mheight : integer);
                     procedure ResizeMap(index, mwidth,mheight : integer);
                     procedure SetMapTileSize(index, twidth,theight : integer);
                     procedure SetZoomMapTileSize(index, twidth,theight : integer);
+
+                    procedure SetMapScrollVertPos(index, value : integer);
+                    function GetMapScrollVertPos(index : integer) : integer;
+                    procedure SetMapScrollHorizPos(index, value : integer);
+                    function GetMapScrollHorizPos(index : integer) : integer;
+                    procedure SetMapDrawTool(index, value : integer);
+                    function GetMapDrawTool(index : integer) : integer;
+                    procedure SetMapGridStatus(index, value : integer);
+                    function GetMapGridStatus(index : integer) : integer;
+                    procedure SetMapClipStatus(index,mode : integer);
+                    function  GetMapClipStatus(index : integer) : integer;
+                    procedure GetMapClipAreaCoords(index : integer;var ca : MapClipAreaRec);
+                    procedure  SetMapClipAreaCoords(index : integer;var ca : MapClipAreaRec);
+
+                    procedure SetMapTileMode(index, value : integer);
+                    function GetMapTileMode(index : integer) : integer;
+
+                    Procedure Hflip(index,x,y,x2,y2: integer);
+                    Procedure VFlip(index,x,y,x2,y2 : integer);
+                    Procedure ScrollLeft(index,x,y,x2,y2 : integer);
+                    Procedure ScrollRight(index,x,y,x2,y2 : integer);
+                    Procedure ScrollUp(index,x,y,x2,y2 : integer);
+                    Procedure ScrollDown(index,x,y,x2,y2 : integer);
+
+                    Procedure CopyToUndo(index : integer);
+                    Procedure Undo(index : integer);
 
                     procedure GetMapProps(index : integer;var props : MapPropsRec);
                     procedure SetMapProps(index : integer; props : MapPropsRec);
@@ -100,6 +155,10 @@ type
 
                     procedure SetMapTile(index,x,y : integer; Tile : TileRec);
                     procedure GetMapTile(index,x,y : integer;var Tile : TileRec);
+
+                    procedure InitClipBoard;
+                    procedure CopyToClipBoard(index,x,y,x2,y2 : integer);
+                    procedure PasteFromClipBoard(index,x,y,x2,y2 : integer);
 
                     procedure SetCurrentMap(index : integer);
                     function GetCurrentMap : integer;
@@ -134,12 +193,97 @@ begin
   SetMapSize(0,16,16);
   SetMapTileSize(0,64,64);
   SetMapCount(1);
+  SetMapGridStatus(0,1); //grid on
+  SetMapClipStatus(0,0); //clip off
+  SetMapDrawTool(0,1);  //pencil
+  SetMapTileMode(0,1); //draw
+  SetMapScrollVertPos(0,0);
+  SetMapScrollHorizPos(0,0);
+  CopyToUndo(0);     //copy map 0 to undo - to init it
+  InitClipBoard;
 end;
-
 
 procedure TMapCoreBase.SetListSize(size : integer);
 begin
  Setlength(Map,size);
+ Setlength(UndoMap,size);
+end;
+
+Procedure TMapCoreBase.CopyToUndo(index : integer);
+var
+ i,j : integer;
+begin
+ for i:=0 to Map[index].Props.width-1 do
+ begin
+   for j:=0 to Map[index].Props.height-1 do
+   begin
+     UndoMap[index].Tile[i,j]:=Map[index].Tile[i,j];
+   end;
+ end;
+end;
+
+Procedure TMapCoreBase.Undo(index : integer);
+var
+ i,j : integer;
+ TTile : TileRec;
+begin
+ for i:=0 to Map[index].Props.width-1 do
+ begin
+   for j:=0 to Map[index].Props.height-1 do
+   begin
+     TTile:=Map[index].Tile[i,j];
+     Map[index].Tile[i,j]:=UndoMap[index].Tile[i,j];
+     UndoMap[index].Tile[i,j]:=TTile;
+   end;
+ end;
+end;
+
+procedure TMapCoreBase.InitClipBoard;
+begin
+  ClipBoard.Status:=0;
+end;
+
+procedure TMapCoreBase.CopyToClipBoard(index,x,y,x2,y2 : integer);
+var
+ i,j   : integer;
+ width,height : integer;
+begin
+ width:=abs(x2-x+1);
+ if width > 256 then width:=256;
+ height:=abs(y2-y+1);
+ if height > 256 then height:=256;
+
+ for i:=0 to width-1 do
+ begin
+   for j:=0 to height-1 do
+   begin
+     ClipBoard.Tile[i,j]:=Map[index].Tile[x+i,y+j];
+   end;
+ end;
+ ClipBoard.width:=width;
+ ClipBoard.height:=height;
+ ClipBoard.Status:=1;
+end;
+
+
+procedure TMapCoreBase.PasteFromClipboard(index,x,y,x2,y2 : integer);
+var
+ i,j   : integer;
+ width,height : integer;
+begin
+ if ClipBoard.Status = 0 then exit;
+ width:=abs(x2-x+1);
+ if ClipBoard.width < width then width:=ClipBoard.width;
+ height:=abs(y2-y+1);
+ if ClipBoard.height < height then height:=ClipBoard.height;
+
+ for i:=0 to width-1 do
+ begin
+   for j:=0 to height-1 do
+   begin
+     Map[index].Tile[i+x,j+y]:=ClipBoard.Tile[i,j];
+   end;
+ end;
 end;
 
 procedure TMapCoreBase.SetZoomSize(index,size : integer);
@@ -217,13 +361,267 @@ begin
  ClearExportProperties(index);
 
  SetLength(Map[index].Tile,DefMaxMapWidth,DefMaxMapHeight);
- ClearMap(index,-1);
+ SetLength(UndoMap[index].Tile,DefMaxMapWidth,DefMaxMapHeight);
+
+ ClearMap(index,TileClear);
 end;
 
 procedure TMapCoreBase.ResizeMap(index, mwidth,mheight : integer);
 begin
- Map[index].Props.width:=mwidth;
- Map[index].Props.height:=mheight;
+  Map[index].Props.width:=mwidth;
+  Map[index].Props.height:=mheight;
+end;
+
+
+procedure TMapCoreBase.SetMapScrollVertPos(index, value : integer);
+begin
+  Map[index].Props.ScrollPos.VirtPos:=value;
+end;
+
+function TMapCoreBase.GetMapScrollVertPos(index : integer) : integer;
+begin
+  result:=Map[index].Props.ScrollPos.VirtPos;
+end;
+
+procedure TMapCoreBase.SetMapTileMode(index, value : integer);
+begin
+  Map[index].Props.TileMode:=value;
+end;
+
+function TMapCoreBase.GetMapTileMode(index : integer) : integer;
+begin
+  result:=Map[index].Props.TileMode;
+end;
+
+
+
+procedure TMapCoreBase.SetMapScrollHorizPos(index, value : integer);
+begin
+  Map[index].Props.ScrollPos.HorizPos:=value;
+end;
+
+function TMapCoreBase.GetMapScrollHorizPos(index : integer) : integer;
+begin
+  result:=Map[index].Props.ScrollPos.HorizPos;
+end;
+
+procedure TMapCoreBase.SetMapDrawTool(index, value : integer);
+begin
+  Map[index].Props.DrawTool:=value;
+end;
+
+function TMapCoreBase.GetMapDrawTool(index : integer) : integer;
+begin
+  result:=Map[index].Props.DrawTool;
+end;
+
+procedure TMapCoreBase.SetMapGridStatus(index, value : integer);
+begin
+  Map[index].Props.GridStatus:=value;
+end;
+
+function TMapCoreBase.GetMapGridStatus(index : integer) : integer;
+begin
+  result:=Map[index].Props.GridStatus;
+end;
+
+
+
+procedure TMapCoreBase.SetMapClipStatus(index,mode : integer);
+begin
+   Map[index].Props.ClipArea.status:=mode;
+end;
+
+function TMapCoreBase.GetMapClipStatus(index : integer) : integer;
+begin
+  result:=Map[index].Props.ClipArea.status;
+end;
+
+procedure TMapCoreBase.GetMapClipAreaCoords(index : integer;var ca : MapClipAreaRec);
+begin
+ if Map[index].Props.ClipArea.status = 1 then
+ begin
+   ca:=Map[index].Props.ClipArea;
+ end
+ else                //no select region so we return the entire map area
+ begin
+   ca.x:=0;
+   ca.y:=0;
+   ca.x2:=Map[index].Props.Width-1;
+   ca.y2:=Map[index].Props.Height-1;
+ end;
+end;
+
+procedure  TMapCoreBase.SetMapClipAreaCoords(index : integer;var ca : MapClipAreaRec);
+var
+  temp : integer;
+begin
+  if ca.x > ca.x2 then
+  begin
+    temp:=ca.x;
+    ca.x:=ca.x2;
+    ca.x2:=temp;
+  end;
+  if ca.y > ca.y2 then
+  begin
+    temp:=ca.y;
+    ca.y:=ca.y2;
+    ca.y2:=temp;
+  end;
+  Map[index].Props.ClipArea:=ca;
+end;
+
+Procedure TMapCoreBase.Hflip(index,x,y,x2,y2: integer);
+Var
+ i,j : integer;
+ L   : integer;
+ C,C2 : TileRec;
+   A  : integer;
+begin
+  L :=(x2-x) Div 2;
+  A :=x2;
+  For i:=x to (x2-L-1) do
+  begin
+    For j:=y to y2 do
+    begin
+     //C:=RMCoreBase.GetPixel(i,j);
+     //C2:=RMCoreBase.GetPixel(A,j);
+     GetMapTile(index,i,j,C);
+     GetMapTile(index,A,j,C2);
+     SetMapTile(index,i,j,C2);
+     SetMapTile(index,A,j,C);
+     //RMCoreBase.PutPixel(i,j,C2);
+     //RMCoreBase.PutPixel(A,J,C);
+    end;
+    Dec(A);
+  end;
+
+end;
+
+Procedure TMapCoreBase.VFlip(index,x,y,x2,y2 : integer);
+Var
+ i,j : integer;
+ L   : integer;
+ C,C2 : TileRec;
+ A  : integer;
+begin
+  L :=(y2-y) Div 2;
+  A :=y2;
+  For j:=y to (y2-L-1) do
+  begin
+    For i:=x to x2 do
+    begin
+     //C:=RMCoreBase.GetPixel(i,j);
+     //C2:=RMCoreBase.GetPixel(i,A);
+
+     GetMapTile(index,i,j,C);
+     GetMapTile(index,i,A,C2);
+
+     SetMapTile(index,i,j,C2);
+     SetMapTile(index,i,A,C);
+
+
+     //RMCoreBase.PutPixel(i,j,C2);
+     //RMCoreBase.PutPixel(i,A,C);
+    end;
+    Dec(A);
+  end;
+end;
+
+Procedure TMapCoreBase.ScrollLeft(index,x,y,x2,y2 : integer);
+Var
+ i,j : integer;
+   c,d : TileRec;
+begin
+ For j:=y to y2 do
+ begin
+   //d:=RMCoreBase.GetPixel(x,j);
+   GetMapTile(index,x,j,d);
+
+   For i:=x+1 to x2 do
+   begin
+   //  c:=RMCoreBase.GetPixel(i,j);
+     GetMapTile(index,i,j,c);
+
+    //RMCoreBase.PutPixel(i-1,j,c);
+     SetMapTile(index,i-1,j,c);
+
+   end;
+//   RMCoreBase.PutPixel(x2,j,d);
+   SetMapTile(index,x2,J,d);
+
+ end;
+end;
+
+Procedure TMapCoreBase.ScrollRight(index,x,y,x2,y2 : integer);
+Var
+ i,j : integer;
+   c,d : TileRec;
+begin
+ For j:=y to y2 do
+ begin
+   //d:=RMCoreBase.GetPixel(x2,j);
+   GetMapTile(index,x2,j,d);
+
+   For i:=x2-1 downto x do
+   begin
+//    c:=RMCoreBase.GetPixel(i,j);
+     GetMapTile(index,i,j,c);
+
+//    RMCoreBase.PutPixel(i+1,j,c);
+     SetMapTile(index,i+1,j,c);
+
+   end;
+//   RMCoreBase.PutPixel(x,j,d);
+     SetMapTile(index,x,j,d);
+ end;
+end;
+
+Procedure TMapCoreBase.ScrollUp(index,x,y,x2,y2 : integer);
+Var
+ i,j : integer;
+   c,d : TileRec;
+begin
+ For i:=x to x2 do
+ begin
+//   d:=RMCoreBase.GetPixel(i,y);
+   GetMapTile(index,i,y,d);
+
+   For j:=y to y2-1 do
+   begin
+//    c:=RMCoreBase.GetPixel(i,j+1);
+     GetMapTile(index,i,j+1,c);
+
+//     RMCoreBase.PutPixel(i,j,c);
+     SetMapTile(index,i,j,c);
+
+   end;
+//   RMCoreBase.PutPixel(i,y2,d);
+   SetMapTile(index,i,y2,d);
+ end;
+end;
+
+Procedure TMapCoreBase.ScrollDown(index,x,y,x2,y2 : integer);
+Var
+ i,j  : integer;
+   c,d : TileRec;
+begin
+ For i:=x to x2 do
+ begin
+//   d:=RMCoreBase.GetPixel(i,y2);
+   GetMapTile(index,i,y2,d);
+
+   For j:=y2  downto y+1 do
+   begin
+//    c:=RMCoreBase.GetPixel(i,j-1);
+     GetMapTile(index,i,j-1,c);
+//     RMCoreBase.PutPixel(i,j,c);
+     SetMapTile(index,i,j,c);
+
+   end;
+//   RMCoreBase.PutPixel(i,y,d);
+     SetMapTile(index,i,y,d);
+ end;
 end;
 
 procedure TMapCoreBase.ClearMap(index, value : integer);

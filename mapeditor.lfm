@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 271
+  Left = 297
   Height = 682
-  Top = 159
+  Top = 246
   Width = 1130
   Caption = 'Map Editor'
   ClientHeight = 662
@@ -10,6 +10,7 @@ object MapEdit: TMapEdit
   OnActivate = FormActivate
   OnClose = FormClose
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnShow = FormShow
   LCLVersion = '2.0.10.0'
   object LeftPanel: TPanel
@@ -118,14 +119,14 @@ object MapEdit: TMapEdit
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 942
+    Left = 1033
     Height = 662
     Top = 0
-    Width = 188
+    Width = 97
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'RightPanel'
     ClientHeight = 662
-    ClientWidth = 188
+    ClientWidth = 97
     ParentColor = False
     ParentFont = False
     TabOrder = 0
@@ -133,7 +134,7 @@ object MapEdit: TMapEdit
       Left = 1
       Height = 660
       Top = 1
-      Width = 186
+      Width = 95
       Align = alClient
       Color = 15790320
       Columns = <>
@@ -161,7 +162,7 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 933
+    Left = 1024
     Height = 662
     Top = 0
     Width = 9
@@ -176,12 +177,12 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightSplitter
     Left = 227
-    Height = 102
+    Height = 126
     Top = 0
-    Width = 706
+    Width = 797
     Anchors = [akTop, akLeft, akRight]
-    ClientHeight = 102
-    ClientWidth = 706
+    ClientHeight = 126
+    ClientWidth = 797
     ParentFont = False
     TabOrder = 4
     object MapInfoLabel: TLabel
@@ -194,9 +195,9 @@ object MapEdit: TMapEdit
       ParentFont = False
     end
     object TileZoom: TTrackBar
-      Left = 671
-      Height = 87
-      Top = 6
+      Left = 762
+      Height = 99
+      Top = 13
       Width = 25
       Max = 6
       Min = 1
@@ -208,49 +209,234 @@ object MapEdit: TMapEdit
       ParentFont = False
       TabOrder = 0
     end
-    object ToolPanel: TPanel
-      Left = 442
-      Height = 74
-      Top = 13
-      Width = 229
+    object Panel2: TPanel
+      Left = 159
+      Height = 96
+      Top = 16
+      Width = 592
       Anchors = [akTop, akRight]
-      ClientHeight = 74
-      ClientWidth = 229
-      ParentFont = False
+      ClientHeight = 96
+      ClientWidth = 592
       TabOrder = 1
-      object RadioDraw: TRadioButton
-        Left = 51
-        Height = 19
-        Top = 26
-        Width = 47
-        Caption = 'Draw'
-        Checked = True
-        OnClick = RadioDrawClick
-        ParentFont = False
-        TabOrder = 1
-        TabStop = True
+      object ToolPencilIcon: TImage
+        Left = 16
+        Height = 32
+        Hint = 'Pencil'
+        Top = 8
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
       end
-      object RadioErase: TRadioButton
-        Left = 147
-        Height = 19
-        Top = 26
-        Width = 47
-        Caption = 'Erase'
-        OnClick = RadioEraseClick
-        ParentFont = False
+      object ToolLineIcon: TImage
+        Left = 16
+        Height = 32
+        Hint = 'Line'
+        Top = 48
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolFRectangleIcon: TImage
+        Left = 56
+        Height = 32
+        Hint = 'Filled Rectangle'
+        Top = 48
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolFCircleIcon: TImage
+        Left = 96
+        Height = 32
+        Hint = 'Filled Circle'
+        Top = 48
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolRectangleIcon: TImage
+        Left = 56
+        Height = 32
+        Hint = 'Empty Rectangle'
+        Top = 8
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolCircleIcon: TImage
+        Left = 96
+        Height = 32
+        Hint = 'Empty Circle'
+        Top = 8
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolEllipseIcon: TImage
+        Left = 136
+        Height = 32
+        Hint = 'Empty Ellipse'
+        Top = 9
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolFEllipseIcon: TImage
+        Left = 136
+        Height = 32
+        Hint = 'Filled Ellipse'
+        Top = 48
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolPaintIcon: TImage
+        Left = 176
+        Height = 32
+        Hint = 'Paint'
+        Top = 48
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolSprayPaintIcon: TImage
+        Left = 176
+        Height = 32
+        Hint = 'Spray Paint'
+        Top = 8
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolGridIcon: TImage
+        Left = 216
+        Height = 32
+        Hint = 'Toggle Grid'
+        Top = 7
+        Width = 32
+        OnClick = ToolGridIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolSelectAreaIcon: TImage
+        Left = 216
+        Height = 32
+        Hint = 'Select Area'
+        Top = 48
+        Width = 32
+        OnClick = ToolIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolScrollLeftIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Scroll Left'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollLeftIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolUndoIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Undo'
+        Top = 8
+        Width = 32
+        OnClick = ToolUndoIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolScrollRightIcon: TImage
+        Left = 296
+        Height = 32
+        Hint = 'Scroll Right'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollRightIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolScrollUpIcon: TImage
+        Left = 336
+        Height = 32
+        Hint = 'Scroll Up'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollUpIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolScrollDownIcon: TImage
+        Left = 376
+        Height = 32
+        Hint = 'Scroll Down'
+        Top = 48
+        Width = 32
+        OnClick = ToolScrollDownIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolHFLIPButton: TButton
+        Left = 296
+        Height = 31
+        Top = 9
+        Width = 54
+        Caption = 'HFLIP'
+        OnClick = ToolHFLIPButtonClick
         TabOrder = 0
       end
-    end
-    object CheckBoxDisplayGrid: TCheckBox
-      Left = 13
-      Height = 19
-      Top = 40
-      Width = 83
-      Caption = 'Display Grid'
-      Checked = True
-      OnChange = CheckBoxDisplayGridChange
-      State = cbChecked
-      TabOrder = 2
+      object ToolVFLIPButton: TButton
+        Left = 354
+        Height = 31
+        Top = 8
+        Width = 54
+        Caption = 'VFLIP'
+        OnClick = ToolVFLIPButtonClick
+        TabOrder = 1
+      end
+      object GroupBox1: TGroupBox
+        Left = 432
+        Height = 73
+        Top = 7
+        Width = 145
+        ClientHeight = 53
+        ClientWidth = 141
+        TabOrder = 2
+        object RadioDraw: TRadioButton
+          Left = 16
+          Height = 19
+          Top = 8
+          Width = 47
+          Caption = 'Draw'
+          Checked = True
+          OnClick = RadioDrawClick
+          ParentFont = False
+          TabOrder = 0
+          TabStop = True
+        end
+        object RadioErase: TRadioButton
+          Left = 80
+          Height = 19
+          Top = 8
+          Width = 47
+          Caption = 'Erase'
+          OnClick = RadioEraseClick
+          ParentFont = False
+          TabOrder = 1
+        end
+      end
     end
   end
   object MiddlePanel: TPanel
@@ -262,21 +448,21 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 227
-    Height = 560
-    Top = 102
-    Width = 706
+    Height = 536
+    Top = 126
+    Width = 797
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'MiddlePanel'
-    ClientHeight = 560
-    ClientWidth = 706
+    ClientHeight = 536
+    ClientWidth = 797
     ParentColor = False
     ParentFont = False
     TabOrder = 5
     object MapScrollBox: TScrollBox
       Left = 1
-      Height = 558
+      Height = 534
       Top = 1
-      Width = 704
+      Width = 795
       HorzScrollBar.Increment = 10
       HorzScrollBar.Page = 105
       HorzScrollBar.Tracking = True
@@ -285,8 +471,8 @@ object MapEdit: TMapEdit
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
-      ClientHeight = 558
-      ClientWidth = 704
+      ClientHeight = 534
+      ClientWidth = 795
       ParentFont = False
       TabOrder = 0
       object MapPaintBox: TPaintBox
@@ -298,9 +484,9 @@ object MapEdit: TMapEdit
         Top = 0
         Width = 105
         ParentColor = False
-        OnMouseDown = MapImageMouseDown
-        OnMouseMove = MapImageMouseMove
-        OnMouseUp = MapImageMouseUp
+        OnMouseDown = MPaintBoxMouseDown
+        OnMouseMove = MPaintBoxMouseMove
+        OnMouseUp = MPaintBoxMouseUp
         OnPaint = MapPaintBoxPaint
       end
     end
@@ -367,6 +553,14 @@ object MapEdit: TMapEdit
       object Clear: TMenuItem
         Caption = 'Clear'
         OnClick = ClearMapClick
+      end
+      object CopyToClipBoard: TMenuItem
+        Caption = 'Copy'
+        OnClick = CopyToClipBoardClick
+      end
+      object PasteFromClipBoard: TMenuItem
+        Caption = 'Paste'
+        OnClick = PasteFromClipBoardClick
       end
       object MenuItem5: TMenuItem
         Caption = 'Resize Map To'

@@ -6,13 +6,18 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,
-  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen;
+  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools;
 
 type
   { TMapEdit }
 
   TMapEdit = class(TForm)
-    CheckBoxDisplayGrid: TCheckBox;
+    GroupBox1: TGroupBox;
+    CopyToClipBoard: TMenuItem;
+    PasteFromClipBoard: TMenuItem;
+    Panel2: TPanel;
+    RadioDraw: TRadioButton;
+    RadioErase: TRadioButton;
     TileImageList: TImageList;
     MenuItem10: TMenuItem;
     Clear: TMenuItem;
@@ -29,10 +34,16 @@ type
     OpenDialog1: TOpenDialog;
     ExportMapsPropsMenu: TPopupMenu;
     MapPaintBox: TPaintBox;
-    RadioDraw: TRadioButton;
-    RadioErase: TRadioButton;
     SaveDialog1: TSaveDialog;
-    ToolPanel: TPanel;
+    ToolCircleIcon: TImage;
+    ToolEllipseIcon: TImage;
+    ToolFCircleIcon: TImage;
+    ToolFEllipseIcon: TImage;
+    ToolFRectangleIcon: TImage;
+    ToolGridIcon: TImage;
+    ToolHFLIPButton: TButton;
+    ToolLineIcon: TImage;
+    ToolPaintIcon: TImage;
     ReSize64x64: TMenuItem;
     ReSize128x128: TMenuItem;
     ReSize256x256: TMenuItem;
@@ -66,6 +77,16 @@ type
     MiddlePanel: TPanel;
     RightPanel: TPanel;
     LeftPanel: TPanel;
+    ToolPencilIcon: TImage;
+    ToolRectangleIcon: TImage;
+    ToolScrollDownIcon: TImage;
+    ToolScrollLeftIcon: TImage;
+    ToolScrollRightIcon: TImage;
+    ToolScrollUpIcon: TImage;
+    ToolSelectAreaIcon: TImage;
+    ToolSprayPaintIcon: TImage;
+    ToolUndoIcon: TImage;
+    ToolVFLIPButton: TButton;
     TopMiddlePanel: TPanel;
     MapScrollBox: TScrollBox;
     LeftVertSplitter: TSplitter;
@@ -74,9 +95,11 @@ type
     TileZoom: TTrackBar;
 
     procedure CheckBoxDisplayGridChange(Sender: TObject);
+    procedure CopyToClipBoardClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
 
     procedure MapImageMouseDown(Sender: TObject; Button: TMouseButton;
@@ -99,6 +122,7 @@ type
     procedure MenuOpenClick(Sender: TObject);
     procedure MenuNewClick(Sender: TObject);
     procedure MenuSaveClick(Sender: TObject);
+    procedure PasteFromClipBoardClick(Sender: TObject);
     procedure ReSizeMapClick(Sender: TObject);
     procedure MenuToolDrawClick(Sender: TObject);
     procedure MenuToolEraseClick(Sender: TObject);
@@ -108,19 +132,51 @@ type
 
     procedure TileListViewClick(Sender: TObject);
     procedure TileZoomChange(Sender: TObject);
+
+    procedure MPaintBoxMouseDownXYX2Y2Tool(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseMoveXYX2Y2Tool(Sender: TObject; Shift: TShiftState;
+      X, Y: Integer);
+    procedure MPaintBoxMouseUpXYX2Y2Tool(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseUpXYTool(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseMoveXYTool(Sender: TObject; Shift: TShiftState;
+      X, Y: Integer);
+    procedure MPaintBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure ToolGridIconClick(Sender: TObject);
+    procedure ToolHFLIPButtonClick(Sender: TObject);
+    procedure ToolIconClick(Sender: TObject);
+    procedure ToolScrollDownIconClick(Sender: TObject);
+    procedure ToolScrollLeftIconClick(Sender: TObject);
+    procedure ToolScrollRightIconClick(Sender: TObject);
+    procedure ToolScrollUpIconClick(Sender: TObject);
+    procedure ToolUndoIconClick(Sender: TObject);
+    procedure ToolVFLIPButtonClick(Sender: TObject);
+
   private
 
   public
     hpos,vpos : integer;
-    MDownLeft      : Boolean;
-    MDownRight      : Boolean;
     CurrentMap : integer;
     TileWidth : integer;
     TileHeight : integer;
     CTile      : TileRec;
     CTileBitMap : TBitMap;
-    CTool       : integer;
+    TileMode       : integer;
+    DrawTool       : integer;
+    RenderDrawToolShape : Boolean;
+
     FormShowActivate : boolean;
+
+    MapX,MapY,MapX2,MapY2,OldMapX,OldMapY : integer;
+
+    function GetMapX(x : integer) : integer;
+    function GetMapY(y : integer) : integer;
 
     procedure PlotTileAt(x,y : integer; TTile : TileRec);
     procedure PlotTile(mx,my : integer; TTile : TileRec);
@@ -128,12 +184,14 @@ type
 
     procedure ClearTile(mx,my : integer);
     procedure PlotMissingTile(mx,my : integer);
-    Procedure SetMapTool(Tool : integer);
+    Procedure SetMapTileMode(Tool : integer);
+    procedure SetDrawTool(tool : integer);
 
     procedure APlotTile(x,y : integer;var TTile : TileRec);   //convert to grid format and store on array
     procedure AClearTile(x,y : integer);
     procedure CPlotTile(ColX,ColY : integer;var TTile : TileRec); //draw to canvas - do not store
     procedure CClearTile(ColX,ColY : integer);
+    Procedure DrawOverLayOnClipArea;
 
     procedure LoadTile(index : integer);
     procedure LoadTilesToTileImageList;
@@ -142,11 +200,15 @@ type
     procedure UpdateTileView;
     procedure UpdateCurrentTile;
     procedure UpdateMapInfo(x,y : integer);
+    procedure UpdateInfoBarX1Y1X2Y2;
+
     procedure UpdateMapView;
     Procedure UpdateMapListView;
     procedure UpdatePageSize;
-
     procedure DrawGrid;
+    Procedure LoadResourceIcons;
+    Procedure UpdateToolSelectionIcons;
+
   end;
 
 var
@@ -159,9 +221,43 @@ implementation
 
 { TMapEdit }
 
+procedure DrawTileCB(x,y,index,mode : integer);
+var
+  TT : TileRec;
+begin
+ if mode = 1 then
+ begin
+   if MapEdit.TileMode = 0 then
+   begin
+     TT.ImageIndex:=TileClear;
+     MapCoreBase.SetMapTile(MapCoreBase.GetCurrentMap,x,y,TT);
+   end
+   else
+   begin
+     MapCoreBase.SetMapTile(MapCoreBase.GetCurrentMap,x,y,MapEdit.CTile);
+   end;
+ end
+ else
+ begin
+   MapEdit.ImageListPlotTile(x,y,MapEdit.CTile);
+ end;
+end;
+
+function GetTileTB(x,y : integer) : integer;
+var
+  TT : TileRec;
+begin
+ MapCoreBase.GetMapTile(MapCoreBase.GetCurrentMap,x,y,TT);
+ result:=TT.ImageIndex;
+end;
+
 procedure TMapEdit.FormCreate(Sender: TObject);
 begin
- SetMapTool(1);  //draw
+ LoadResourceIcons;
+ SetDrawPixelProc(@DrawTileCB);
+ SetGetPixelProc(@GetTileTB);
+ SetMapTileMode(1);  //draw
+ SetDrawTool(DrawShapePencil);
  CurrentMap:=MapCoreBase.GetCurrentMap;
  MapCoreBase.SetZoomSize(CurrentMap,4);
 
@@ -172,10 +268,22 @@ begin
  TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
  TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
 
- MDownLeft:=False;
- MDownRight:=False;
  CTile.ImageIndex:=TileMissing;
  FormShowActivate:=false;
+
+ MapX:=0;
+ MapY:=0;
+ MapX2:=0;
+ MapY2:=0;
+ OldMapX:=-1;
+ OldMapY:=-1;
+ RenderDrawToolShape:=False;
+ UpdateToolSelectionIcons;
+end;
+
+procedure TMapEdit.FormDestroy(Sender: TObject);
+begin
+  CTileBitmap.Free;
 end;
 
 procedure TMapEdit.FormShow(Sender: TObject);
@@ -241,10 +349,46 @@ begin
   MapPaintBox.Invalidate;
 end;
 
+procedure TMapEdit.SetDrawTool(tool : integer);
+begin
+  DrawTool:=tool;
+  MapCoreBase.SetMapDrawTool(MapCoreBase.GetCurrentMap,DrawTool);
+end;
+
+
+function TMapEdit.GetMapX(x : integer) : integer;
+begin
+  result:=x div TileWidth;
+end;
+
+function TMapEdit.GetMapY(y : integer) : integer;
+begin
+  result:=y div TileHeight;
+end;
+
 procedure TMapEdit.CheckBoxDisplayGridChange(Sender: TObject);
 begin
   MapPaintBox.Invalidate;
 end;
+
+procedure TMapEdit.CopyToClipBoardClick(Sender: TObject);
+var
+ ca : MapClipAreaRec;
+begin
+ MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+ MapCoreBase.CopyToClipBoard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
+end;
+
+procedure TMapEdit.PasteFromClipBoardClick(Sender: TObject);
+var
+  ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.PasteFromClipboard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
+  MapPaintBox.Invalidate;
+end;
+
+
 
 procedure TMapEdit.PlotTile(mx,my : integer; TTile : TileRec);
 var
@@ -302,18 +446,20 @@ end;
 
 procedure TMapEdit.MapImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
+ (*
  UpdateMapInfo(x,y);
 
- if MDOwnLeft and (CTool=1) then
+ if MDOwnLeft and (TileMode=1) then
  begin
    APlotTile(x,y,CTile);
    //MapCoreBase.SetMapTile(CurrentMap,mx,my,CTile);
  end
- else if (MDOwnRight=true) or ((MDownLeft=true) and (CTool=0)) then
+ else if (MDOwnRight=true) or ((MDownLeft=true) and (TileMode=0)) then
  begin
    AClearTile(x,y);
  end;
  MapPaintBox.Invalidate;
+ *)
 end;
 
 procedure TMapEdit.APlotTile(x,y : integer;var TTile : TileRec);
@@ -369,6 +515,7 @@ end;
 procedure TMapEdit.MapImageMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
+ (*
  MDownLeft:=False;
  MDownRight:=False;
 
@@ -380,24 +527,25 @@ begin
  else if Button = mbLeft then
  begin
     MDownLeft:=True;
-    if CTool = 1 then
+    if TileMode = 1 then
     begin
       APlotTile(x,y,CTile);
     end
-    else if CTool = 0 then
+    else if TileMode = 0 then
     begin
       AClearTile(x,y);
     end;
  end;
  MapPaintbox.Invalidate
+ *)
 end;
 
 procedure TMapEdit.MapImageMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  MDownLeft:=False;
+  (*MDownLeft:=False;
   MDownRight:=False;
-  MapPaintBox.Invalidate;
+  MapPaintBox.Invalidate;*)
 end;
 
 procedure TMapEdit.ClearMapClick(Sender: TObject);
@@ -410,13 +558,32 @@ end;
 procedure TMapEdit.MapListViewClick(Sender: TObject);
 var
   item : TListItem;
+  zs,tw,th : integer;
 begin
    if (MapListView.SelCount > 0) then
    begin
      item:=MapListView.LastSelected;
+     MapCoreBase.SetMapScrollHorizPos(MapCoreBase.GetCurrentMap,MapScrollBox.HorzScrollBar.Position);
+     MapCoreBase.SetMapScrollVertPos(MapCoreBase.GetCurrentMap,MapScrollBox.VertScrollBar.Position);
+
      MapCoreBase.SetCurrentMap(item.Index);
      CurrentMap:=MapCoreBase.GetCurrentMap;
+
+     tw:=MapCoreBase.GetMapTileWidth(CurrentMap);
+     th:=MapCoreBase.GetMapTileHeight(CurrentMap);
+     zs:=MapCoreBase.GetZoomSize(CurrentMap);
+     MapCoreBase.SetZoomSize(CurrentMap,zs);
+     TileZoom.Position:=zs;
+     MapCoreBase.SetMapTileSize(CurrentMap,tw,th);
+
+     TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
+     TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
+
      UpdatePageSize;
+     MapScrollBox.HorzScrollBar.Position:=MapCoreBase.GetMapScrollHorizPos(MapCoreBase.GetCurrentMap);
+     MapScrollBox.VertScrollBar.Position:=MapCoreBase.GetMapScrollVertPos(MapCoreBase.GetCurrentMap);
+     SetDrawTool(MapCoreBase.GetMapDrawTool(CurrentMap));
+     UpdateToolSelectionIcons;
      //UpdateMapView;
      MapPaintBox.Invalidate;
    end;
@@ -444,13 +611,26 @@ begin
     MapPaintBox.Canvas.Line(0,y,MapPaintBox.Width,y);
     inc(y,TileHeight);
   end;
+  MapPaintBox.Canvas.Pen.Mode :=pmCopy;
+end;
 
+Procedure  TMapEdit.DrawOverLayOnClipArea;
+var
+  ca : MapClipAreaRec;
+begin
+  MapPaintBox.Canvas.Brush.Style:=bsClear;
+  MapPaintBox.Canvas.Pen.Color:=clYellow;
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapPaintBox.Canvas.Rectangle(ca.x*TileWidth-2,ca.y*TileHeight-2,(ca.x2+1)*TileWidth+3,(ca.y2+1)*TileHeight+3);
+  MapPaintBox.Canvas.Rectangle(ca.x*TileWidth-3,ca.y*TileHeight-3,(ca.x2+1)*TileWidth+4,(ca.y2+1)*TileHeight+4);
 end;
 
 procedure TMapEdit.MapPaintBoxPaint(Sender: TObject);
 begin
   UpdateMapView;
-  if CheckBoxDisplayGrid.Checked then DrawGrid;
+  if RenderDrawToolShape  then DrawItem(DrawTool,MapX,MapY,MapX2,MapY2,CTile.ImageIndex,0);
+  if MapCoreBase.GetMapGridStatus(MapCoreBase.GetCurrentMap) = 1 then DrawGrid;
+  if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then DrawOverLayOnClipArea;
 end;
 
 procedure TMapEdit.MenuDeleteClick(Sender: TObject);
@@ -534,12 +714,23 @@ end;
 
 procedure TMapEdit.MenuNewClick(Sender: TObject);
 begin
-  MapCoreBase.AddMap;
+  //capture vert/scroll bar positions
+  MapCoreBase.SetMapScrollHorizPos(MapCoreBase.GetCurrentMap,MapScrollBox.HorzScrollBar.Position);
+  MapCoreBase.SetMapScrollVertPos(MapCoreBase.GetCurrentMap,MapScrollBox.VertScrollBar.Position);
+
+  MapCoreBase.AddMap;   //making copy of Map 0 for all new maps - Map 0 is the primary map
   MapCoreBase.SetCurrentMap(MapCoreBase.GetMapCount-1);
   CurrentMap:=MapCoreBase.GetCurrentMap;
+
+  TileZoom.Position:=4;
+  MapCoreBase.SetZoomSize(CurrentMap,TileZoom.Position);
+
   UpdateMapListView;
   UpdatePageSize;
-  //UpdateMapView;
+  MapScrollBox.HorzScrollBar.Position:=0;
+  MapScrollBox.VertScrollBar.Position:=0;
+  SetDrawTool(DrawShapePencil);
+  UpdateToolSelectionIcons;
   MapPaintBox.Invalidate;
 end;
 
@@ -563,6 +754,8 @@ begin
    WriteMap(SaveDialog1.FileName);
   end;
 end;
+
+
 
 procedure TMapEdit.ReSizeMapClick(Sender: TObject);
 var
@@ -595,22 +788,24 @@ end;
 
 procedure TMapEdit.MenuToolDrawClick(Sender: TObject);
 begin
-  SetMapTool(1);
+
 end;
 
 procedure TMapEdit.MenuToolEraseClick(Sender: TObject);
 begin
- SetMapTool(0);
+
 end;
 
 procedure TMapEdit.RadioDrawClick(Sender: TObject);
 begin
-  SetMapTool(1);
+  TileMode:=1;
+  MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
 end;
 
 procedure TMapEdit.RadioEraseClick(Sender: TObject);
 begin
- SetMapTool(0);
+ TileMode:=0;
+ MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
 end;
 
 procedure TMapEdit.ReSizeTiles(Sender: TObject);
@@ -662,9 +857,10 @@ end;
 
 
 //0 erase 1 draw tile
-Procedure TMapEdit.SetMapTool(Tool : integer);
+Procedure TMapEdit.SetMapTileMode(Tool : integer);
 begin
-  CTool:=Tool;
+  TileMode:=Tool;
+  MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
   MenuToolErase.Checked:=false;
   MenuToolDraw.Checked:=false;
 
@@ -682,7 +878,7 @@ end;
 
 procedure TMapEdit.MapImageMouseLeave(Sender: TObject);
 begin
-  MDownRight:=False;
+(*  MDownRight:=False;*)
 end;
 
 procedure TMapEdit.LoadTile(index : integer);
@@ -886,13 +1082,365 @@ begin
   SelectedTileImage.canvas.CopyRect(Rect(0, 0, CTileBitMap.Width, CTileBitMap.Height), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
 end;
 
+procedure TMapEdit.UpdateInfoBarX1Y1X2Y2;
+var
+  XYStr   : string;
+begin
+ XYStr:='X = '+IntToStr(MapX)+' Y = '+IntToStr(MapY)+#13#10+
+        'X2 = '+IntToStr(MapX2)+' Y2 = '+IntToStr(MapY2)+#13#10+
+        'Width = '+IntToStr(ABS(MapX2-MapX+1))+' Height = '+IntToStr(ABS(MapY2-MapY+1));
+ MapInfoLabel.Caption:=XYStr;
+end;
+
 procedure TMapEdit.UpdateMapInfo(x,y : integer);
 var
  mx,my : integer;
+ ClipStr : string;
+ ColIndexStr : string;
+ ca      : MapClipAreaRec;
+ XYStr : string;
+ TT : TileRec;
 begin
   mx:=x div TileWidth;
   my:=y div TileHeight;
-  MapInfoLabel.Caption:='X = '+IntToStr(mx)+'  Y = '+IntToStr(my);
+
+  XYStr:='X = '+IntToStr(MX)+' Y = '+IntToStr(MY)+#13#10;
+  ColIndexStr:='';
+  if (mx >= 0) and (my >= 0) then
+   begin
+     MapCoreBase.GetMapTile(MapCoreBase.GetCurrentMap,mx,my,tt);
+     ColIndexStr:='Tile Index: '+IntToStr(TT.ImageIndex);
+   end;
+   ClipStr:='';
+   if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then
+   begin
+        MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+        ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
+                 'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
+   end;
+   MapInfoLabel.Caption:=XYStr+ClipStr+ColIndexStr;
+
+
+  //MapInfoLabel.Caption:='X = '+IntToStr(mx)+'  Y = '+IntToStr(my);
+end;
+
+// xyx2y2 mouse down event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
+procedure TMapEdit.MPaintBoxMouseDownXYX2Y2Tool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+ ca : MapClipAreaRec;
+begin
+  MapX:=GetMapX(x);
+  MapY:=GetMapY(y);
+  MapX2:=MapX;
+  MapY2:=MapY;
+  UpdateInfoBarX1Y1X2Y2;
+  OldMapX:=MapX;
+  OldMapY:=MapY;
+
+  //  DrawTool:=RMDRAWTools.GetDrawTool;
+
+  if DrawTool = DrawShapeClip then
+  begin
+    ca.x:=MapX;
+    ca.y:=MapY;
+    ca.x2:=MapX2;
+    ca.y2:=MapY2;
+    MapCoreBase.SetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+    MapCoreBase.SetMapClipStatus(MapCoreBase.GetCurrentMap,1);
+    MapPaintBox.Invalidate;
+    exit;
+  end;
+
+//  UpdateRenderBitMap;
+//  RenderBitMap2.Canvas.CopyRect(rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height),RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
+ // DrawItem(DrawTool,MapX,MapY,MapX,MapY,CTile.ImageIndex,0);
+ RenderDrawToolShape:=true;
+ MapPaintBox.Invalidate;
+end;
+
+// xyx2y2 mouse move event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
+procedure TMapEdit.MPaintBoxMouseMoveXYX2Y2Tool(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+ ca : MapClipAreaRec;
+begin
+ if not ((ssLeft in Shift) or (ssRight in Shift)) then
+ begin
+  UpdateMapInfo(x,y); // we only have x,y
+  exit;
+ end;
+ MapX2:=GetMapX(x);
+ MapY2:=GetMapY(y);
+ if (OldMapX=-1) or (OldMapY=-1) then exit;
+ if (MapX2=OldMapX) and (MapY2=OldMapY) then exit; // we are just just drawing in the same  x,y
+
+
+  //new spot
+  OldMapX:=MapX2;
+  OldMapY:=MapY2;
+  UpdateInfoBarX1Y1X2Y2; //we have x1,x2,y1,t2
+
+  //  DrawTool:=RMDRAWTools.GetDrawTool;
+  if DrawTool = DrawShapeClip then
+  begin
+     ca.x:=MapX;
+     ca.y:=MapY;
+     ca.x2:=MapX2;
+     ca.y2:=MapY2;
+
+     MapCoreBase.SetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+     MapCoreBase.SetMapClipStatus(MapCoreBase.GetCurrentMap,1);
+     MapPaintBox.Invalidate;
+     exit;
+  end;
+  RenderDrawToolShape:=true;
+  MapPaintBox.Invalidate; //draw the current
+end;
+
+// xyx2y2 mouse up event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
+procedure TMapEdit.MPaintBoxMouseUpXYX2Y2Tool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if (OldMapX=-1) or (OldMapY=-1) then exit;       //prevent right clicking from outsize of zoom area while moving into zoom area creates unwanted event - checking the coors allows to jump out with out drawing garbage
+  OldMapX:=-1;
+  OldMapY:=-1;
+//  DrawTool:=RMDRAWTools.GetDrawTool;
+  if TileMode = 0 then
+     DrawItem(DrawTool,MapX,MapY,MapX2,MapY2,TileClear,1)
+  else
+     DrawItem(DrawTool,MapX,MapY,MapX2,MapY2,CTile.ImageIndex,1);
+  RenderDrawToolShape:=False;
+  MapPaintBox.Invalidate;
+end;
+
+// xy mouse down event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
+procedure TMapEdit.MPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  MapX:=GetMapX(x);
+  MapY:=GetMapY(y);
+  if (MapX=OldMapX) and (MapY=OldMapY) then exit; // we are just just drawing in the same zoom x,y
+
+  OldMapX:=MapX;
+  OldMapY:=MapY;
+//  DrawTool:=RMDRAWTools.GetDrawTool;
+
+  if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
+  begin
+    if TileMode = 0 then  //erase mode
+      FloodFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),TileClear,1)
+    else
+      FloodFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),CTile.ImageIndex,1);
+    RenderDrawToolShape:=False;
+    MapPaintBox.Invalidate;
+  end
+  else
+  begin
+    if TileMode = 0 then
+      DrawItem(DrawTool,MapX,MapY,MapX,MapY,TileClear,1)
+    else
+      DrawItem(DrawTool,MapX,MapY,MapX,MapY,CTile.ImageIndex,1);
+
+    RenderDrawToolShape:=False;
+    MapPaintBox.Invalidate;
+  end;
+end;
+
+// xy mouse move event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
+procedure TMapEdit.MPaintBoxMouseMoveXYTool(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  MapX:=GetMapX(x);
+  MapY:=GetMapY(y);
+
+  UpdateMapInfo(x,y);
+  if not ((ssLeft in Shift) or (ssRight in Shift)) then exit;
+
+  if (MapX=OldMapX) and (MapY=OldMapY) then exit; // we are just just drawing in the same zoom x,y
+  OldMapX:=MapX;
+  OldMapY:=MapY;
+//  DrawTool:=RMDRAWTools.GetDrawTool;
+
+//  RMDrawTools.CreateRandomSprayPoints;
+//  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+//  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+  DrawItem(DrawTool,MapX,MapY,MapX,MapY,CTile.ImageIndex,1);
+  RenderDrawToolShape:=False;
+  MapPaintBox.Invalidate;
+end;
+
+// xy mouse up event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
+procedure TMapEdit.MPaintBoxMouseUpXYTool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  OldMapX:=-1;
+  OldMapY:=-1;
+end;
+
+procedure TMapEdit.MPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+
+ MapCoreBase.SetMapClipStatus(MapCoreBase.GetCurrentMap,0);  //turn it off - we turn on again when new area is selected
+// DrawTool:=RMDRAWTools.GetDrawTool;
+ if DrawTool<>DrawShapeClip then MapCoreBase.CopyToUndo(MapCoreBase.GetCurrentMap);
+ Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:MPaintBoxMouseDownXYTool(Sender,Button,Shift,X,Y);
+                                  DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
+               DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:MPaintBoxMouseDownXYX2Y2Tool(Sender,Button,Shift,X,Y);
+ end;
+end;
+
+procedure TMapEdit.MPaintBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+// DrawTool:=RMDRAWTools.GetDrawTool;
+ Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:MPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
+               DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
+               DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:MPaintBoxMouseMoveXYX2Y2Tool(Sender,Shift,X,Y);
+
+ end;
+end;
+
+procedure TMapEdit.MPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+// DrawTool:=RMDRAWTools.GetDrawTool;
+ Case DrawTool of DrawShapePencil,DrawShapeSpray:MPaintBoxMouseUpXYTool(Sender,Button,Shift,X,Y);
+               DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
+               DrawShapeEllipse,DrawShapeFEllipse:MPaintBoxMouseUpXYX2Y2Tool(Sender,Button,Shift,X,Y);
+
+ end;
+ //UpdateThumbview;               RenderDrawToolShape:=False;
+end;
+
+procedure TMapEdit.ToolGridIconClick(Sender: TObject);
+begin
+ if MapCoreBase.GetMapGridStatus(MapCoreBase.GetCurrentMap) = 1 then
+    MapCoreBase.SetMapGridStatus(MapCoreBase.GetCurrentMap,0)
+ else  MapCoreBase.SetMapGridStatus(MapCoreBase.GetCurrentMap,1);
+
+ MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolHFLIPButtonClick(Sender: TObject);
+var
+ ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.Hflip(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolIconClick(Sender: TObject);
+begin
+ MapCoreBase.SetMapClipStatus(MapCoreBase.GetCurrentMap,0);
+ Case (Sender As TImage).Name of 'ToolPencilIcon':DrawTool:=DrawShapePencil;
+                                 'ToolLineIcon':DrawTool:=DrawShapeLine;
+                                 'ToolRectangleIcon':DrawTool:=DrawShapeRectangle;
+                                 'ToolFRectangleIcon':DrawTool:=DrawShapeFRectangle;
+                                 'ToolFCircleIcon':DrawTool:=DrawShapeFCircle;
+                                 'ToolCircleIcon':DrawTool:=DrawShapeCircle;
+                                 'ToolEllipseIcon':DrawTool:=DrawShapeEllipse;
+                                 'ToolFEllipseIcon':DrawTool:=DrawShapeFEllipse;
+                                 'ToolPaintIcon':DrawTool:=DrawShapePaint;
+                                 'ToolSprayPaintIcon':DrawTool:=DrawShapeSpray;
+                                 'ToolSelectAreaIcon':DrawTool:=DrawShapeClip;
+ end;
+ MapCoreBase.SetMapDrawTool(MapCoreBase.GetCurrentMap,DrawTool);
+ UpdateToolSelectionIcons;
+ MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolScrollDownIconClick(Sender: TObject);
+var
+ ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.ScrollDown(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolScrollLeftIconClick(Sender: TObject);
+var
+ ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.ScrollLeft(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolScrollRightIconClick(Sender: TObject);
+var
+ ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.ScrollRight(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolScrollUpIconClick(Sender: TObject);
+var
+ ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.ScrollUp(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolUndoIconClick(Sender: TObject);
+begin
+// ShowMessage('undo');
+ MapCoreBase.Undo(MapCoreBase.GetCurrentMap);
+ MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.ToolVFLIPButtonClick(Sender: TObject);
+var
+ ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.Vflip(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  MapPaintBox.Invalidate;
+end;
+
+Procedure TMapEdit.LoadResourceIcons;
+begin
+  ToolPencilIcon.Picture.LoadFromResourceName(HInstance,'PEN1');
+  ToolLineIcon.Picture.LoadFromResourceName(HInstance,'LINE1');
+  ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRC1');
+  ToolFCircleIcon.Picture.LoadFromResourceName(HInstance,'FCIRC1');
+
+  ToolEllipseIcon.Picture.LoadFromResourceName(HInstance,'ELLIP1');
+  ToolFEllipseIcon.Picture.LoadFromResourceName(HInstance,'FELLIP1');
+
+  ToolRectangleIcon.Picture.LoadFromResourceName(HInstance,'RECT1');
+  ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT1');
+  ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY1');
+  ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT1');
+  ToolGridIcon.Picture.LoadFromResourceName(HInstance,'GRID1');
+  ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT1');
+  ToolUndoIcon.Picture.LoadFromResourceName(HInstance,'UNDO1');
+  ToolScrollUpIcon.Picture.LoadFromResourceName(HInstance,'UP1');
+  ToolScrollDownIcon.Picture.LoadFromResourceName(HInstance,'DOWN1');
+  ToolScrollLeftIcon.Picture.LoadFromResourceName(HInstance,'LEFT1');
+  ToolScrollRightIcon.Picture.LoadFromResourceName(HInstance,'RIGHT1');
+end;
+
+procedure TMapEdit.UpdateToolSelectionIcons;
+begin
+  LoadResourceIcons;
+ // DrawTool:=MapCoreBase.GetMapDrawTool(MapCoreBase.GetCurrentMap);
+  case DrawTool of DrawShapePencil:ToolPencilIcon.Picture.LoadFromResourceName(HInstance,'PEN2');
+              DrawShapeLine:ToolLineIcon.Picture.LoadFromResourceName(HInstance,'LINE2');
+            DrawShapeCircle:ToolCircleIcon.Picture.LoadFromResourceName(HInstance,'CIRC2');
+           DrawShapeFCircle:ToolFCircleIcon.Picture.LoadFromResourceName(HInstance,'FCIRC2');
+           DrawShapeEllipse:ToolEllipseIcon.Picture.LoadFromResourceName(HInstance,'ELLIP2');
+          DrawShapeFEllipse:ToolFEllipseIcon.Picture.LoadFromResourceName(HInstance,'FELLIP2');
+           DrawShapeRectangle:ToolRectangleIcon.Picture.LoadFromResourceName(HInstance,'RECT2');
+        DrawShapeFRectangle:ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT2');
+             DrawShapeSpray:ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY2');
+             DrawShapePaint:ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT2');
+              DrawShapeClip:ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT2');
+  end;
 end;
 
 end.

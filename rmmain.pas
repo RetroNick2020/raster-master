@@ -320,6 +320,7 @@ type
 
 
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure FreeBASICClick(Sender: TObject);
     procedure FreePascalClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
@@ -566,6 +567,12 @@ begin
  ZoomY2:=0;
  OldZoomX:=-1;
  OldZoomY:=-1;
+end;
+
+procedure TRMMainForm.FormDestroy(Sender: TObject);
+begin
+  RenderBitMap.Free;
+  RenderBitMap2.Free;
 end;
 
 procedure TRMMainForm.RMAboutDialogClick(Sender: TObject);
@@ -1284,7 +1291,7 @@ begin
     ToolGridMenu.Checked:=false;
   end;
 
-  UpdateActualArea;
+ // UpdateActualArea;
   UpdateZoomArea;
 end;
 
@@ -1461,7 +1468,7 @@ procedure TRMMainForm.ZPaintBoxMouseUpXYTool(Sender: TObject; Button: TMouseButt
   Shift: TShiftState; X, Y: Integer);
 begin
   OldZoomX:=-1;
-  OldZoomX:=-1;
+  OldZoomY:=-1;
 end;
 
 

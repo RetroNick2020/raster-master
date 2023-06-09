@@ -10,7 +10,8 @@ uses
   Forms, pascalscript, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor,
   rmcolorvga, rmabout, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
   rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
-  gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga, fileprops
+  gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
+  fileprops, drawprocs
      { you can add units after this };
 
 {$R *.res}

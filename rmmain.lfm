@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 119
+  Left = 148
   Height = 872
-  Top = 134
+  Top = 169
   Width = 1335
   Align = alClient
   Caption = 'Raster Master'
@@ -11,6 +11,7 @@ object RMMainForm: TRMMainForm
   Menu = MainMenu1
   OnClose = FormClose
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   Position = poDefault
   LCLVersion = '2.0.10.0'
   Scaled = False
@@ -22,13 +23,13 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1104
+    Left = 1123
     Height = 852
     Top = 0
-    Width = 231
+    Width = 212
     Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 852
-    ClientWidth = 231
+    ClientWidth = 212
     TabOrder = 5
     object RMPanel: TPanel
       AnchorSideRight.Control = RightPanel
@@ -36,7 +37,7 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Cursor = crNo
-      Left = 57
+      Left = 38
       Height = 121
       Top = 720
       Width = 158
@@ -103,7 +104,7 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Control = RightHSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 208
+    Left = 227
     Height = 740
     Top = 112
     Width = 885
@@ -156,11 +157,11 @@ object RMMainForm: TRMMainForm
     Left = 0
     Height = 852
     Top = 0
-    Width = 208
+    Width = 227
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
     ClientHeight = 852
-    ClientWidth = 208
+    ClientWidth = 227
     TabOrder = 0
     object LeftVSplitter: TSplitter
       AnchorSideLeft.Control = LeftPanel
@@ -173,7 +174,7 @@ object RMMainForm: TRMMainForm
       Left = 0
       Height = 13
       Top = 226
-      Width = 208
+      Width = 225
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -191,7 +192,7 @@ object RMMainForm: TRMMainForm
       Left = 0
       Height = 613
       Top = 239
-      Width = 197
+      Width = 216
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
       Color = 15790320
@@ -214,12 +215,12 @@ object RMMainForm: TRMMainForm
       Left = 0
       Height = 226
       Top = 0
-      Width = 193
+      Width = 212
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
       ClientHeight = 226
-      ClientWidth = 193
+      ClientWidth = 212
       TabOrder = 0
       object ActualBox: TImage
         Left = 16
@@ -234,7 +235,7 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 197
+    Left = 216
     Height = 852
     Top = 0
     Width = 11
@@ -248,7 +249,7 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1093
+    Left = 1112
     Height = 852
     Top = 0
     Width = 11
@@ -262,14 +263,14 @@ object RMMainForm: TRMMainForm
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightHSplitter
-    Left = 208
+    Left = 227
     Height = 112
     Top = 0
     Width = 885
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 112
     ClientWidth = 885
-    TabOrder = 3
+    TabOrder = 2
     object ToolPanel: TPanel
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
