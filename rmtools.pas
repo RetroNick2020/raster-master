@@ -955,7 +955,6 @@ if GetMaxYoffset < 0 then GetMaxYOffset:=0;
   //GetMaxYOffset:=yoff-1;
 end;
 
-
 function TRMDrawTools.GetZoomX(x : integer) : integer;
 begin
   GetZoomX:=x div GridArea.CellWidth;
@@ -967,8 +966,6 @@ begin
  GetZoomY:=y div GridArea.CellHeight;
  if GetZoomY < 0 then GetZoomY:=0;
 end;
-
-
 
 procedure TRMDrawTools.DrawGrid(Image : TCanvas;x,y,gWidth,gHeight,mode : integer);
 begin

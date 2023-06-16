@@ -1,208 +1,147 @@
 unit flood;
 {$mode objfpc}{$H+}
-//{$mode TP}
 
 interface
  uses
   Classes, SysUtils,rmcore;
 
-Procedure Fill(xx,yy,NColor: Integer);
+procedure ScanFill(x, y, width, height, newColor : integer);
+
 implementation
-
-Procedure Fill(xx,yy,NColor: Integer);
 const
- Left =1;
- right=2;
- up   =3;
- down =4;
- StackMax = 10000;
-//Type
-// stype = Array[0..10000] of byte;
-// stypePtr=^Stype;
-Var
- StackHolderX : Array[0..StackMax] of Integer;
- StackHolderY :  Array[0..StackMax] of Integer;
- StackHolderPos :  Array[0..StackMax] of Integer;
- sthnum    : word;
- pp        : Word;
- coltofill : Word;
+ MaxQueueSize = 100;
+Type
+  TFPoint = record
+            x,y : integer;
+  end;
+
+  TPixelQueue = Class
+             Count : integer;
+             PointList : array[1..MaxQueueSize] of TFPoint;
+             constructor Create;
+             procedure push(var pt : TFPoint);
+             procedure popfirst(var pt : TFPoint);
+             procedure pop(var pt : TFPoint);
+             function GetCount : integer;
+  end;
 
 
-Procedure AddToStack(nx,ny,np : integer);
+constructor TPixelQueue.Create;
 begin
-  if (sthnum >= StackMax) then exit;
-  inc(sthnum);
-  StackHolderx[sthnum]:=nx;
-  StackHoldery[sthnum]:=ny;
-  StackHolderpos[sthnum]:=np;
+ count:=0;
 end;
 
-Procedure CheckRight;
+procedure TPixelQueue.push(var pt : TFPoint);
 begin
-if xx< (RMCoreBase.GetWidth-1) then
+ if (count+1) > MaxQueueSize then exit;
+ if (pt.x < 0) or (pt.y<0) then exit;
+ inc(count);
+ PointList[count]:=pt;
+end;
+procedure TPixelQueue.popfirst(var pt : TFPoint);
+var
+i : integer;
 begin
-if RMCoreBase.getpixel(xx+1,yy) = ColTofill  then
-//IconImage[xx+1,yy] = ColTofill then
-   begin
-(*   Pplot2(xx+1,yy,false);*)
-//   IconImage[xx+1,yy] :=Ncolor;
-    RMCoreBase.putpixel(xx+1,yy,Ncolor);
-
-  // inc(sthnum);
- //  StackHolderx[sthnum]:=xx+1;
- //  StackHoldery[sthnum]:=yy;
- //  StackHolderpos[sthnum]:=Right;
-
- AddToStack(xx+1,yy,Right);
-end;
-end;
-end;
-
-
-Procedure CheckLeft;
-Begin
-if xx >0 then
-begin
-//if IconImage[xx-1,yy] = ColTofill then
-if RMCoreBase.GetPixel(xx-1,yy) = ColTofill then
-
-begin
-(*     Pplot2(xx-1,yy,false);*)
-//     IconImage[xx-1,yy]:=Ncolor;
-    RMCoreBase.PutPixel(xx-1,yy,Ncolor);
-
-//    inc(sthnum);
-//   StackHolderx[sthnum]:=xx-1;
-//   StackHoldery[sthnum]:=yy;
-//   StackHolderpos[sthnum]:=left;
-     AddToStack(xx-1,yy,Left);
-
-end;
-end;
-end;
-
-Procedure CheckUp;
-begin
-if yy>0 then
-begin
-//if IconImage[xx,yy-1] = ColTofill then
-  if RMCoreBase.GetPixel(xx,yy-1) =ColTofill then
-  begin
-(*   Pplot2(xx,yy-1,false);*)
-//   IconImage[xx,yy-1]:=Ncolor;
-   RMCoreBase.PutPixel(xx,yy-1,Ncolor);
-
-//   inc(sthnum);
-//   StackHolderx[sthnum]:=xx;
-//   StackHoldery[sthnum]:=yy-1;
-//   StackHolderpos[sthnum]:=up;
-     AddToStack(xx,yy-1,up);
-
-end;
-end;
-
-end;
-
-Procedure CheckDown;
-begin
-if yy<(RMCoreBase.GetHeight-1) then
-begin
-//If IconImage[xx,yy+1]=ColTofill then
-   If RMCoreBase.GetPixel(xx,yy+1)=ColTofill then
-   begin
-(*    Pplot2(xx,yy+1,false);*)
-//    IconImage[xx,yy+1]:=Ncolor;
-     RMCoreBase.PutPixel(xx,yy+1,Ncolor);
-
- //   inc(sthnum);
- //   StackHolderx[sthnum]:=xx;
- //   StackHoldery[sthnum]:=yy+1;
- //   StackHolderpos[sthnum]:=down;
-
-  AddToStack(xx,yy+1,down);
-
-end;
-end;
-end;
-
-Procedure GetColortoFill;
-begin
-//ColToFill:=IconImage[xx,yy];
-ColToFill:=RMCoreBase.GetPixel(xx,yy);
-
-end;
-
-
-
-Procedure GetNewCord;
-begin
- if sthnum > 0 then
+ if count > 0 then
  begin
-  xx:=StackHolderx[sthnum];
-  yy:=StackHoldery[sthnum];
-  pp:=StackHolderpos[sthnum];
-  dec(sthnum);
+   pt:=PointList[1];
+   dec(count);
+   for i:=1 to count do
+   begin
+      PointList[i]:=PointList[i+1];
+   end;
  end;
 end;
 
-
-
-
+procedure TPixelQueue.pop(var pt : TFPoint);
 begin
-if (xx<0) or (xx>(RMCoreBase.GetWidth-1)) then exit;
-if (yy<0) or (yy>(RMCoreBase.GetHeight-1)) then exit;
-
-//GetMem(StackHolderX,SizeOf(Stype));
-//GetMem(StackHolderY,SizeOf(Stype));
-//GetMem(StackHolderPos,SizeOf(Stype));
-
-
-//FillChar(StackHolderX,SizeOf(StackHolderX),0);
-//FillChar(StackHolderY,SizeOf(StackHolderY),0);
-//FillChar(StackHolderPos,SizeOf(StackHolderPos),0);
-
-sthnum:=1;
-GetColorTofill;
-If ColToFill = NColor then exit;
-//IconImage[xx,yy]:=Ncolor;
-RMCoreBase.PutPixel(xx,yy,Ncolor);
-
-Repeat
- case pp of
- Left: begin
-          CheckLeft;
-          CheckDown;
-          Checkup;
-      end;
- Right:begin
-          CheckRight;
-          CheckUp;
-          CheckDown;
-       end;
- Up:   begin
-           CheckRight;
-           CheckLeft;
-           Checkup;
-       end;
- Down: begin
-           CheckDown;
-           CheckRight;
-           CheckLeft;
-       end;
- else
-    begin
-           CheckRight;
-           CheckUP;
-           CheckDown;
-           CheckLeft;
-    end;
+ if count > 0 then
+ begin
+   pt:=PointList[count];
+   dec(count);
  end;
- GetNewCord;
-Until sthnum=0;
-//FreeMem(StackHolderX,SizeOf(Stype));
-//FreeMem(StackHolderY,SizeOf(Stype));
-//FreeMem(StackHolderPos,SizeOf(Stype));
-
 end;
+
+function TPixelQueue.GetCount : integer;
+begin
+  GetCount:=count;
+end;
+
+function GetPix(x,y : integer) : integer;
+begin
+//  if (x<0) or (y<0) or (x>RMCoreBase.GetWidth-1) or (y>RMCoreBase.GetHeight-1) then
+//     result:=-1
+//  else
+    result:=RMCoreBase.GetPixel(x,y);
+end;
+
+procedure PutPix(x,y,color : integer);
+begin
+  if (x<0) or (y<0) or (x>RMCoreBase.GetWidth-1) or (y>RMCoreBase.GetHeight-1) then exit;
+  RMCoreBase.PutPixel(x,y,color);
+end;
+
+procedure ScanFill(x, y, width, height, newColor : integer);
+var
+  x1 : integer;
+  spanAbove, spanBelow : boolean;
+  PQ     : TPixelQueue;
+  temp   : TFPoint;
+  oldColor : integer;
+begin
+  if GetPix(x,y) = newColor then exit;
+  oldColor:=GetPix(x,y);
+
+  PQ:=TPixelQueue.Create;
+  temp.x:=x;
+  temp.y:=y;
+  PQ.push(temp);
+  while PQ.GetCount>0 do
+  begin
+    PQ.popfirst(temp);
+    x:=temp.x;
+    y:=temp.y;
+
+    x1 := x;
+    while ((x1 >= 0) and (GetPix(x1,y) = oldColor)) do
+    begin
+      x1:=x1-1;
+    end;
+    x1:=x1+1;
+    spanAbove := false;
+    spanBelow := false;
+
+    while((x1 < width) and (GetPix(x1,y) = oldColor)) do
+    begin
+      PutPix( x1,y, newColor);
+      if((NOT spanAbove) and  (y > 0) and (GetPix(x1,(y - 1) ) = oldColor)) then
+      begin
+        temp.x:=x1;
+        temp.y:=y-1;
+        PQ.push(temp);
+        spanAbove := true;
+      end
+      else if (spanAbove and (y > 0) and (GetPix(x1,(y - 1)) <> oldColor)) then
+      begin
+        spanAbove := false;
+      end;
+
+      if ((NOT spanBelow) and (y < height - 1) and (GetPix(x1,(y + 1)) = oldColor)) then
+      begin
+        temp.x:=x1;
+        temp.y:=y+1;
+        PQ.push(temp);
+        spanBelow := true;
+      end
+      else if(spanBelow and (y < height - 1) and (GetPix(x1,(y + 1)) <> oldColor)) then
+      begin
+        spanBelow := false;
+      end;
+      x1:=x1+1;
+    end;
+  end;
+end;
+
+
 end.
 

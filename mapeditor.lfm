@@ -1,11 +1,11 @@
 object MapEdit: TMapEdit
-  Left = 297
-  Height = 682
-  Top = 246
-  Width = 1130
+  Left = 218
+  Height = 860
+  Top = 140
+  Width = 1324
   Caption = 'Map Editor'
-  ClientHeight = 662
-  ClientWidth = 1130
+  ClientHeight = 840
+  ClientWidth = 1324
   Menu = MainMenu1
   OnActivate = FormActivate
   OnClose = FormClose
@@ -20,13 +20,13 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 662
+    Height = 840
     Top = 0
-    Width = 218
+    Width = 256
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'LeftPanel'
-    ClientHeight = 662
-    ClientWidth = 218
+    ClientHeight = 840
+    ClientWidth = 256
     ParentFont = False
     TabOrder = 3
     object SelectedTilePanel: TPanel
@@ -36,12 +36,12 @@ object MapEdit: TMapEdit
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVertSplitter
       Left = 1
-      Height = 169
+      Height = 216
       Top = 1
-      Width = 216
+      Width = 254
       Anchors = [akTop, akLeft, akRight, akBottom]
-      ClientHeight = 169
-      ClientWidth = 216
+      ClientHeight = 216
+      ClientWidth = 254
       ParentFont = False
       TabOrder = 0
       object SelectedTileImage: TImage
@@ -64,8 +64,8 @@ object MapEdit: TMapEdit
       Cursor = crVSplit
       Left = 1
       Height = 9
-      Top = 170
-      Width = 216
+      Top = 217
+      Width = 254
       Align = alNone
       Anchors = [akLeft, akRight]
       AutoSnap = False
@@ -82,21 +82,21 @@ object MapEdit: TMapEdit
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 482
-      Top = 179
-      Width = 216
+      Height = 613
+      Top = 226
+      Width = 254
       Anchors = [akTop, akLeft, akRight, akBottom]
       Caption = 'LeftBottomPanel'
-      ClientHeight = 482
-      ClientWidth = 216
+      ClientHeight = 613
+      ClientWidth = 254
       ParentColor = False
       ParentFont = False
       TabOrder = 2
       object TileListView: TListView
         Left = 1
-        Height = 480
+        Height = 611
         Top = 1
-        Width = 214
+        Width = 252
         Align = alClient
         Color = 15790320
         Columns = <>
@@ -119,22 +119,22 @@ object MapEdit: TMapEdit
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1033
-    Height = 662
+    Left = 1209
+    Height = 840
     Top = 0
-    Width = 97
+    Width = 115
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'RightPanel'
-    ClientHeight = 662
-    ClientWidth = 97
+    ClientHeight = 840
+    ClientWidth = 115
     ParentColor = False
     ParentFont = False
     TabOrder = 0
     object MapListView: TListView
       Left = 1
-      Height = 660
+      Height = 838
       Top = 1
-      Width = 95
+      Width = 113
       Align = alClient
       Color = 15790320
       Columns = <>
@@ -149,8 +149,8 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 218
-    Height = 662
+    Left = 256
+    Height = 840
     Top = 0
     Width = 9
     Align = alNone
@@ -162,8 +162,8 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1024
-    Height = 662
+    Left = 1200
+    Height = 840
     Top = 0
     Width = 9
     Align = alNone
@@ -176,13 +176,13 @@ object MapEdit: TMapEdit
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightSplitter
-    Left = 227
+    Left = 265
     Height = 126
     Top = 0
-    Width = 797
+    Width = 935
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 126
-    ClientWidth = 797
+    ClientWidth = 935
     ParentFont = False
     TabOrder = 4
     object MapInfoLabel: TLabel
@@ -195,7 +195,7 @@ object MapEdit: TMapEdit
       ParentFont = False
     end
     object TileZoom: TTrackBar
-      Left = 762
+      Left = 900
       Height = 99
       Top = 13
       Width = 25
@@ -210,7 +210,7 @@ object MapEdit: TMapEdit
       TabOrder = 0
     end
     object Panel2: TPanel
-      Left = 159
+      Left = 297
       Height = 96
       Top = 16
       Width = 592
@@ -447,22 +447,22 @@ object MapEdit: TMapEdit
     AnchorSideRight.Control = RightSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 227
-    Height = 536
+    Left = 265
+    Height = 714
     Top = 126
-    Width = 797
+    Width = 935
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'MiddlePanel'
-    ClientHeight = 536
-    ClientWidth = 797
+    ClientHeight = 714
+    ClientWidth = 935
     ParentColor = False
     ParentFont = False
     TabOrder = 5
     object MapScrollBox: TScrollBox
       Left = 1
-      Height = 534
+      Height = 712
       Top = 1
-      Width = 795
+      Width = 933
       HorzScrollBar.Increment = 10
       HorzScrollBar.Page = 105
       HorzScrollBar.Tracking = True
@@ -471,8 +471,8 @@ object MapEdit: TMapEdit
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
-      ClientHeight = 534
-      ClientWidth = 795
+      ClientHeight = 712
+      ClientWidth = 933
       ParentFont = False
       TabOrder = 0
       object MapPaintBox: TPaintBox
@@ -554,6 +554,9 @@ object MapEdit: TMapEdit
         Caption = 'Clear'
         OnClick = ClearMapClick
       end
+      object Undo: TMenuItem
+        Caption = 'Undo'
+      end
       object CopyToClipBoard: TMenuItem
         Caption = 'Copy'
         OnClick = CopyToClipBoardClick
@@ -616,14 +619,95 @@ object MapEdit: TMapEdit
       end
     end
     object MenuItem19: TMenuItem
-      Caption = 'Tools'
-      object MenuToolDraw: TMenuItem
+      Caption = 'Tile Mode'
+      object TileModeDraw: TMenuItem
         Caption = 'Draw'
-        OnClick = MenuToolDrawClick
+        OnClick = TileModeDrawClick
       end
-      object MenuToolErase: TMenuItem
+      object TileModeErase: TMenuItem
         Caption = 'Erase'
-        OnClick = MenuToolEraseClick
+        OnClick = TileModeEraseClick
+      end
+    end
+    object MenuItem15: TMenuItem
+      Caption = 'Tools'
+      object ToolPencilMenu: TMenuItem
+        Caption = 'Pencil'
+        OnClick = ToolMenuClick
+      end
+      object ToolLineMenu: TMenuItem
+        Caption = 'Line'
+        OnClick = ToolMenuClick
+      end
+      object ToolRectangleMenu: TMenuItem
+        Caption = 'Rectangle'
+        OnClick = ToolMenuClick
+      end
+      object ToolFRectangleMenu: TMenuItem
+        Caption = 'Filled Rectangle'
+        OnClick = ToolMenuClick
+      end
+      object ToolCircleMenu: TMenuItem
+        Caption = 'Circle'
+        OnClick = ToolMenuClick
+      end
+      object ToolFCircleMenu: TMenuItem
+        Caption = 'Filled Circle'
+        OnClick = ToolMenuClick
+      end
+      object ToolEllipseMenu: TMenuItem
+        Caption = 'Ellipse'
+        OnClick = ToolMenuClick
+      end
+      object ToolFEllipseMenu: TMenuItem
+        Caption = 'Filled Ellipse'
+        OnClick = ToolMenuClick
+      end
+      object ToolPaintMenu: TMenuItem
+        Caption = 'Paint'
+        OnClick = ToolMenuClick
+      end
+      object ToolSprayPaintMenu: TMenuItem
+        Caption = 'Spray Paint'
+        OnClick = ToolMenuClick
+      end
+      object ToolSelectAreaMenu: TMenuItem
+        Caption = 'Select Area'
+        OnClick = ToolMenuClick
+      end
+      object ToolGridMenu: TMenuItem
+        Caption = 'Grid'
+        OnClick = ToolGridIconClick
+      end
+      object ToolFlipMenu: TMenuItem
+        Caption = 'Flip'
+        object Horizontal: TMenuItem
+          Caption = 'Horizontal'
+          OnClick = ToolHFLIPButtonClick
+        end
+        object Vertical: TMenuItem
+          Caption = 'Vertical'
+          OnClick = ToolVFLIPButtonClick
+        end
+      end
+      object ScrollMenu: TMenuItem
+        Caption = 'Scroll'
+        object ScrollRightMenu: TMenuItem
+          Caption = 'Right'
+          OnClick = ToolScrollRightIconClick
+        end
+        object ScrollLeftMenu: TMenuItem
+          Caption = 'Left'
+          OnClick = ToolScrollLeftIconClick
+        end
+        object ScrollUpMenu: TMenuItem
+          Caption = 'Up'
+          OnClick = ToolScrollUpIconClick
+        end
+        object ScrollDownMenu: TMenuItem
+          Caption = 'Down'
+          OnClick = ToolScrollDownIconClick
+        end
       end
     end
   end

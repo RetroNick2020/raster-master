@@ -31,7 +31,7 @@ type
     ImageList1: TImageList;
     InfoBarLabel: TLabel;
     ListView1: TListView;
-    MenuItem1: TMenuItem;
+    MenuEdit: TMenuItem;
     EditCopy: TMenuItem;
     EditPaste: TMenuItem;
     EditColor: TMenuItem;
@@ -436,6 +436,9 @@ type
        procedure LoadDefaultPalette;
        procedure UpdatePalette;
        procedure UpdatePaletteMenu;
+       procedure UpdateEditMenu;
+       procedure UpdateToolsMenu;
+
        procedure UpdateToolFlipScrollMenu;
 
        procedure UpdateColorBox;
@@ -558,7 +561,7 @@ begin
  ClearSelectedToolsMenu;
  PaletteVGA.Checked:=true; // set vga palette
  UpdateToolSelectionIcons;
- ToolPencilMenu.Checked:=true; //enable pencil tool in SpriteImportMenu
+ UpdateEditMenu;
  InitThumbView;
 
  ZoomX:=0;
@@ -1415,15 +1418,18 @@ var
 begin
   ZoomX:=RMDrawTools.GetZoomX(x);
   ZoomY:=RMDrawTools.GetZoomY(y);
-  if (ZoomX=OldZoomX) and (ZoomY=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
-
+//  if (ZoomX=OldZoomX) and (ZoomY=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
+//  this is commented out because it breaks repainting to the same pixel
   OldZoomX:=ZoomX;
   OldZoomY:=ZoomY;
   DrawTool:=RMDRAWTools.GetDrawTool;
 
   if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
   begin
-    Fill(ZoomX,ZoomY,RMCoreBase.GetCurColor);
+    ScanFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
+  //   Fill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
+   // Fill(ZoomX,ZoomY,RMCoreBase.GetCurColor);
+
     UpdateRenderBitMap;
     ZoomPaintBox.Invalidate;
     UpdateActualArea;
@@ -1598,12 +1604,33 @@ begin
   RMDrawTools.DrawOverlayOnClipArea(ZoomPaintBox.Canvas,clYellow,0); //mode 0 is copy
 end;
 
+procedure TRMMainForm.UpdateToolsMenu;
+var
+  DT : integer;
+begin
+ DT:=RMDRAWTools.GetDrawTool;
+ case DT of DrawShapePencil:ToolPencilMenu.Checked:=true;
+              DrawShapeLine:ToolLineMenu.Checked:=true;
+            DrawShapeCircle:  ToolCircleMenu.Checked:=true;
+          DrawShapeFCircle:  ToolFCircleMenu.Checked:=true;
+          DrawShapeEllipse:  ToolEllipseMenu.Checked:=true;
+         DrawShapeFEllipse:  ToolFEllipseMenu.Checked:=true;
+        DrawShapeRectangle:  ToolRectangleMenu.Checked:=true;
+       DrawShapeFRectangle:  ToolFRectangleMenu.Checked:=true;
+            DrawShapeSpray:  ToolMenuSprayPaint.Checked:=true;
+            DrawShapePaint:  ToolMenuPaint.Checked:=true;
+             DrawShapeClip:  ToolSelectAreaMenu.Checked:=true;
+ end;
+ if RMDrawTools.GetGridMode = 1 then ToolGridMenu.Checked:=true;
+end;
 
 procedure TRMMainForm.ClearSelectedToolsMenu;
 begin
+  ToolPencilMenu.Checked:=false;
+  ToolLineMenu.Checked:=false;
+
   ToolFRectangleMenu.Checked:=false;
   ToolRectangleMenu.Checked:=false;
-  ToolLineMenu.Checked:=false;
   ToolSelectAreaMenu.Checked:=false;
 
   ToolMenuSprayPaint.Checked:=false;
@@ -1613,7 +1640,7 @@ begin
   ToolEllipseMenu.Checked:=false;
   ToolFEllipseMenu.Checked:=false;
 
-  ToolPencilMenu.Checked:=false;
+  ToolGridMenu.Checked:=false;
 end;
 
 Procedure TRMMainForm.LoadResourceIcons;
@@ -1674,6 +1701,8 @@ begin
               DrawShapeClip:ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT2');
 
   end;
+  ClearSelectedToolsMenu;
+  UpdateToolsMenu;
 end;
 
 procedure TRMMainForm.ShowSelectAreaTools;
@@ -2003,10 +2032,29 @@ begin
    end;
 end;
 
+Procedure TRMMainForm.UpdateEditMenu;
+begin
+  EditResizeTo8.Checked:=false;
+  EditResizeTo16.Checked:=false;
+  EditResizeTo32.Checked:=false;
+  EditResizeTo64.Checked:=false;
+  EditResizeTo128.Checked:=false;
+  EditResizeTo256.Checked:=false;
+  case RMCoreBase.GetWidth           of 8:  EditResizeTo8.Checked:=true;
+                                       16:  EditResizeTo16.Checked:=true;
+                                       32:  EditResizeTo32.Checked:=true;
+                                       64:  EditResizeTo64.Checked:=true;
+                                       128:  EditResizeTo128.Checked:=true;
+                                       256:  EditResizeTo256.Checked:=true;
+
+  end;
+end;
+
 procedure TRMMainForm.EditResizeToNewSize(Sender: TObject);
 var
  ImgWidth,ImgHeight : integer;
 begin
+
   if (Sender As TMenuItem).Name = 'EditResizeTo8' then
   begin
     ImgWidth:=8;
@@ -2054,6 +2102,7 @@ begin
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbView;
+  UpdateEditMenu;
 end;
 
 procedure TRMMainForm.javaScriptArrayClick(Sender: TObject);
@@ -3059,9 +3108,11 @@ begin
 
    CoreToPalette;
    UpdateColorBox;
-   UpdateToolSelectionIcons;
+   UpdateToolSelectionIcons;      //calls updatetoolsmenu
+   //UpdateToolsMenu;
    UpdatePalette;
    UpdatePaletteMenu;
+   UpdateEditMenu;
    UpdateActualArea;
    UpdateZoomArea;
    UpdateZoomScroller;
@@ -3414,6 +3465,7 @@ begin
       UpdateToolSelectionIcons;
       UpdatePalette;
       UpdatePaletteMenu;
+      UpdateEditMenu;
       UpdateActualArea;
       UpdateZoomArea;
       UpdateZoomScroller;
@@ -3515,6 +3567,7 @@ begin
       UpdatePalette;
       UpdateActualArea;
       UpdateZoomArea;
+      UpdateEditMenu;
    end;
  end;
 end;

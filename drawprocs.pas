@@ -16,7 +16,7 @@ procedure SetDrawPixelProc(dic : drawitemproc);
 procedure SetGetPixelProc(gic : GetItemProc);
 
 procedure DrawItem(item,x,y,x2,y2,index,mode : integer);
-procedure FloodFill(px,py, MaxX,MaxY,index,mode : integer);
+procedure FloodFill(x,y, MaxX,MaxY,index,mode : integer);
 
 implementation
 
@@ -46,7 +46,7 @@ Type
              Count : integer;
              PointList : array[1..MaxQueueSize] of TFPoint;
              constructor Create;
-             procedure push(pt : TFPoint);
+             procedure push(var pt : TFPoint);
              procedure popfirst(var pt : TFPoint);
              procedure pop(var pt : TFPoint);
              function GetCount : integer;
@@ -64,7 +64,7 @@ begin
  count:=0;
 end;
 
-procedure TPixelQueue.push(pt : TFPoint);
+procedure TPixelQueue.push(var pt : TFPoint);
 begin
  if (count+1) > MaxQueueSize then exit;
  inc(count);
@@ -99,69 +99,66 @@ begin
   GetCount:=count;
 end;
 
-procedure FloodFill(px,py, MaxX,MaxY,index,mode : integer);
+procedure FloodFill(x, y, MaxX,MaxY,index,mode : integer);
 var
- PQ : TPixelQueue; (*implement stack point class*)
- temp   : TFPoint;
- txy    : TFPoint;
- y1     : integer;
- spanleft,spanright : boolean;
- targetColor : integer;
+  x1 : integer;
+  spanAbove, spanBelow : boolean;
+  PQ     : TPixelQueue;
+  temp   : TFPoint;
+  oldColor : integer;
 begin
-  targetColor := GetItemX(px, py);
-  if (targetColor=Index) then  (* no need to do anything if they are the same *)
-  begin
-    exit;
-  end;
+  if GetItemX(x,y) = index then exit;
+  oldColor:=GetItemX(x,y);
 
   PQ:=TPixelQueue.Create;
-  txy.x:=px;
-  txy.y:=py;
-  PQ.Push(txy);
-  while (PQ.Count > 0) do
+  temp.x:=x;
+  temp.y:=y;
+  PQ.push(temp);
+  while PQ.GetCount>0 do
   begin
-    PQ.PopFirst(temp);
-    y1 := temp.Y;
-    while (y1 >= 0) AND (GetItemX(temp.X, y1) = targetColor) do
-    begin
-      Dec(y1);
-    end;
-    inc(y1);
-    spanLeft := false;
-    spanRight := false;
-    while (y1 <MaxY) AND (GetItemX(temp.X, y1) = targetColor) do
-    begin
-      PutItemX(temp.X, y1, Index,mode);
-      if (NOT spanLeft) AND (temp.X > 0) AND (GetItemX(temp.X - 1, y1) = targetColor) then
-      begin
-        txy.x:=temp.x-1;
-        txy.y:=y1;
-        PQ.Push(txy);
-        spanLeft := true;
-      end
-  //    else if ((spanLeft AND (temp.X - 1 = 0)) AND (GetItemX(temp.X - 1, y1) <> targetColor)) then
-     else if ((spanLeft AND (temp.X - 1 = 0)) OR (GetItemX(temp.X - 1, y1) <> targetColor)) then
-     begin
-        spanLeft := false;
-      end;
-      if (NOT spanRight AND (temp.X <MaxX - 1) AND (GetItemX(temp.X + 1, y1) = targetColor)) then
-      begin
-        txy.x:=temp.x+1;
-        txy.y:=y1;
-        PQ.Push(txy);
-        spanRight := true;
-      end
- //     else if (spanRight AND (temp.X < MaxX - 1) AND (GetItemX(temp.X + 1, y1) <> targetColor)) then
-     else if (spanRight AND (temp.X < MaxX - 1) AND (GetItemX(temp.X + 1, y1) <> targetColor)) then
+    PQ.popfirst(temp);
+    x:=temp.x;
+    y:=temp.y;
 
+    x1 := x;
+    while ((x1 >= 0) and (GetItemX(x1,y) = oldColor)) do
+    begin
+      x1:=x1-1;
+    end;
+    x1:=x1+1;
+    spanAbove := false;
+    spanBelow := false;
+
+    while((x1 < MaxX) and (GetItemX(x1,y) = oldColor)) do
+    begin
+      PutItemX( x1,y, index,mode);
+      if((NOT spanAbove) and  (y > 0) and (GetItemX(x1,(y - 1) ) = oldColor)) then
       begin
-        spanRight := false;
+        temp.x:=x1;
+        temp.y:=y-1;
+        PQ.push(temp);
+        spanAbove := true;
+      end
+      else if (spanAbove and (y > 0) and (GetItemX(x1,(y - 1)) <> oldColor)) then
+      begin
+        spanAbove := false;
       end;
-     inc(y1);
+
+      if ((NOT spanBelow) and (y < MaxY - 1) and (GetItemX(x1,(y + 1)) = oldColor)) then
+      begin
+        temp.x:=x1;
+        temp.y:=y+1;
+        PQ.push(temp);
+        spanBelow := true;
+      end
+      else if(spanBelow and (y < MaxY - 1) and (GetItemX(x1,(y + 1)) <> oldColor)) then
+      begin
+        spanBelow := false;
+      end;
+      x1:=x1+1;
     end;
   end;
 end;
-
 
 
 Procedure CreateRandomSprayPoints;

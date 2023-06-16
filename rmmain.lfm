@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 148
+  Left = 163
   Height = 872
-  Top = 169
+  Top = 71
   Width = 1335
   Align = alClient
   Caption = 'Raster Master'
@@ -174,7 +174,7 @@ object RMMainForm: TRMMainForm
       Left = 0
       Height = 13
       Top = 226
-      Width = 225
+      Width = 226
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -977,7 +977,7 @@ object RMMainForm: TRMMainForm
         OnClick = FileExitMenuClick
       end
     end
-    object MenuItem1: TMenuItem
+    object MenuEdit: TMenuItem
       Caption = 'Edit'
       object EditResizeTo: TMenuItem
         Caption = 'Resize To'
@@ -1307,11 +1307,11 @@ object RMMainForm: TRMMainForm
       object ToolFlipMenu: TMenuItem
         Caption = 'Flip'
         object ToolFlipHorizMenu: TMenuItem
-          Caption = 'Horintal'
+          Caption = 'Horizontal'
           OnClick = ToolFlipHorizMenuClick
         end
         object ToolFlipVirtMenu: TMenuItem
-          Caption = 'Virtical'
+          Caption = 'Vertical'
           OnClick = ToolFlipVirtMenuClick
         end
       end
