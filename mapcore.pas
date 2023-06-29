@@ -10,8 +10,8 @@ uses
 Const
   MaxListSize = 100;
   ZSizeDefaults : array of integer = (8,16,32,64,128,256);
-  DefMaxMapWidth = 64;
-  DefMaxMapHeight = 64;
+  DefMaxMapWidth = 256;
+  DefMaxMapHeight = 256;
 
   RMMapSig = 'RMM';
   RMMapVersion = 2;
@@ -95,7 +95,7 @@ type
 
                     procedure SetListSize(size : integer);
                     procedure SetMapSize(index, mwidth,mheight : integer);
-                    procedure ResizeMap(index, mwidth,mheight : integer);
+                    procedure ResizeMapSize(index, mwidth,mheight : integer);
                     procedure SetMapTileSize(index, twidth,theight : integer);
                     procedure SetZoomMapTileSize(index, twidth,theight : integer);
 
@@ -147,13 +147,14 @@ type
 
                     function GetMapTileWidth(index : integer) : integer;
                     function GetMapTileHeight(index : integer) : integer;
+                    function GetMapTileIndex(index,x,y : integer) : integer;
 
                     function GetZoomMapTileWidth(index : integer) : integer;
                     function GetZoomMapTileHeight(index : integer) : integer;
 
                     function GetZoomTileSize(ZoomSize : integer) : integer;
 
-                    procedure SetMapTile(index,x,y : integer; Tile : TileRec);
+                    procedure SetMapTile(index,x,y : integer;var  Tile : TileRec);
                     procedure GetMapTile(index,x,y : integer;var Tile : TileRec);
 
                     procedure InitClipBoard;
@@ -366,7 +367,7 @@ begin
  ClearMap(index,TileClear);
 end;
 
-procedure TMapCoreBase.ResizeMap(index, mwidth,mheight : integer);
+procedure TMapCoreBase.ResizeMapSize(index, mwidth,mheight : integer);
 begin
   Map[index].Props.width:=mwidth;
   Map[index].Props.height:=mheight;
@@ -732,17 +733,26 @@ begin
   GetMapTileHeight:=Map[index].Props.TileHeight;
 end;
 
+function TMapCoreBase.GetMapTileIndex(index,x,y : integer) : integer;
+begin
+ if (x < 0) or (x >= Map[index].Props.width) or (y < 0) or (y >= Map[index].Props.height) then
+   result:=-1000
+ else
+   result:=Map[index].Tile[x,y].ImageIndex;
+end;
 
-procedure TMapCoreBase.SetMapTile(index,x,y : integer; Tile : TileRec);
+procedure TMapCoreBase.SetMapTile(index,x,y : integer; var Tile : TileRec);
 begin
  if (x < 0) or (x >= Map[index].Props.width) or (y < 0) or (y >= Map[index].Props.height) then exit;
  Map[index].Tile[x,y]:=Tile;
+ //  Move(Tile,Map[index].Tile[x,y],sizeof(Tile));
 end;
 
 procedure TMapCoreBase.GetMapTile(index,x,y : integer;var Tile : TileRec);
 begin
  if (x < 0) or (x >= Map[index].Props.width) or (y < 0) or (y >= Map[index].Props.height) then exit;
  Tile:=Map[index].Tile[x,y];
+ // Move(Map[index].Tile[x,y],Tile,sizeof(Tile));
 end;
 
 procedure TMapCoreBase.SetCurrentMap(index : integer);

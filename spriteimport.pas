@@ -15,7 +15,6 @@ type
   TSpriteImportForm = class(TForm)
     CheckBoxDisplayGrid: TCheckBox;
     CheckBoxSnapToGrid: TCheckBox;
-    InfoLabel: TLabel;
     OpenDialog1: TOpenDialog;
     ImportFromClipboard: TButton;
     SpriteSheetPaintBox: TPaintBox;
@@ -25,6 +24,7 @@ type
     SpriteSizeLabel: TLabel;
     OpenSpriteSheet: TButton;
     SpriteImage: TImage;
+    StatusBar1: TStatusBar;
     TopPanel: TPanel;
     SpriteSheetScrollBox: TScrollBox;
     ZoomTrackBar: TTrackBar;
@@ -493,7 +493,7 @@ begin
   TempX2:=TempX+SpriteWidth-1;
   TempY2:=TempY+SpriteHeight-1;
 
-  infolabel.Caption:='X = '+IntToStr(TempX)+' Y = '+IntToStr(TempY)+' X2 = '+IntToStr(TempX2)+' Y2 = '+IntToStr(TempY2);
+  StatusBar1.SimpleText:='X = '+IntToStr(TempX)+' Y = '+IntToStr(TempY)+' X2 = '+IntToStr(TempX2)+' Y2 = '+IntToStr(TempY2);
 end;
 
 end.

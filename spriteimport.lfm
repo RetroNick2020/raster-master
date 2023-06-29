@@ -111,16 +111,6 @@ object SpriteImportForm: TSpriteImportForm
       TabOrder = 3
       Text = 'VGA Palette'
     end
-    object InfoLabel: TLabel
-      Left = 980
-      Height = 15
-      Top = 116
-      Width = 49
-      Anchors = [akRight, akBottom]
-      Caption = 'InfoLabel'
-      ParentColor = False
-      ParentFont = False
-    end
     object ImportFromClipboard: TButton
       Left = 160
       Height = 25
@@ -151,6 +141,20 @@ object SpriteImportForm: TSpriteImportForm
       Checked = True
       State = cbChecked
       TabOrder = 6
+    end
+    object StatusBar1: TStatusBar
+      AnchorSideLeft.Control = SpriteImage
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideRight.Control = TopPanel
+      AnchorSideRight.Side = asrBottom
+      Left = 146
+      Height = 23
+      Top = 112
+      Width = 884
+      Align = alNone
+      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Around = 10
+      Panels = <>
     end
   end
   object SpriteSheetScrollBox: TScrollBox

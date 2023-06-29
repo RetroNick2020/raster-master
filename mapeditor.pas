@@ -15,6 +15,10 @@ type
     GroupBox1: TGroupBox;
     CopyToClipBoard: TMenuItem;
     MenuItem15: TMenuItem;
+    ReSizeMap256x256: TMenuItem;
+    ReSizeMap128x128: TMenuItem;
+    StatusBar1: TStatusBar;
+    StatusBar2: TStatusBar;
     ToolPencilMenu: TMenuItem;
     ToolLineMenu: TMenuItem;
     ToolRectangleMenu: TMenuItem;
@@ -78,7 +82,6 @@ type
     SelectedTileImage: TImage;
     MainMenu1: TMainMenu;
     ImageList1: TImageList;
-    MapInfoLabel: TLabel;
     FileMenuItem: TMenuItem;
     MenuItem1: TMenuItem;
     ReSize8x8: TMenuItem;
@@ -235,7 +238,6 @@ type
     procedure UpdateMenus;
     procedure UpdateEditMenus;
 
-
   end;
 
 var
@@ -287,7 +289,6 @@ begin
  SetDrawTool(DrawShapePencil);
  CurrentMap:=MapCoreBase.GetCurrentMap;
  MapCoreBase.SetZoomSize(CurrentMap,4);
-
  MapCoreBase.SetMapTileSize(CurrentMap,32,32);
 
  CTileBitmap:=TBitMap.Create;
@@ -304,6 +305,7 @@ begin
  MapY2:=0;
  OldMapX:=-1;
  OldMapY:=-1;
+
  RenderDrawToolShape:=False;
  UpdateToolSelectionIcons;
  UpdateEditMenus;
@@ -665,6 +667,22 @@ begin
   MapPaintBox.Canvas.Rectangle(ca.x*TileWidth-3,ca.y*TileHeight-3,(ca.x2+1)*TileWidth+4,(ca.y2+1)*TileHeight+4);
 end;
 
+procedure TMapEdit.UpdateMapView;
+var
+  i,j : integer;
+  T   : TileRec;
+begin
+ for j:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
+  begin
+    for i:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
+    begin
+      MapCoreBase.GetMapTile(CurrentMap,i,j,T);
+      if T.ImageIndex = TileMissing then PlotMissingTile(i,j)
+      else if T.ImageIndex <> TileClear then ImageListPlotTile(i,j,T);
+    end;
+  end;
+end;
+
 procedure TMapEdit.MapPaintBoxPaint(Sender: TObject);
 begin
   UpdateMapView;
@@ -809,10 +827,16 @@ begin
  ReSizeMap16x16.Checked:=false;
  ReSizeMap32x32.Checked:=false;
  ReSizeMap64x64.Checked:=false;
+ ReSizeMap128x128.Checked:=false;
+ ReSizeMap256x256.Checked:=false;
+
  case MapCoreBase.GetMapWidth(MapCoreBase.GetCurrentMap) of 8: ReSizeMap8x8.Checked:=true;
                                                            16: ReSizeMap16x16.Checked:=true;
                                                            32: ReSizeMap32x32.Checked:=true;
                                                            64: ReSizeMap64x64.Checked:=true;
+                                                           128: ReSizeMap128x128.Checked:=true;
+                                                           256: ReSizeMap256x256.Checked:=true;
+
  end;
  ReSize8x8.Checked:=false;
  ReSize16x16.Checked:=false;
@@ -834,27 +858,35 @@ end;
 
 procedure TMapEdit.ReSizeMapClick(Sender: TObject);
 var
-  mw,mh : integer;
+  mwidth,mheight : integer;
 begin
-
  Case (Sender As TMenuItem).Name of 'ReSizeMap8x8' :begin
-                                                      mw:=8;
-                                                      mh:=8;
+                                                      mwidth:=8;
+                                                      mheight:=8;
                                                     end;
                                     'ReSizeMap16x16' :begin
-                                                      mw:=16;
-                                                      mh:=16;
+                                                      mwidth:=16;
+                                                      mheight:=16;
                                                     end;
                                     'ReSizeMap32x32' :begin
-                                                      mw:=32;
-                                                      mh:=32;
+                                                      mwidth:=32;
+                                                      mheight:=32;
                                                     end;
                                     'ReSizeMap64x64' :begin
-                                                      mw:=64;
-                                                      mh:=64;
+                                                      mwidth:=64;
+                                                      mheight:=64;
                                                     end;
+                                    'ReSizeMap128x128' :begin
+                                                      mwidth:=128;
+                                                      mheight:=128;
+                                                    end;
+                                    'ReSizeMap256x256' :begin
+                                                      mwidth:=256;
+                                                      mheight:=256;
+                                                    end;
+
  end;
- MapCoreBase.ResizeMap(CurrentMap,mw,mh);
+ MapCoreBase.ResizeMapSize(CurrentMap,mwidth,mheight);
 // TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
 // TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
  UpdateEditMenus;
@@ -1102,23 +1134,6 @@ begin
   MapPaintBox.Invalidate;
 end;
 
-
-procedure TMapEdit.UpdateMapView;
-var
-  i,j : integer;
-  T   : TileRec;
-begin
- for j:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
-  begin
-    for i:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
-    begin
-      MapCoreBase.GetMapTile(CurrentMap,i,j,T);
-      if T.ImageIndex = TileMissing then PlotMissingTile(i,j)
-      else if T.ImageIndex <> TileClear then ImageListPlotTile(i,j,T);
-    end;
-  end;
-end;
-
 procedure TMapEdit.UpdateTileView;
 var
   i,count : integer;
@@ -1159,10 +1174,11 @@ end;
 procedure TMapEdit.UpdatePageSize;
 begin
  MapPaintBox.Width:=0;
- MapPaintBox.height:=0;
+ MapPaintBox.Height:=0;
  MapPaintBox.Invalidate;
+
  MapPaintBox.Width:=MapCoreBase.GetZoomMapPageWidth(CurrentMap)+1;
- MapPaintBox.height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap)+1;
+ MapPaintBox.Height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap)+1;
  MapPaintBox.Invalidate;
 end;
 
@@ -1174,12 +1190,13 @@ end;
 
 procedure TMapEdit.UpdateInfoBarX1Y1X2Y2;
 var
-  XYStr   : string;
+  XYStr,WHStr   : string;
 begin
  XYStr:='X = '+IntToStr(MapX)+' Y = '+IntToStr(MapY)+#13#10+
-        'X2 = '+IntToStr(MapX2)+' Y2 = '+IntToStr(MapY2)+#13#10+
-        'Width = '+IntToStr(ABS(MapX2-MapX+1))+' Height = '+IntToStr(ABS(MapY2-MapY+1));
- MapInfoLabel.Caption:=XYStr;
+        'X2 = '+IntToStr(MapX2)+' Y2 = '+IntToStr(MapY2)+#13#10;
+ WHStr:='Width = '+IntToStr(ABS(MapX2-MapX+1))+' Height = '+IntToStr(ABS(MapY2-MapY+1));
+ StatusBar1.SimpleText:=XYStr;
+ StatusBar2.SimpleText:=WHStr;
 end;
 
 procedure TMapEdit.UpdateMapInfo(x,y : integer);
@@ -1189,7 +1206,7 @@ var
  ColIndexStr : string;
  ca      : MapClipAreaRec;
  XYStr : string;
- TT : TileRec;
+ TIndex : integer;
 begin
   mx:=x div TileWidth;
   my:=y div TileHeight;
@@ -1198,8 +1215,8 @@ begin
   ColIndexStr:='';
   if (mx >= 0) and (my >= 0) then
    begin
-     MapCoreBase.GetMapTile(MapCoreBase.GetCurrentMap,mx,my,tt);
-     ColIndexStr:='Tile Index: '+IntToStr(TT.ImageIndex);
+     TIndex:=MapCoreBase.GetMapTileIndex(MapCoreBase.GetCurrentMap,mx,my);
+     ColIndexStr:='Tile Index: '+IntToStr(TIndex);
    end;
    ClipStr:='';
    if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then
@@ -1208,10 +1225,9 @@ begin
         ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
                  'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
    end;
-   MapInfoLabel.Caption:=XYStr+ClipStr+ColIndexStr;
 
-
-  //MapInfoLabel.Caption:='X = '+IntToStr(mx)+'  Y = '+IntToStr(my);
+  StatusBar1.SimpleText:=XYStr+ColIndexStr;
+  StatusBar2.SimpleText:=ClipStr;
 end;
 
 // xyx2y2 mouse ScrollDownMenu event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
@@ -1227,8 +1243,6 @@ begin
   UpdateInfoBarX1Y1X2Y2;
   OldMapX:=MapX;
   OldMapY:=MapY;
-
-  //  DrawTool:=RMDRAWTools.GetDrawTool;
 
   if DrawTool = DrawShapeClip then
   begin
@@ -1257,14 +1271,13 @@ var
 begin
  if not ((ssLeft in Shift) or (ssRight in Shift)) then
  begin
-  UpdateMapInfo(x,y); // we only have x,y
+    UpdateMapInfo(x,y); // we only have x,y
   exit;
  end;
  MapX2:=GetMapX(x);
  MapY2:=GetMapY(y);
  if (OldMapX=-1) or (OldMapY=-1) then exit;
  if (MapX2=OldMapX) and (MapY2=OldMapY) then exit; // we are just just drawing in the same  x,y
-
 
   //new spot
   OldMapX:=MapX2;
@@ -1309,8 +1322,8 @@ procedure TMapEdit.MPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButto
 begin
   MapX:=GetMapX(x);
   MapY:=GetMapY(y);
- // if (MapX=OldMapX) and (MapY=OldMapY) then exit; // we are just just drawing in the same zoom x,y
- // breaks flood painting over the same tile
+//  if (MapX=OldMapX) and (MapY=OldMapY) then exit; // we are just just drawing in the same zoom x,y
+ // breaks flood painting over the same tile if we uncomment
 
   OldMapX:=MapX;
   OldMapY:=MapY;
@@ -1319,9 +1332,19 @@ begin
   if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
   begin
     if TileMode = 0 then  //erase mode
-      FloodFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),TileClear,1)
+    begin
+      if (ssLeft in Shift) and (ssShift in Shift) then
+        ReplaceFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),TileClear,1)
+      else
+        FloodFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),TileClear,1);
+    end
     else
-      FloodFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),CTile.ImageIndex,1);
+    begin
+      if (ssLeft in Shift) and (ssShift in Shift) then
+         ReplaceFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),CTile.ImageIndex,1)
+      else
+         FloodFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),CTile.ImageIndex,1);
+    end;
     RenderDrawToolShape:=False;
     MapPaintBox.Invalidate;
   end
@@ -1345,19 +1368,18 @@ begin
   MapY:=GetMapY(y);
 
   UpdateMapInfo(x,y);
-  if not ((ssLeft in Shift) or (ssRight in Shift)) then exit;
 
   if (MapX=OldMapX) and (MapY=OldMapY) then exit; // we are just just drawing in the same zoom x,y
+
   OldMapX:=MapX;
   OldMapY:=MapY;
-//  DrawTool:=RMDRAWTools.GetDrawTool;
 
-//  RMDrawTools.CreateRandomSprayPoints;
-//  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
-//  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
-  DrawItem(DrawTool,MapX,MapY,MapX,MapY,CTile.ImageIndex,1);
-  RenderDrawToolShape:=False;
-  MapPaintBox.Invalidate;
+  if ((ssLeft in Shift) or (ssRight in Shift)) then
+  begin
+    DrawItem(DrawTool,MapX,MapY,MapX,MapY,CTile.ImageIndex,1);
+    RenderDrawToolShape:=False;
+    MapPaintBox.Invalidate;
+  end;
 end;
 
 // xy mouse ScrollUpMenu event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
@@ -1371,9 +1393,7 @@ end;
 procedure TMapEdit.MPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-
  MapCoreBase.SetMapClipStatus(MapCoreBase.GetCurrentMap,0);  //turn it off - we turn on again when new area is selected
-// DrawTool:=RMDRAWTools.GetDrawTool;
  if DrawTool<>DrawShapeClip then MapCoreBase.CopyToUndo(MapCoreBase.GetCurrentMap);
  Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:MPaintBoxMouseDownXYTool(Sender,Button,Shift,X,Y);
                                   DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
@@ -1383,7 +1403,6 @@ end;
 
 procedure TMapEdit.MPaintBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
-// DrawTool:=RMDRAWTools.GetDrawTool;
  Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:MPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
                DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
                DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:MPaintBoxMouseMoveXYX2Y2Tool(Sender,Shift,X,Y);
@@ -1394,13 +1413,11 @@ end;
 procedure TMapEdit.MPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-// DrawTool:=RMDRAWTools.GetDrawTool;
  Case DrawTool of DrawShapePencil,DrawShapeSpray:MPaintBoxMouseUpXYTool(Sender,Button,Shift,X,Y);
                DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
                DrawShapeEllipse,DrawShapeFEllipse:MPaintBoxMouseUpXYX2Y2Tool(Sender,Button,Shift,X,Y);
 
  end;
- //UpdateThumbview;               RenderDrawToolShape:=False;
 end;
 
 procedure TMapEdit.ToolGridIconClick(Sender: TObject);
@@ -1508,7 +1525,6 @@ end;
 
 procedure TMapEdit.ToolUndoIconClick(Sender: TObject);
 begin
-// ShowMessage('undo');
  MapCoreBase.Undo(MapCoreBase.GetCurrentMap);
  MapPaintBox.Invalidate;
 end;
@@ -1566,7 +1582,6 @@ begin
   ToolGridMenu.Checked:=false;
 end;
 
-
 procedure TMapEdit.UpdateMenus;          // and Tile Mode radio buttons
 begin
   ClearCheckedMenus;
@@ -1613,6 +1628,7 @@ begin
               DrawShapeClip:ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT2');
   end;
 end;
+
 
 end.
 

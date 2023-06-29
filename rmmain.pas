@@ -29,7 +29,6 @@ type
     FreeBASIC: TMenuItem;
     AmigaBasic: TMenuItem;
     ImageList1: TImageList;
-    InfoBarLabel: TLabel;
     ListView1: TListView;
     MenuEdit: TMenuItem;
     EditCopy: TMenuItem;
@@ -91,6 +90,8 @@ type
     OWPutImageArray: TMenuItem;
     OpenWatcom: TMenuItem;
     QBMouseShapeFile: TMenuItem;
+    StatusBar1: TStatusBar;
+    StatusBar2: TStatusBar;
   //  ZoomScrollBox: TScrollBox;
     ZoomPaintBox: TPaintBox;
     ZoomScrollBox: TScrollBox;
@@ -1385,7 +1386,7 @@ var
 begin
  zx:=RMDrawTools.GetZoomX(x);
  zy:=RMDrawTools.GetZoomy(y);
- XYStr:='Zoom X = '+IntToStr(ZX)+' Zoom Y = '+IntToStr(ZY)+#13#10;
+ XYStr:='X = '+IntToStr(ZX)+' Y = '+IntToStr(ZY)+#13#10;
  ColIndexStr:='';
  if (zx >= 0) and (zy >= 0) then
  begin
@@ -1398,17 +1399,21 @@ begin
       ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
                'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
  end;
- InfoBarLabel.Caption:=XYStr+ClipStr+ColIndexStr;
+// InfoBarLabel.Caption:=XYStr+ClipStr+ColIndexStr;
+ StatusBar1.SimpleText:=XYStr+ColIndexStr;
+ StatusBar2.SimpleText:=ClipStr;
 end;
 
 procedure TRMMainForm.UpdateInfoBarDetail;
 var
-  XYStr   : string;
+  XYStr,WHStr   : string;
 begin
- XYStr:='Zoom X = '+IntToStr(ZoomX)+' Zoom Y = '+IntToStr(ZoomY)+#13#10+
-        'Zoom X2 = '+IntToStr(ZoomX2)+' Zoom Y2 = '+IntToStr(ZoomY2)+#13#10+
-        'Width = '+IntToStr(ABS(ZoomX2-ZoomX+1))+' Height = '+IntToStr(ABS(ZoomY2-ZoomY+1));
- InfoBarLabel.Caption:=XYStr;
+ XYStr:='X = '+IntToStr(ZoomX)+' Y = '+IntToStr(ZoomY)+#13#10+
+        'X2 = '+IntToStr(ZoomX2)+' Y2 = '+IntToStr(ZoomY2)+#13#10;
+ WHStr:='Width = '+IntToStr(ABS(ZoomX2-ZoomX+1))+' Height = '+IntToStr(ABS(ZoomY2-ZoomY+1));
+// InfoBarLabel.Caption:=XYStr;
+ StatusBar1.SimpleText:=XYStr;
+ StatusBar2.SimpleText:=WHStr;
 end;
 
 // xy mouse down event - this handles all the tools that just requires x,y coords only - pixel and spraypaint

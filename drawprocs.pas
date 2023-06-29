@@ -17,6 +17,7 @@ procedure SetGetPixelProc(gic : GetItemProc);
 
 procedure DrawItem(item,x,y,x2,y2,index,mode : integer);
 procedure FloodFill(x,y, MaxX,MaxY,index,mode : integer);
+procedure ReplaceFill(x, y, MaxX,MaxY,index,mode : integer);
 
 implementation
 
@@ -159,6 +160,23 @@ begin
     end;
   end;
 end;
+
+//replaces all occurances in Map of selected  Tile - like flood fill but for all - does not need to be connected - mainly to be used for missing tiles
+procedure ReplaceFill(x, y, MaxX,MaxY,index,mode : integer);
+var
+ i,j,ReplaceColor : integer;
+begin
+  if GetItemX(x,y) = index then exit;
+  ReplaceColor:=GetItemX(x,y);
+  for j:=0 to MaxY-1 do
+  begin
+    for i:=0 to MaxX-1 do
+    begin
+      if GetItemX(i,j) = ReplaceColor then  PutItemX( i,j, index,mode);
+    end;
+  end;
+end;
+
 
 
 Procedure CreateRandomSprayPoints;

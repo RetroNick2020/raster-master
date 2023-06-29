@@ -474,21 +474,6 @@ object RMMainForm: TRMMainForm
         ShowHint = True
       end
     end
-    object InfoBarLabel: TLabel
-      AnchorSideLeft.Control = MiddleTopPanel
-      AnchorSideTop.Control = MiddleTopPanel
-      AnchorSideBottom.Control = MiddleTopPanel
-      AnchorSideBottom.Side = asrBottom
-      Left = 12
-      Height = 110
-      Top = 1
-      Width = 412
-      Anchors = [akTop, akLeft, akBottom]
-      AutoSize = False
-      BorderSpacing.Left = 11
-      ParentColor = False
-      WordWrap = True
-    end
     object TrackBar1: TTrackBar
       Left = 849
       Height = 110
@@ -502,6 +487,28 @@ object RMMainForm: TRMMainForm
       Align = alRight
       BorderSpacing.Right = 5
       TabOrder = 1
+    end
+    object StatusBar1: TStatusBar
+      AnchorSideRight.Control = ToolPanel
+      Left = 16
+      Height = 23
+      Top = 8
+      Width = 374
+      Align = alNone
+      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Around = 10
+      Panels = <>
+    end
+    object StatusBar2: TStatusBar
+      AnchorSideRight.Control = ToolPanel
+      Left = 16
+      Height = 23
+      Top = 40
+      Width = 374
+      Align = alNone
+      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Around = 10
+      Panels = <>
     end
   end
   object MainMenu1: TMainMenu
