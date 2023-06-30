@@ -28,7 +28,7 @@ Const
    QPLan   = 15; //Quick Pascal
    gccLan  = 16;
    OWLan   = 17; //Open Watcom C/C++ compiler
-
+   BAMLan  = 18; //Basic Anywhere Machine
 
    NoExportFormat = 0;
    PutImageExportFormat = 1;  //for all compilers the use put/putimage
@@ -196,8 +196,8 @@ begin
    inc(xoffset,8);
  end;
 end;
-
-Procedure spToPacked(var SinglePlane  : LineBufType ;
+//4 color packed - 4 pixels per byte
+Procedure spToPacked4(var SinglePlane  : LineBufType ;
                      var PackedPlane  : LineBufType;
                          BytesPerLine : word);
 
@@ -212,6 +212,24 @@ begin
    inc(x,4);
   end;
 end;
+
+//16 color packed - 2 pixels per byte
+Procedure spToPacked16(var SinglePlane  : LineBufType ;
+                     var PackedPlane  : LineBufType;
+                         BytesPerLine : word);
+
+var
+  x,i : word;
+begin
+ Fillchar(PackedPlane,sizeof(PackedPlane),0);
+ x:=0;
+ For i:=0 to BytesPerLine-1 do
+ begin
+   PackedPlane[i] := (SinglePlane[x] shl 4) + SinglePlane[x+1];
+   inc(x,2);
+  end;
+end;
+
 
 Function WriteXgfFP(x,y,x2,y2 : word;filename:string):word;
 type
@@ -325,6 +343,22 @@ begin
   end;
 end;
 
+function GetBPLSizeBAM(width,ncolors : word) : word;
+begin
+  GetBPLSizeBAM:=0;
+  case nColors of 2:GetBPLSizeBAM:=(width+7) div 8;  (* note to self - this is correct, Bytes per line for one bitplane is the same for 2 and 16 colors, but 16 colors has 4 bitplanes *)
+                  4:GetBPLSizeBAM:=(width+3) div 4;
+                 16:GetBPLSizeBAM:=(width+1) div 2;
+                256:GetBPLSizeBAM:=width;
+  end;
+end;
+
+function GetXImageSizeBAM(width,height,ncolors : integer) : longint;
+begin
+  GetXImageSizeBAM:=GetBPLSizeBAM(width,ncolors)*height+4;
+end;
+
+
 function GetXImageSize(width,height,ncolors : integer) : longint;
 var
   BPL : word;
@@ -366,6 +400,12 @@ begin
                                 head.Width:=width;
                                 head.Height:=height;
                               end;
+                       BAMLan: begin
+                                head.Width:=width;
+                                head.Height:=height;
+                                If NumColors=4 then head.Width:=width*2
+                              end;
+
                       GWLan,QBLan,QCLan,QPLan: begin
                                      If NumColors=4 then head.Width:=width*2
                                      else If NumColors=256 then head.Width:=width SHL 3
@@ -480,7 +520,7 @@ begin
        sourceLineBuf[i]:=GetPixel(x+i,y+j);
    end;
    case nColors of   2:spTOmp(sourcelinebuf,destlinebuf,BPL,1);
-                     4:spToPacked(sourcelinebuf,destlinebuf,BPL);
+                     4:spToPacked4(sourcelinebuf,destlinebuf,BPL);
                     16:begin
                          RemapToBorland(sourcelinebuf,Width);  //OW uses the same bit plane format as Borland for 16 colors
                          spTOmp(sourcelinebuf,destlinebuf,BPL,4);
@@ -497,6 +537,52 @@ begin
 end;
 
 
+Procedure WriteXGFBufferBAM(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
+Var
+ sourcelinebuf : Linebuftype;
+ destlinebuf   : Linebuftype;
+ Head     : XgfHead;
+ width    : word;
+ height   : word;
+ BPL        : Word;
+ BTW        : word; //bytes to write to buffer
+ i,j,n      : Word;
+ nColors  : Word;
+ tempBuf    : array[1..4] of byte;
+begin
+ width:=x2-x+1;
+ Height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ BPL:=GetBPLSizeBAM(Width,nColors);
+ BTW:=BPL;
+
+ FixHead(Head,Width,Height,LanType);
+ Move(Head,tempBuf,sizeof(tempBuf));
+
+ for n:=1 to 4 do
+ begin
+    BitplaneWriter(tempBuf[n],data,1);
+ end;
+
+ for j:=0 to height-1 do
+ begin
+   for i:=0 to Width-1 do
+   begin
+       sourceLineBuf[i]:=GetPixel(x+i,y+j);
+   end;
+   case nColors of   2:spTOmp(sourcelinebuf,destlinebuf,BPL,1);
+                     4:spToPacked4(sourcelinebuf,destlinebuf,BPL);
+                    16:spToPacked16(sourcelinebuf,destlinebuf,BPL);
+                   256:destlinebuf:=sourcelinebuf;
+   end;
+   for n:=0 to BTW-1 do
+   begin
+     BitplaneWriter(destlinebuf[n],data,1);
+   end;
+ end;
+
+ BitplaneWriter(0,data,2);  //flush it
+end;
 
 
 Procedure WriteXGFBuffer(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
@@ -536,7 +622,7 @@ begin
        sourceLineBuf[i]:=GetPixel(x+i,y+j);
    end;
    case nColors of 2:spTOmp(sourcelinebuf,destlinebuf,BPL,1);
-                     4:spToPacked(sourcelinebuf,destlinebuf,BPL);
+                     4:spToPacked4(sourcelinebuf,destlinebuf,BPL);
                     16:begin
                          If (LanType=TPLan) OR (LanType=TCLan) OR (LanType=PBLan) then RemapToBorland(sourcelinebuf,Width);
                          spTOmp(sourcelinebuf,destlinebuf,BPL,4);
@@ -774,6 +860,61 @@ begin
    buffer.Error:=IORESULT;
 end;
 
+procedure BitplaneWriterBAMBasicCode(inByte : Byte; var Buffer : BufferRec;action : integer);
+var
+ i : integer;
+ BAMInt : smallint;
+begin
+{$I-}
+   if action = 0 then
+   begin
+       buffer.bufCount:=0;
+       buffer.error:=0;
+   end
+   else if action = 1 then
+   begin
+       inc(buffer.bufcount);
+       buffer.buflist[buffer.bufcount]:=inbyte;
+       if buffer.bufcount = 20 then                      //every 10 bytes write to data statement
+       begin
+           //write the data statement
+           write(buffer.ftext,'DATA ');
+           for i:=0 to 9 do
+           begin
+             BAMInt:=(buffer.buflist[i*2+2] shl 8) + buffer.buflist[i*2+1];
+             //write(buffer.ftext,buffer.buflist[i*2+2],2),HexStr(buffer.buflist[i*2+1],2));
+             write(buffer.ftext,BAMInt);
+
+             if i < 9 then write(buffer.ftext,',');
+           end;
+           writeln(buffer.ftext);
+           buffer.bufcount:=0;
+       end;
+   end
+   else if action = 2 then  //write the remaining data
+   begin
+     if buffer.bufcount > 0 then
+     begin
+       write(buffer.ftext,'DATA ');
+       for i:=0 to ((buffer.bufcount+1) div 2)-1 do
+       begin
+         //write(buffer.ftext,'&H',HexStr(buffer.buflist[i*2+2],2),HexStr(buffer.buflist[i*2+1],2));
+         BAMInt:=(buffer.buflist[i*2+2] shl 8) + buffer.buflist[i*2+1];
+         write(buffer.ftext,BAMInt);
+
+         if i < (((buffer.bufcount+1) div 2)-1) then write(buffer.ftext,',');
+       end;
+       writeln(buffer.ftext);
+       buffer.bufcount:=0;
+     end;
+   end;
+   {$I+}
+   buffer.Error:=IORESULT;
+end;
+
+
+
+
 Function WriteTPCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
 var
   Width,Height : Word;
@@ -976,6 +1117,36 @@ begin
 end;
 
 
+Function WriteBAMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longword;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+
+begin
+ BWriter:=@BitplaneWriterBAMBasicCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSizeBAM(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,#39,' BAM Put Bitmap Code Created By Raster Master');
+ writeln(data.ftext,#39,' Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors);
+ writeln(data.ftext,#39,' ',Imagename);
+ WriteXGFBufferBAM(BWriter,data,x,y,x2,y2,BAMLan);
+ writeln(data.ftext);
+
+{$I+}
+ WriteBAMCodeToBuffer:=IORESULT;
+end;
+
+
+
 Function WriteQBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
 var
   Width,Height : Word;
@@ -1155,6 +1326,7 @@ begin
 
                  QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
                  GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
+                 BAMLan: WriteBAMCodeToBuffer(data,x,y,x2,y2,imagename);
 
                  QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
                  QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
@@ -1230,6 +1402,7 @@ begin
 
                   QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
                   GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
+                  BAMLan: WriteBAMCodeToBuffer(data,x,y,x2,y2,imagename);
 
                   QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
                   QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imageId,imagename);

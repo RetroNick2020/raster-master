@@ -1,12 +1,12 @@
 object RMMainForm: TRMMainForm
-  Left = 163
-  Height = 872
-  Top = 71
-  Width = 1335
+  Left = -8
+  Height = 1177
+  Top = -8
+  Width = 1920
   Align = alClient
   Caption = 'Raster Master'
-  ClientHeight = 852
-  ClientWidth = 1335
+  ClientHeight = 1157
+  ClientWidth = 1920
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
   OnClose = FormClose
@@ -23,13 +23,13 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1123
-    Height = 852
+    Left = 1612
+    Height = 1157
     Top = 0
-    Width = 212
+    Width = 308
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 852
-    ClientWidth = 212
+    ClientHeight = 1157
+    ClientWidth = 308
     TabOrder = 5
     object RMPanel: TPanel
       AnchorSideRight.Control = RightPanel
@@ -37,9 +37,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Cursor = crNo
-      Left = 38
+      Left = 134
       Height = 121
-      Top = 720
+      Top = 1025
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
@@ -104,22 +104,22 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Control = RightHSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 227
-    Height = 740
+    Left = 324
+    Height = 1045
     Top = 112
-    Width = 885
+    Width = 1277
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 740
-    ClientWidth = 885
+    ClientHeight = 1045
+    ClientWidth = 1277
     TabOrder = 1
     object ZoomScrollBox: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
       AnchorSideTop.Control = MiddleBottomPanel
       Left = 0
-      Height = 740
+      Height = 1045
       Top = 0
-      Width = 885
+      Width = 1277
       HorzScrollBar.Increment = 93
       HorzScrollBar.Page = 862
       HorzScrollBar.Tracking = True
@@ -129,8 +129,8 @@ object RMMainForm: TRMMainForm
       Align = alClient
       Anchors = [akRight, akBottom]
       BorderStyle = bsNone
-      ClientHeight = 740
-      ClientWidth = 885
+      ClientHeight = 1045
+      ClientWidth = 1277
       TabOrder = 0
       object ZoomPaintBox: TPaintBox
         AnchorSideLeft.Control = ZoomScrollBox
@@ -155,13 +155,13 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 852
+    Height = 1157
     Top = 0
-    Width = 227
+    Width = 324
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 852
-    ClientWidth = 227
+    ClientHeight = 1157
+    ClientWidth = 324
     TabOrder = 0
     object LeftVSplitter: TSplitter
       AnchorSideLeft.Control = LeftPanel
@@ -173,8 +173,8 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 226
-      Width = 226
+      Top = 309
+      Width = 323
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -190,9 +190,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 613
-      Top = 239
-      Width = 216
+      Height = 835
+      Top = 322
+      Width = 313
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
       Color = 15790320
@@ -213,14 +213,14 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 226
+      Height = 309
       Top = 0
-      Width = 212
+      Width = 309
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 226
-      ClientWidth = 212
+      ClientHeight = 309
+      ClientWidth = 309
       TabOrder = 0
       object ActualBox: TImage
         Left = 16
@@ -235,8 +235,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 216
-    Height = 852
+    Left = 313
+    Height = 1157
     Top = 0
     Width = 11
     Align = alNone
@@ -249,8 +249,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1112
-    Height = 852
+    Left = 1601
+    Height = 1157
     Top = 0
     Width = 11
     Align = alNone
@@ -263,19 +263,19 @@ object RMMainForm: TRMMainForm
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightHSplitter
-    Left = 227
+    Left = 324
     Height = 112
     Top = 0
-    Width = 885
+    Width = 1277
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 112
-    ClientWidth = 885
+    ClientWidth = 1277
     TabOrder = 2
     object ToolPanel: TPanel
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 400
+      Left = 792
       Height = 88
       Top = 8
       Width = 434
@@ -475,7 +475,7 @@ object RMMainForm: TRMMainForm
       end
     end
     object TrackBar1: TTrackBar
-      Left = 849
+      Left = 1241
       Height = 110
       Top = 1
       Width = 30
@@ -493,7 +493,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 8
-      Width = 374
+      Width = 766
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -504,7 +504,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 40
-      Width = 374
+      Width = 766
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -642,6 +642,17 @@ object RMMainForm: TRMMainForm
           object AqbPsetBitMap: TMenuItem
             Caption = 'PSet BitMap Data'
             OnClick = AqbPsetBitMapClick
+          end
+        end
+        object MenuItem1: TMenuItem
+          Caption = 'BAM Basic'
+          object BAMPutData: TMenuItem
+            Caption = 'Put Data Statements'
+            OnClick = BAMPutDataClick
+          end
+          object BAMPutPlusMaskData: TMenuItem
+            Caption = 'Put+Mask Data Statements'
+            OnClick = BAMPutDataClick
           end
         end
         object FreeBASIC: TMenuItem

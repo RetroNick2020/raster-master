@@ -68,6 +68,7 @@ type
     fbRayLibFuchsia: TMenuItem;
     fbRayLibIndex0: TMenuItem;
     fbRayLibRGB: TMenuItem;
+    MenuItem1: TMenuItem;
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     AqbPsetBitMap: TMenuItem;
@@ -77,6 +78,8 @@ type
     MenuItem15: TMenuItem;
     ACBobFile: TMenuItem;
     ACVSpriteFile: TMenuItem;
+    BAMPutData: TMenuItem;
+    BAMPutPlusMaskData: TMenuItem;
     PascalBOBBitmapFile: TMenuItem;
     PascalVSpriteBitmapFile: TMenuItem;
     PropertiesFileDialog: TMenuItem;
@@ -307,6 +310,7 @@ type
     procedure AmigaPascalClick(Sender: TObject);
     procedure AmigaPascalPaletteClick(Sender: TObject);
     procedure AqbPsetBitMapClick(Sender: TObject);
+    procedure BAMPutDataClick(Sender: TObject);
 
 
     procedure ColorBoxMouseEnter(Sender: TObject);
@@ -1948,6 +1952,33 @@ var
    end;
  end;
 
+procedure TRMMainForm.BAMPutDataClick(Sender: TObject);
+ var
+  x,y,x2,y2 : integer;
+  error : word;
+ begin
+    GetOpenSaveRegion(x,y,x2,y2);
+    ExportDialog.FileName:='';
+    Case (Sender As TMenuItem).Name of 'BAMPutData' :ExportDialog.Filter := 'BAM Put Data Statements|*.bas';
+                                       'BAMPutPlusMaskData' :ExportDialog.Filter := 'BAM Put+Mask Data Statements|*.bas';
+
+    End;
+
+    if ExportDialog.Execute then
+    begin
+       Case (Sender As TMenuItem).Name of 'BAMPutData' : error:=WriteXGFToCode(x,y,x2,y2,BAMLan,ExportDialog.FileName);
+                                          'BAMPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,BAMLan,ExportDialog.FileName);
+
+       End;
+
+       if (error<>0) then
+       begin
+          ShowMessage('Error Saving file!');
+          exit;
+       end;
+    end;
+end;
+
 procedure TRMMainForm.TurboPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -2840,6 +2871,8 @@ begin
       end;
    end;
 end;
+
+
 
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var
