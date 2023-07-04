@@ -736,6 +736,7 @@ object MapEdit: TMapEdit
     end
   end
   object SaveDialog1: TSaveDialog
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
     Left = 64
     Top = 352
   end

@@ -167,6 +167,17 @@ begin
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
+                   BAMLan:begin
+                           ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
+                           ComboImage.Items.Add('None');
+                           ComboImage.Items.Add('Put Image');
+                           ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
+                           ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
+                           ComboPalette.ItemIndex:=EO.Palette;
+                         end;
                    FPLan:begin
                            ComboImage.Items.Clear;
                            ComboMask.Items.Clear;
@@ -342,6 +353,8 @@ begin
    ComboCompiler.Items.Add('Quick Pascal');
    ComboCompiler.Items.Add('gcc');
    ComboCompiler.Items.Add('Open Watcom C');
+   ComboCompiler.Items.Add('BAM Basic');
+
    ComboCompiler.ItemIndex:=0;
    ComboImage.Items.Clear;
    ComboImage.Items.Add('None');

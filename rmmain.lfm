@@ -1102,6 +1102,17 @@ object RMMainForm: TRMMainForm
             OnClick = AmigaPascalPaletteClick
           end
         end
+        object MenuItem16: TMenuItem
+          Caption = 'BAM Basic'
+          object BAMPaletteData: TMenuItem
+            Caption = 'Palette Data Statements'
+            OnClick = PaletteExportQBasicClick
+          end
+          object BAMPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportQBasicClick
+          end
+        end
         object MenuItem3: TMenuItem
           Caption = 'FreeBASIC'
           object FBPaletteData: TMenuItem

@@ -16,26 +16,29 @@ Procedure WriteMaps(filename : string);
 Procedure WriteAllMapsF(var F : File);
 Procedure WriteMapF(var F : File; index : integer);
 
-procedure ExportMap(filename : string; Lan : integer);
+procedure ExportMap(filename : string; Lan : integer;UseClipArea : boolean);
 procedure WriteMapsCodeToBuffer(var F : Text);
 procedure ResExportMaps(var F:File);
 
-
-
-
 implementation
 
-
-
-procedure ExportPascalMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
+procedure ExportPascalMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean);
 var
   MapProps   : MapPropsRec;
   size : longint;
   mwidth,mheight : integer;
+  ca : MapClipAreaRec;
 begin
  MapCoreBase.GetMapProps(index,MapProps);
  mwidth:=MapCoreBase.GetExportWidth(index);
  mheight:=MapCoreBase.GetExportHeight(index);
+
+ if UseClipArea and (MapCoreBase.GetMapClipStatus(index)=1) then
+ begin
+   MapCoreBase.GetMapClipAreaCoords(index,ca);
+   mwidth:=ca.x2-ca.x+1;
+   mheight:=ca.y2-ca.y+1;
+ end;
 
  size:=mwidth*mheight+4;
  MWSetValuesTotal(mc,size);
@@ -53,15 +56,23 @@ begin
  Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of integer = (');
 end;
 
-procedure ExportCMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
+procedure ExportCMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean);
 var
   MapProps   : MapPropsRec;
   size : longint;
   mwidth,mheight : integer;
+  ca : MapClipAreaRec;
 begin
  MapCoreBase.GetMapProps(index,MapProps);
  mwidth:=MapCoreBase.GetExportWidth(index);
  mheight:=MapCoreBase.GetExportHeight(index);
+
+ if UseClipArea and (MapCoreBase.GetMapClipStatus(index)=1) then
+ begin
+   MapCoreBase.GetMapClipAreaCoords(index,ca);
+   mwidth:=ca.x2-ca.x+1;
+   mheight:=ca.y2-ca.y+1;
+ end;
 
  size:=mwidth*mheight+4;
  MWSetValuesTotal(mc,size);
@@ -80,16 +91,23 @@ begin
  Writeln(mc.FTextPtr^,'  ','int ',Imagename, '[',size,']  = {');
 end;
 
-procedure ExportBasicMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
+procedure ExportBasicMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean);
 var
   MapProps    : MapPropsRec;
   size : longint;
   mwidth,mheight : integer;
+  ca : MapClipAreaRec;
 begin
  MapCoreBase.GetMapProps(index,MapProps);
  mwidth:=MapCoreBase.GetExportWidth(index);
  mheight:=MapCoreBase.GetExportHeight(index);
 
+ if UseClipArea and (MapCoreBase.GetMapClipStatus(index)=1) then
+ begin
+   MapCoreBase.GetMapClipAreaCoords(index,ca);
+   mwidth:=ca.x2-ca.x+1;
+   mheight:=ca.y2-ca.y+1;
+ end;
 
  size:=mwidth*mheight+4;
  MWSetValuesTotal(mc,size);
@@ -103,18 +121,24 @@ begin
  Writeln(mc.FTextPtr^,#39,' ',Imagename);
 end;
 
-procedure ExportBasicLNMapHeader(var mc : CodeGenRec; index : integer;ImageName : string);
+procedure ExportBasicLNMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean);
 var
   MapProps    : MapPropsRec;
   size : longint;
   mwidth,mheight : integer;
+  ca : MapClipAreaRec;
 begin
  //SetGWStartLineNumber(1000);
-
  MapCoreBase.GetMapProps(index,MapProps);
  mwidth:=MapCoreBase.GetExportWidth(index);
  mheight:=MapCoreBase.GetExportHeight(index);
 
+ if UseClipArea and (MapCoreBase.GetMapClipStatus(index)=1) then
+ begin
+   MapCoreBase.GetMapClipAreaCoords(index,ca);
+   mwidth:=ca.x2-ca.x+1;
+   mheight:=ca.y2-ca.y+1;
+ end;
 
  size:=mwidth*mheight+4;
  MWSetValuesTotal(mc,size);
@@ -128,25 +152,38 @@ begin
 end;
 
 //same code for languages - only header is different
-procedure ExportMapMain(var mc : CodeGenRec; index : integer);
+procedure ExportMapMain(var mc : CodeGenRec; index : integer;UseClipArea : boolean);
 var
   MapProps : MapPropsRec;
   i,j : integer;
   Tile  : TileRec;
   mwidth,mheight : integer;
+  ca : MapClipAreaRec;
+  startx,starty : integer;
 begin
  MapCoreBase.GetMapProps(index,MapProps);
  mwidth:=MapCoreBase.GetExportWidth(index);
  mheight:=MapCoreBase.GetExportHeight(index);
+ startx:=0;
+ starty:=0;
+
+ if UseClipArea and (MapCoreBase.GetMapClipStatus(index)=1) then
+ begin
+   MapCoreBase.GetMapClipAreaCoords(index,ca);
+   mwidth:=ca.x2-ca.x+1;
+   mheight:=ca.y2-ca.y+1;
+   startx:=ca.x;
+   starty:=ca.y;
+ end;
 
  MWWriteInteger(mc,mwidth);
  MWWriteInteger(mc,mheight);
  MWWriteInteger(mc,MapProps.tilewidth);
  MWWriteInteger(mc,MapProps.tileheight);
 
- for j:=0 to mheight -1 do
+ for j:=starty to starty+mheight-1 do
  begin
-   for i:=0 to mwidth-1 do
+   for i:=startx to startx+mwidth-1 do
    begin
      MapCoreBase.GetMapTile(index,i,j,Tile);
      {$I-}
@@ -158,7 +195,7 @@ begin
 end;
 
 
-procedure ExportMap(filename : string;Lan : Integer);
+procedure ExportMap(filename : string;Lan : Integer;UseClipArea : boolean);
 var
   mc : CodeGenRec;
   index : integer;
@@ -175,12 +212,12 @@ begin
   if IORESULT<>0 then exit;
 
   index:=MapCoreBase.GetCurrentMap;
-  Case Lan of BasicLan:ExportBasicMapHeader(mc,index,ImageName);
-            BasicLnLan:ExportBasicLNMapHeader(mc,index,ImageName);
-                  CLan:ExportCMapHeader(mc,index,ImageName);
-             PascalLan:ExportPascalMapHeader(mc,index,ImageName);
+  Case Lan of BasicLan:ExportBasicMapHeader(mc,index,ImageName,UseClipArea);
+            BasicLnLan:ExportBasicLNMapHeader(mc,index,ImageName,UseClipArea);
+                  CLan:ExportCMapHeader(mc,index,ImageName,UseClipArea);
+             PascalLan:ExportPascalMapHeader(mc,index,ImageName,UseClipArea);
   End;
-  ExportMapMain(mc,index);
+  ExportMapMain(mc,index,UseClipArea);
   Case Lan of BasicLan,BasicLNLan:Writeln(F);
                              CLan:Writeln(F,'};');
                         PascalLan:Writeln(F,');');
@@ -210,12 +247,12 @@ begin
       Lan:=ExportProps.Lan;
       Imagename:=ExportProps.Name;
 
-      Case Lan of BasicLan,FBBasicLan,QB64BasicLan,AQBBasicLan:ExportBasicMapHeader(mc,i,ImageName);
-                BasicLnLan:ExportBasicLNMapHeader(mc,i,ImageName);
-                      CLan:ExportCMapHeader(mc,i,ImageName);
-                 PascalLan:ExportPascalMapHeader(mc,i,ImageName);
+      Case Lan of BasicLan,BAMBasicLan,FBBasicLan,QB64BasicLan,AQBBasicLan:ExportBasicMapHeader(mc,i,ImageName,False);
+                BasicLnLan:ExportBasicLNMapHeader(mc,i,ImageName,false);
+                      CLan:ExportCMapHeader(mc,i,ImageName,false);
+                 PascalLan:ExportPascalMapHeader(mc,i,ImageName,false);
       End;
-      ExportMapMain(mc,i);
+      ExportMapMain(mc,i,false);
       Case Lan of BasicLan,FBBasicLan,QB64BasicLan,AQBBasicLan,BasicLNLan:Writeln(F);
                       CLan:Writeln(F,'};');
                  PascalLan:Writeln(F,');');

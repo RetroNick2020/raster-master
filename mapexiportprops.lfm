@@ -1,108 +1,118 @@
 object MapExportForm: TMapExportForm
   Left = 1143
-  Height = 318
+  Height = 254
   Top = 268
-  Width = 400
+  Width = 320
   BorderStyle = bsDialog
   Caption = 'Map Export Properties'
-  ClientHeight = 0
-  ClientWidth = 0
-  DesignTimePPI = 120
+  ClientHeight = 254
+  ClientWidth = 320
   LCLVersion = '2.0.10.0'
   object EditName: TEdit
-    Left = 104
-    Height = 28
-    Top = 32
-    Width = 264
+    Left = 83
+    Height = 23
+    Top = 26
+    Width = 211
     MaxLength = 20
+    ParentFont = False
     TabOrder = 0
   end
   object MapName: TLabel
-    Left = 53
-    Height = 20
-    Top = 32
-    Width = 40
+    Left = 42
+    Height = 15
+    Top = 26
+    Width = 32
     Caption = 'Name'
     ParentColor = False
+    ParentFont = False
   end
   object MapType: TLabel
-    Left = 28
-    Height = 20
-    Top = 128
-    Width = 65
+    Left = 22
+    Height = 15
+    Top = 102
+    Width = 51
     Caption = 'Map Type'
     ParentColor = False
+    ParentFont = False
   end
   object ComboMap: TComboBox
-    Left = 104
-    Height = 28
-    Top = 128
-    Width = 264
-    ItemHeight = 20
+    Left = 83
+    Height = 23
+    Top = 102
+    Width = 211
+    ItemHeight = 15
+    ParentFont = False
     Style = csDropDownList
     TabOrder = 1
   end
   object CompilerType: TLabel
-    Left = 32
-    Height = 20
-    Top = 80
-    Width = 61
+    Left = 26
+    Height = 15
+    Top = 64
+    Width = 49
     Caption = 'Compiler'
     ParentColor = False
+    ParentFont = False
   end
   object ComboCompiler: TComboBox
-    Left = 104
-    Height = 28
-    Top = 80
-    Width = 264
-    ItemHeight = 20
+    Left = 83
+    Height = 23
+    Top = 64
+    Width = 211
+    ItemHeight = 15
     OnChange = ComboCompilerChange
+    ParentFont = False
     Style = csDropDownList
     TabOrder = 2
   end
   object EditWidth: TEdit
-    Left = 104
-    Height = 28
-    Top = 176
-    Width = 48
+    Left = 83
+    Height = 23
+    Top = 141
+    Width = 38
     MaxLength = 3
     NumbersOnly = True
+    ParentFont = False
     TabOrder = 3
     Text = '0'
   end
   object WidthLabel: TLabel
-    Left = 53
-    Height = 20
-    Top = 176
-    Width = 40
+    Left = 42
+    Height = 15
+    Top = 141
+    Width = 32
     Caption = 'Width'
     ParentColor = False
+    ParentFont = False
   end
   object EditHeight: TEdit
-    Left = 104
-    Height = 28
-    Top = 216
-    Width = 48
+    Left = 83
+    Height = 23
+    Top = 173
+    Width = 38
     MaxLength = 3
     NumbersOnly = True
+    ParentFont = False
     TabOrder = 4
     Text = '0'
   end
   object HeightLabel: TLabel
-    Left = 48
-    Height = 20
-    Top = 216
-    Width = 45
+    Left = 38
+    Height = 15
+    Top = 173
+    Width = 36
     Caption = 'Height'
     ParentColor = False
+    ParentFont = False
   end
   object Button1: TButton
-    Left = 280
-    Height = 31
-    Top = 264
-    Width = 94
+    Left = 224
+    Height = 25
+    Top = 211
+    Width = 75
     Caption = 'OK'
     OnClick = Button1Click
+    ParentFont = False
     TabOrder = 5
   end
 end

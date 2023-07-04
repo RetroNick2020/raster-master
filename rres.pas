@@ -172,6 +172,10 @@ begin
                                               2:format:=MouseImageExportFormat;
                            end;
                          end;
+                   BAMLan:begin
+                           case ImageIndex of 1:format:=PutImageExportFormat;
+                           end;
+                         end;
                    QB64Lan:begin
                            case ImageIndex of 1:format:=RGBAFuchsiaExportFormat;
                                               2:format:=RGBAIndex0ExportFormat;
@@ -295,6 +299,11 @@ begin
                                          MouseImageExportFormat:size:=GetMouseShapeSize;
                      end;
                     end;
+             BAMLan:begin
+                     Case ImageFormat of PutImageExportFormat:size:=GetXImageSizeBAM(width,height,ncolors);
+                     end;
+                    end;
+
              QB64Lan:begin
                        //if (ImageType >0)  and (ImageType < 4) then
                        //begin
@@ -402,7 +411,7 @@ end;
 Procedure WriteBasicLabel(var data : BufferRec;Lan : integer;LabelName : string);
 begin
   //we don't want GWLan  - it has line number already
-  case Lan of ABLan,AQBLan,FBinQBModeLan,FBLan,QBLan,QB64Lan,PBLan:Writeln(data.fText,LabelName,'Label:');
+  case Lan of BAMLan,ABLan,AQBLan,FBinQBModeLan,FBLan,QBLan,QB64Lan,PBLan:Writeln(data.fText,LabelName,'Label:');
   end;
 end;
 
@@ -412,7 +421,7 @@ var
 begin
   DotOrUnderScore:='.';
 
-  if (Lan=AQBLan) or (Lan = FBinQBModeLan) or (Lan = FBLan) then
+  if (Lan=BAMLan) or (Lan=AQBLan) or (Lan = FBinQBModeLan) or (Lan = FBLan) then
   begin
     DotOrUnderScore:='_';
   end;
@@ -590,7 +599,7 @@ begin
      end;
 
 
-     if (EO.LAN in [ABLan,AQBLan,GWLan,QBLan,QB64Lan,FBinQBModeLan,FBLan,PBLan]) then
+     if (EO.LAN in [BAMLan,ABLan,AQBLan,GWLan,QBLan,QB64Lan,FBinQBModeLan,FBLan,PBLan]) then
      begin
        if DefIntFlag then
        begin
@@ -626,7 +635,7 @@ begin
          if ImageExportFormat > 0 then
          begin
 //        if (EO.Image = 1) and ((EO.Lan = FBinQBModeLan) or (EO.Lan = ABLan) or (EO.Lan = QBLan) or (EO.Lan = GWLan) or (EO.Lan = PBLan)) then size := size div 2;  //we writing basic integers for Image format 1
-          if (ImageExportFormat = PutImageExportFormat) and (EO.Lan in [FBinQBModeLan,ABLan,QBLan,GWLan,PBLan]) then size := size div 2;  //we writing basic integers for Image format 1
+          if (ImageExportFormat = PutImageExportFormat) and (EO.Lan in [BAMLan,FBinQBModeLan,ABLan,QBLan,GWLan,PBLan]) then size := size div 2;  //we writing basic integers for Image format 1
 
           if (ImageExportFormat = MouseImageExportFormat) and (EO.Lan in [FBinQBModeLan,QBLan,GWLan,PBLan]) then size := size div 2;  //we writing basic integers for Image format 1
 
@@ -704,7 +713,7 @@ begin
    mheight:=MapCoreBase.GetExportHeight(i);
    size:=mwidth*mheight+4;
 
-   if ((MPE.Lan=BasicLan) or (MPE.Lan=AQBBasicLan) or  (MPE.Lan=FBBasicLan) or (MPE.Lan=QB64BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then   //hack alert - fix FBBasicLan
+   if ((MPE.Lan=BasicLan) or (MPE.Lan=BAMBasicLan) or (MPE.Lan=AQBBasicLan) or  (MPE.Lan=FBBasicLan) or (MPE.Lan=QB64BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then   //hack alert - fix FBBasicLan
    begin
      Lan:=QBLan;
      if MPE.Lan = BasicLnLan then
@@ -718,6 +727,10 @@ begin
      else if MPE.Lan = AQBBasicLan then
      begin
        Lan:=AQBLan;
+     end
+     else if MPE.Lan = BAMBasicLan then
+     begin
+        Lan:=BAMLan;
      end;
 
      WriteBasicVariable(data,Lan,MPE.Name+'Map','Size',size);
@@ -785,7 +798,7 @@ begin
      WritePalToArrayBuffer(data,EO.Name+'Pal',EO.Lan,EO.Palette);
    end;
 
-   case EO.Lan of TPLan,TCLan,FPLan,FBinQBModeLan,QBLan,GWLan,QCLan,QPLan,PBLan,OWLan:
+   case EO.Lan of TPLan,TCLan,FPLan,FBinQBModeLan,BAMLan,QBLan,GWLan,QCLan,QPLan,PBLan,OWLan:
         begin
 //          if EO.Image = 1 then   //put image format
 

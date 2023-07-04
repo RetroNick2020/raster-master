@@ -15,6 +15,7 @@ const
  FBBasicLan = 5;   //fix this in the future - just a hack right now to make things work with freebasic
  QB64BasicLan = 6; //fix this in the future - just a hack right now to make things work with Qb64
  AQBBasicLan = 7;  //fix this in the future - just a hack right now to make things work with Amiga QuickBasic AQB
+ BAMBasicLan = 8;
  ValueFormatDecimal = 0;
  ValueFormatHex = 1;
 

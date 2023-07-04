@@ -722,7 +722,7 @@ begin
  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
  if SaveDialog1.Execute then
  begin
-  ExportMap(SaveDialog1.FileName,BasicLNLan);
+  ExportMap(SaveDialog1.FileName,BasicLNLan,True);
  end;
 end;
 
@@ -731,7 +731,7 @@ begin
  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
  if SaveDialog1.Execute then
  begin
-   ExportMap(SaveDialog1.FileName,BasicLan);
+   ExportMap(SaveDialog1.FileName,BasicLan,true);
  end;
 end;
 
@@ -740,7 +740,7 @@ begin
  SaveDialog1.Filter := 'c|*.c|All Files|*.*';
  if SaveDialog1.Execute then
  begin
-   ExportMap(SaveDialog1.FileName,CLan);
+   ExportMap(SaveDialog1.FileName,CLan,true);
  end;
 end;
 
@@ -749,7 +749,7 @@ begin
   SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*';
   if SaveDialog1.Execute then
   begin
-   ExportMap(SaveDialog1.FileName,PascalLan);
+   ExportMap(SaveDialog1.FileName,PascalLan,true);
   end;
 end;
 

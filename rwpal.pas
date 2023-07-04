@@ -86,6 +86,7 @@ begin
               FBinQBModeLan:LanToStr:='FreeBASIC';
               FPLan:LanToStr:='FreePascal';
               OWLan:LanToStr:='Open Watcom C';
+              BAMLan:LanToStr:='BAM Basic';
 
   end;
 end;
@@ -150,7 +151,7 @@ end;
 function CommandEndBracketToStr(Lan : integer) : string;
 begin
  CommandEndBracketToStr:=');';
- Case Lan of ABLan,FBinQBModeLan,QBlan,PBLan,GWLan:CommandEndBracketToStr:='';
+ Case Lan of ABLan,FBinQBModeLan,QBlan,PBLan,GWLan,BAMLan:CommandEndBracketToStr:='';
  end;
 end;
 
@@ -179,7 +180,7 @@ begin
   Rewrite(F);
   NColors:=GetMaxColor+1;
   BFormat:=ColorFormatToStr(rgbFormat);
-  Writeln(F,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, 'Format= ',BFormat);
+  Writeln(F,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),' Palette, ',' Size= ',GetPalSize(nColors,rgbFormat),' Colors= ',NColors, ' Format= ',BFormat);
   For i:=0 to NColors-1 do
   begin
     GetColor(i,CR);
@@ -325,6 +326,10 @@ SetGWStartLineNumber(1000);
       cistr:=IntToStr(EightToSixBit(r)+(EightToSixBit(g)*256)+(EightToSixBit(b)*65536));
       if (Lan=PBlan) then   PBasicEndBracket:=')' else   PBasicEndBracket:='';
       WriteLn(F,LineCountToStr(Lan),pcmdstr,' ',i,', ',cistr,LineTrmStr,PBasicEndBracket);  // only for Call PaletteX(index,color) otherwise normal Palette command structure
+    end
+    else if Lan=BAMLan then
+    begin
+      WriteLn(F,pcmdstr,' ',i,', _BGR(',b,',',g,',',r,')');
     end
     else if rgbFormat = ColorIndexFormat then
     begin
@@ -695,7 +700,7 @@ end;
 //write c/pascal constants and basic data statements
 procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
 begin
-   case Lan of ABLan,AQBLan,QBLan,PBLan,GWLAN,FBinQBModeLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
+   case Lan of BAMLan,ABLan,AQBLan,QBLan,PBLan,GWLAN,FBinQBModeLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
                TPLan,QPLan,APLan,FPLan,TCLan,QCLan,ACLan,OWLan:WritePalCPascalBuffer(data,imagename,Lan,rgbFormat);
    end;
 end;

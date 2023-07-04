@@ -103,6 +103,7 @@ type
  function GetXImageSizeFB(width,height : integer) : longint;
  function GetXImageSizeFP(width,height : integer) : longint;
  function GetXImageSizeOW(width,height,ncolors : integer) : longint;
+ function GetXImageSizeBAM(width,height,ncolors : integer) : longint;
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);

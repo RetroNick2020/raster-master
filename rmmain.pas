@@ -80,6 +80,9 @@ type
     ACVSpriteFile: TMenuItem;
     BAMPutData: TMenuItem;
     BAMPutPlusMaskData: TMenuItem;
+    MenuItem16: TMenuItem;
+    BAMPaletteData: TMenuItem;
+    BAMPaletteCommands: TMenuItem;
     PascalBOBBitmapFile: TMenuItem;
     PascalVSpriteBitmapFile: TMenuItem;
     PropertiesFileDialog: TMenuItem;
@@ -1900,6 +1903,9 @@ begin
                                     'FBPaletteCommands' : ExportDialog.Filter :='FreeBASIC Palette Commands|*.bas';
                                     'PBPaletteData' : ExportDialog.Filter := 'Turbo\Power Basic Palette Data|*.bas';
                                     'PBPaletteCommands' : ExportDialog.Filter :='Turbo\Power Basic Palette Commands|*.bas';
+                                    'BAMPaletteData' : ExportDialog.Filter := 'BAM Basic Palette Data|*.bas';
+                                    'BAMPaletteCommands' : ExportDialog.Filter :='BAM Basic Palette Commands|*.bas';
+
    end;
 
    if ExportDialog.Execute then
@@ -1915,6 +1921,10 @@ begin
                                      'FBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,FBinQBModeLan,ColorFormat);
                                      'PBPaletteData' : error:=WritePalData(ExportDialog.FileName,PBLan,ColorFormat);
                                      'PBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,PBLan,ColorFormat);
+                                     'BAMPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,BAMLan,ColorEightBitFormat);
+                                     'BAMPaletteData' : error:=WritePalData(ExportDialog.FileName,BAMLan,ColorEightBitFormat);
+
+
       end;
 
       if error<>0 then
