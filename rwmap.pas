@@ -48,9 +48,9 @@ begin
  Writeln(mc.FTextPtr^,'(* Pascal Map Code Created By Raster Master *)');
  Writeln(mc.FTextPtr^,'(* Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
          MapProps.tilewidth,' Tile Height=',MapProps.tileheight,' *)');
- Writeln(mc.FTextPtr^,'  ',Imagename,'_Size   =  ',size,';');
+ Writeln(mc.FTextPtr^,'  ',Imagename,'_Size   = ',size,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Width  = ',mwidth,';');
- Writeln(mc.FTextPtr^,'  ',Imagename,'_Height =',mheight,';');
+ Writeln(mc.FTextPtr^,'  ',Imagename,'_Height = ',mheight,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Tile_Width  = ',MapProps.tilewidth,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Tile_Height = ',MapProps.tileheight,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of integer = (');
@@ -87,7 +87,6 @@ begin
  Writeln(mc.FTextPtr^,'#define ',Imagename,'_Height ',mheight);
  Writeln(mc.FTextPtr^,'#define ',Imagename,'_Tile_Width  ',MapProps.tilewidth);
  Writeln(mc.FTextPtr^,'#define ',Imagename,'_Tile_Height ',MapProps.tileheight);
-
  Writeln(mc.FTextPtr^,'  ','int ',Imagename, '[',size,']  = {');
 end;
 

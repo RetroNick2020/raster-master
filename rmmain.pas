@@ -10,7 +10,8 @@ uses
   ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore, flood,
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
-  rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,fileprops;
+  rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
+  fileprops,rmconfig,rmclipboard;
 
 
 type
@@ -481,6 +482,8 @@ type
        procedure ZPaintBoxMouseMoveXYX2Y2Tool(Sender: TObject; Shift: TShiftState;  X, Y: Integer);
        procedure ZPaintBoxMouseUpXYX2Y2Tool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
 
+       function ExportTextFileToClipboard(Sender: TObject) : boolean;
+       function ExportPaletteTextFileToClipboard(Sender: TObject; ColorFormat : integer) : boolean;
 
   public
        procedure UpdateImportedImage;
@@ -578,6 +581,8 @@ begin
  ZoomY2:=0;
  OldZoomX:=-1;
  OldZoomY:=-1;
+
+
 end;
 
 procedure TRMMainForm.FormDestroy(Sender: TObject);
@@ -1438,8 +1443,12 @@ begin
 
   if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
   begin
-    ScanFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
-  //   Fill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
+    if (ssLeft in Shift) and (ssShift in Shift) then
+      ReplaceAllFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor)
+    else
+      ScanFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
+
+      //   Fill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
    // Fill(ZoomX,ZoomY,RMCoreBase.GetCurColor);
 
     UpdateRenderBitMap;
@@ -1908,13 +1917,14 @@ begin
 
    end;
 
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   ColorFormat:=ColorSixBitFormat;
+   if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+   if ExportPaletteTextFileToClipboard(Sender,ColorFormat) then exit;
+
    if ExportDialog.Execute then
    begin
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-
-      ColorFormat:=ColorSixBitFormat;
-      if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
-
       Case (Sender As TMenuItem).Name of 'QBPaletteData' : error:=WritePalData(ExportDialog.FileName,QBLan,ColorFormat);
                                      'QBPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,QBLan,ColorFormat);
                                      'FBPaletteData' : error:=WritePalData(ExportDialog.FileName,FBinQBModeLan,ColorFormat);
@@ -1947,6 +1957,8 @@ var
                                      'QBPutFile' : ExportDialog.Filter := 'QuickBasic\QB64 Put File|*.xgf';
    End;
 
+   if ExportTextFileToClipboard(Sender) then exit;
+
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'QBPutData' : error:=WriteXGFToCode(x,y,x2,y2,QBLan,ExportDialog.FileName);
@@ -1973,6 +1985,8 @@ procedure TRMMainForm.BAMPutDataClick(Sender: TObject);
                                        'BAMPutPlusMaskData' :ExportDialog.Filter := 'BAM Put+Mask Data Statements|*.bas';
 
     End;
+
+    if ExportTextFileToClipboard(Sender) then exit;
 
     if ExportDialog.Execute then
     begin
@@ -2006,6 +2020,9 @@ begin
 
 
   End;
+
+  if ExportTextFileToClipboard(Sender) then exit;
+
   if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'TPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
@@ -2037,6 +2054,8 @@ begin
                                        'FPPutImageFile' :ExportDialog.Filter := 'FreePascal PutImage File|*.xgf';
    End;
 
+   if ExportTextFileToClipboard(Sender) then exit;
+
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'FPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,FPLan,ExportDialog.FileName);
@@ -2062,6 +2081,8 @@ begin
                               'GWPutPlusMaskData' :ExportDialog.Filter := 'GWBASIC Put+Mask Data Statements|*.bas';
                                       'GWPutFile' :ExportDialog.Filter := 'GWBASIC Put File|*.xgf';
    End;
+
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -2166,6 +2187,9 @@ var
    end;
 
    GetOpenSaveRegion(x,y,x2,y2);
+
+   if ExportTextFileToClipboard(Sender) then exit;
+
    if ExportDialog.Execute then
    begin
       error:=WriteJavaScriptArray(x,y,x2,y2,ExportDialog.FileName,transparent);
@@ -2292,6 +2316,256 @@ begin
   end;
 end;
 
+function TRMMainForm.ExportTextFileToClipboard(Sender: TObject) : boolean;
+var
+ x,y,x2,y2 : integer;
+ error : word;
+ filename : string;
+begin
+ if rmconfigbase.GetExportTextFileToClipStatus = false then
+ begin
+   result:=false;
+   exit;
+ end;
+
+ GetOpenSaveRegion(x,y,x2,y2);
+ filename:=GetTemporaryPathWithProvidedFileName(ImagethumbBase.GetExportName(ImagethumbBase.GetCurrent));
+ Case (Sender As TMenuItem).Name of       'ExportRESInclude' :begin
+                                                                filename:=GetTemporaryPathAndFileName;
+                                                                error:=RESInclude(FileName,0,FALSE);
+                                                              end;
+                                          'ABPutData' : error:=WriteAmigaBasicXGFDataFile(x,y,x2,y2,FileName);
+                                          'ABPutPlusMaskData' : error:=WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2,FileName);
+                                          'ABBobData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,filename,false);
+                                          'ABVSpriteData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,FileName,true);
+
+                                          'CBOBBitmapArray':error:=WriteAmigaCBobCodeToFile(x,y,x2,y2,FileName,False);
+                                          'CVSpriteBitmapArray':error:=WriteAmigaCBobCodeToFile(x,y,x2,y2,FileName,true);
+
+                                          'PascalBOBBitmapArray':error:=WriteAmigaPascalBobCodeToFile(x,y,x2,y2,FileName,false);
+                                          'PascalVSpriteBitmapArray':error:=WriteAmigaPascalBobCodeToFile(x,y,x2,y2,FileName,true);
+
+                                          'AqbPsetBitMap':  error:=WriteAQBBitMapCodeToFile(x,y,x2,y2,FileName);
+
+                                          'BAMPutData' : error:=WriteXGFToCode(x,y,x2,y2,BAMLan,FileName);
+                                          'BAMPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,BAMLan,FileName);
+
+                                          'FBPutData' : error:=WriteXGFToCode(x,y,x2,y2,FBinQBModeLan,FileName);
+                                          'FBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FBinQBModeLan,FileName);
+
+                                          'FPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,FPLan,FileName);
+                                          'FPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FPLan,FileName);
+
+                                          'GWPutData' : error:=WriteXGFToCode(x,y,x2,y2,GWLan,FileName);
+                                          'GWPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,GWLan,FileName);
+
+                                          'fpRayLibFuchsia' :begin
+                                                               WriteRayLibCodeToFile(FileName,x,y,x2,y2,FPLan,1);
+                                                               {$I+}
+                                                               error:=IORESULT;
+                                                               {$I-}
+                                                             end;
+                                          'fpRayLibIndex0'  :begin
+                                                               WriteRayLibCodeToFile(FileName,x,y,x2,y2,FPLan,2);
+                                                               {$I+}
+                                                               error:=IORESULT;
+                                                               {$I-}
+                                                              end;
+                                          'fpRayLibRGB' :begin
+                                                           WriteRayLibCodeToFile(FileName,x,y,x2,y2,FPLan,3);
+                                                           {$I+}
+                                                           error:=IORESULT;
+                                                           {$I-}
+                                                          end;
+                                       'gccRayLibFuchsia':begin
+                                                            WriteRayLibCodeToFile(FileName,x,y,x2,y2,gccLan,1);
+                                                            {$I+}
+                                                            error:=IORESULT;
+                                                            {$I-}
+                                                           end;
+                                         'gccRayLibIndex0':begin
+                                                             WriteRayLibCodeToFile(FileName,x,y,x2,y2,gccLan,2);
+                                                             {$I+}
+                                                             error:=IORESULT;
+                                                             {$I-}
+                                                            end;
+                                           'gccRayLibRGB' : begin
+                                                              WriteRayLibCodeToFile(FileName,x,y,x2,y2,gccLan,3);
+                                                              {$I+}
+                                                              error:=IORESULT;
+                                                              {$I-}
+                                                             end;
+                                            'qbRayLibFuchsia':begin
+                                                                WriteRayLibCodeToFile(FileName,x,y,x2,y2,QB64Lan,1);
+                                                                {$I+}
+                                                                error:=IORESULT;
+                                                                {$I-}
+                                                              end;
+                                             'qbRayLibIndex0':begin
+                                                                 WriteRayLibCodeToFile(FileName,x,y,x2,y2,QB64Lan,2);
+                                                                {$I+}
+                                                                error:=IORESULT;
+                                                                {$I-}
+                                                              end;
+                                              'qbRayLibRGB' : begin
+                                                                 WriteRayLibCodeToFile(FileName,x,y,x2,y2,QB64Lan,3);
+                                                                {$I+}
+                                                                error:=IORESULT;
+                                                                {$I-}
+                                                               end;
+                                             'fbRayLibFuchsia':begin
+                                                                 WriteRayLibCodeToFile(FileName,x,y,x2,y2,FBLan,1);
+                                                                 {$I+}
+                                                                 error:=IORESULT;
+                                                                 {$I-}
+                                                               end;
+                                             'fbRayLibIndex0':begin
+                                                                WriteRayLibCodeToFile(FileName,x,y,x2,y2,FBLan,2);
+                                                                {$I+}
+                                                                error:=IORESULT;
+                                                                {$I-}
+                                                              end;
+                                              'fbRayLibRGB' : begin
+                                                                WriteRayLibCodeToFile(FileName,x,y,x2,y2,FBLan,3);
+                                                                {$I+}
+                                                                error:=IORESULT;
+                                                                {$I-}
+                                                               end;
+
+                                          'OWPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,OWLan,FileName);
+                                          'OWPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,OWLan,FileName);
+
+                                          'QBPutData' : error:=WriteXGFToCode(x,y,x2,y2,QBLan,FileName);
+                                          'QBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QBLan,FileName);
+
+                                          'QCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,QCLan,FileName);
+                                          'QCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QCLan,FileName);
+
+                                          'QPPutImageArray' : error:=WriteXgfToCode(x,y,x2,y2,QPLan,FileName);
+                                          'QPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,QPLan,FileName);
+
+                                          'TBPutData' : error:=WriteXGFToCode(x,y,x2,y2,PBLan,FileName);
+                                          'TBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,PBLan,FileName);
+
+                                          'TPPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TPLan,FileName);
+                                          'TPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TPLan,FileName);
+                                          'TPDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TPLan,FileName);
+                                          'TPDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TPLan,FileName);
+
+                                          'TCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TCLan,FileName);
+                                          'TCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TCLan,FileName);
+                                          'TCDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TCLan,FileName);
+                                          'TCDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TCLan,FileName);
+
+                                          'QBMouseShapeData',
+                                          'FBMouseShapeData',
+                                          'TBMouseShapeData': error:=WriteMShapeToCode(x,y,QBLan,1,FileName);
+                                          'GWMouseShapeData': error:=WriteMShapeToCode(x,y,GWLan,1,FileName);
+                                          'TPMouseShapeArray',
+                                          'QPMouseShapeArray': error:=WriteMShapeToCode(x,y,TPLan,1,FileName);
+                                          'TCMouseShapeArray',
+                                          'QCMouseShapeArray',
+                                          'OWMouseShapeArray': error:=WriteMShapeToCode(x,y,TCLan,1,FileName);
+                                          'GWMouseShapeFile',
+                                          'FPMouseShapeFile',
+                                          'FBMouseShapeFile',
+                                          'TPMouseShapeFile',
+                                          'QPMouseShapeFile',
+                                          'QBMouseShapeFile',
+                                          'TBMouseShapeFile',
+                                          'TCMouseShapeFile',
+                                          'QCMouseShapeFile',
+                                          'OWMouseShapeFile':error:=WriteMShapeToFile(x,y,FileName);
+                                          'TransparentImage':error:=WriteJavaScriptArray(x,y,x2,y2,Filename,true);
+                                          'NonTransparentImage':error:=WriteJavaScriptArray(x,y,x2,y2,FileName,false);
+
+ else
+   result:=false;  //did not find a supported format return false
+   exit;
+ End;
+
+ result:=true;  //found supported format - return true
+ if error<>0 then
+ begin
+    ShowMessage('Error Exporting!');
+    exit;
+ end;
+
+ ReadFileAndCopyToClipboard(filename);
+ EraseFile(filename);
+ ShowMessage('Exported to Clipboard!');
+end;
+
+function TRMMainForm.ExportPaletteTextFileToClipboard(Sender: TObject; ColorFormat : integer) : boolean;
+var
+ error : word;
+ filename : string;
+begin
+ if rmconfigbase.GetExportTextFileToClipStatus = false then
+ begin
+   result:=false;
+   exit;
+ end;
+
+ filename:=GetTemporaryPathWithProvidedFileName(ImagethumbBase.GetExportName(ImagethumbBase.GetCurrent)+'Pal');
+ Case (Sender As TMenuItem).Name of
+                                          'ABPaletteData'  : error:=WritePalData(FileName,ABLan,ColorOnePercentFormat);
+                                          'ABPaletteCommands' : error:=WritePalStatements(FileName,ABLan,ColorOnePercentFormat);
+
+                                          'ACVSpriteColorArray' :  error:=WriteRGBPackedPalArray(FileName,ACLan,true);
+                                          'ACPaletteArray'    :  error:=WritePalConstants(FileName,ACLan,ColorFourBitFormat);
+                                          'ACRGB4PaletteArray' :  error:=WriteRGBPackedPalArray(FileName,ACLan,false);
+
+                                          'APVSpriteColorArray' :  error:=WriteRGBPackedPalArray(FileName,APLan,true);
+                                          'APPaletteArray'     :  error:=WritePalConstants(FileName,APLan,ColorFourBitFormat);
+                                          'APRGB4PaletteArray'  :  error:=WriteRGBPackedPalArray(FileName,APLan,false);
+
+                                          'QBPaletteData' : error:=WritePalData(FileName,QBLan,ColorFormat);
+                                          'QBPaletteCommands' : error:=WritePalStatements(FileName,QBLan,ColorFormat);
+                                          'FBPaletteData' : error:=WritePalData(FileName,FBinQBModeLan,ColorFormat);
+                                          'FBPaletteCommands' : error:=WritePalStatements(FileName,FBinQBModeLan,ColorFormat);
+                                          'PBPaletteData' : error:=WritePalData(FileName,PBLan,ColorFormat);
+                                          'PBPaletteCommands' : error:=WritePalStatements(FileName,PBLan,ColorFormat);
+                                          'BAMPaletteCommands' : error:=WritePalStatements(FileName,BAMLan,ColorEightBitFormat);
+                                          'BAMPaletteData' : error:=WritePalData(FileName,BAMLan,ColorEightBitFormat);
+
+                                          'TPPaletteArray' : error:=WritePalConstants(FileName,TPLan,ColorFormat);
+                                          'TPPaletteCommands' : error:=WritePalStatements(FileName,TPLan,ColorFormat);
+                                          'FPPaletteArray' : error:=WritePalConstants(FileName,FPLan,ColorFormat);
+                                          'FPPaletteCommands' : error:=WritePalStatements(FileName,FPLan,ColorFormat);
+
+                                          'GWPaletteData' : error:=WritePalData(FileName,GWLan,ColorFormat);
+                                          'GWPaletteCommands' : error:=WritePalStatements(FileName,GWLan,ColorFormat);
+
+                                          'OWPaletteArray' : error:=WritePalConstants(FileName,OWLan,ColorFormat);
+                                          'OWPaletteCommands' : error:=WritePalStatements(FileName,OWLan,ColorFormat);
+
+                                          'QCPaletteArray' : error:=WritePalConstants(FileName,QCLan,ColorFormat);
+                                          'QCPaletteCommands' : error:=WritePalStatements(FileName,QCLan,ColorFormat);
+                                          'QPPaletteArray' : error:=WritePalConstants(FileName,QPLan,ColorFormat);
+                                          'QPPaletteCommands' : error:=WritePalStatements(FileName,QPLan,ColorFormat);
+
+                                          'TCPaletteArray' : error:=WritePalConstants(FileName,TCLan,ColorFormat);
+                                          'TCPaletteCommands' : error:=WritePalStatements(FileName,TCLan,ColorFormat);
+ else
+   result:=false;  //did not find a supported format return false
+   exit;
+ End;
+
+ result:=true;  //found supported format - return true
+ if error<>0 then
+ begin
+    ShowMessage('Error Exporting!');
+    exit;
+ end;
+
+ ReadFileAndCopyToClipboard(filename);
+ EraseFile(filename);
+ ShowMessage('Exported to Clipboard!');
+end;
+
+
+
 procedure TRMMainForm.QuickPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -2302,6 +2576,9 @@ begin
                              'QPPutImagePlusMaskArray' :ExportDialog.Filter := 'Quick Pascal PutImage+Mask Array|*.pas';
                                       'QPPutImageFile' :ExportDialog.Filter := 'Quick Pascal PutImage File|*.xgf';
   End;
+
+  if ExportTextFileToClipboard(Sender) then exit;
+
   if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'QPPutImageArray' : error:=WriteXgfToCode(x,y,x2,y2,QPLan,ExportDialog.FileName);
@@ -2326,6 +2603,8 @@ var
 begin
  //update the current thumb image
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+ if ExportTextFileToClipboard(Sender) then exit;  //copy to clipboard found export format and was success - if it doesn't we contnue to export to file
 
  Case (Sender As TMenuItem).Name of 'ExportRESInclude' : ExportDialog.Filter := 'RES Pascal Include|*.inc|RES Pascal Include|*.pas|RES C Include|*.h|RES C Include|*.c|RES BASIC Include|*.bi|RES BASIC Include|*.bas|All Files|*.*';
                                      'ExportRESBinary' : ExportDialog.Filter := 'RES Binary|*.res';
@@ -2357,18 +2636,19 @@ var
                                       'QPPaletteCommands' : ExportDialog.Filter :='QuickPascal Palette Commands|*.pas';
     end;
 
+    pm:=RMCoreBase.Palette.GetPaletteMode;
+    ColorFormat:=ColorSixBitFormat;
+    if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+    if ExportPaletteTextFileToClipboard(Sender,ColorFormat) then exit;
+
     if ExportDialog.Execute then
     begin
-       pm:=RMCoreBase.Palette.GetPaletteMode;
-       ColorFormat:=ColorSixBitFormat;
-       if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
-
        Case (Sender As TMenuItem).Name of 'QCPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,QCLan,ColorFormat);
                                          'QCPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,QCLan,ColorFormat);
                                          'QPPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,QPLan,ColorFormat);
                                          'QPPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,QPLan,ColorFormat);
        end;
-
 
        if error<>0 then
        begin
@@ -2387,23 +2667,25 @@ procedure TRMMainForm.PaletteExportTurboCClick(Sender: TObject);
    Case (Sender As TMenuItem).Name of 'TCPaletteArray' : ExportDialog.Filter := 'Turbo C Palette Array|*.c';
                                          'TCPaletteCommands' : ExportDialog.Filter :='Turbo C Palette Commands|*.c';
    end;
-     if ExportDialog.Execute then
-     begin
-        pm:=RMCoreBase.Palette.GetPaletteMode;
-        ColorFormat:=ColorEightBitFormat;
-        if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
-        Case (Sender As TMenuItem).Name of 'TCPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,TCLan,ColorFormat);
-                                        'TCPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,TCLan,ColorFormat);
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   ColorFormat:=ColorEightBitFormat;
+   if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
 
-        end;
+   if ExportPaletteTextFileToClipboard(Sender,ColorFormat) then exit;
 
-        if error<>0 then
-        begin
-           ShowMessage('Error Saving Palette file!');
-           exit;
-        end;
+   if ExportDialog.Execute then
+   begin
+     Case (Sender As TMenuItem).Name of 'TCPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,TCLan,ColorFormat);
+                                     'TCPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,TCLan,ColorFormat);
      end;
+
+     if error<>0 then
+     begin
+       ShowMessage('Error Saving Palette file!');
+       exit;
+     end;
+   end;
   end;
 
 procedure TRMMainForm.OpenWatcomCClick(Sender: TObject);
@@ -2416,6 +2698,8 @@ begin
                               'OWPutImagePlusMaskArray' :ExportDialog.Filter := 'Open Watcom C _putimage+Mask Array|*.c';
                                        'OWPutImageFile' :ExportDialog.Filter := 'Open Watcom C _putimage File|*.xgf';
    End;
+
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -2442,12 +2726,14 @@ var
                                       'OWPaletteCommands' : ExportDialog.Filter :='Open Watcom C Palette Commands|*.c';
     end;
 
+    pm:=RMCoreBase.Palette.GetPaletteMode;
+    ColorFormat:=ColorSixBitFormat;
+    if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+    if ExportPaletteTextFileToClipboard(Sender,ColorFormat) then exit;
+
     if ExportDialog.Execute then
     begin
-       pm:=RMCoreBase.Palette.GetPaletteMode;
-       ColorFormat:=ColorSixBitFormat;
-       if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
-
        Case (Sender As TMenuItem).Name of 'OWPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,OWLan,ColorFormat);
                                          'OWPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,OWLan,ColorFormat);
        end;
@@ -2513,6 +2799,8 @@ begin
                                        'QCPutImageFile' :ExportDialog.Filter := 'Quick C _putimage File|*.xgf';
    End;
 
+   if ExportTextFileToClipboard(Sender) then exit;
+
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'QCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,QCLan,ExportDialog.FileName);
@@ -2543,6 +2831,9 @@ begin
                                        'TCDOSPBMArray' : ExportDialog.Filter := 'Turbo C DOS Xlib PBM Array|*.c';
 
    End;
+
+   if ExportTextFileToClipboard(Sender) then exit;
+
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'TCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TCLan,ExportDialog.FileName);
@@ -2574,6 +2865,7 @@ begin
                                       'TBPutFile' :ExportDialog.Filter := 'Turbo\Power Basic Put File|*.xgf';
    End;
 
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -2600,6 +2892,8 @@ begin
                               'FBPutPlusMaskData' :ExportDialog.Filter := 'FreeBASIC Put+Mask Data Statements|*.bas';
                                       'FBPutFile' :ExportDialog.Filter := 'FreeBASIC Put File|*.xgf';
    End;
+
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -2663,23 +2957,25 @@ begin
    end;
  end;
 
-   if ExportDialog.Execute then
-   begin
-      Case (Sender As TMenuItem).Name of 'ABPutData' : error:=WriteAmigaBasicXGFDataFile(x,y,x2,y2,ExportDialog.FileName);
-                                         'ABPutPlusMaskData' : error:=WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2,ExportDialog.FileName);
-                                         'ABBobData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,false);
-                                         'ABVSpriteData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,true);
-                                         'ABPutFile' :  error:=WriteAmigaBasicXGFFile(x,y,x2,y2,ExportDialog.FileName);
-                                         'ABBobFile' : error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,false);
-                                         'ABVSpriteFile' :  error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,true);
-      End;
+ if ExportTextFileToClipboard(Sender) then exit;
 
-      if error<>0 then
-      begin
-        ShowMessage('Error Saving file!');
-        exit;
-      end;
+ if ExportDialog.Execute then
+ begin
+   Case (Sender As TMenuItem).Name of 'ABPutData' : error:=WriteAmigaBasicXGFDataFile(x,y,x2,y2,ExportDialog.FileName);
+                                      'ABPutPlusMaskData' : error:=WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2,ExportDialog.FileName);
+                                      'ABBobData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,false);
+                                      'ABVSpriteData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,ExportDialog.FileName,true);
+                                      'ABPutFile' :  error:=WriteAmigaBasicXGFFile(x,y,x2,y2,ExportDialog.FileName);
+                                      'ABBobFile' : error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,false);
+                                      'ABVSpriteFile' :  error:=WriteAmigaBasicBobFile(x,y,x2,y2,ExportDialog.FileName,true);
+   End;
+
+   if error<>0 then
+   begin
+      ShowMessage('Error Saving file!');
+      exit;
    end;
+  end;
 end;
 
 
@@ -2693,6 +2989,9 @@ begin
                                     'ACRGB4PaletteArray' : ExportDialog.Filter :='Amiga C RGB4 Palette Array|*.c';
 
    end;
+
+   if ExportPaletteTextFileToClipboard(Sender,0) then exit;
+
    if ExportDialog.Execute then
    begin
      Case (Sender As TMenuItem).Name of 'ACVSpriteColorArray' :  error:=WriteRGBPackedPalArray(ExportDialog.FileName,ACLan,true);
@@ -2750,6 +3049,7 @@ begin
      end;
    end;
 
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -2812,6 +3112,7 @@ begin
      end;
    end;
 
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -2839,6 +3140,9 @@ begin
                                     'APRGB4PaletteArray' : ExportDialog.Filter :='Amiga Pascal RGB4 Palette Array|*.pas';
 
    end;
+
+   if ExportPaletteTextFileToClipboard(Sender,0) then exit;
+
    if ExportDialog.Execute then
    begin
      Case (Sender As TMenuItem).Name of 'APVSpriteColorArray' :  error:=WriteRGBPackedPalArray(ExportDialog.FileName,APLan,true);
@@ -2870,6 +3174,8 @@ begin
       ShowMessage('Invalid Palette Mode for this action. Choose an Amiga Palette Please');
       exit;
    end;
+
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -2926,6 +3232,8 @@ begin
                                       'ABPaletteCommands' : ExportDialog.Filter :='AmigaBasic Palette Commands|*.bas';
    end;
 
+   if ExportPaletteTextFileToClipboard(Sender,0) then exit;
+
    if ExportDialog.Execute then
    begin
       Case (Sender As TMenuItem).Name of 'ABPaletteData'  : error:=WritePalData(ExportDialog.FileName,ABLan,ColorOnePercentFormat);
@@ -2949,12 +3257,15 @@ begin
    Case (Sender As TMenuItem).Name of 'GWPaletteData' : ExportDialog.Filter := 'GWBasic Palette Data|*.bas';
                                       'GWPaletteCommands' : ExportDialog.Filter :='GWBasic Palette Commands|*.bas';
    end;
+
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   ColorFormat:=ColorSixBitFormat;
+   if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
+
+   if ExportPaletteTextFileToClipboard(Sender,ColorFormat) then exit;
+
    if ExportDialog.Execute then
    begin
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      ColorFormat:=ColorSixBitFormat;
-      if pm=PaletteModeEGA then ColorFormat:=ColorIndexFormat;
-
       Case (Sender As TMenuItem).Name of 'GWPaletteData' : error:=WritePalData(ExportDialog.FileName,GWLan,ColorFormat);
                                      'GWPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,GWLan,ColorFormat);
       end;
@@ -2978,11 +3289,15 @@ begin
                                          'FPPaletteArray' : ExportDialog.Filter := 'FreePascal Palette Array|*.pas';
                                          'FPPaletteCommands' : ExportDialog.Filter :='FreePascal Palette Commands|*.pas';
    end;
+
+   ColorFormat:=ColorEightBitFormat;
+   pm:=RMCoreBase.Palette.GetPaletteMode;
+   if (pm=PaletteModeEGA) then ColorFormat:=ColorIndexFormat;
+
+   if ExportPaletteTextFileToClipboard(Sender,ColorFormat) then exit;
+
    if ExportDialog.Execute then
    begin
-      ColorFormat:=ColorEightBitFormat;
-      pm:=RMCoreBase.Palette.GetPaletteMode;
-      if (pm=PaletteModeEGA) then ColorFormat:=ColorIndexFormat;
 
       Case (Sender As TMenuItem).Name of 'TPPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,TPLan,ColorFormat);
                                       'TPPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,TPLan,ColorFormat);
@@ -3047,7 +3362,7 @@ begin
                                       'OWMouseShapeFile': ExportDialog.Filter := 'Mouse Shape File|*.mou';
    end;
 
-
+   if ExportTextFileToClipboard(Sender) then exit;
 
    if ExportDialog.Execute then
    begin
@@ -3290,6 +3605,9 @@ begin
                                                             end;
 
    end;
+
+   if ExportTextFileToClipboard(Sender) then exit;
+
    if ExportDialog.Execute then
    begin
       //SetCoreActive;
@@ -3420,10 +3738,27 @@ procedure TRMMainForm.ThumbPopUpMenuExportClick(Sender: TObject);
 var
  Error : word;
  index : integer;
+ filename : string;
 begin
  //update the current thumb image
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
  ExportDialog.Filter := 'RES Pascal Include|*.inc|RES Pascal Include|*.pas|RES C Include|*.h|RES C Include|*.c|RES BASIC Include|*.bi|RES BASIC Include|*.bas|All Files|*.*';
+
+ if rmconfigbase.GetExportTextFileToClipStatus = true then
+ begin
+    index:=ListView1.ItemIndex;
+    if index = -1 then index:=0;
+    filename:=GetTemporaryPathAndFileName;
+    error:=RESInclude(filename,index,TRUE);
+    if error<>0 then
+    begin
+      ShowMessage('Error Exporting!');
+    end;
+    ReadFileAndCopyToClipboard(filename);
+    EraseFile(filename);
+    ShowMessage('Exported to Clipboard!');
+    exit;
+ end;
 
  if ExportDialog.Execute then
  begin

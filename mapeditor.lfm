@@ -536,28 +536,28 @@ object MapEdit: TMapEdit
         Caption = 'Export'
         object MenuItem2: TMenuItem
           Caption = 'Basic'
-          object MenuItem8: TMenuItem
+          object ExportBasicMapData: TMenuItem
             Caption = 'Map Data Statements'
             OnClick = MenuExportBasicMapData
           end
         end
         object MenuItem13: TMenuItem
           Caption = 'Basic (Line# )'
-          object MenuItem14: TMenuItem
+          object BasicLNMapData: TMenuItem
             Caption = 'Map Data Statements'
             OnClick = MenuExportBasicLNMapData
           end
         end
         object MenuItem6: TMenuItem
           Caption = 'C'
-          object MenuItem11: TMenuItem
+          object ExportCArray: TMenuItem
             Caption = 'Map Array'
             OnClick = MenuExportCArray
           end
         end
         object MenuItem7: TMenuItem
           Caption = 'Pascal'
-          object MenuItem12: TMenuItem
+          object ExportPascalArray: TMenuItem
             Caption = 'Map Array'
             OnClick = MenuExportPascalArray
           end

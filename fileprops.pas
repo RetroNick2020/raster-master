@@ -5,29 +5,32 @@ unit fileprops;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,rwpng;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
+  ComCtrls, rwpng,rmconfig;
 
 type
 
   { TFileProperties }
 
   TFileProperties = class(TForm)
-    OKButton: TButton;
-    ColorIndexCheckBox: TCheckBox;
-    CustomCheckBox: TCheckBox;
-    ColorIndexValue: TEdit;
-    RV: TEdit;
-    GV: TEdit;
-    BV: TEdit;
-    AV: TEdit;
-    FuschiaCheckBox: TCheckBox;
-    Label1: TLabel;
-    Label2: TLabel;
-    R: TLabel;
-    G: TLabel;
-    B: TLabel;
     A: TLabel;
+    AV: TEdit;
+    B: TLabel;
+    BV: TEdit;
+    TextToClipboardCheckBox: TCheckBox;
+    ColorIndexCheckBox: TCheckBox;
+    ColorIndexValue: TEdit;
+    CustomCheckBox: TCheckBox;
+    FuschiaCheckBox: TCheckBox;
+    G: TLabel;
+    GV: TEdit;
+    Label2: TLabel;
+    OKButton: TButton;
+    Label1: TLabel;
+    R: TLabel;
+    RV: TEdit;
     procedure OKButtonClick(Sender: TObject);
+    procedure TextToClipboardCheckBoxChange(Sender: TObject);
     procedure ValueChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
@@ -67,6 +70,7 @@ end;
 procedure TFileProperties.FormCreate(Sender: TObject);
 begin
    GetProps(PngRGBA); //copy the values we set in the form
+   TextToClipboardCheckBox.Checked:=rmconfigbase.GetExportTextFileToClipStatus;
 end;
 
 procedure TFileProperties.ValueChange(Sender: TObject);
@@ -78,6 +82,11 @@ end;
 procedure TFileProperties.OKButtonClick(Sender: TObject);
 begin
    modalresult:= mrOk;
+end;
+
+procedure TFileProperties.TextToClipboardCheckBoxChange(Sender: TObject);
+begin
+ rmconfigbase.SetExportTextFileToClipStatus(TextToClipboardCheckBox.Checked);
 end;
 
 // to be called after setprops

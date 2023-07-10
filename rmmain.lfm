@@ -657,6 +657,7 @@ object RMMainForm: TRMMainForm
         end
         object FreeBASIC: TMenuItem
           Caption = 'FreeBASIC - QB Mode'
+          OnClick = FreeBASICClick
           object FBPutData: TMenuItem
             Caption = 'Put Data Statements'
             OnClick = FreeBASICClick

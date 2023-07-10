@@ -6,6 +6,7 @@ interface
   Classes, SysUtils,rmcore;
 
 procedure ScanFill(x, y, width, height, newColor : integer);
+procedure ReplaceAllFill(x, y, MaxX,MaxY,color : integer);
 
 implementation
 const
@@ -138,6 +139,22 @@ begin
         spanBelow := false;
       end;
       x1:=x1+1;
+    end;
+  end;
+end;
+
+//replaces all occurances in Map of selected  Tile - like flood fill but for all - does not need to be connected - mainly to be used for missing tiles
+procedure ReplaceAllFill(x, y, MaxX,MaxY,color : integer);
+var
+ i,j,ReplaceColor : integer;
+begin
+  if GetPix(x,y) = color then exit;
+  ReplaceColor:=GetPix(x,y);
+  for j:=0 to MaxY-1 do
+  begin
+    for i:=0 to MaxX-1 do
+    begin
+      if GetPix(i,j) = ReplaceColor then  PutPix( i,j, color);
     end;
   end;
 end;

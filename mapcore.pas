@@ -130,6 +130,8 @@ type
 
                     function GetExportHeight(index : integer) : integer;
                     function GetExportWidth(index : integer) : integer;
+                    function GetExportName(index : integer) : string;
+
                     function GetExportMapCount : integer;
 
                     procedure GetMapExportProps(index : integer;var props : MapExportFormatRec);
@@ -345,6 +347,12 @@ begin
  end;
  GetExportHeight:=Height;
 end;
+
+function TMapCoreBase.GetExportName(index : integer) : string;
+begin
+  result:=Map[index].ExportProps.Name;
+end;
+
 
 procedure TMapCoreBase.ClearExportProperties(index : integer);
 begin

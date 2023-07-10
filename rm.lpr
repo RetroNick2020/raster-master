@@ -11,7 +11,7 @@ uses
   rmcolorvga, rmabout, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
   rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
-  fileprops, drawprocs
+  fileprops, drawprocs, rmconfig, rmclipboard
      { you can add units after this };
 
 {$R *.res}

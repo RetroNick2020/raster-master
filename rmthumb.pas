@@ -113,6 +113,8 @@ type
              function GetExportWidth(index : integer) : integer;
              function GetExportHeight(index : integer) : integer;
 
+             function GetExportName(index : integer) : string;
+
              procedure MakeThumbImage(index : integer;var imglist : TImageList;action : integer);
              procedure MakeThumbImageFromCore(index : integer;var imglist : TImageList;action : integer);
 
@@ -514,6 +516,11 @@ begin
     Height:=ImageMain[index].Props.ExportFormat.Height;
  end;
  GetExportHeight:=Height;
+end;
+
+function TImageThumb.GetExportName(index : integer) : string;
+begin
+ result:=ImageMain[index].Props.ExportFormat.Name;
 end;
 
 procedure TImageThumb.GetExportOptions(index : integer;var EO : ImageExportFormatRec);

@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,
-  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools;
+  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
+  rmconfig;
 
 type
   { TMapEdit }
@@ -47,15 +48,15 @@ type
     TileImageList: TImageList;
     MenuItem10: TMenuItem;
     Clear: TMenuItem;
-    MenuItem11: TMenuItem;
-    MenuItem12: TMenuItem;
+    ExportCArray: TMenuItem;
+    ExportPascalArray: TMenuItem;
     MenuItem13: TMenuItem;
-    MenuItem14: TMenuItem;
+    BasicLNMapData: TMenuItem;
     MenuMapProps: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem6: TMenuItem;
     MenuItem7: TMenuItem;
-    MenuItem8: TMenuItem;
+    ExportBasicMapData: TMenuItem;
     MenuNew: TMenuItem;
     OpenDialog1: TOpenDialog;
     ExportMapsPropsMenu: TPopupMenu;
@@ -237,6 +238,8 @@ type
     procedure ClearCheckedMenus;
     procedure UpdateMenus;
     procedure UpdateEditMenus;
+
+    function ExportTextFileToClipboard(Sender: TObject) : boolean;
 
   end;
 
@@ -717,8 +720,40 @@ begin
   end;
 end;
 
+function TMapEdit.ExportTextFileToClipboard(Sender: TObject) : boolean;
+var
+ filename : string;
+begin
+ if rmconfigbase.GetExportTextFileToClipStatus = false then
+ begin
+   result:=false;
+   exit;
+ end;
+
+ filename:=GetTemporaryPathWithProvidedFileName(MapCoreBase.GetExportName(MapCoreBase.GetCurrentMap));
+ Case (Sender As TMenuItem).Name of  'ExportBasicMapData':ExportMap(FileName,BasicLan,True);
+                                     'BasicLNMapData':ExportMap(FileName,BasicLNLan,True);
+                                     'ExportCArray': ExportMap(FileName,CLan,true);
+                                     'ExportPascalArray':ExportMap(FileName,PascalLan,true);
+
+ else
+   result:=false;  //did not find a supported format return false
+   exit;
+ End;
+
+ result:=true;  //found supported format - return true
+
+ ReadFileAndCopyToClipboard(filename);
+ EraseFile(filename);
+ ShowMessage('Exported to Clipboard!');
+end;
+
+
+
 procedure TMapEdit.MenuExportBasicLNMapData(Sender: TObject);
 begin
+ if ExportTextFileToClipboard(Sender) then exit;
+
  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
  if SaveDialog1.Execute then
  begin
@@ -728,6 +763,8 @@ end;
 
 procedure TMapEdit.MenuExportBasicMapData(Sender: TObject);
 begin
+ if ExportTextFileToClipboard(Sender) then exit;
+
  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
  if SaveDialog1.Execute then
  begin
@@ -737,6 +774,8 @@ end;
 
 procedure TMapEdit.MenuExportCArray(Sender: TObject);
 begin
+ if ExportTextFileToClipboard(Sender) then exit;
+
  SaveDialog1.Filter := 'c|*.c|All Files|*.*';
  if SaveDialog1.Execute then
  begin
@@ -746,6 +785,8 @@ end;
 
 procedure TMapEdit.MenuExportPascalArray(Sender: TObject);
 begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
   SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*';
   if SaveDialog1.Execute then
   begin

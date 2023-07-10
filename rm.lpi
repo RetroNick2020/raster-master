@@ -136,7 +136,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="30">
+    <Units Count="32">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -290,6 +290,14 @@
         <Filename Value="drawprocs.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit29>
+      <Unit30>
+        <Filename Value="rmconfig.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="rmclipboard.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit31>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
