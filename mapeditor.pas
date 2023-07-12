@@ -16,6 +16,7 @@ type
     GroupBox1: TGroupBox;
     CopyToClipBoard: TMenuItem;
     MenuItem15: TMenuItem;
+    CloneMap: TMenuItem;
     ReSizeMap256x256: TMenuItem;
     ReSizeMap128x128: TMenuItem;
     StatusBar1: TStatusBar;
@@ -121,6 +122,7 @@ type
     TileZoom: TTrackBar;
 
     procedure CheckBoxDisplayGridChange(Sender: TObject);
+    procedure CloneMapClick(Sender: TObject);
     procedure CopyToClipBoardClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -414,6 +416,19 @@ end;
 procedure TMapEdit.CheckBoxDisplayGridChange(Sender: TObject);
 begin
   MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.CloneMapClick(Sender: TObject);
+begin
+  MapCoreBase.CloneMap;
+  MapCoreBase.SetCurrentMap(MapCoreBase.GetMapCount-1);
+  CurrentMap:=MapCoreBase.GetCurrentMap;
+
+  UpdateMapListView;
+  MapScrollBox.HorzScrollBar.Position:=0;
+  MapScrollBox.VertScrollBar.Position:=0;
+  MapPaintBox.Invalidate;
+  ShowMessage('Map Cloned!');
 end;
 
 procedure TMapEdit.CopyToClipBoardClick(Sender: TObject);

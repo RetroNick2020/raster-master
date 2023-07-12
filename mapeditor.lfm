@@ -573,6 +573,10 @@ object MapEdit: TMapEdit
       object Undo: TMenuItem
         Caption = 'Undo'
       end
+      object CloneMap: TMenuItem
+        Caption = 'Clone'
+        OnClick = CloneMapClick
+      end
       object CopyToClipBoard: TMenuItem
         Caption = 'Copy'
         OnClick = CopyToClipBoardClick

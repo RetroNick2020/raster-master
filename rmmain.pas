@@ -84,6 +84,7 @@ type
     MenuItem16: TMenuItem;
     BAMPaletteData: TMenuItem;
     BAMPaletteCommands: TMenuItem;
+    EditClone: TMenuItem;
     PascalBOBBitmapFile: TMenuItem;
     PascalVSpriteBitmapFile: TMenuItem;
     PropertiesFileDialog: TMenuItem;
@@ -323,6 +324,7 @@ type
     procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
       var AText: String);
     procedure EditClearClick(Sender: TObject);
+    procedure EditCloneClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -4022,6 +4024,31 @@ end;
 procedure TRMMainForm.EditClearClick(Sender: TObject);
 begin
  Clear;
+end;
+
+procedure TRMMainForm.EditCloneClick(Sender: TObject);
+begin
+ if ImageThumbBase.GetCount >= MaxThumbImages then exit;
+
+ CopyScrollPositionToCore;
+ ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
+
+ ZoomScrollBox.HorzScrollBar.Position:=0;
+ ZoomScrollBox.VertScrollBar.Position:=0;
+
+ ImageThumbBase.AddImage;
+ ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
+
+ with ListView1.Items.Add do
+ begin
+   ImageIndex :=ImageThumbBase.GetCount-1;
+   Caption:='Image '+IntToStr(ImageThumbBase.GetCount);
+ end;
+
+ ImageThumbBase.SetCurrent(ImageThumbBase.GetCount-1);
+ Listview1.Refresh;
+ ShowMessage('Image Cloned!');
+
 end;
 
 function TRMMainForm.getopenfilename(var filename,ext : string; filter : string) : boolean;

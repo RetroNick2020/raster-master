@@ -172,6 +172,7 @@ type
                     procedure DeleteMap(index : integer);
                     procedure InsertMap(index : integer);
                     procedure AddMap;
+                    procedure CloneMap;
 
 
                     procedure SetZoomSize(index,size : integer);
@@ -493,14 +494,10 @@ begin
   begin
     For j:=y to y2 do
     begin
-     //C:=RMCoreBase.GetPixel(i,j);
-     //C2:=RMCoreBase.GetPixel(A,j);
      GetMapTile(index,i,j,C);
      GetMapTile(index,A,j,C2);
      SetMapTile(index,i,j,C2);
      SetMapTile(index,A,j,C);
-     //RMCoreBase.PutPixel(i,j,C2);
-     //RMCoreBase.PutPixel(A,J,C);
     end;
     Dec(A);
   end;
@@ -520,18 +517,10 @@ begin
   begin
     For i:=x to x2 do
     begin
-     //C:=RMCoreBase.GetPixel(i,j);
-     //C2:=RMCoreBase.GetPixel(i,A);
-
      GetMapTile(index,i,j,C);
      GetMapTile(index,i,A,C2);
-
      SetMapTile(index,i,j,C2);
      SetMapTile(index,i,A,C);
-
-
-     //RMCoreBase.PutPixel(i,j,C2);
-     //RMCoreBase.PutPixel(i,A,C);
     end;
     Dec(A);
   end;
@@ -544,21 +533,13 @@ Var
 begin
  For j:=y to y2 do
  begin
-   //d:=RMCoreBase.GetPixel(x,j);
    GetMapTile(index,x,j,d);
-
    For i:=x+1 to x2 do
    begin
-   //  c:=RMCoreBase.GetPixel(i,j);
      GetMapTile(index,i,j,c);
-
-    //RMCoreBase.PutPixel(i-1,j,c);
      SetMapTile(index,i-1,j,c);
-
    end;
-//   RMCoreBase.PutPixel(x2,j,d);
    SetMapTile(index,x2,J,d);
-
  end;
 end;
 
@@ -569,19 +550,12 @@ Var
 begin
  For j:=y to y2 do
  begin
-   //d:=RMCoreBase.GetPixel(x2,j);
    GetMapTile(index,x2,j,d);
-
    For i:=x2-1 downto x do
    begin
-//    c:=RMCoreBase.GetPixel(i,j);
      GetMapTile(index,i,j,c);
-
-//    RMCoreBase.PutPixel(i+1,j,c);
      SetMapTile(index,i+1,j,c);
-
    end;
-//   RMCoreBase.PutPixel(x,j,d);
      SetMapTile(index,x,j,d);
  end;
 end;
@@ -593,19 +567,12 @@ Var
 begin
  For i:=x to x2 do
  begin
-//   d:=RMCoreBase.GetPixel(i,y);
    GetMapTile(index,i,y,d);
-
    For j:=y to y2-1 do
    begin
-//    c:=RMCoreBase.GetPixel(i,j+1);
      GetMapTile(index,i,j+1,c);
-
-//     RMCoreBase.PutPixel(i,j,c);
      SetMapTile(index,i,j,c);
-
    end;
-//   RMCoreBase.PutPixel(i,y2,d);
    SetMapTile(index,i,y2,d);
  end;
 end;
@@ -617,19 +584,13 @@ Var
 begin
  For i:=x to x2 do
  begin
-//   d:=RMCoreBase.GetPixel(i,y2);
    GetMapTile(index,i,y2,d);
-
    For j:=y2  downto y+1 do
    begin
-//    c:=RMCoreBase.GetPixel(i,j-1);
      GetMapTile(index,i,j-1,c);
-//     RMCoreBase.PutPixel(i,j,c);
      SetMapTile(index,i,j,c);
-
    end;
-//   RMCoreBase.PutPixel(i,y,d);
-     SetMapTile(index,i,y,d);
+   SetMapTile(index,i,y,d);
  end;
 end;
 
@@ -832,6 +793,35 @@ begin
  ExportProps.Lan:=Lan;
  ExportProps.MapFormat:=Format;
  SetMapExportProps(MapCount-1,ExportProps);
+end;
+
+procedure TMapCoreBase.CloneMap;  //clones current map
+var
+ props : MapPropsRec;
+ ExportProps : MapExportFormatRec;
+ i,j : integer;
+ Tile : TileRec;
+begin
+ if (MapCount=0) or (MapCount >= MaxListSize) then exit;
+ inc(MapCount);
+
+ //copy properties from current map
+ GetMapProps(CurrentMap,props);
+ SetMapProps(MapCount-1,props);
+ SetMapSize(MapCount-1,props.width,props.height);
+
+ //copy Lan and Format settings from current Map
+ GetMapExportProps(CurrentMap,ExportProps);
+ SetMapExportProps(MapCount-1,ExportProps);
+
+ For j:=0 to props.height-1 do
+ begin
+   For i:=0 to props.width-1 do
+   begin
+    GetMapTile(CurrentMap,i,j,Tile);
+    SetMapTile(MapCount-1,i,j,Tile);
+   end;
+ end;
 end;
 
 begin

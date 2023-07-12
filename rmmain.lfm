@@ -1029,6 +1029,10 @@ object RMMainForm: TRMMainForm
         Caption = 'Clear'
         OnClick = EditClearClick
       end
+      object EditClone: TMenuItem
+        Caption = 'Clone'
+        OnClick = EditCloneClick
+      end
       object EditUndo: TMenuItem
         Caption = 'Undo'
         OnClick = ToolUndoIconClick
