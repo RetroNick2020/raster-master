@@ -987,6 +987,10 @@ object RMMainForm: TRMMainForm
           end
         end
       end
+      object BulkExportPNG: TMenuItem
+        Caption = 'Bulk Export PNG''s'
+        OnClick = BulkExportPNGClick
+      end
       object PropertiesFileDialog: TMenuItem
         Caption = 'Properties'
         OnClick = PropertiesFileDialogClick
@@ -1466,5 +1470,10 @@ object RMMainForm: TRMMainForm
     UsePreProcessor = False
     Left = 1592
     Top = 8
+  end
+  object SelectDirectoryDialog: TSelectDirectoryDialog
+    Title = 'Select Export Directory'
+    Left = 1640
+    Top = 672
   end
 end

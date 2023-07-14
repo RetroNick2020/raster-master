@@ -85,6 +85,7 @@ type
     BAMPaletteData: TMenuItem;
     BAMPaletteCommands: TMenuItem;
     EditClone: TMenuItem;
+    BulkExportPNG: TMenuItem;
     PascalBOBBitmapFile: TMenuItem;
     PascalVSpriteBitmapFile: TMenuItem;
     PropertiesFileDialog: TMenuItem;
@@ -98,6 +99,7 @@ type
     OWPutImageArray: TMenuItem;
     OpenWatcom: TMenuItem;
     QBMouseShapeFile: TMenuItem;
+    SelectDirectoryDialog: TSelectDirectoryDialog;
     StatusBar1: TStatusBar;
     StatusBar2: TStatusBar;
   //  ZoomScrollBox: TScrollBox;
@@ -316,6 +318,7 @@ type
     procedure AmigaPascalPaletteClick(Sender: TObject);
     procedure AqbPsetBitMapClick(Sender: TObject);
     procedure BAMPutDataClick(Sender: TObject);
+    procedure BulkExportPNGClick(Sender: TObject);
 
 
     procedure ColorBoxMouseEnter(Sender: TObject);
@@ -2003,6 +2006,24 @@ procedure TRMMainForm.BAMPutDataClick(Sender: TObject);
           exit;
        end;
     end;
+end;
+
+procedure TRMMainForm.BulkExportPNGClick(Sender: TObject);
+var
+ PngRGBA : PngRGBASettingsRec;
+ FileName : String;
+ i : integer;
+begin
+ ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+ FilePropertiesDialog.GetProps(PngRGBA);
+ if SelectDirectoryDialog.Execute then
+ begin
+   for i:=0 to ImageThumbBase.GetCount-1 do
+   begin
+     FileName:=IncludeTrailingPathDelimiter(SelectDirectoryDialog.filename)+ImageThumbBase.GetExportName(i)+'.png';
+     SaveFromThumbAsPNG(i,FileName,PngRGBA);
+   end;
+ end;
 end;
 
 procedure TRMMainForm.TurboPascalClick(Sender: TObject);

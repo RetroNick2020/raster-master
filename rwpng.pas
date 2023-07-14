@@ -5,7 +5,7 @@ unit rwpng;
 interface
 
 uses
-  Classes, SysUtils, graphics,fgl,StrUtils,rmcore,dialogs;
+  Classes, SysUtils, graphics,fgl,StrUtils,rmcore,dialogs,rmthumb;
 
 
 
@@ -40,6 +40,8 @@ type
                              var TopPalette : TRMPaletteBuf;topncolors : integer);
 //    function FindPaletteIndexInCurrentSpritePalette(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nColors : integer) : integer;
     procedure CopyImageToCore(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer; x,y,x2,y2 : integer);
+    procedure CopyThumbToImage(index : integer;PngRGBA : PngRGBASettingsRec); // 0=none,1=transparent color=0, 2=transparent color=fuschia,
+
     procedure CopyPaletteToCore(NewPalette : TRMPaletteBuf;PaletteMode : integer);
 
     Procedure LoadFromFile(filename : string);
@@ -56,6 +58,8 @@ type
 
 function ReadPNG(x,y,x2,y2 : integer;filename : string; LoadPalette : Boolean) : integer;
 function SavePNG(x,y,x2,y2 : integer;filename : string; PngRGBA : PngRGBASettingsRec) : integer;
+function SaveFromThumbAsPNG(index : integer;filename : string; PngRGBA : PngRGBASettingsRec) : integer;
+
 function FindPaletteIndex(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nColors : integer) : integer;
 
 
@@ -609,6 +613,9 @@ begin
  end;
 end;
 
+
+
+
 procedure TEasyPNG.CopyPictureToCanvas(canvas : TCanvas;x,y,x2,y2 : integer);
 begin
 
@@ -631,6 +638,67 @@ begin
  SavePNG:=0;
 end;
 
+
+procedure TEasyPNG.CopyThumbToImage(index : integer;PngRGBA : PngRGBASettingsRec); // 0=none,1=transparent color=0, 2=transparent color=fuschia,
+var
+ width,height : integer;
+ i,j   : integer;
+ ci    : integer;
+ cr    : TRMColorRec;
+ pixeldata  : PByte;
+ pixelpos   : longint;
+begin
+ width:=ImageThumbBase.GetExportWidth(index);
+ height:=ImageThumbBase.GetExportHeight(index);;
+
+ picture1.Bitmap.Width:=width;
+ Picture1.Bitmap.height:=height;
+ picture1.Bitmap.PixelFormat:=pf32bit;         //change format to 32 bit/RGBA
+ pixeldata:=picture1.Bitmap.RawImage.Data;
+ pixelpos:=0;
+ for j:=0 to height-1 do
+ begin
+   for i:=0 to width-1 do
+   begin
+     ci:=ImageThumbBase.GetPixel(index,i,j);
+     ImageThumbBase.GetColor(index,ci,cr);
+
+     pixeldata[pixelpos]:=cr.b;     // Blue
+     pixeldata[pixelpos+1]:=cr.g;   // Green
+     pixeldata[pixelpos+2]:=cr.r;   // Red
+     pixeldata[pixelpos+3]:=255;    // Alpha     255 = solid
+
+     if (PngRGBA.UseColorIndex) and (PngRGBA.ColorIndex=ci) then
+     begin
+       pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
+     end;
+
+     if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.g=0) and (cr.b=255) then   //use fuschia
+     begin
+       pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
+     end;
+
+     if (PngRGBA.UseCustom) and (cr.r = PngRGBA.R) and (cr.b=PngRGBA.B) and (cr.g=PngRGBA.G) then   //use fuschia
+     begin
+       pixeldata[pixelpos+3]:=PngRGBA.A;  // use Custom Alpha level for transperancy
+     end;
+
+     inc(pixelpos,4);
+   end;
+ end;
+end;
+
+
+function SaveFromThumbAsPNG(index : integer;filename : string; PngRGBA : PngRGBASettingsRec) : integer;
+var
+ EasyPNG : TEasyPNG;
+begin
+ EasyPNG:=TEasyPNG.Create;
+ EasyPNG.CopyThumbToImage(index,PngRGBA);
+ EasyPNG.SaveToFile(filename);
+ EasyPNG.Free;
+ SaveFromThumbAsPNG:=0;
+end;
 
 
 
