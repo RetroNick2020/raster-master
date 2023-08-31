@@ -3490,7 +3490,6 @@ begin
    RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
 
    ZoomSize:=RMDrawTools.GetZoomSize;
-   CopyScrollPositionFromCore;
 
    CoreToPalette;
    UpdateColorBox;
@@ -3503,6 +3502,7 @@ begin
    UpdateZoomArea;
    UpdateZoomScroller;
    UpdateThumbView;
+   CopyScrollPositionFromCore;
  end;
 end;
 
