@@ -1,9 +1,11 @@
 'Sokoban for BAM (Basic Anywhere Machine)
 'Raster Master Sprite/Map Editor was used to create/assemble graphics/map
-
+option explicit 
 defint a-Z
 
 declare sub InitPalette()
+declare sub ReadBoard()
+
 declare sub ReadFloor()
 declare sub ReadCrateMarker()
 declare sub ReadCrate()
@@ -37,6 +39,39 @@ CONST KEY_LEFT$ = CHR$(0)+CHR$(75)
 CONST KEY_RIGHT$ = CHR$(0)+CHR$(77)
 CONST KEY_DOWN$ = CHR$(0)+CHR$(80)
 
+dim emptyblock as integer
+dim wallblock as integer
+dim crateblock as integer
+dim floorblock as integer
+dim pusherleftblock as integer
+dim pusherrightblock as integer
+dim pusherupblock as integer
+dim pusherdownblock as integer
+dim cratemarkerblock as integer
+
+dim playerleft  as integer
+dim playerright  as integer
+dim playerup  as integer
+dim playerdown as integer
+dim playerdirection as integer
+
+dim playmode as integer
+dim x as integer
+dim y as integer
+dim i as integer
+dim j as integer
+dim tile as integer
+dim count as integer
+dim match as integer
+
+'we read these values from the map data
+dim maxcol as integer
+dim maxrow as integer
+dim tileheight as integer
+dim tilewidth as integer
+
+dim k$ as string
+
 emptyblock=-1
 wallblock=0
 crateblock=2
@@ -62,11 +97,11 @@ y=0
 maxcol=0
 maxrow=0
 tileheight=0
-tileheight=0
+tilewidth=0
 
 screen 7
 InitPalette()
-gosub ReadBoard
+ReadBoard()
 ReadPusher()
 ReadWall()
 ReadCrate()
@@ -116,7 +151,7 @@ sub MoveDown()
   end if
 end sub
 
-ReadBoard:
+sub ReadBoard()
   restore boardMapLabel
   read maxcol,maxrow,tilewidth,tileheight
   maxcol=maxcol-1
@@ -154,7 +189,7 @@ ReadBoard:
      end if  
    next i
   next j
-return
+end sub
 
 sub DrawBoard()
   for j=0 to maxrow
@@ -372,6 +407,7 @@ sub ReadFloor()
 end sub
 
 sub InitPalette()
+ dim r,g,b as integer
   restore PalLabel
   for i=0 to 15
     read r,g,b
