@@ -1,7 +1,7 @@
 '* *************************************************************** *
 '* qbdemo4.bas VGA Palette Demo for QuickBASIC                     *
 '*                                                                 *
-'* remappalette commands were created by Exporting palette from    *
+'* palette commands were created by Exporting palette from         *
 '* Raster Master. Palette->Export->QuickBasic->Palette Commands    *
 '* *************************************************************** *
 
