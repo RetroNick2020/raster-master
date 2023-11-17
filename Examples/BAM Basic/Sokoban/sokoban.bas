@@ -417,8 +417,8 @@ end sub
 
 boardMapLabel:
 ' Basic Map Code Created By Raster Master
-' Size =103 Width=11 Height=9 Tile Width=32 Tile Height=32
-' board3
+' Size =103 Width=11 Height=9 Tile Width=16 Tile Height=16
+' board1
 DATA 11,9,16,16,0,0,0,0,0,0
 DATA 0,0,0,0,0,0,4,0,1,4
 DATA 4,4,4,4,1,0,0,4,0,0
