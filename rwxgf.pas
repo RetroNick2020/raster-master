@@ -40,12 +40,15 @@ Const
    XLibLBMExportFormat = 5; //Xlib format for TC/TP
    XLibPBMExportFormat = 6;
 
-   RGBAFuchsiaExportFormat = 7;  //originaly intended for just Raylib support - but also work in qb64/freebasic RGB formats
+   RGBAFuchsiaExportFormat = 7;
    RGBAIndex0ExportFormat = 8;
    RGBExportFormat = 9;
 
    MouseImageExportFormat = 10;
 
+   RayLibRGBAFuchsiaExportFormat = 11;
+   RayLibRGBAIndex0ExportFormat = 12;
+   RayLibRGBExportFormat = 13;
 
 
    Binary2   = 1;

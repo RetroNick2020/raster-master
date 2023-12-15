@@ -832,18 +832,18 @@ object RMMainForm: TRMMainForm
             OnClick = MouseSaveClick
           end
         end
-        object MenuItem12: TMenuItem
+        object QB64: TMenuItem
           Caption = 'QB64'
-          object qbRayLibFuchsia: TMenuItem
-            Caption = 'RGBA - Fuchsia Array'
+          object qb64RGBAFuchsia: TMenuItem
+            Caption = 'RGBA - Fuchsia Data Statements'
             OnClick = RayLibExportClick
           end
-          object qbRayLibIndex0: TMenuItem
-            Caption = 'RGBA - Index 0 Array'
+          object qb64RGBAIndex0: TMenuItem
+            Caption = 'RGBA - Index 0 Data Statements'
             OnClick = RayLibExportClick
           end
-          object qbRayLibRGB: TMenuItem
-            Caption = 'RGB Array'
+          object qb64RGB: TMenuItem
+            Caption = 'RGB Data Statements'
             OnClick = RayLibExportClick
           end
         end

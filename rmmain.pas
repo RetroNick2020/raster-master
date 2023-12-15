@@ -70,7 +70,7 @@ type
     fbRayLibIndex0: TMenuItem;
     fbRayLibRGB: TMenuItem;
     MenuItem1: TMenuItem;
-    MenuItem12: TMenuItem;
+    QB64: TMenuItem;
     MenuItem13: TMenuItem;
     AqbPsetBitMap: TMenuItem;
     GWMouseShapeFile: TMenuItem;
@@ -116,9 +116,9 @@ type
     ScriptMenuRun: TMenuItem;
     ScriptMenu: TMenuItem;
     RMScript: TPSScript;
-    qbRayLibRGB: TMenuItem;
-    qbRayLibIndex0: TMenuItem;
-    qbRayLibFuchsia: TMenuItem;
+    qb64RGB: TMenuItem;
+    qb64RGBAIndex0: TMenuItem;
+    qb64RGBAFuchsia: TMenuItem;
     MenuItem8: TMenuItem;
     SpriteImportMenu: TMenuItem;
     MiddleTopPanel: TPanel;
@@ -3594,17 +3594,17 @@ begin
                                                              Lan:=gccLan;
                                                              format:=3;
                                                            end;
-                                         'qbRayLibFuchsia':begin
+                                       'qb64RGBAFuchsia':begin
                                                               ExportDialog.Filter := 'Basic Array|*.bas';
                                                               Lan:=QB64Lan;
                                                               format:=1;
                                                             end;
-                                          'qbRayLibIndex0':begin
+                                          'qb64RGBAIndex0':begin
                                                               ExportDialog.Filter := 'Basic Array|*.bas';
                                                               Lan:=QB64Lan;
                                                               format:=2;
                                                             end;
-                                          'qbRayLibRGB' : begin
+                                               'qb64RGB' : begin
                                                             ExportDialog.Filter := 'Basic Array|*.bas';
                                                             Lan:=QB64Lan;
                                                             format:=3;
@@ -3876,7 +3876,7 @@ begin
       UpdateZoomArea;
       UpdateZoomScroller;
       UpdateThumbView;
-      UpdateToolFlipScrollMenu;
+      //UpdateToolFlipScrollMenu;
     end;
 end;
 
@@ -3910,8 +3910,6 @@ var
   item  : TListItem;
   i,index : integer;
 begin
-
-
  if ImageThumbBase.GetCount = 1 then
  begin
     if (Listview1.SelCount > 0) then

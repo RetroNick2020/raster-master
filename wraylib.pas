@@ -108,8 +108,8 @@ begin
  MWSetLan(mc,BasicLan);
  MWSetValueFormat(mc,ValueFormatHex);
 
- Writeln(mc.FTextPtr^,#39,' RayLib Basic Image Code Created By Raster Master');
- Writeln(mc.FTextPtr^,#39,' Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height,' *)');
+ Writeln(mc.FTextPtr^,#39,' RGB/RGBA Basic Image Code Created By Raster Master');
+ Writeln(mc.FTextPtr^,#39,' Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height);
 end;
 
 

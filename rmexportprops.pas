@@ -138,6 +138,10 @@ begin
                              ComboImage.Items.Add('RGBA Fuchsia');
                              ComboImage.Items.Add('RGBA Index 0');
                              ComboImage.Items.Add('RGB');
+                             ComboImage.Items.Add('RayLib RGBA Fuchsia');
+                             ComboImage.Items.Add('RayLib RGBA Index 0');
+                             ComboImage.Items.Add('RayLib RGB');
+
                              ComboMask.Items.Add('None');
                              ComboImage.ItemIndex:=EO.Image;
                              ComboMask.ItemIndex:=EO.Mask;

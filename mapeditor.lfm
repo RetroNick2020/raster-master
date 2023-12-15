@@ -1,11 +1,11 @@
 object MapEdit: TMapEdit
-  Left = 335
+  Left = 159
   Height = 860
-  Top = 143
-  Width = 1324
+  Top = 204
+  Width = 1333
   Caption = 'Map Editor'
   ClientHeight = 840
-  ClientWidth = 1324
+  ClientWidth = 1333
   DoubleBuffered = True
   Menu = MainMenu1
   OnActivate = FormActivate
@@ -24,11 +24,11 @@ object MapEdit: TMapEdit
     Left = 0
     Height = 840
     Top = 0
-    Width = 256
+    Width = 258
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'LeftPanel'
     ClientHeight = 840
-    ClientWidth = 256
+    ClientWidth = 258
     ParentFont = False
     TabOrder = 3
     object SelectedTilePanel: TPanel
@@ -40,10 +40,10 @@ object MapEdit: TMapEdit
       Left = 1
       Height = 216
       Top = 1
-      Width = 254
+      Width = 256
       Anchors = [akTop, akLeft, akRight, akBottom]
       ClientHeight = 216
-      ClientWidth = 254
+      ClientWidth = 256
       ParentFont = False
       TabOrder = 0
       object SelectedTileImage: TImage
@@ -67,7 +67,7 @@ object MapEdit: TMapEdit
       Left = 1
       Height = 9
       Top = 217
-      Width = 254
+      Width = 256
       Align = alNone
       Anchors = [akLeft, akRight]
       AutoSnap = False
@@ -86,11 +86,11 @@ object MapEdit: TMapEdit
       Left = 1
       Height = 613
       Top = 226
-      Width = 254
+      Width = 256
       Anchors = [akTop, akLeft, akRight, akBottom]
       Caption = 'LeftBottomPanel'
       ClientHeight = 613
-      ClientWidth = 254
+      ClientWidth = 256
       ParentColor = False
       ParentFont = False
       TabOrder = 2
@@ -98,7 +98,7 @@ object MapEdit: TMapEdit
         Left = 1
         Height = 611
         Top = 1
-        Width = 252
+        Width = 254
         Align = alClient
         Color = 15790320
         Columns = <>
@@ -121,14 +121,14 @@ object MapEdit: TMapEdit
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1209
+    Left = 1217
     Height = 840
     Top = 0
-    Width = 115
+    Width = 116
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'RightPanel'
     ClientHeight = 840
-    ClientWidth = 115
+    ClientWidth = 116
     ParentColor = False
     ParentFont = False
     TabOrder = 0
@@ -136,7 +136,7 @@ object MapEdit: TMapEdit
       Left = 1
       Height = 838
       Top = 1
-      Width = 113
+      Width = 114
       Align = alClient
       Color = 15790320
       Columns = <>
@@ -151,7 +151,7 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 256
+    Left = 258
     Height = 840
     Top = 0
     Width = 9
@@ -164,7 +164,7 @@ object MapEdit: TMapEdit
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1200
+    Left = 1208
     Height = 840
     Top = 0
     Width = 9
@@ -178,17 +178,17 @@ object MapEdit: TMapEdit
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightSplitter
-    Left = 265
+    Left = 267
     Height = 126
     Top = 0
-    Width = 935
+    Width = 941
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 126
-    ClientWidth = 935
+    ClientWidth = 941
     ParentFont = False
     TabOrder = 4
     object TileZoom: TTrackBar
-      Left = 900
+      Left = 906
       Height = 99
       Hint = 'Zoom Level'
       Top = 13
@@ -206,7 +206,7 @@ object MapEdit: TMapEdit
       TabOrder = 0
     end
     object Panel2: TPanel
-      Left = 297
+      Left = 303
       Height = 96
       Top = 16
       Width = 592
@@ -445,7 +445,7 @@ object MapEdit: TMapEdit
       Left = 16
       Height = 23
       Top = 16
-      Width = 271
+      Width = 277
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -457,7 +457,7 @@ object MapEdit: TMapEdit
       Left = 16
       Height = 23
       Top = 48
-      Width = 271
+      Width = 277
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -472,14 +472,14 @@ object MapEdit: TMapEdit
     AnchorSideRight.Control = RightSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 265
+    Left = 267
     Height = 714
     Top = 126
-    Width = 935
+    Width = 941
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'MiddlePanel'
     ClientHeight = 714
-    ClientWidth = 935
+    ClientWidth = 941
     ParentColor = False
     ParentFont = False
     TabOrder = 5
@@ -487,7 +487,7 @@ object MapEdit: TMapEdit
       Left = 1
       Height = 712
       Top = 1
-      Width = 933
+      Width = 939
       HorzScrollBar.Increment = 10
       HorzScrollBar.Page = 105
       HorzScrollBar.Tracking = True
@@ -497,7 +497,7 @@ object MapEdit: TMapEdit
       Align = alClient
       BorderStyle = bsNone
       ClientHeight = 712
-      ClientWidth = 933
+      ClientWidth = 939
       ParentFont = False
       TabOrder = 0
       object MapPaintBox: TPaintBox

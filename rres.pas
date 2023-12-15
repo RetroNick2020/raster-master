@@ -180,6 +180,9 @@ begin
                            case ImageIndex of 1:format:=RGBAFuchsiaExportFormat;
                                               2:format:=RGBAIndex0ExportFormat;
                                               3:format:=RGBExportFormat;
+                                              4:format:=RayLibRGBAFuchsiaExportFormat;
+                                              5:format:=RayLibRGBAIndex0ExportFormat;
+                                              6:format:=RayLibRGBExportFormat;
                            end;
                          end;
                    PBLan:begin
@@ -305,13 +308,12 @@ begin
                     end;
 
              QB64Lan:begin
-                       //if (ImageType >0)  and (ImageType < 4) then
-                       //begin
-                       //   size:=ResRayLibImageSize(width,height,ImageType);
-                       //end;
                        Case ImageFormat of RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,1);
                                            RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,2);
                                            RGBExportFormat:size:=ResRayLibImageSize(width,height,3);
+                                           RayLibRGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,1);
+                                           RayLibRGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,2);
+                                           RayLibRGBExportFormat:size:=ResRayLibImageSize(width,height,3);
                        end;
                      end;
              FPLan:begin
@@ -429,6 +431,10 @@ begin
   begin
     writeln(data.fText,LineCountToStr(Lan),'Dim ',vname,DotOrUnderScore,vsubname,' As Integer = ',value);
   end
+  else if (Lan=QB64Lan) then
+  begin
+    writeln(data.fText,LineCountToStr(Lan),'Const ',vname,DotOrUnderScore,vsubname,' = ',value);
+  end
   else
   begin
     writeln(data.fText,LineCountToStr(Lan),vname,DotOrUnderScore,vsubname,' = ',value);
@@ -475,27 +481,59 @@ begin
   writeln(data.fText,LineCountToStr(Lan),'Next _rmy');
 end;
 
-procedure WriteQB64BasicReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+procedure WriteQB64ReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
 begin
   writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
   writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'&');
   writeln(data.fText,LineCountToStr(Lan),name,'& = _NewImage(',name,'.Width,',name,'.Height,32)');
-  writeln(data.fText,LineCountToStr(Lan),'prevdest = _Dest');
+  writeln(data.fText,LineCountToStr(Lan),'rmprevdest = _Dest');
   writeln(data.fText,LineCountToStr(Lan),'_Dest ',name,'&');
-  writeln(data.fText,LineCountToStr(Lan),'For y=0 to ',name,'.Height-1');
-  writeln(data.fText,LineCountToStr(Lan),'  For x=0 to ',name,'.Width-1');
-  writeln(data.fText,LineCountToStr(Lan),'   Read r,g,b');
+  writeln(data.fText,LineCountToStr(Lan),'For rmy=0 to ',name,'.Height-1');
+  writeln(data.fText,LineCountToStr(Lan),'  For rmx=0 to ',name,'.Width-1');
+  writeln(data.fText,LineCountToStr(Lan),'   Read rmr,rmg,rmb');
   writeln(data.fText,LineCountToStr(Lan),'   if ',name,'.Format = 7 Then');
-  writeln(data.fText,LineCountToStr(Lan),'      Read a');
-  writeln(data.fText,LineCountToStr(Lan),'      PSet(x,y),_RGBA(r,g,b,a)');
+  writeln(data.fText,LineCountToStr(Lan),'      Read rma');
+  writeln(data.fText,LineCountToStr(Lan),'      PSet(rmx,rmy),_RGBA(rmr,rmg,rmb,rma)');
   writeln(data.fText,LineCountToStr(Lan),'   else');
-  writeln(data.fText,LineCountToStr(Lan),'      PSet(x,y),_RGB(r,g,b)');
+  writeln(data.fText,LineCountToStr(Lan),'      PSet(rmx,rmy),_RGB(rmr,rmg,rmb)');
   writeln(data.fText,LineCountToStr(Lan),'   end if');
-  writeln(data.fText,LineCountToStr(Lan),'  Next x');
-  writeln(data.fText,LineCountToStr(Lan),'Next y');
-  writeln(data.fText,LineCountToStr(Lan),'_Dest prevdest');
+  writeln(data.fText,LineCountToStr(Lan),'  Next rmx');
+  writeln(data.fText,LineCountToStr(Lan),'Next rmy');
+  writeln(data.fText,LineCountToStr(Lan),'_Dest rmprevdest');
 end;
 
+procedure WriteQB64RayLibReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
+begin
+  writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+  writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'Data AS _MEM');
+  writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'Image AS Image');
+  writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'Texture AS Texture');
+
+  writeln(data.fText,LineCountToStr(Lan),name,'Data = _MemNew(',name,'.Size)');
+  writeln(data.fText,LineCountToStr(Lan),'rmc = 0');
+  writeln(data.fText,LineCountToStr(Lan),'For rmy=0 to ',name,'.Height-1');
+  writeln(data.fText,LineCountToStr(Lan),'  For rmx=0 to ',name,'.Width-1');
+  writeln(data.fText,LineCountToStr(Lan),'   Read rmr,rmg,rmb');
+  writeln(data.fText,LineCountToStr(Lan),'   _MemPut ',name,'Data, ',name,'Data.OFFSET + rmc, rmr As _UNSIGNED _BYTE ');
+  writeln(data.fText,LineCountToStr(Lan),'   _MemPut ',name,'Data, ',name,'Data.OFFSET + rmc + 1, rmg As _UNSIGNED _BYTE ');
+  writeln(data.fText,LineCountToStr(Lan),'   _MemPut ',name,'Data, ',name,'Data.OFFSET + rmc + 2, rmb As _UNSIGNED _BYTE ');
+  writeln(data.fText,LineCountToStr(Lan),'   if ',name,'.Format = 7 Then');
+  writeln(data.fText,LineCountToStr(Lan),'      Read rma');
+  writeln(data.fText,LineCountToStr(Lan),'      _MemPut ',name,'Data, ',name,'Data.OFFSET + rmc + 3, rma As _UNSIGNED _BYTE ');
+  writeln(data.fText,LineCountToStr(Lan),'      rmc = rmc + 4 ');
+  writeln(data.fText,LineCountToStr(Lan),'   else');
+  writeln(data.fText,LineCountToStr(Lan),'      rmc = rmc + 3 ');
+  writeln(data.fText,LineCountToStr(Lan),'   end if');
+  writeln(data.fText,LineCountToStr(Lan),'  Next rmx');
+  writeln(data.fText,LineCountToStr(Lan),'Next rmy');
+
+  writeln(data.fText,LineCountToStr(Lan),name,'Image.dat =  ',name,'Data.OFFSET');
+  writeln(data.fText,LineCountToStr(Lan),name,'Image.W = ',name,'.Width');
+  writeln(data.fText,LineCountToStr(Lan),name,'Image.H = ',name,'.Height');
+  writeln(data.fText,LineCountToStr(Lan),name,'Image.mipmaps = 1');
+  writeln(data.fText,LineCountToStr(Lan),name,'Image.format = ',name,'.Format');
+  writeln(data.fText,LineCountToStr(Lan),'LoadTextureFromImage ',name,'Image, ',name,'Texture');
+end;
 
 
 procedure WriteAQBImageStub(var data : BufferRec;Lan,Image,Mask : integer; name : string;size : longint);
@@ -591,6 +629,9 @@ begin
         Case ImageExportFormat of RGBAFuchsiaExportFormat:size:=RayLibImageSize(width,height,1);
                                    RGBAIndex0ExportFormat:size:=RayLibImageSize(width,height,2);
                                           RGBExportFormat:size:=RayLibImageSize(width,height,3);
+                                  RayLibRGBAFuchsiaExportFormat:size:=RayLibImageSize(width,height,1);
+                                   RayLibRGBAIndex0ExportFormat:size:=RayLibImageSize(width,height,2);
+                                          RayLibRGBExportFormat:size:=RayLibImageSize(width,height,3);
         end;
     //    if (EO.Image > 0) and (EO.Image < 4) then
     //    begin
@@ -606,6 +647,19 @@ begin
           if (EO.Lan in [AQBLan,FBLan]) then
           begin
             writeln(data.fText,LineCountToStr(EO.Lan),'Dim As Integer _rmx,_rmy,_rmr,_rmg,_rmb,_rma,_rmi,_rmj');
+          end
+          else if (EO.Lan = QB64Lan) then
+          begin
+            if ImageExportFormat in [RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat] then
+            begin
+              writeln(data.fText,LineCountToStr(EO.Lan),'Dim rmx,rmy,rmi,rmj,rmc AS Integer');
+              writeln(data.fText,LineCountToStr(EO.Lan),'Dim rmr, rmg, rmb, rma As _Unsigned _Byte');
+            end
+            else
+            begin
+              writeln(data.fText,LineCountToStr(EO.Lan),'Dim rmx,rmy,rmi,rmj,rmc,rmprevdest AS Integer');
+              writeln(data.fText,LineCountToStr(EO.Lan),'Dim rmr, rmg, rmb, rma As _Unsigned _Byte');
+            end;
           end
           else
           begin
@@ -644,10 +698,10 @@ begin
 //        if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) and ((EO.Image > 0) and (EO.Image < 4)) then
           if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) then
           begin
-            if  ((ImageExportFormat = RGBAFuchsiaExportFormat) or (ImageExportFormat=RGBAIndex0ExportFormat) or (ImageExportFormat=RGBExportFormat)) then
+            if  ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat,RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat] then
             begin
                Format:=7;
-               if ImageExportFormat = RGBExportFormat then Format:=4;
+               if ImageExportFormat in [RGBExportFormat,rayLibRGBExportFormat] then Format:=4;
                WriteBasicVariable(data,EO.Lan,EO.Name,'Format',Format);   // for QB64/Freebasic RayLib formats
             end;
           end;
@@ -680,8 +734,13 @@ begin
           begin
             if  (ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat]) then
             begin
-              WriteQB64BasicReadStub(data,EO.Lan,EO.Name,size);   //QB64 - not QB\QuickBASUC - RGB/RGBA Load code
+              WriteQB64ReadStub(data,EO.Lan,EO.Name,size);   //QB64 - Use Internal Graphics
+            end
+            else if  (ImageExportFormat in [RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat]) then
+            begin
+              WriteQB64RayLibReadStub(data,EO.Lan,EO.Name,size);  //QB64 - Use RayLib Graphics
             end;
+
           end
           else
           begin
@@ -844,8 +903,6 @@ begin
      WriteTCPBMCodeToBuffer(data,0,0,width-1,height-1,i,EO.Name);
    end;
 
-
-
    if (EO.LAN=ABLan) and (ImageExportFormat = PutImageExportFormat) then
    begin
      WriteBasicLabel(data,EO.Lan,EO.Name);
@@ -881,12 +938,15 @@ begin
    end;
 
    //FP RayLib formats
-   if (EO.Lan in [FPLan,QB64Lan,FBLan,gccLan]) and (ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat]) then
+   if (EO.Lan in [FPLan,QB64Lan,FBLan,gccLan]) and (ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat,RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat]) then
    begin
      if (EO.Lan in [QB64Lan,FBLan]) then WriteBasicLabel(data,EO.Lan,EO.Name);
      Case ImageExportFormat of RGBAFuchsiaExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,1,EO.Name);
                                 RGBAIndex0ExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,2,EO.Name);
                                        RGBExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,3,EO.Name);
+                         RayLibRGBAFuchsiaExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,1,EO.Name);
+                          RayLibRGBAIndex0ExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,2,EO.Name);
+                                 RayLibRGBExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,3,EO.Name);
      end;
    end;
 (*
@@ -1191,11 +1251,6 @@ begin
  {$I+}
  RESBinary:=IOResult;
 end;
-
-
-
-
-
 
 
 
