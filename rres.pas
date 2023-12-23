@@ -155,6 +155,10 @@ begin
                                               4:format:=MouseImageExportFormat;
                            end;
                          end;
+                  TMTLan:begin
+                           case ImageIndex of 1:format:=PutImageExportFormat;
+                           end;
+                         end;
                    TCLan:begin
                            case ImageIndex of 1:format:=PutImageExportFormat;
                                               2:format:=XLibLBMExportFormat;
@@ -269,6 +273,11 @@ begin
                                           XLibPBMExportFormat:size:=GetLBMPBMImageSize(width,height); // Xlib LBM/PBM
                                           MouseImageExportFormat:size:=GetMouseShapeSize;
                       end;
+                   end;
+
+            TMTLan:begin
+                     Case ImageFormat of PutImageExportFormat:size:=GetXImageSizeTMT(width,height,ncolors);
+                     end;
                    end;
              TCLan:begin
                       Case ImageFormat of PutImageExportFormat:size:=GetXImageSize(width,height,ncolors);
@@ -857,7 +866,7 @@ begin
      WritePalToArrayBuffer(data,EO.Name+'Pal',EO.Lan,EO.Palette);
    end;
 
-   case EO.Lan of TPLan,TCLan,FPLan,FBinQBModeLan,BAMLan,QBLan,GWLan,QCLan,QPLan,PBLan,OWLan:
+   case EO.Lan of TPLan,TMTLan,TCLan,FPLan,FBinQBModeLan,BAMLan,QBLan,GWLan,QCLan,QPLan,PBLan,OWLan:
         begin
 //          if EO.Image = 1 then   //put image format
 

@@ -994,6 +994,17 @@ object RMMainForm: TRMMainForm
             OnClick = TurboCClick
           end
         end
+        object MenuItem12: TMenuItem
+          Caption = 'TMT Pascal'
+          object TMTPutImageArray: TMenuItem
+            Caption = 'PutImage Array'
+            OnClick = TMTPascalClick
+          end
+          object TMTPutImageFile: TMenuItem
+            Caption = 'PutImage File'
+            OnClick = TMTPascalClick
+          end
+        end
       end
       object BulkExportPNG: TMenuItem
         Caption = 'Bulk Export PNG''s'

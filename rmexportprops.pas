@@ -296,6 +296,17 @@ begin
                              ComboMask.ItemIndex:=EO.Mask;
                              ComboPalette.ItemIndex:=EO.Palette;
                            end;
+                   TMTLan:begin
+                           ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
+                           ComboImage.Items.Add('None');
+                           ComboImage.Items.Add('putimage');
+                           ComboMask.Items.Add('None');
+                           ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
+                           ComboPalette.ItemIndex:=EO.Palette;
+                         end;
+
   end;
 end;
 
@@ -358,6 +369,7 @@ begin
    ComboCompiler.Items.Add('gcc');
    ComboCompiler.Items.Add('Open Watcom C');
    ComboCompiler.Items.Add('BAM Basic');
+   ComboCompiler.Items.Add('TMT Pascal');
 
    ComboCompiler.ItemIndex:=0;
    ComboImage.Items.Clear;

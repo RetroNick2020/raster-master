@@ -70,6 +70,9 @@ type
     fbRayLibIndex0: TMenuItem;
     fbRayLibRGB: TMenuItem;
     MenuItem1: TMenuItem;
+    MenuItem12: TMenuItem;
+    TMTPutImageFile: TMenuItem;
+    TMTPutImageArray: TMenuItem;
     QB64: TMenuItem;
     MenuItem13: TMenuItem;
     AqbPsetBitMap: TMenuItem;
@@ -419,6 +422,7 @@ type
     procedure TurboPowerBasicClick(Sender: TObject);
     procedure TurboCClick(Sender: TObject);
     procedure TurboPascalClick(Sender: TObject);
+    procedure TMTPascalClick(Sender: TObject);
 
     procedure ZoomBoxMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
@@ -2026,6 +2030,38 @@ begin
  end;
 end;
 
+procedure TRMMainForm.TMTPascalClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ error : word;
+begin
+  GetOpenSaveRegion(x,y,x2,y2);
+  Case (Sender As TMenuItem).Name of 'TMTPutImageArray' :ExportDialog.Filter := 'TMT Pascal PutImage Array|*.pas';
+//                                  'TMTPutImagePlusMaskArray' :ExportDialog.Filter := 'TMT Pascal PutImage+Mask Array|*.pas';
+                                  'TMTPutImageFile' : ExportDialog.Filter := 'TMT Pascal PutImage File|*.xgf';
+
+
+
+  End;
+
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  if ExportDialog.Execute then
+   begin
+      Case (Sender As TMenuItem).Name of 'TMTPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TMTLan,ExportDialog.FileName);
+                         //        'TMTPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TPLan,ExportDialog.FileName);
+                                         'TMTPutImageFile' : error:=WriteXGFToFile(x,y,x2,y2,TMTLan,ExportDialog.FileName);
+
+      End;
+
+      if error<>0 then
+      begin
+        ShowMessage('Error Saving file!');
+        exit;
+      end;
+   end;
+end;
+
 procedure TRMMainForm.TurboPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -2474,6 +2510,8 @@ begin
                                           'TPPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TPLan,FileName);
                                           'TPDOSLBMArray' : error:=WriteLBMToCode(x,y,x2,y2,TPLan,FileName);
                                           'TPDOSPBMArray' : error:=WritePBMToCode(x,y,x2,y2,TPLan,FileName);
+
+                                          'TMTPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TMTLan,FileName);
 
                                           'TCPutImageArray' : error:=WriteXGFToCode(x,y,x2,y2,TCLan,FileName);
                                           'TCPutImagePlusMaskArray' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,TCLan,FileName);

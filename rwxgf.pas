@@ -29,6 +29,7 @@ Const
    gccLan  = 16;
    OWLan   = 17; //Open Watcom C/C++ compiler
    BAMLan  = 18; //Basic Anywhere Machine
+   TMTLan  = 19; // TMT Pascal Compiler - 32bit DOS
 
    NoExportFormat = 0;
    PutImageExportFormat = 1;  //for all compilers the use put/putimage
@@ -107,6 +108,7 @@ type
  function GetXImageSizeFP(width,height : integer) : longint;
  function GetXImageSizeOW(width,height,ncolors : integer) : longint;
  function GetXImageSizeBAM(width,height,ncolors : integer) : longint;
+ function GetXImageSizeTMT(width,height,ncolors : integer) : longint;
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
 procedure BitplaneWriterPascalCode(inByte : Byte; var Buffer : BufferRec;action : integer);
@@ -347,6 +349,11 @@ begin
   end;
 end;
 
+function GetBPLSizeTMT(width,ncolors : word) : word;
+begin
+  GetBPLSizeTMT:=width;
+end;
+
 function GetBPLSizeBAM(width,ncolors : word) : word;
 begin
   GetBPLSizeBAM:=0;
@@ -362,6 +369,10 @@ begin
   GetXImageSizeBAM:=GetBPLSizeBAM(width,ncolors)*height+4;
 end;
 
+function GetXImageSizeTMT(width,height,ncolors : integer) : longint;
+begin
+  GetXImageSizeTMT:=GetBPLSizeTMT(width,ncolors)*height+4;
+end;
 
 function GetXImageSize(width,height,ncolors : integer) : longint;
 var
@@ -396,7 +407,7 @@ var
   numColors : word;
 begin
   numColors:=GetMaxColor+1;
-  Case LanType of TPLan,TCLan: begin
+  Case LanType of TPLan,TCLan,TMTLan: begin
                                  head.Width:=width-1;
                                  head.Height:=height-1;
                               end;
@@ -579,6 +590,50 @@ begin
                     16:spToPacked16(sourcelinebuf,destlinebuf,BPL);
                    256:destlinebuf:=sourcelinebuf;
    end;
+   for n:=0 to BTW-1 do
+   begin
+     BitplaneWriter(destlinebuf[n],data,1);
+   end;
+ end;
+
+ BitplaneWriter(0,data,2);  //flush it
+end;
+
+Procedure WriteXGFBufferTMT(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2 : word);
+Var
+// sourcelinebuf : Linebuftype;
+ destlinebuf   : Linebuftype;
+ Head       : XgfHead;
+ Width      : Word;
+ Height     : Word;
+ BPL        : Word;  //bytes per line for one bitplane
+ BTW        : Word; //bytes to write to buffer
+ i,j,n      : Word;
+ nColors    : Word;
+ tempBuf    : array[1..4] of byte;
+begin
+ width:=x2-x+1;
+ Height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ BPL:=GetBPLSizeTMT(Width,nColors);
+ BTW:=BPL;
+
+ //patch correct widht height for language/compiler - Microsoft and Borland did some wierd things to a simple bitmap format
+ FixHead(Head,Width,Height,TMTLan);
+ Move(Head,tempBuf,sizeof(tempBuf));
+
+ for n:=1 to 4 do
+ begin
+    BitplaneWriter(tempBuf[n],data,1);
+ end;
+
+ for j:=0 to height-1 do
+ begin
+   for i:=0 to Width-1 do
+   begin
+     destLineBuf[i]:=GetPixel(x+i,y+j);
+   end;
+
    for n:=0 to BTW-1 do
    begin
      BitplaneWriter(destlinebuf[n],data,1);
@@ -952,6 +1007,42 @@ begin
  WriteTPCodeToBuffer:=IORESULT;
 end;
 
+Function WriteTMTCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageid : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longint;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
+begin
+ BWriter:=@BitplaneWriterPascalCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetXImageSizeTMT(width,height,nColors);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,'(* TMT Pascal PutImage Bitmap Code Created By Raster Master *)');
+ writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
+ writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
+ writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
+ writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
+ writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
+
+ writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WriteXGFBufferTMT(BWriter,data,x,y,x2,y2);
+
+ writeln(data.ftext);
+
+{$I+}
+ WriteTMTCodeToBuffer:=IORESULT;
+end;
+
+
+
 
 Function WriteOWCodeToBuffer(var data :BufferRec;x,y,x2,y2,imageId : word; imagename:string):word;
 var
@@ -1310,6 +1401,18 @@ begin
   SetMaskMode(oMask);
 end;
 
+procedure WriteXgfToBufferTMT(x,y,x2,y2,Mask : word;var data : BufferRec);
+var
+ omask : integer;
+begin
+  omask:=GetMaskMode;
+  SetMaskMode(Mask);
+  BitPlaneWriterFile(0,data,0);
+  WriteXGFBufferTMT(@BitPlaneWriterFile,data,x,y,x2,y2);
+  SetMaskMode(oMask);
+end;
+
+
 
 //write a single file
 Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
@@ -1327,6 +1430,8 @@ begin
  Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
  case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
                  TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
+                 TMTLan: WriteTMTCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
                  QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
                  GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
@@ -1383,6 +1488,8 @@ Assign(data.f,filename);
  case LanType of         OWLan: WriteXGFToBufferOW(x,y,x2,y2,0,data);
                  FBinQBModeLan: WriteXGFToBufferFB(x,y,x2,y2,0,data);
                          FPLan: WriteXGFToBufferFP(x,y,x2,y2,0,data);
+                        TMTLan: WriteXGFToBufferTMT(x,y,x2,y2,0,data);
+
       else
          WriteXGFToBuffer(x,y,x2,y2,LanType,0,data);
  end;
@@ -1403,6 +1510,8 @@ begin
   SetMaskMode(Mask);
   case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
                   TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
+                  TMTLan: WriteTMTCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
 
                   QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
                   GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
