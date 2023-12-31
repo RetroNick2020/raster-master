@@ -71,6 +71,9 @@ type
     fbRayLibRGB: TMenuItem;
     MenuItem1: TMenuItem;
     MenuItem12: TMenuItem;
+    PaletteExportTMTPascal: TMenuItem;
+    TMTPaletteArray: TMenuItem;
+    TMTPaletteCommands: TMenuItem;
     TMTPutImageFile: TMenuItem;
     TMTPutImageArray: TMenuItem;
     QB64: TMenuItem;
@@ -347,6 +350,7 @@ type
     procedure ListView1Click(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
+    procedure TMTPaletteExportClick(Sender: TObject);
     procedure OpenWatcomCClick(Sender: TObject);
     procedure PaletteExportOWCClick(Sender: TObject);
     procedure PaletteXGA256Click(Sender: TObject);
@@ -372,6 +376,7 @@ type
     procedure RESExportClick(Sender: TObject);
     procedure FileDeleteClick(Sender: TObject);
     procedure SaveProjectFileClick(Sender: TObject);
+    procedure TMTPaletteCommandsClick(Sender: TObject);
     procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
     procedure PaletteExportTurboCClick(Sender: TObject);
@@ -670,7 +675,6 @@ var
  ca : TClipAreaRec;
 begin
   RMDrawTools.GetClipAreaCoords(ca);
-  ClearClipAreaOutline;
   RMDrawTools.ScrollDown(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
@@ -682,7 +686,6 @@ var
  ca : TClipAreaRec;
 begin
   RMDrawTools.GetClipAreaCoords(ca);
-  ClearClipAreaOutline;
   RMDrawTools.ScrollLeft(ca.x,ca.y,ca.x2,ca.y2);
   UpdateActualArea;
   UpdateZoomArea;
@@ -2594,6 +2597,8 @@ begin
                                           'TPPaletteCommands' : error:=WritePalStatements(FileName,TPLan,ColorFormat);
                                           'FPPaletteArray' : error:=WritePalConstants(FileName,FPLan,ColorFormat);
                                           'FPPaletteCommands' : error:=WritePalStatements(FileName,FPLan,ColorFormat);
+                                          'TMTPaletteArray' : error:=WritePalConstants(FileName,TMTLan,ColorEightBitFormat);
+                                          'TMTPaletteCommands' : error:=WritePalStatements(FileName,TMTLan,ColorEightBitFormat);
 
                                           'GWPaletteData' : error:=WritePalData(FileName,GWLan,ColorFormat);
                                           'GWPaletteCommands' : error:=WritePalStatements(FileName,GWLan,ColorFormat);
@@ -3339,6 +3344,7 @@ begin
    end;
 end;
 
+
 procedure TRMMainForm.PaletteExportTurboPascalClick(Sender: TObject);
 var
  pm : integer;
@@ -3349,6 +3355,9 @@ begin
                                          'TPPaletteCommands' : ExportDialog.Filter :='Turbo Pascal Palette Commands|*.pas';
                                          'FPPaletteArray' : ExportDialog.Filter := 'FreePascal Palette Array|*.pas';
                                          'FPPaletteCommands' : ExportDialog.Filter :='FreePascal Palette Commands|*.pas';
+                                         'TMTPaletteArray' : ExportDialog.Filter := 'TMT Pascal Palette Array|*.pas';
+                                         'TMTPaletteCommands' : ExportDialog.Filter :='TMT Pascal Palette Commands|*.pas';
+
    end;
 
    ColorFormat:=ColorEightBitFormat;
@@ -3359,11 +3368,13 @@ begin
 
    if ExportDialog.Execute then
    begin
-
       Case (Sender As TMenuItem).Name of 'TPPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,TPLan,ColorFormat);
                                       'TPPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,TPLan,ColorFormat);
                                       'FPPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,FPLan,ColorFormat);
                                       'FPPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,FPLan,ColorFormat);
+                                      'TMTPaletteArray' : error:=WritePalConstants(ExportDialog.FileName,TMTLan,ColorEightBitFormat);
+                                      'TMTPaletteCommands' : error:=WritePalStatements(ExportDialog.FileName,TMTLan,ColorEightBitFormat);
+
       end;
 
       if error<>0 then
@@ -3593,6 +3604,11 @@ begin
  MapEdit.UpdateTileView;
  MapEdit.Show;
  MapEdit.WindowState:=wsNormal;
+end;
+
+procedure TRMMainForm.TMTPaletteExportClick(Sender: TObject);
+begin
+
 end;
 
 procedure TRMMainForm.RayLibExportClick(Sender: TObject);
@@ -4023,6 +4039,13 @@ begin
       ImageThumbBase.SaveProject(SaveDialog1.Filename);
    end;
 end;
+
+procedure TRMMainForm.TMTPaletteCommandsClick(Sender: TObject);
+begin
+
+end;
+
+
 
 procedure TRMMainForm.NewClick(Sender: TObject);
 begin

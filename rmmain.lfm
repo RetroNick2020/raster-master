@@ -1251,6 +1251,17 @@ object RMMainForm: TRMMainForm
             OnClick = PaletteExportTurboPascalClick
           end
         end
+        object PaletteExportTMTPascal: TMenuItem
+          Caption = 'TMT Pascal'
+          object TMTPaletteArray: TMenuItem
+            Caption = 'Palette Array'
+            OnClick = PaletteExportTurboPascalClick
+          end
+          object TMTPaletteCommands: TMenuItem
+            Caption = 'Palette Commands'
+            OnClick = PaletteExportTurboPascalClick
+          end
+        end
       end
       object EditColor: TMenuItem
         Caption = 'Edit Colors'

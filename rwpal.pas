@@ -87,6 +87,7 @@ begin
               FPLan:LanToStr:='FreePascal';
               OWLan:LanToStr:='Open Watcom C';
               BAMLan:LanToStr:='BAM Basic';
+              TMTLan:LanToStr:='TMT Pascal';
 
   end;
 end;
@@ -98,7 +99,7 @@ begin
  begin
    PaletteCmdToStr:='SetPalette(';
  end
- else if (Lan=TPLan) OR (Lan=FPLan) then
+ else if (Lan=TPLan) OR (Lan=FPLan) OR (Lan=TMTLan) then
  begin
    PaletteCmdToStr:='SetRGBPalette(';
  end
@@ -127,7 +128,7 @@ end;
 function LineTrmToStr(Lan : integer) : string;
 begin
  LineTrmToStr:='';
- Case Lan of QPLan,TPLan,FPLan,APLan:LineTrmToStr:=');';
+ Case Lan of QPLan,TPLan,FPLan,TMTLan,APLan:LineTrmToStr:=');';
              TCLan,QCLan,ACLan,OWLan:LineTrmToStr:='};';
  end;
 end;
@@ -135,7 +136,7 @@ end;
 function CommentBeginToStr(Lan : integer) : string;
 begin
  CommentBeginToStr:=#39;
- Case Lan of QPLan,TPLan,FPLan,APLan:CommentBeginToStr:='(*';
+ Case Lan of QPLan,TPLan,FPLan,TMTLan,APLan:CommentBeginToStr:='(*';
              TCLan,QCLan,ACLan,OWLan:CommentBeginToStr:='/*';
  end;
 end;
@@ -143,7 +144,7 @@ end;
 function CommentEndToStr(Lan : integer) : string;
 begin
  CommentEndToStr:='';
- Case Lan of QPLan,TPLan,FPLan,APLan:CommentEndToStr:='*)';
+ Case Lan of QPLan,TPLan,FPLan,TMTLan,APLan:CommentEndToStr:='*)';
              TCLan,QCLan,ACLan,OWLan:CommentEndToStr:='*/';
  end;
 end;
@@ -238,7 +239,7 @@ begin
   begin
     arraysize:=Ncolors*3;
   end;
-  If (Lan=TPlan) OR (Lan =FPLan) OR (Lan=QPlan) OR (Lan = APLan) then
+  If (Lan=TPlan) OR (Lan =FPLan) OR (Lan=QPlan) OR (Lan=TMTlan) OR (Lan = APLan) then
   begin
    Writeln(F,palettenamestr, ' : array[0..',arraysize-1,'] of byte = (');
   end
