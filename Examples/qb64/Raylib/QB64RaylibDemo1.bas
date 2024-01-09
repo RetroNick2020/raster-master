@@ -1,4 +1,5 @@
 'Raster Master Demo Showing how inlcude RES Text Include using QB64 and Raylib
+'see video https://youtu.be/DP3Q8r92qW0
 
 '$INCLUDE:'include/raylib.bi'
 
