@@ -5,7 +5,7 @@ unit wraylib;
 interface
 
 uses
-  Classes, SysUtils,LazFileUtils,rmcore,rmcodegen,rmxgfcore,rwxgf;
+  Classes, SysUtils,LazFileUtils,rmcore,rmcodegen,rmxgfcore,rwxgf,rmconfig,rwpng;
 
 type
   raylibImageHeadRec = packed Record
@@ -14,7 +14,9 @@ type
                         mipmaps : smallint;
                         format  : smallint;
                        end;
-
+ const
+   RGBSize = 3;
+   RGBASize = 4;
 
 procedure WriteRayLibCodeToBuffer(var F : Text; x,y,x2,y2, Lan,format : integer;ImageName : string);
 procedure WriteRayLibCodeToFile(filename : string; x,y,x2,y2, Lan,format : integer);
@@ -30,7 +32,7 @@ function RayLibImageSize(width,height ,format : integer) : longint;
 var
  Size : longint;
 begin
- if format = 3 then Size:=3*width*height else Size:=4*width*height;
+ if format = RGBSize then Size:=3*width*height else Size:=4*width*height;
  RayLibImageSize:=Size;
 end;
 
@@ -45,13 +47,14 @@ begin
  Case format of 1:GetRayLibFormatDesc:='RGBA - Fuchsia';
                 2:GetRayLibFormatDesc:='RGBA - Index 0';
                 3:GetRayLibFormatDesc:='RGB';
+                4:GetRayLibFormatDesc:='RGBA - Custom';
  end;
 end;
 
 function GetRayLibFormatValue(format : integer) : string;
 begin
  GetRayLibFormatValue:='';
- Case format of 1,2:GetRayLibFormatValue:='7';  // PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+ Case format of 1,2,4:GetRayLibFormatValue:='7';  // PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
                 3:GetRayLibFormatValue:='4';    // PIXELFORMAT_UNCOMPRESSED_R8G8B8
  end;
 end;
@@ -66,7 +69,7 @@ begin
  MWSetLan(mc,PascalLan);
  MWSetValueFormat(mc,ValueFormatHex);
 
- Writeln(mc.FTextPtr^,'(* RayLib Pascal Image Code Created By Raster Master *)');
+ Writeln(mc.FTextPtr^,'(* RGB/RGBA Pascal Image Code Created By Raster Master *)');
  Writeln(mc.FTextPtr^,'(* Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height,' *)');
  Writeln(mc.FTextPtr^,'  ',ImageName,'_Size = ',size,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,'_Format = ', GetRayLibFormatValue(format),';');
@@ -88,7 +91,7 @@ begin
  MWSetLan(mc,CLan);
  MWSetValueFormat(mc,ValueFormatHex);
 
- Writeln(mc.FTextPtr^,'/* RayLib C Image Code Created By Raster Master */');
+ Writeln(mc.FTextPtr^,'/* RGB/RGBA C Image Code Created By Raster Master */');
  Writeln(mc.FTextPtr^,'/* Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height,' */');
  Writeln(mc.FTextPtr^,'#define ',ImageName,'_Size   ',size);
  Writeln(mc.FTextPtr^,'#define ',ImageName,'_Format ',GetRayLibFormatValue(format));
@@ -121,7 +124,9 @@ var
   PixelIndex : integer;
   cr    : TRMColorRec;
   alpha  : integer;
+  PngRGBA : PngRGBASettingsRec;
 begin
+  rmconfigbase.GetProps(PngRGBA);
   MWInit(mc,F);
   width:=x2-x+1;
   height:=y2-y+1;
@@ -156,6 +161,28 @@ begin
          begin
            alpha:=0;                 // transparent
          end;
+         MWWriteByte(mc,cr.r);
+         MWWriteByte(mc,cr.g);
+         MWWriteByte(mc,cr.b);
+         MWWriteByte(mc,alpha);
+       end
+       else if (format = 4) then  //custom
+       begin
+          if (PngRGBA.UseColorIndex) and (PngRGBA.ColorIndex=PixelIndex) then
+          begin
+            alpha:=0;  // Alpha     0 = transparent
+          end;
+
+          if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.g=0) and (cr.b=255) then   //use fuschia
+          begin
+            alpha:=0;  // Alpha     0 = transparent
+          end;
+
+         if (PngRGBA.UseCustom) and (cr.r = PngRGBA.R) and (cr.b=PngRGBA.B) and (cr.g=PngRGBA.G) then   //if custom RGB
+         begin
+           alpha:=PngRGBA.A;        // set custom Alpha value
+         end;
+
          MWWriteByte(mc,cr.r);
          MWWriteByte(mc,cr.g);
          MWWriteByte(mc,cr.b);
@@ -207,7 +234,9 @@ var
   alpha  : integer;
   PixelLine : array[0..2047] of Byte;    // a line of RGB or RGBA pixels
   PCounter  : integer;
+  PngRGBA : PngRGBASettingsRec;
 begin
+  rmconfigbase.GetProps(PngRGBA);
   rimage.width:=x2-x+1;
   rimage.height:=y2-y+1;
   rimage.mipmaps:=1;
@@ -246,6 +275,29 @@ begin
          begin
            alpha:=0;                 // transparent
          end;
+         PixelLine[PCounter]:=cr.r;
+         PixelLine[PCounter+1]:=cr.g;
+         PixelLine[PCounter+2]:=cr.b;
+         PixelLine[PCounter+3]:=alpha;
+         inc(PCounter,4);
+       end
+       else if (format = 4) then //custom
+       begin
+         if (PngRGBA.UseColorIndex) and (PngRGBA.ColorIndex=PixelIndex) then
+         begin
+           alpha:=0;  // Alpha     0 = transparent
+         end;
+
+         if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.g=0) and (cr.b=255) then   //use fuschia
+         begin
+           alpha:=0;  // Alpha     0 = transparent
+         end;
+
+         if (PngRGBA.UseCustom) and (cr.r = PngRGBA.R) and (cr.b=PngRGBA.B) and (cr.g=PngRGBA.G) then   //if custom RGB
+         begin
+           alpha:=PngRGBA.A;        // set custom Alpha value
+         end;
+
          PixelLine[PCounter]:=cr.r;
          PixelLine[PCounter+1]:=cr.g;
          PixelLine[PCounter+2]:=cr.b;

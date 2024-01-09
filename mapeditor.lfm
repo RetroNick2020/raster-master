@@ -187,6 +187,47 @@ object MapEdit: TMapEdit
     ClientWidth = 941
     ParentFont = False
     TabOrder = 4
+    object Panel1: TPanel
+      Left = 792
+      Height = 96
+      Top = 13
+      Width = 112
+      Anchors = [akTop, akRight]
+      ClientHeight = 96
+      ClientWidth = 112
+      TabOrder = 4
+      object GroupBox1: TGroupBox
+        Left = 16
+        Height = 72
+        Top = 10
+        Width = 80
+        ClientHeight = 52
+        ClientWidth = 76
+        TabOrder = 0
+        object RadioDraw: TRadioButton
+          Left = 16
+          Height = 19
+          Top = 0
+          Width = 47
+          Caption = 'Draw'
+          Checked = True
+          OnClick = RadioDrawClick
+          ParentFont = False
+          TabOrder = 0
+          TabStop = True
+        end
+        object RadioErase: TRadioButton
+          Left = 16
+          Height = 19
+          Top = 24
+          Width = 47
+          Caption = 'Erase'
+          OnClick = RadioEraseClick
+          ParentFont = False
+          TabOrder = 1
+        end
+      end
+    end
     object TileZoom: TTrackBar
       Left = 906
       Height = 99
@@ -206,13 +247,13 @@ object MapEdit: TMapEdit
       TabOrder = 0
     end
     object Panel2: TPanel
-      Left = 303
+      Left = 360
       Height = 96
-      Top = 16
-      Width = 592
+      Top = 13
+      Width = 424
       Anchors = [akTop, akRight]
       ClientHeight = 96
-      ClientWidth = 592
+      ClientWidth = 424
       TabOrder = 1
       object ToolPencilIcon: TImage
         Left = 16
@@ -408,44 +449,13 @@ object MapEdit: TMapEdit
         ShowHint = True
         TabOrder = 1
       end
-      object GroupBox1: TGroupBox
-        Left = 432
-        Height = 73
-        Top = 7
-        Width = 145
-        ClientHeight = 53
-        ClientWidth = 141
-        TabOrder = 2
-        object RadioDraw: TRadioButton
-          Left = 16
-          Height = 19
-          Top = 8
-          Width = 47
-          Caption = 'Draw'
-          Checked = True
-          OnClick = RadioDrawClick
-          ParentFont = False
-          TabOrder = 0
-          TabStop = True
-        end
-        object RadioErase: TRadioButton
-          Left = 80
-          Height = 19
-          Top = 8
-          Width = 47
-          Caption = 'Erase'
-          OnClick = RadioEraseClick
-          ParentFont = False
-          TabOrder = 1
-        end
-      end
     end
     object StatusBar1: TStatusBar
       AnchorSideRight.Control = Panel2
       Left = 16
       Height = 23
       Top = 16
-      Width = 277
+      Width = 334
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -457,10 +467,11 @@ object MapEdit: TMapEdit
       Left = 16
       Height = 23
       Top = 48
-      Width = 277
+      Width = 334
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
+      BorderWidth = 1
       Panels = <>
     end
   end

@@ -51,6 +51,8 @@ Const
    RayLibRGBAIndex0ExportFormat = 12;
    RayLibRGBExportFormat = 13;
 
+   RGBACustomExportFormat = 14;
+   RayLibRGBACustomExportFormat = 15;
 
    Binary2   = 1;
    Binary4   = 2;

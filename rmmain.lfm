@@ -842,6 +842,10 @@ object RMMainForm: TRMMainForm
             Caption = 'RGBA - Index 0 Data Statements'
             OnClick = RayLibExportClick
           end
+          object qb64RGBACustom: TMenuItem
+            Caption = 'RGBA - Custom Data Statements'
+            OnClick = RayLibExportClick
+          end
           object qb64RGB: TMenuItem
             Caption = 'RGB Data Statements'
             OnClick = RayLibExportClick

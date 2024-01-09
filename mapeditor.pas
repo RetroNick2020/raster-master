@@ -13,10 +13,13 @@ type
   { TMapEdit }
 
   TMapEdit = class(TForm)
-    GroupBox1: TGroupBox;
     CopyToClipBoard: TMenuItem;
+    GroupBox1: TGroupBox;
     MenuItem15: TMenuItem;
     CloneMap: TMenuItem;
+    Panel1: TPanel;
+    RadioDraw: TRadioButton;
+    RadioErase: TRadioButton;
     ReSizeMap256x256: TMenuItem;
     ReSizeMap128x128: TMenuItem;
     StatusBar1: TStatusBar;
@@ -44,8 +47,6 @@ type
     Undo: TMenuItem;
     PasteFromClipBoard: TMenuItem;
     Panel2: TPanel;
-    RadioDraw: TRadioButton;
-    RadioErase: TRadioButton;
     TileImageList: TImageList;
     MenuItem10: TMenuItem;
     Clear: TMenuItem;

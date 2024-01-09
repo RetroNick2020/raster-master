@@ -71,6 +71,7 @@ type
     fbRayLibRGB: TMenuItem;
     MenuItem1: TMenuItem;
     MenuItem12: TMenuItem;
+    qb64RGBACustom: TMenuItem;
     PaletteExportTMTPascal: TMenuItem;
     TMTPaletteArray: TMenuItem;
     TMTPaletteCommands: TMenuItem;
@@ -2457,19 +2458,26 @@ begin
                                                               error:=IORESULT;
                                                               {$I-}
                                                              end;
-                                            'qbRayLibFuchsia':begin
+                                            'qb64RGBAFuchsia':begin
                                                                 WriteRayLibCodeToFile(FileName,x,y,x2,y2,QB64Lan,1);
                                                                 {$I+}
                                                                 error:=IORESULT;
                                                                 {$I-}
                                                               end;
-                                             'qbRayLibIndex0':begin
+                                             'qb64RGBAIndex0':begin
                                                                  WriteRayLibCodeToFile(FileName,x,y,x2,y2,QB64Lan,2);
                                                                 {$I+}
                                                                 error:=IORESULT;
                                                                 {$I-}
                                                               end;
-                                              'qbRayLibRGB' : begin
+                                             'qb64RGBACustom':begin
+                                                                 WriteRayLibCodeToFile(FileName,x,y,x2,y2,QB64Lan,4);
+                                                                {$I+}
+                                                                error:=IORESULT;
+                                                                {$I-}
+                                                              end;
+
+                                              'qb64RGB' : begin
                                                                  WriteRayLibCodeToFile(FileName,x,y,x2,y2,QB64Lan,3);
                                                                 {$I+}
                                                                 error:=IORESULT;
@@ -2847,7 +2855,11 @@ var
  PngRGBA : PngRGBASettingsRec;
 begin
  FilePropertiesDialog.GetProps(PngRGBA);  //get values before change
- if FilePropertiesDialog.ShowModal <> mrOK then
+ if FilePropertiesDialog.ShowModal = mrOK then
+ begin
+    rmconfigbase.SetProps(PngRGBA);  //set these values to config object
+ end
+ else
  begin
     FilePropertiesDialog.SetProps(PngRGBA); //restore values because close/cancel was selected
     FilePropertiesDialog.UpdateValues;
@@ -3657,6 +3669,12 @@ begin
                                                               ExportDialog.Filter := 'Basic Array|*.bas';
                                                               Lan:=QB64Lan;
                                                               format:=2;
+                                                            end;
+
+                                          'qb64RGBACustom':begin
+                                                              ExportDialog.Filter := 'Basic Array|*.bas';
+                                                              Lan:=QB64Lan;
+                                                              format:=4;
                                                             end;
                                                'qb64RGB' : begin
                                                             ExportDialog.Filter := 'Basic Array|*.bas';

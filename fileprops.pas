@@ -69,7 +69,9 @@ end;
 
 procedure TFileProperties.FormCreate(Sender: TObject);
 begin
-   GetProps(PngRGBA); //copy the values we set in the form
+  // GetProps(PngRGBA); //copy the values we set in the form
+   rmconfigbase.GetProps(PngRGBA);
+   UpdateValues;
    TextToClipboardCheckBox.Checked:=rmconfigbase.GetExportTextFileToClipStatus;
 end;
 
