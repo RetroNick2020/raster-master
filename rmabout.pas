@@ -8,8 +8,8 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,lclintf;
 
 Const
-  ProgramName ='Raster Master v3.0 R97';
-  ProgramLicense = 'Released January 9 - 2024 under MIT License';
+  ProgramName ='Raster Master v3.1 R98';
+  ProgramLicense = 'Released January 10 - 2024 under MIT License';
 
 type
 

@@ -71,6 +71,7 @@ type
     fbRayLibRGB: TMenuItem;
     MenuItem1: TMenuItem;
     MenuItem12: TMenuItem;
+    fpRayLibCustom: TMenuItem;
     qb64RGBACustom: TMenuItem;
     PaletteExportTMTPascal: TMenuItem;
     TMTPaletteArray: TMenuItem;
@@ -2434,6 +2435,12 @@ begin
                                                                error:=IORESULT;
                                                                {$I-}
                                                               end;
+                                          'fpRayLibCustom'  :begin
+                                                               WriteRayLibCodeToFile(FileName,x,y,x2,y2,FPLan,4);
+                                                               {$I+}
+                                                               error:=IORESULT;
+                                                               {$I-}
+                                                              end;
                                           'fpRayLibRGB' :begin
                                                            WriteRayLibCodeToFile(FileName,x,y,x2,y2,FPLan,3);
                                                            {$I+}
@@ -3639,6 +3646,11 @@ begin
                                                            ExportDialog.Filter := 'FreePascal Array|*.pas';
                                                            Lan:=FPLan;
                                                            format:=2;
+                                                         end;
+                                      'fpRayLibCustom' :begin
+                                                           ExportDialog.Filter := 'FreePascal Array|*.pas';
+                                                           Lan:=FPLan;
+                                                           format:=4;
                                                          end;
                                          'fpRayLibRGB' :begin
                                                             ExportDialog.Filter := 'FreePascal Array|*.pas';

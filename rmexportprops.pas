@@ -191,6 +191,7 @@ begin
                            ComboImage.Items.Add('putimage');
                            ComboImage.Items.Add('RayLib RGBA Fuchsia');
                            ComboImage.Items.Add('RayLib RGBA Index 0');
+                           ComboImage.Items.Add('RayLib RGBA Custom');
                            ComboImage.Items.Add('RayLib RGB');
                            ComboImage.Items.Add('Mouse Image');
 

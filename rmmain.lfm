@@ -1,12 +1,12 @@
 object RMMainForm: TRMMainForm
-  Left = -8
-  Height = 1177
-  Top = -8
-  Width = 1920
+  Left = 38
+  Height = 1077
+  Top = 81
+  Width = 1824
   Align = alClient
   Caption = 'Raster Master'
-  ClientHeight = 1157
-  ClientWidth = 1920
+  ClientHeight = 1057
+  ClientWidth = 1824
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
   OnClose = FormClose
@@ -23,13 +23,13 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1612
-    Height = 1157
+    Left = 1532
+    Height = 1057
     Top = 0
-    Width = 308
+    Width = 292
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 1157
-    ClientWidth = 308
+    ClientHeight = 1057
+    ClientWidth = 292
     TabOrder = 5
     object RMPanel: TPanel
       AnchorSideRight.Control = RightPanel
@@ -37,9 +37,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Cursor = crNo
-      Left = 134
+      Left = 118
       Height = 121
-      Top = 1025
+      Top = 925
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
@@ -104,22 +104,22 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Control = RightHSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 324
-    Height = 1045
+    Left = 308
+    Height = 945
     Top = 112
-    Width = 1277
+    Width = 1213
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 1045
-    ClientWidth = 1277
+    ClientHeight = 945
+    ClientWidth = 1213
     TabOrder = 1
     object ZoomScrollBox: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
       AnchorSideTop.Control = MiddleBottomPanel
       Left = 0
-      Height = 1045
+      Height = 945
       Top = 0
-      Width = 1277
+      Width = 1213
       HorzScrollBar.Increment = 93
       HorzScrollBar.Page = 862
       HorzScrollBar.Tracking = True
@@ -129,8 +129,8 @@ object RMMainForm: TRMMainForm
       Align = alClient
       Anchors = [akRight, akBottom]
       BorderStyle = bsNone
-      ClientHeight = 1045
-      ClientWidth = 1277
+      ClientHeight = 945
+      ClientWidth = 1213
       TabOrder = 0
       object ZoomPaintBox: TPaintBox
         AnchorSideLeft.Control = ZoomScrollBox
@@ -155,13 +155,13 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 1157
+    Height = 1057
     Top = 0
-    Width = 324
+    Width = 308
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 1157
-    ClientWidth = 324
+    ClientHeight = 1057
+    ClientWidth = 308
     TabOrder = 0
     object LeftVSplitter: TSplitter
       AnchorSideLeft.Control = LeftPanel
@@ -173,8 +173,8 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 309
-      Width = 323
+      Top = 282
+      Width = 308
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -190,9 +190,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 835
-      Top = 322
-      Width = 313
+      Height = 762
+      Top = 295
+      Width = 297
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
       Color = 15790320
@@ -213,14 +213,14 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 309
+      Height = 282
       Top = 0
-      Width = 309
+      Width = 293
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 309
-      ClientWidth = 309
+      ClientHeight = 282
+      ClientWidth = 293
       TabOrder = 0
       object ActualBox: TImage
         Left = 16
@@ -235,8 +235,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 313
-    Height = 1157
+    Left = 297
+    Height = 1057
     Top = 0
     Width = 11
     Align = alNone
@@ -249,8 +249,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1601
-    Height = 1157
+    Left = 1521
+    Height = 1057
     Top = 0
     Width = 11
     Align = alNone
@@ -263,19 +263,19 @@ object RMMainForm: TRMMainForm
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightHSplitter
-    Left = 324
+    Left = 308
     Height = 112
     Top = 0
-    Width = 1277
+    Width = 1213
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 112
-    ClientWidth = 1277
+    ClientWidth = 1213
     TabOrder = 2
     object ToolPanel: TPanel
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 792
+      Left = 728
       Height = 88
       Top = 8
       Width = 434
@@ -481,7 +481,7 @@ object RMMainForm: TRMMainForm
       end
     end
     object TrackBar1: TTrackBar
-      Left = 1241
+      Left = 1177
       Height = 110
       Hint = 'Zoom Level'
       Top = 1
@@ -502,7 +502,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 8
-      Width = 766
+      Width = 702
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -513,7 +513,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 40
-      Width = 766
+      Width = 702
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -730,6 +730,10 @@ object RMMainForm: TRMMainForm
           end
           object fpRayLibIndex0: TMenuItem
             Caption = 'RayLib (RGBA - Index 0) Array'
+            OnClick = RayLibExportClick
+          end
+          object fpRayLibCustom: TMenuItem
+            Caption = 'RayLib (RGBA - Custom) Array'
             OnClick = RayLibExportClick
           end
           object fpRayLibRGB: TMenuItem

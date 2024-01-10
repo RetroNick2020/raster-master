@@ -205,8 +205,9 @@ begin
                            case ImageIndex of 1:format:=PutImageExportFormat;
                                               2:format:=RGBAFuchsiaExportFormat;
                                               3:format:=RGBAIndex0ExportFormat;
-                                              4:format:=RGBExportFormat;
-                                              5:format:=MouseImageExportFormat;
+                                              4:format:=RGBACustomExportFormat;
+                                              5:format:=RGBExportFormat;
+                                              6:format:=MouseImageExportFormat;
                            end;
                          end;
                    FBinQBModeLan:begin
@@ -330,36 +331,20 @@ begin
                        end;
                      end;
              FPLan:begin
-                      //if ImageType = 1 then
-                      //begin
-                      //   size:=GetXImageSizeFP(width,height);
-                      //end
-                      //else if (ImageType >1)  and (ImageType < 5) then
-                      //begin
-                      //   size:=ResRayLibImageSize(width,height,ImageType-1);
-                      //end;
-
                       Case ImageFormat of  PutImageExportFormat:size:=GetXImageSizeFP(width,height);
-                                           RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,1);
-                                           RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,2);
-                                           RGBExportFormat:size:=ResRayLibImageSize(width,height,3);
+                                           RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBACustomExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBExportFormat:size:=ResRayLibImageSize(width,height,RGBSize);
                                            MouseImageExportFormat:size:=GetMouseShapeSize;
                       end;
                    end;
              FBinQBModeLan:begin
-                             //if ImageType = 1 then
-                             //begin
-                             //  size:=GetXImageSizeFB(width,height);
-                             //end;
                              Case ImageFormat of PutImageExportFormat:size:=GetXImageSizeFB(width,height);
-                                                       MouseImageExportFormat:size:=GetMouseShapeSize;
+                                               MouseImageExportFormat:size:=GetMouseShapeSize;
                              end;
                            end;
              FBLan:begin
-                      //if (ImageType >0)  and (ImageType < 4) then
-                      //begin
-                      //   size:=ResRayLibImageSize(width,height,ImageType);
-                      //end;
                       Case ImageFormat of  RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,1);
                                            RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,2);
                                            RGBExportFormat:size:=ResRayLibImageSize(width,height,3);
@@ -665,7 +650,7 @@ begin
           end
           else if (EO.Lan = QB64Lan) then
           begin
-            if ImageExportFormat in [RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat] then
+            if ImageExportFormat in [RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBACustomExportFormat,RayLibRGBExportFormat] then
             begin
               writeln(data.fText,LineCountToStr(EO.Lan),'Dim rmx,rmy,rmi,rmj,rmc AS Integer');
               writeln(data.fText,LineCountToStr(EO.Lan),'Dim rmr, rmg, rmb, rma As _Unsigned _Byte');
@@ -713,7 +698,7 @@ begin
 //        if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) and ((EO.Image > 0) and (EO.Image < 4)) then
           if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) then
           begin
-            if  ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat,RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat] then
+            if  ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBACustomExportFormat,RGBExportFormat,RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat] then
             begin
                Format:=7;
                if ImageExportFormat in [RGBExportFormat,rayLibRGBExportFormat] then Format:=4;
@@ -755,7 +740,6 @@ begin
             begin
               WriteQB64RayLibReadStub(data,EO.Lan,EO.Name,size);  //QB64 - Use RayLib Graphics
             end;
-
           end
           else
           begin
@@ -953,7 +937,14 @@ begin
    end;
 
    //FP RayLib formats
-   if (EO.Lan in [FPLan,QB64Lan,FBLan,gccLan]) and (ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBACustomExportFormat,RGBExportFormat,RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBACustomExportFormat,RayLibRGBExportFormat]) then
+   if (EO.Lan in [FPLan,QB64Lan,FBLan,gccLan]) and (ImageExportFormat in [RGBAFuchsiaExportFormat,
+                                                                          RGBAIndex0ExportFormat,
+                                                                          RGBACustomExportFormat,
+                                                                          RGBExportFormat,
+                                                                          RayLibRGBAFuchsiaExportFormat,
+                                                                          RayLibRGBAIndex0ExportFormat,
+                                                                          RayLibRGBACustomExportFormat,
+                                                                          RayLibRGBExportFormat]) then
    begin
      if (EO.Lan in [QB64Lan,FBLan]) then WriteBasicLabel(data,EO.Lan,EO.Name);
      Case ImageExportFormat of RGBAFuchsiaExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,1,EO.Name);
@@ -966,28 +957,6 @@ begin
                                  RayLibRGBExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,3,EO.Name);
      end;
    end;
-(*
-   //QB/FB RayLib formats
-   if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) and ((ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat]) then
-   begin
-     WriteBasicLabel(data,EO.Lan,EO.Name);
-     //WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image,EO.Name);
-     Case ImageExportFormat of RGBAFuchsiaExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,1,EO.Name);
-                                     RGBAIndex0ExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,2,EO.Name);
-                                            RGBExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,3,EO.Name);
-     end;
-   end;
-
-   //gcc RayLib Format
-   if (EO.Lan = gccLan) and ((ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat]) then
-   begin
-//      WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,EO.Image,EO.Name);
-      Case ImageExportFormat of RGBAFuchsiaExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,1,EO.Name);
-                                     RGBAIndex0ExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,2,EO.Name);
-                                            RGBExportFormat:WriteRayLibCodeToBuffer(data.fText,0,0,width-1,height-1, EO.Lan,3,EO.Name);
-     end;
-   end;
- *)
  end;
 
  if ExportOnlyIndex = false then     //export the maps
