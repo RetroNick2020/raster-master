@@ -218,7 +218,8 @@ begin
                    FBLan:begin
                            case ImageIndex of 1:format:=RGBAFuchsiaExportFormat;
                                               2:format:=RGBAIndex0ExportFormat;
-                                              3:format:=RGBExportFormat;
+                                              3:format:=RGBACustomExportFormat;
+                                              4:format:=RGBExportFormat;
                            end;
                          end;
                    ABLan:begin
@@ -251,7 +252,9 @@ begin
                    gccLan:begin
                            case ImageIndex of 1:format:=RGBAFuchsiaExportFormat;
                                               2:format:=RGBAIndex0ExportFormat;
-                                              3:format:=RGBExportFormat;
+                                              3:format:=RGBACustomExportFormat;
+                                              4:format:=RGBExportFormat;
+
                            end;
                          end;
                    OWLan:begin
@@ -345,9 +348,10 @@ begin
                              end;
                            end;
              FBLan:begin
-                      Case ImageFormat of  RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,1);
-                                           RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,2);
-                                           RGBExportFormat:size:=ResRayLibImageSize(width,height,3);
+                      Case ImageFormat of  RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBACustomExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBExportFormat:size:=ResRayLibImageSize(width,height,RGBSize);
                       end;
                     end;
              ABLan:begin
@@ -374,9 +378,10 @@ begin
                    end;
              gccLan:begin
                       // size:=ResRayLibImageSize(width,height,ImageType);
-                      Case ImageFormat of  RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,1);
-                                           RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,2);
-                                           RGBExportFormat:size:=ResRayLibImageSize(width,height,3);
+                      Case ImageFormat of  RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBACustomExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
+                                           RGBExportFormat:size:=ResRayLibImageSize(width,height,RGBSize);
                       end;
                     end;
              OWLan:begin
@@ -936,7 +941,7 @@ begin
      WriteAQBBitMapCodeToBuffer(data.fText,0,0,height-1,width-1,EO.Name);
    end;
 
-   //FP RayLib formats
+   //RGBA/RayLib formats
    if (EO.Lan in [FPLan,QB64Lan,FBLan,gccLan]) and (ImageExportFormat in [RGBAFuchsiaExportFormat,
                                                                           RGBAIndex0ExportFormat,
                                                                           RGBACustomExportFormat,
@@ -1170,6 +1175,7 @@ begin
                                         //if (EO.Image > 0) and (EO.Image<4) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image);
                                         case ImageExportFormat of RGBAFuchsiaExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,1);
                                                                    RGBAIndex0ExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,2);
+                                                                   RGBACustomExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,4);
                                                                           RGBExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,3);
                                         end;
                                       end;
@@ -1187,6 +1193,7 @@ begin
                                        //if (EO.Image > 1) and (EO.Image<5) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image-1);
                                        case ImageExportFormat of RGBAFuchsiaExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,1);
                                                                    RGBAIndex0ExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,2);
+                                                                   RGBACustomExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,4);
                                                                           RGBExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,3);
                                        end;
                                        if (ImageExportFormat = MouseImageExportFormat) then WriteMShapeToBuffer(0,0,data.f);
@@ -1200,6 +1207,7 @@ begin
                                        //if (EO.Image > 0) and (EO.Image<4) then ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image);
                                        case ImageExportFormat of RGBAFuchsiaExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,1);
                                                                    RGBAIndex0ExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,2);
+                                                                   RGBACustomExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,4);
                                                                           RGBExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,3);
                                        end;
                                     end;
@@ -1216,6 +1224,7 @@ begin
                                       //ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,EO.Image);
                                        case ImageExportFormat of RGBAFuchsiaExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,1);
                                                                    RGBAIndex0ExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,2);
+                                                                   RGBACustomExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,4);
                                                                           RGBExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,3);
                                        end;
                                     end;

@@ -222,8 +222,8 @@ begin
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('RGBA Fuchsia');
                            ComboImage.Items.Add('RGBA Index 0');
+                           ComboImage.Items.Add('RGBA Custom');
                            ComboImage.Items.Add('RGB');
-
                            ComboMask.Items.Add('None');
                            ComboImage.ItemIndex:=EO.Image;
                            ComboMask.ItemIndex:=EO.Mask;
@@ -293,6 +293,7 @@ begin
                              ComboImage.Items.Add('None');
                              ComboImage.Items.Add('RayLib RGBA Fuchsia');
                              ComboImage.Items.Add('RayLib RGBA Index 0');
+                             ComboImage.Items.Add('RayLib RGBA Custom');
                              ComboImage.Items.Add('RayLib RGB');
                              ComboMask.Items.Add('None');
                              ComboImage.ItemIndex:=EO.Image;
@@ -305,6 +306,7 @@ begin
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('putimage');
                            ComboMask.Items.Add('None');
+                           ComboMask.Items.Add('Inverted');
                            ComboImage.ItemIndex:=EO.Image;
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;

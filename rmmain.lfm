@@ -751,6 +751,10 @@ object RMMainForm: TRMMainForm
             Caption = 'RayLib (RGBA - Index 0) Array'
             OnClick = RayLibExportClick
           end
+          object gccRayLibCustom: TMenuItem
+            Caption = 'RayLib (RGBA - Custom) Array'
+            OnClick = RayLibExportClick
+          end
           object gccRayLibRGB: TMenuItem
             Caption = 'RayLib (RGB) Array'
             OnClick = RayLibExportClick
@@ -1075,6 +1079,10 @@ object RMMainForm: TRMMainForm
       object EditPaste: TMenuItem
         Caption = 'Paste'
         OnClick = EditPasteClick
+      end
+      object EditProperties: TMenuItem
+        Caption = 'Properties'
+        OnClick = PropertiesClick
       end
     end
     object MenuItem4: TMenuItem

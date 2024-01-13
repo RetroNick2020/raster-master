@@ -72,6 +72,8 @@ type
     MenuItem1: TMenuItem;
     MenuItem12: TMenuItem;
     fpRayLibCustom: TMenuItem;
+    gccRayLibCustom: TMenuItem;
+    EditProperties: TMenuItem;
     qb64RGBACustom: TMenuItem;
     PaletteExportTMTPascal: TMenuItem;
     TMTPaletteArray: TMenuItem;
@@ -2135,6 +2137,8 @@ begin
    end;
 end;
 
+
+
 procedure TRMMainForm.GWBASICClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -2459,6 +2463,13 @@ begin
                                                              error:=IORESULT;
                                                              {$I-}
                                                             end;
+                                         'gccRayLibCustom':begin
+                                                             WriteRayLibCodeToFile(FileName,x,y,x2,y2,gccLan,4);
+                                                             {$I+}
+                                                             error:=IORESULT;
+                                                             {$I-}
+                                                            end;
+
                                            'gccRayLibRGB' : begin
                                                               WriteRayLibCodeToFile(FileName,x,y,x2,y2,gccLan,3);
                                                               {$I+}
@@ -3667,6 +3678,12 @@ begin
                                                              Lan:=gccLan;
                                                              format:=2;
                                                            end;
+                                         'gccRayLibCustom':begin
+                                                             ExportDialog.Filter := 'gcc Array|*.c';
+                                                             Lan:=gccLan;
+                                                             format:=4;
+                                                           end;
+
                                          'gccRayLibRGB' : begin
                                                              ExportDialog.Filter := 'gcc Array|*.c';
                                                              Lan:=gccLan;
