@@ -30,6 +30,7 @@ Const
    OWLan   = 17; //Open Watcom C/C++ compiler
    BAMLan  = 18; //Basic Anywhere Machine
    TMTLan  = 19; // TMT Pascal Compiler - 32bit DOS
+   QBJSLan = 20; // QB to JS transpiler
 
    NoExportFormat = 0;
    PutImageExportFormat = 1;  //for all compilers the use put/putimage

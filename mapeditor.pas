@@ -17,6 +17,7 @@ type
     GroupBox1: TGroupBox;
     MenuItem15: TMenuItem;
     CloneMap: TMenuItem;
+    Properties: TMenuItem;
     Panel1: TPanel;
     RadioDraw: TRadioButton;
     RadioErase: TRadioButton;

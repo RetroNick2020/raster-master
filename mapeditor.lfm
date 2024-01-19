@@ -659,6 +659,10 @@ object MapEdit: TMapEdit
           OnClick = ReSizeTiles
         end
       end
+      object Properties: TMenuItem
+        Caption = 'Properties'
+        OnClick = MenuMapPropsClick
+      end
     end
     object MenuItem17: TMenuItem
       Caption = 'View'

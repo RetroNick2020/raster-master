@@ -311,6 +311,20 @@ begin
                            ComboMask.ItemIndex:=EO.Mask;
                            ComboPalette.ItemIndex:=EO.Palette;
                          end;
+                 QBJSLan:begin
+                           ComboImage.Items.Clear;
+                           ComboMask.Items.Clear;
+                           ComboImage.Items.Add('None');
+                           ComboImage.Items.Add('RGBA Fuchsia');
+                           ComboImage.Items.Add('RGBA Index 0');
+                           ComboImage.Items.Add('RGBA Custom');
+                           ComboImage.Items.Add('RGB');
+                           ComboMask.Items.Add('None');
+                           ComboImage.ItemIndex:=EO.Image;
+                           ComboMask.ItemIndex:=EO.Mask;
+                           ComboPalette.ItemIndex:=EO.Palette;
+                         end;
+
 
   end;
 end;
@@ -375,6 +389,7 @@ begin
    ComboCompiler.Items.Add('Open Watcom C');
    ComboCompiler.Items.Add('BAM Basic');
    ComboCompiler.Items.Add('TMT Pascal');
+   ComboCompiler.Items.Add('QBJS');
 
    ComboCompiler.ItemIndex:=0;
    ComboImage.Items.Clear;

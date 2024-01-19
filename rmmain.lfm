@@ -859,6 +859,25 @@ object RMMainForm: TRMMainForm
             OnClick = RayLibExportClick
           end
         end
+        object QBJS: TMenuItem
+          Caption = 'QBJS'
+          object qbjsRGBAFuchsia: TMenuItem
+            Caption = 'RGBA - Fuchsia Data Statements'
+            OnClick = RayLibExportClick
+          end
+          object qbjsRGBAIndex0: TMenuItem
+            Caption = 'RGBA - Index 0 Data Statements'
+            OnClick = RayLibExportClick
+          end
+          object qbjsRGBACustom: TMenuItem
+            Caption = 'RGBA - Custom Data Statements'
+            OnClick = RayLibExportClick
+          end
+          object qbjsRGB: TMenuItem
+            Caption = 'RGB Data Statements'
+            OnClick = RayLibExportClick
+          end
+        end
         object QuickC: TMenuItem
           Caption = 'Quick C'
           object QCPutImageArray: TMenuItem

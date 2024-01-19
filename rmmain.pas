@@ -74,6 +74,11 @@ type
     fpRayLibCustom: TMenuItem;
     gccRayLibCustom: TMenuItem;
     EditProperties: TMenuItem;
+    QBJS: TMenuItem;
+    qbjsRGBAFuchsia: TMenuItem;
+    qbjsRGBAIndex0: TMenuItem;
+    qbjsRGBACustom: TMenuItem;
+    qbjsRGB: TMenuItem;
     qb64RGBACustom: TMenuItem;
     PaletteExportTMTPascal: TMenuItem;
     TMTPaletteArray: TMenuItem;
@@ -2501,6 +2506,32 @@ begin
                                                                 error:=IORESULT;
                                                                 {$I-}
                                                                end;
+                                              'qbjsRGBAFuchsia':begin
+                                                                  WriteRayLibCodeToFile(FileName,x,y,x2,y2,QBJSLan,1);
+                                                                  {$I+}
+                                                                  error:=IORESULT;
+                                                                  {$I-}
+                                                                end;
+                                               'qbjsRGBAIndex0':begin
+                                                                   WriteRayLibCodeToFile(FileName,x,y,x2,y2,QBJSLan,2);
+                                                                  {$I+}
+                                                                  error:=IORESULT;
+                                                                  {$I-}
+                                                                end;
+                                               'qbjsRGBACustom':begin
+                                                                   WriteRayLibCodeToFile(FileName,x,y,x2,y2,QBJSLan,4);
+                                                                  {$I+}
+                                                                  error:=IORESULT;
+                                                                  {$I-}
+                                                                end;
+
+                                                'qbjsRGB' : begin
+                                                                   WriteRayLibCodeToFile(FileName,x,y,x2,y2,QBJSLan,3);
+                                                                  {$I+}
+                                                                  error:=IORESULT;
+                                                                  {$I-}
+                                                                 end;
+
                                              'fbRayLibFuchsia':begin
                                                                  WriteRayLibCodeToFile(FileName,x,y,x2,y2,FBLan,1);
                                                                  {$I+}
@@ -3710,7 +3741,27 @@ begin
                                                             Lan:=QB64Lan;
                                                             format:=3;
                                                           end;
+                                               'qbjsRGBAFuchsia':begin
+                                                                      ExportDialog.Filter := 'Basic Array|*.bas';
+                                                                      Lan:=QBJSLan;
+                                                                      format:=1;
+                                                                    end;
+                                                  'qbjsRGBAIndex0':begin
+                                                                      ExportDialog.Filter := 'Basic Array|*.bas';
+                                                                      Lan:=QBJSLan;
+                                                                      format:=2;
+                                                                    end;
 
+                                                  'qbjsRGBACustom':begin
+                                                                      ExportDialog.Filter := 'Basic Array|*.bas';
+                                                                      Lan:=QBJSLan;
+                                                                      format:=4;
+                                                                    end;
+                                                       'qbjsRGB' : begin
+                                                                    ExportDialog.Filter := 'Basic Array|*.bas';
+                                                                    Lan:=QBJSLan;
+                                                                    format:=3;
+                                                                 end;
                                           'fbRayLibFuchsia':begin
                                                                ExportDialog.Filter := 'Basic Array|*.bas';
                                                                Lan:=FBLan;

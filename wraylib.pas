@@ -115,6 +115,20 @@ begin
  Writeln(mc.FTextPtr^,#39,' Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height);
 end;
 
+procedure ExportQBJSHeader(var mc : codegenrec;width,height,imageId,format : integer;ImageName : string);
+var
+  size : longint;
+begin
+ size:=RayLibImageSize(width,height,format);
+ MWSetValuesTotal(mc,size);
+ MWSetValuesPerLine(mc,20);
+ MWSetLan(mc,QBJSBasicLan);
+ MWSetValueFormat(mc,ValueFormatHex);
+
+ Writeln(mc.FTextPtr^,#39,' RGB/RGBA QBJS Image Code Created By Raster Master');
+ Writeln(mc.FTextPtr^,#39,' Size = ',size,' Format = ',GetRayLibFormatDesc(format),' Width=',width,' Height=',height);
+end;
+
 
 procedure WriteRayLibCodeToBuffer(var F : Text; x,y,x2,y2, Lan,format : integer;ImageName : string);
 var
@@ -134,6 +148,7 @@ begin
   case Lan of FPLan:ExportPascalHeader(mc,width,height,imageId,format,ImageName);
                gccLan:ExportCHeader(mc,width,height,imageId,format,ImageName);
                FBLan,QB64Lan:ExportBasicHeader(mc,width,height,imageId,format,ImageName);
+               QBJSLan:ExportQBJSHeader(mc,width,height,imageId,format,ImageName);
   end;
 
   for j:=y to y2 do

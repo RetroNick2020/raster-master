@@ -16,6 +16,8 @@ const
  QB64BasicLan = 6; //fix this in the future - just a hack right now to make things work with Qb64
  AQBBasicLan = 7;  //fix this in the future - just a hack right now to make things work with Amiga QuickBasic AQB
  BAMBasicLan = 8;
+ QBJSBasicLan = 9;
+
  ValueFormatDecimal = 0;
  ValueFormatHex = 1;
 
@@ -112,7 +114,7 @@ end;
 
 procedure MWWriteData(var mc : CodeGenRec);
 begin
-  if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan) then
+  if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan) or (mc.LanId=QBJSBasicLan) then
   begin
     if mc.VCL = 0 then Write(mc.FTextPtr^,'DATA ');
   end;
@@ -120,7 +122,7 @@ end;
 
 procedure MWWriteIndent(var mc : CodeGenRec);
 begin
- if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan)  then exit;
+ if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan) or (mc.LanId=QBJSBasicLan) then exit;
  if (mc.VCL = 0) then
  begin
   if (mc.IndentOnFirst = false) and (mc.LineCount=0) then exit;
@@ -144,7 +146,7 @@ begin
    end
    else if (mc.VCL=mc.ValuesPerLine)  then  //end of line but not last value
    begin
-     if (mc.LanId<>BasicLan) and (mc.LanId<>BasicLNLan) then Write(mc.FTextPtr^,','); //if not basic write a comma
+     if (mc.LanId<>BasicLan) and (mc.LanId<>BasicLNLan) and (mc.LanId<>QBJSBasicLan) then Write(mc.FTextPtr^,','); //if not basic write a comma
    end;
  end;
 end;
@@ -157,6 +159,7 @@ begin
  if LanId=BasicLan then HStr:='&H'+HStr;
  if LanId=PascalLan then HStr:='$'+HStr;
  if LanId=CLan then HStr:='0x'+HStr;
+ if LanId=QBJSBasicLan then HStr:='0x'+HStr;
  ByteToHex:=HStr;
 end;
 
