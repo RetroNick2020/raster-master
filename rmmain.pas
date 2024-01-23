@@ -74,6 +74,7 @@ type
     fpRayLibCustom: TMenuItem;
     gccRayLibCustom: TMenuItem;
     EditProperties: TMenuItem;
+    BAMRGBPutData: TMenuItem;
     QBJS: TMenuItem;
     qbjsRGBAFuchsia: TMenuItem;
     qbjsRGBAIndex0: TMenuItem;
@@ -2004,6 +2005,7 @@ procedure TRMMainForm.BAMPutDataClick(Sender: TObject);
     ExportDialog.FileName:='';
     Case (Sender As TMenuItem).Name of 'BAMPutData' :ExportDialog.Filter := 'BAM Put Data Statements|*.bas';
                                        'BAMPutPlusMaskData' :ExportDialog.Filter := 'BAM Put+Mask Data Statements|*.bas';
+                                       'BAMRGBPutData' :ExportDialog.Filter := 'BAM Put RGB Data Statements|*.bas';
 
     End;
 
@@ -2013,7 +2015,7 @@ procedure TRMMainForm.BAMPutDataClick(Sender: TObject);
     begin
        Case (Sender As TMenuItem).Name of 'BAMPutData' : error:=WriteXGFToCode(x,y,x2,y2,BAMLan,ExportDialog.FileName);
                                           'BAMPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,BAMLan,ExportDialog.FileName);
-
+                                          'BAMRGBPutData' : error:=WriteXGFToCodeEx(x,y,x2,y2,BAMLan,RGBExportFormat,ExportDialog.FileName);
        End;
 
        if (error<>0) then
@@ -2422,6 +2424,7 @@ begin
 
                                           'BAMPutData' : error:=WriteXGFToCode(x,y,x2,y2,BAMLan,FileName);
                                           'BAMPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,BAMLan,FileName);
+                                          'BAMRGBPutData' : error:=WriteXGFToCodeEx(x,y,x2,y2,BAMLan,RGBExportFormat,FileName);
 
                                           'FBPutData' : error:=WriteXGFToCode(x,y,x2,y2,FBinQBModeLan,FileName);
                                           'FBPutPlusMaskData' : error:=WriteXgfWithMaskToCode(x,y,x2,y2,FBinQBModeLan,FileName);

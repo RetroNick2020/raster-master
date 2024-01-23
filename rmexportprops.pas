@@ -178,6 +178,7 @@ begin
                            ComboMask.Items.Clear;
                            ComboImage.Items.Add('None');
                            ComboImage.Items.Add('Put Image');
+                           ComboImage.Items.Add('Put RGB Image');
                            ComboMask.Items.Add('None');
                            ComboMask.Items.Add('Inverted');
                            ComboImage.ItemIndex:=EO.Image;

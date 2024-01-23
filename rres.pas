@@ -178,6 +178,7 @@ begin
                          end;
                    BAMLan:begin
                            case ImageIndex of 1:format:=PutImageExportFormat;
+                                              2:format:=RGBExportFormat;
                            end;
                          end;
                    QB64Lan:begin
@@ -326,9 +327,9 @@ begin
                     end;
              BAMLan:begin
                      Case ImageFormat of PutImageExportFormat:size:=GetXImageSizeBAM(width,height,ncolors);
+                                               RGBExportFormat:size:=GetRGBXImageSizeBAM(width,height);
                      end;
                     end;
-
              QB64Lan:begin
                        Case ImageFormat of RGBAFuchsiaExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
                                            RGBAIndex0ExportFormat:size:=ResRayLibImageSize(width,height,RGBASize);
@@ -680,10 +681,6 @@ begin
                                    RayLibRGBACustomExportFormat:size:=RayLibImageSize(width,height,RGBASize);
                                           RayLibRGBExportFormat:size:=RayLibImageSize(width,height,RGBSize);
         end;
-    //    if (EO.Image > 0) and (EO.Image < 4) then
-    //    begin
-    //       size:=RayLibImageSize(width,height,EO.Image);
-    //    end;
      end;
 
 
@@ -741,17 +738,13 @@ begin
          end;
        end;
 
-//       if (EO.Image > 0) then  //we have an image
-         if ImageExportFormat > 0 then
-         begin
-//        if (EO.Image = 1) and ((EO.Lan = FBinQBModeLan) or (EO.Lan = ABLan) or (EO.Lan = QBLan) or (EO.Lan = GWLan) or (EO.Lan = PBLan)) then size := size div 2;  //we writing basic integers for Image format 1
+       if ImageExportFormat > 0 then
+       begin
           if (ImageExportFormat = PutImageExportFormat) and (EO.Lan in [BAMLan,FBinQBModeLan,ABLan,QBLan,GWLan,PBLan]) then size := size div 2;  //we writing basic integers for Image format 1
-
+          if (ImageExportFormat = RGBExportFormat) and (EO.Lan =BAMLan) then size := size div 2;  //we writing basic integers for BAM RGB format
           if (ImageExportFormat = MouseImageExportFormat) and (EO.Lan in [FBinQBModeLan,QBLan,GWLan,PBLan]) then size := size div 2;  //we writing basic integers for Image format 1
 
-
           WriteBasicVariable(data,EO.Lan,EO.Name,'Size',size);
-//        if ((EO.Lan = QB64Lan) or (EO.Lan = FBLan)) and ((EO.Image > 0) and (EO.Image < 4)) then
           if ((EO.Lan = QB64Lan) or (EO.Lan = QBJSLan) or (EO.Lan = FBLan)) then
           begin
             if  ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBACustomExportFormat,RGBExportFormat,RayLibRGBAFuchsiaExportFormat,RayLibRGBAIndex0ExportFormat,RayLibRGBExportFormat] then
@@ -761,13 +754,17 @@ begin
                WriteBasicVariable(data,EO.Lan,EO.Name,'Format',Format);   // for QB64/Freebasic RayLib formats
             end;
           end;
+          if (ImageExportFormat = RGBExportFormat) and (EO.Lan = BAMLan) then
+          begin
+            Format:=4;
+            WriteBasicVariable(data,EO.Lan,EO.Name,'Format',Format);
+          end;
+
           WriteBasicVariable(data,EO.Lan,EO.Name,'Width',width);
           WriteBasicVariable(data,EO.Lan,EO.Name,'Height',height);
           WriteBasicVariable(data,EO.Lan,EO.Name,'Colors',nColors);
           WriteBasicVariable(data,EO.Lan,EO.Name,'Id',i);
 
-          //write loader code
-//          if (EO.Lan=ABLan) and ((EO.Image=2) or (EO.Image=3)) then   //these are stored in strings so we need a diffent way
           if (EO.Lan=ABLan) and (ImageExportFormat in [AmigaBOBExportFormat,AmigaVSpriteExportFormat]) then   //these are stored in strings so we need a diffent way
           begin
             WriteAmigaBasicBobVSprite(data,EO.Lan,EO.Name,size);
@@ -777,7 +774,6 @@ begin
             WriteBasicVariable(data,EO.Lan,EO.Name,'Depth',nColorsToBitPlanes(nColors));
             WriteAQBImageStub(data,EO.Lan,EO.Image,EO.Mask,EO.Name,size);
           end
-//        else if (EO.Lan=FBLan) and ((EO.Image>0) and (EO.Image<4)) then
           else if (EO.Lan=FBLan) then
           begin
            if  (ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBExportFormat]) then
@@ -785,7 +781,6 @@ begin
              WriteFBBasicReadStub(data,EO.Lan,EO.Name,size);   //FreeBASIC - not QB mode - RGB/RGBA Load code
            end;
           end
-//        else if (EO.Lan=QB64Lan) and ((EO.Image>0) and (EO.Image<4)) then
           else if (EO.Lan=QB64Lan) then
           begin
             if  (ImageExportFormat in [RGBAFuchsiaExportFormat,RGBAIndex0ExportFormat,RGBACustomExportFormat,RGBExportFormat]) then
@@ -796,6 +791,10 @@ begin
             begin
               WriteQB64RayLibReadStub(data,EO.Lan,EO.Name,size);  //QB64 - Use RayLib Graphics
             end;
+          end
+          else if (EO.Lan=BAMLan) then
+          begin
+              WriteBasicDimReadStub(data,EO.Lan,EO.Name,size);   //loading stub for putimage code.
           end
           else if (EO.Lan=QBJSLan) then
           begin
@@ -810,7 +809,6 @@ begin
           end;
        end;
 
-//    if (EO.Image = 1) and (EO.Mask > 0)  then    //we have putimage mask - except for
       if (ImageExportFormat = PutImageExportFormat) and (EO.Mask > 0)  then    //we have putimage mask - except for
       begin
          WriteBasicVariable(data,EO.Lan,EO.Name+'Mask','Size',size);
@@ -998,6 +996,12 @@ begin
      WriteBasicLabel(data,EO.Lan,EO.Name);
      WriteAQBBitMapCodeToBuffer(data.fText,0,0,height-1,width-1,EO.Name);
    end;
+
+   if (EO.LAN=BAMLan) and (ImageExportFormat = RGBExportFormat) then
+   begin
+        WriteBasicLabel(data,EO.Lan,EO.Name);
+        WriteRGBXGFCodeToBuffer(data,0,0,height-1,width-1,EO.Lan,EO.Mask,EO.Name);
+    end;
 
    //RGBA/RayLib formats
    if (EO.Lan in [FPLan,QB64Lan,QBJSLan,FBLan,gccLan]) and (ImageExportFormat in [RGBAFuchsiaExportFormat,

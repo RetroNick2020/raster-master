@@ -663,6 +663,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Put+Mask Data Statements'
             OnClick = BAMPutDataClick
           end
+          object BAMRGBPutData: TMenuItem
+            Caption = 'Put RGB Data Statements'
+            OnClick = BAMPutDataClick
+          end
         end
         object FreeBASIC: TMenuItem
           Caption = 'FreeBASIC - QB Mode'

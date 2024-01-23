@@ -95,6 +95,7 @@ type
  BitPlaneWriterProc = Procedure(inByte : Byte; var Buffer : BufferRec; action : integer);
 
  Function WriteXgfToCode(x,y,x2,y2,LanType : word;filename:string):word;
+ Function WriteXgfToCodeEx(x,y,x2,y2,LanType, ExportFormat : word;filename:string):word;
  Function WriteXgfWithMaskToCode(x,y,x2,y2,LanType : word;filename:string):word;
  Function WriteXgfToFile(x,y,x2,y2,LanType : word;filename:string):word;
 
@@ -105,12 +106,15 @@ type
  procedure WriteXgfToBufferOW(x,y,x2,y2,Mask : word;var data : BufferRec);
 
  function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
+ function WriteRGBXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 
  function GetXImageSize(width,height,ncolors : integer) : longint;
  function GetXImageSizeFB(width,height : integer) : longint;
  function GetXImageSizeFP(width,height : integer) : longint;
  function GetXImageSizeOW(width,height,ncolors : integer) : longint;
  function GetXImageSizeBAM(width,height,ncolors : integer) : longint;
+ function GetRGBXImageSizeBAM(width,height : integer) : longint;
+
  function GetXImageSizeTMT(width,height,ncolors : integer) : longint;
 
 procedure BitplaneWriterFile(inByte : Byte; var Buffer : BufferRec;action : integer);
@@ -372,6 +376,11 @@ begin
   GetXImageSizeBAM:=GetBPLSizeBAM(width,ncolors)*height+4;
 end;
 
+function GetRGBXImageSizeBAM(width,height : integer) : longint;
+begin
+  GetRGBXImageSizeBAM:=width*3*height+4;
+end;
+
 function GetXImageSizeTMT(width,height,ncolors : integer) : longint;
 begin
   GetXImageSizeTMT:=GetBPLSizeTMT(width,ncolors)*height+4;
@@ -554,6 +563,49 @@ begin
  BitplaneWriter(0,data,2);  //flush it
 end;
 
+Procedure WriteRGBXGFBufferBAM(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
+Var
+ destlinebuf: Linebuftype;
+ Head       : XgfHead;
+ Width      : word;
+ Height     : word;
+ BTW        : word; //bytes to write to buffer
+ i,j,n      : Word;
+ tempBuf    : array[1..4] of byte;
+ PixelIndex : integer;
+ cr         : TRMColorRec;
+ begin
+ Width:=x2-x+1;
+ Height:=y2-y+1;
+ BTW:=Width*3;
+
+ FixHead(Head,Width,Height,LanType);
+ Move(Head,tempBuf,sizeof(tempBuf));
+
+ for n:=1 to 4 do
+ begin
+    BitplaneWriter(tempBuf[n],data,1);
+ end;
+
+ for j:=0 to Height-1 do
+ begin
+   for i:=0 to Width-1 do
+   begin
+       PixelIndex:=GetPixel(x+i,y+j);
+       GetColor(PixelIndex,cr);
+       destLineBuf[i*3]:=cr.r;
+       destLineBuf[i*3+1]:=cr.g;
+       destLineBuf[i*3+2]:=cr.b;
+   end;
+
+   for n:=0 to BTW-1 do
+   begin
+     BitplaneWriter(destlinebuf[n],data,1);
+   end;
+ end;
+
+ BitplaneWriter(0,data,2);  //flush it
+end;
 
 Procedure WriteXGFBufferBAM(BitPlaneWriter  : BitPlaneWriterProc;var data :BufferRec; x,y,x2,y2,LanType : word);
 Var
@@ -1215,13 +1267,42 @@ begin
 end;
 
 
-Function WriteBAMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+
+Function WriteBAMRGBCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
 var
   Width,Height : Word;
   Size      : longword;
   nColors   : integer;
   BWriter   : BitPlaneWriterProc;
 
+begin
+ BWriter:=@BitplaneWriterBAMBasicCode;
+
+ width:=x2-x+1;
+ height:=y2-y+1;
+ nColors:=GetMaxColor+1;
+ Size:=GetRGBXImageSizeBAM(width,height);
+{$I-}
+ BWriter(0,data,0);  //init the data record
+ data.ArraySize:=size;
+
+ writeln(data.ftext,#39,' BAM Put Bitmap Code Created By Raster Master');
+ writeln(data.ftext,#39,' Size= ', Size div 2,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' Format = RGB');
+ writeln(data.ftext,#39,' ',Imagename);
+ WriteRGBXGFBufferBAM(BWriter,data,x,y,x2,y2,BAMLan);
+ writeln(data.ftext);
+
+{$I+}
+ WriteBAMRGBCodeToBuffer:=IORESULT;
+end;
+
+
+Function WriteBAMCodeToBuffer(var data :BufferRec;x,y,x2,y2 : word; imagename:string):word;
+var
+  Width,Height : Word;
+  Size      : longword;
+  nColors   : integer;
+  BWriter   : BitPlaneWriterProc;
 begin
  BWriter:=@BitplaneWriterBAMBasicCode;
 
@@ -1456,6 +1537,48 @@ begin
  WriteXgfToCode:=IOResult;
 end;
 
+//This function will replace WriteXgfToCode eventually - just adding this to one language at time
+Function WriteXgfToCodeEx(x,y,x2,y2,LanType, ExportFormat : word;filename:string):word;
+var
+ data      : BufferRec;
+ imagename : String;
+ imageid   : word;
+begin
+ SetCoreActive;   // we are getting data from core object RMCoreBase
+ SetGWStartLineNumber(1000);
+ assign(data.fText,filename);
+{$I-}
+ rewrite(data.fText);
+ imageid:=GetThumbIndex;
+ Imagename:=ExtractFileName(ExtractFileNameWithoutExt(filename));
+ case LanType of TPLan: WriteTPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                 TCLan: WriteTCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
+                 TMTLan: WriteTMTCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
+                 QBLan: WriteQBCodeToBuffer(data,x,y,x2,y2,imagename);
+                 GWLan: WriteGWCodeToBuffer(data,x,y,x2,y2,imagename);
+                 BAMLan:begin
+                          Case ExportFormat of PutImageExportFormat:WriteBAMCodeToBuffer(data,x,y,x2,y2,imagename);
+                                               RGBExportFormat:WriteBAMRGBCodeToBuffer(data,x,y,x2,y2,imagename);
+                          end;
+                        end;
+                 QPLan: WriteQPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+                 QCLan: WriteQCCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
+                 OWLan: WriteOWCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
+                 PBLan: WritePBCodeToBuffer(data,x,y,x2,y2,imagename);
+
+                 FBinQBModeLan: WriteFBCodeToBuffer(data,x,y,x2,y2,imagename);
+                 FPLan: WriteFPCodeToBuffer(data,x,y,x2,y2,imageid,imagename);
+
+ end;
+ close(data.fText);
+ {$I+}
+ WriteXgfToCodeEx:=IOResult;
+end;
+
 Function WriteXgfWithMaskToCode(x,y,x2,y2,LanType : word;filename:string):word;
 var
  data      : BufferRec;
@@ -1505,7 +1628,7 @@ end;
 
 function WriteXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 var
- omask : integer;
+ omask   : integer;
  imageid : word;
 begin
   imageId:=GetThumbIndex;
@@ -1533,6 +1656,21 @@ begin
   SetMaskMode(omask);
   WriteXGFCodeToBuffer:=data.Error;
 end;
+
+function WriteRGBXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
+var
+ omask   : integer;
+ imageid : word;
+begin
+  imageId:=GetThumbIndex;
+  omask:=GetMaskMode;
+  SetMaskMode(Mask);
+  case LanType of BAMLan: WriteBAMRGBCodeToBuffer(data,x,y,x2,y2,imagename);
+  end;
+  SetMaskMode(omask);
+  WriteRGBXGFCodeToBuffer:=data.Error;
+end;
+
 
 
 begin
