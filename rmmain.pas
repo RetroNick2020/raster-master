@@ -162,7 +162,7 @@ type
     ToolSprayPaintIcon: TImage;
     ToolUndoIcon: TImage;
     ToolVFLIPButton: TButton;
-    TrackBar1: TTrackBar;
+    ZoomTrackBar: TTrackBar;
     Utilities: TMenuItem;
     MiddleBottomPanel: TPanel;
     QPPaletteArray: TMenuItem;
@@ -443,7 +443,7 @@ type
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure FileExitMenuClick(Sender: TObject);
     procedure OpenFileClick(Sender: TObject);
-    procedure TrackBar1Change(Sender: TObject);
+    procedure ZoomTrackBarChange(Sender: TObject);
     procedure ZoomPaintBoxPaint(Sender: TObject);
     procedure ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -584,7 +584,7 @@ begin
  MaxXOffset:=0;
  MaxYOffset:=0;
 
- Trackbar1.Position:=RMDrawTools.getZoomSize;
+ ZoomTrackBar.Position:=RMDrawTools.getZoomSize;
 
  RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
  LoadDefaultPalette;
@@ -1029,7 +1029,7 @@ end;
 
 procedure TRMMainForm.updateZoomScroller;
 begin
-  Trackbar1.Position:=ZoomSize;
+  ZoomTrackBar.Position:=ZoomSize;
 end;
 
 procedure TRMMainForm.UpdateColorBox;
@@ -1370,7 +1370,7 @@ begin
 
    RMDrawTools.SetZoomSize(ZoomSize);
    RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
-   TrackBar1.Position:=RMDrawTools.GetZoomSize;
+   ZoomTrackBar.Position:=RMDrawTools.GetZoomSize;
    UpdateZoomArea;
 end;
 
@@ -1379,18 +1379,17 @@ begin
   close;            // I created extra work - i added prompt in close
 end;
 
-procedure TRMMainForm.TrackBar1Change(Sender: TObject);
+procedure TRMMainForm.ZoomTrackBarChange(Sender: TObject);
 begin
-  RMDrawTools.SetZoomSize(TrackBar1.Position);
+  RMDrawTools.SetZoomSize(ZoomTrackBar.Position);
   ZoomPaintBox.Width:=1;
   ZoomPaintBox.Height:=1;
   ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
   ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
-  ZoomPaintBox.Canvas.Clear;
-  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+ // ZoomPaintBox.Canvas.Clear;
+ // RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
   RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
   RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
-
   ZoomSize:=RMDrawTools.GetZoomSize;
   UpdateZoomArea;
 end;
@@ -3644,7 +3643,7 @@ begin
  RMDrawTools.SetZoomSize(2);
  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
  UpdateZoomArea;
- Trackbar1.Position:=RMDrawTools.getZoomSize;
+ ZoomTrackBar.Position:=RMDrawTools.getZoomSize;
 
  ImageThumbBase.SetCount(1);
  ImageThumbBase.SetCurrent(0);
@@ -4110,17 +4109,24 @@ begin
 
       ImageThumbBase.CopyIndexImageToCore(ImageThumbBase.GetCurrent);   //to future nick - do not delete this line - it is important
       listview1.refresh;
-
       ActualBox.Width:=RMCoreBase.GetWidth;
       ActualBox.Height:=RMCoreBase.GetHeight;
 
-      RMDrawTools.SetZoomSize(1);
-      RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+      //RMDrawTools.SetZoomSize(1);
+      //RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+      //RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
+      //RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
+      //ZoomSize:=RMDrawTools.GetZoomSize;
+
+      ZoomPaintBox.Width:=1;
+      ZoomPaintBox.Height:=1;
+      ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+      ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+      //  ZoomPaintBox.Canvas.Clear;
+      //  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
       RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
       RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
-
       ZoomSize:=RMDrawTools.GetZoomSize;
-
       CoreToPalette;
       UpdateColorBox;
       UpdatePalette;
@@ -4165,7 +4171,7 @@ begin
  UpdateActualArea;
  UpdateZoomArea;
 
- Trackbar1.Position:=RMDrawTools.getZoomSize;
+ ZoomTrackBar.Position:=RMDrawTools.getZoomSize;
  ZoomScrollBox.HorzScrollBar.Position:=0;
  ZoomScrollBox.VertScrollBar.Position:=0;
 
@@ -4196,7 +4202,7 @@ begin
  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
  UpdateZoomArea;
 // UnFreezeScrollAndZoom;
- Trackbar1.Position:=RMDrawTools.getZoomSize;
+ ZoomTrackBar.Position:=RMDrawTools.getZoomSize;
  ZoomScrollBox.HorzScrollBar.Position:=0;
  ZoomScrollBox.VertScrollBar.Position:=0;
  UpdateThumbView;

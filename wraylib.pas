@@ -77,13 +77,12 @@ begin
  Writeln(mc.FTextPtr^,'  ',ImageName,'_Height = ',height,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,'_Id = ',imageId,';');
  Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of byte = (');
-
 end;
 
 
 procedure ExportCHeader(var mc : codegenrec;width,height,imageId,format : integer;ImageName : string);
 var
-  size : longint;
+ size : longint;
 begin
  size:=RayLibImageSize(width,height,format);
  MWSetValuesTotal(mc,size);
@@ -332,7 +331,6 @@ begin
     {$I+}
     if IORESULT<>0 then exit;
   end;
-
 end;
 
 end.

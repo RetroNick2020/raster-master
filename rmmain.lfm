@@ -480,14 +480,14 @@ object RMMainForm: TRMMainForm
         ShowHint = True
       end
     end
-    object TrackBar1: TTrackBar
+    object ZoomTrackBar: TTrackBar
       Left = 1177
       Height = 110
       Hint = 'Zoom Level'
       Top = 1
       Width = 30
       Min = 1
-      OnChange = TrackBar1Change
+      OnChange = ZoomTrackBarChange
       Orientation = trVertical
       Position = 1
       TickMarks = tmTopLeft
