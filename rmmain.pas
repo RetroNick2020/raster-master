@@ -2908,7 +2908,8 @@ begin
  FilePropertiesDialog.GetProps(PngRGBA);  //get values before change
  if FilePropertiesDialog.ShowModal = mrOK then
  begin
-    rmconfigbase.SetProps(PngRGBA);  //set these values to config object
+    FilePropertiesDialog.GetProps(PngRGBA); //get the new updated props
+    rmconfigbase.SetProps(PngRGBA);  //set new values to config object
  end
  else
  begin

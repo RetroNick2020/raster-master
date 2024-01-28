@@ -3,7 +3,7 @@
 
 Unit wjavascriptarray;
  Interface
-   uses SysUtils,LazFileUtils,rmcore,bits;
+   uses SysUtils,LazFileUtils,rmcore,bits,rwpng,rmconfig;
 
 Function WriteJavaScriptArray(x,y,x2,y2 : word;filename:string; transparent : boolean):word;
 Implementation
@@ -86,8 +86,10 @@ var
   ImageName : string;
   asize : longint;
   r,g,b,a : byte;
-  ColorIndex : integer;
+  PixelIndex : integer;
+  PngRGBA : PngRGBASettingsRec;
  begin
+ rmconfigbase.GetProps(PngRGBA);
  width:=x2-x+1;
  height:=y2-y+1;
  asize:=GetArraySize(width,height);
@@ -107,16 +109,32 @@ var
  begin
   for i:=x to x2 do
   begin
-    colorIndex:=RMCoreBase.GetPixel(i,j);
+    PixelIndex:=RMCoreBase.GetPixel(i,j);
 
-    r:=RMCoreBase.palette.GetRed(ColorIndex);
-    g:=RMCoreBase.palette.GetGreen(ColorIndex);
-    b:=RMCoreBase.palette.GetBlue(ColorIndex);
+    r:=RMCoreBase.palette.GetRed(PixelIndex);
+    g:=RMCoreBase.palette.GetGreen(PixelIndex);
+    b:=RMCoreBase.palette.GetBlue(PixelIndex);
     a:=255;
     if transparent then
     begin
-       if ColorIndex = 0 then a:=0;
-       if (r=255) and (g=0) and (b=255) then a:=0;
+       //if ColorIndex = 0 then a:=0;
+       //if (r=255) and (g=0) and (b=255) then a:=0;
+
+         if (PngRGBA.UseColorIndex) and (PngRGBA.ColorIndex=PixelIndex) then
+         begin
+           a:=0;  // Alpha     0 = transparent
+         end;
+
+         if (PngRGBA.UseFuschia) and (r = 255) and (g=0) and (b=255) then   //use fuschia
+         begin
+           a:=0;  // Alpha     0 = transparent
+         end;
+
+         if (PngRGBA.UseCustom) and (r = PngRGBA.R) and (b=PngRGBA.B) and (g=PngRGBA.G) then   //if custom RGB
+         begin
+           a:=PngRGBA.A;        // set custom Alpha value
+         end;
+
     end;
     ArrayWriter(r,data,1);
     ArrayWriter(g,data,1);

@@ -38,7 +38,7 @@ type
 
   public
     procedure UpdateValues;
-    procedure SetProps(props : PngRGBASettingsRec);
+    procedure SetProps(var props : PngRGBASettingsRec);
     procedure GetProps(var props : PngRGBASettingsRec);
 
   end;
@@ -110,7 +110,7 @@ begin
   ColorIndexValue.Text:=IntToStr(PngRGBA.ColorIndex);
 end;
 
-procedure TFileProperties.SetProps(props : PngRGBASettingsRec);
+procedure TFileProperties.SetProps(var props : PngRGBASettingsRec);
 begin
   PngRGBA:=props;
 end;
