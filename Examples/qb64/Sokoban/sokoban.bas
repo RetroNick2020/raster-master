@@ -330,7 +330,6 @@ End Sub
 Sub VScreenToScreen
     _Dest 0
     _PutImage (0, 0)-(799, 599), VScreen
-    '_PutImage (0, 0), Wall
     _Dest VScreen
 End Sub
 
