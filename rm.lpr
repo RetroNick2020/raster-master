@@ -18,7 +18,6 @@ uses
 
 begin
   RequireDerivedFormResource:=True;
-  Application.Scaled:=True;
   Application.Title:='RM';
   Application.Initialize;
   Application.CreateForm(TRMMainForm, RMMainForm);

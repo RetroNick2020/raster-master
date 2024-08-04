@@ -4,7 +4,7 @@ object MapEdit: TMapEdit
   Top = 204
   Width = 1333
   Caption = 'Map Editor'
-  ClientHeight = 840
+  ClientHeight = 860
   ClientWidth = 1333
   DoubleBuffered = True
   Menu = MainMenu1
@@ -14,7 +14,7 @@ object MapEdit: TMapEdit
   OnDestroy = FormDestroy
   OnShow = FormShow
   ParentDoubleBuffered = False
-  LCLVersion = '2.0.10.0'
+  LCLVersion = '3.4.0.0'
   object LeftPanel: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -22,12 +22,12 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 840
+    Height = 860
     Top = 0
     Width = 258
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'LeftPanel'
-    ClientHeight = 840
+    ClientHeight = 860
     ClientWidth = 258
     ParentFont = False
     TabOrder = 3
@@ -38,11 +38,11 @@ object MapEdit: TMapEdit
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVertSplitter
       Left = 1
-      Height = 216
+      Height = 221
       Top = 1
       Width = 256
       Anchors = [akTop, akLeft, akRight, akBottom]
-      ClientHeight = 216
+      ClientHeight = 221
       ClientWidth = 256
       ParentFont = False
       TabOrder = 0
@@ -66,7 +66,7 @@ object MapEdit: TMapEdit
       Cursor = crVSplit
       Left = 1
       Height = 9
-      Top = 217
+      Top = 222
       Width = 256
       Align = alNone
       Anchors = [akLeft, akRight]
@@ -84,19 +84,19 @@ object MapEdit: TMapEdit
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 613
-      Top = 226
+      Height = 628
+      Top = 231
       Width = 256
       Anchors = [akTop, akLeft, akRight, akBottom]
       Caption = 'LeftBottomPanel'
-      ClientHeight = 613
+      ClientHeight = 628
       ClientWidth = 256
       ParentColor = False
       ParentFont = False
       TabOrder = 2
       object TileListView: TListView
         Left = 1
-        Height = 611
+        Height = 626
         Top = 1
         Width = 254
         Align = alClient
@@ -122,19 +122,19 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1217
-    Height = 840
+    Height = 860
     Top = 0
     Width = 116
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'RightPanel'
-    ClientHeight = 840
+    ClientHeight = 860
     ClientWidth = 116
     ParentColor = False
     ParentFont = False
     TabOrder = 0
     object MapListView: TListView
       Left = 1
-      Height = 838
+      Height = 858
       Top = 1
       Width = 114
       Align = alClient
@@ -152,7 +152,7 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 258
-    Height = 840
+    Height = 860
     Top = 0
     Width = 9
     Align = alNone
@@ -165,7 +165,7 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1208
-    Height = 840
+    Height = 860
     Top = 0
     Width = 9
     Align = alNone
@@ -197,34 +197,34 @@ object MapEdit: TMapEdit
       ClientWidth = 112
       TabOrder = 4
       object GroupBox1: TGroupBox
-        Left = 16
-        Height = 72
-        Top = 10
-        Width = 80
-        ClientHeight = 52
-        ClientWidth = 76
+        Left = 8
+        Height = 90
+        Top = 1
+        Width = 96
+        ClientHeight = 70
+        ClientWidth = 92
         TabOrder = 0
         object RadioDraw: TRadioButton
           Left = 16
           Height = 19
           Top = 0
-          Width = 47
+          Width = 45
           Caption = 'Draw'
           Checked = True
-          OnClick = RadioDrawClick
           ParentFont = False
           TabOrder = 0
           TabStop = True
+          OnClick = RadioDrawClick
         end
         object RadioErase: TRadioButton
           Left = 16
           Height = 19
           Top = 24
-          Width = 47
+          Width = 45
           Caption = 'Erase'
-          OnClick = RadioEraseClick
           ParentFont = False
           TabOrder = 1
+          OnClick = RadioEraseClick
         end
       end
     end
@@ -432,10 +432,10 @@ object MapEdit: TMapEdit
         Top = 9
         Width = 54
         Caption = 'HFLIP'
-        OnClick = ToolHFLIPButtonClick
         ParentShowHint = False
         ShowHint = True
         TabOrder = 0
+        OnClick = ToolHFLIPButtonClick
       end
       object ToolVFLIPButton: TButton
         Left = 354
@@ -444,10 +444,10 @@ object MapEdit: TMapEdit
         Top = 8
         Width = 54
         Caption = 'VFLIP'
-        OnClick = ToolVFLIPButtonClick
         ParentShowHint = False
         ShowHint = True
         TabOrder = 1
+        OnClick = ToolVFLIPButtonClick
       end
     end
     object StatusBar1: TStatusBar
@@ -484,19 +484,19 @@ object MapEdit: TMapEdit
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 267
-    Height = 714
+    Height = 734
     Top = 126
     Width = 941
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'MiddlePanel'
-    ClientHeight = 714
+    ClientHeight = 734
     ClientWidth = 941
     ParentColor = False
     ParentFont = False
     TabOrder = 5
     object MapScrollBox: TScrollBox
       Left = 1
-      Height = 712
+      Height = 732
       Top = 1
       Width = 939
       HorzScrollBar.Increment = 10
@@ -507,7 +507,7 @@ object MapEdit: TMapEdit
       VertScrollBar.Tracking = True
       Align = alClient
       BorderStyle = bsNone
-      ClientHeight = 712
+      ClientHeight = 732
       ClientWidth = 939
       ParentFont = False
       TabOrder = 0
