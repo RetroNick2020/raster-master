@@ -11,7 +11,7 @@ uses
   rmcolorvga, rmabout, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
   rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
-  fileprops, drawprocs, rmconfig, rmclipboard
+  fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr
      { you can add units after this };
 
 {$R *.res}
@@ -31,6 +31,7 @@ begin
   Application.CreateForm(TSpriteImportForm, SpriteImportForm);
   Application.CreateForm(TRMXgaColorDialog, RMXgaColorDialog);
   Application.CreateForm(TFileProperties, FilePropertiesDialog);
+  Application.CreateForm(TSoundGeneratorForm, SoundGeneratorForm);
   Application.Run;
 end.
 

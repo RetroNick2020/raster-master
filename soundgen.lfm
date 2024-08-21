@@ -1,0 +1,654 @@
+object SoundGeneratorForm: TSoundGeneratorForm
+  Left = 536
+  Height = 728
+  Top = 179
+  Width = 706
+  Caption = 'Sound Generator (SFXR)'
+  ClientHeight = 728
+  ClientWidth = 706
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  Position = poScreenCenter
+  LCLVersion = '3.4.0.0'
+  object Button1: TButton
+    Left = 8
+    Height = 25
+    Top = 40
+    Width = 121
+    Caption = 'Pickup/coin'
+    TabOrder = 0
+    OnClick = Button1Click
+  end
+  object Button2: TButton
+    Left = 8
+    Height = 25
+    Top = 72
+    Width = 121
+    Caption = 'Laser/shoot'
+    TabOrder = 1
+    OnClick = Button2Click
+  end
+  object Button3: TButton
+    Left = 8
+    Height = 25
+    Top = 104
+    Width = 121
+    Caption = 'Explosion'
+    TabOrder = 2
+    OnClick = Button3Click
+  end
+  object Button4: TButton
+    Left = 8
+    Height = 25
+    Top = 136
+    Width = 121
+    Caption = 'Powerup'
+    TabOrder = 3
+    OnClick = Button4Click
+  end
+  object Button5: TButton
+    Left = 8
+    Height = 25
+    Top = 168
+    Width = 121
+    Caption = 'Hit/hurt'
+    TabOrder = 4
+    OnClick = Button5Click
+  end
+  object Button6: TButton
+    Left = 8
+    Height = 25
+    Top = 200
+    Width = 121
+    Caption = 'Jump'
+    TabOrder = 5
+    OnClick = Button6Click
+  end
+  object Button7: TButton
+    Left = 8
+    Height = 25
+    Top = 232
+    Width = 121
+    Caption = 'Blip/select'
+    TabOrder = 6
+    OnClick = Button7Click
+  end
+  object Button8: TButton
+    Left = 8
+    Height = 25
+    Top = 616
+    Width = 121
+    Caption = 'Mutate'
+    TabOrder = 7
+    OnClick = Button8Click
+  end
+  object Button9: TButton
+    Left = 8
+    Height = 25
+    Top = 648
+    Width = 121
+    Caption = 'Randomize'
+    TabOrder = 8
+    OnClick = Button9Click
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 15
+    Top = 8
+    Width = 52
+    Caption = 'Generator'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 152
+    Height = 15
+    Top = 8
+    Width = 85
+    Caption = 'Manual Settings'
+    ParentColor = False
+  end
+  object GroupBox1: TGroupBox
+    Left = 152
+    Height = 112
+    Top = 72
+    Width = 409
+    ClientHeight = 92
+    ClientWidth = 405
+    TabOrder = 9
+    object ScrollBar1: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 0
+      Width = 250
+      PageSize = 0
+      TabOrder = 0
+    end
+    object ScrollBar2: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 24
+      Width = 250
+      PageSize = 0
+      TabOrder = 1
+    end
+    object ScrollBar3: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 48
+      Width = 250
+      PageSize = 0
+      TabOrder = 2
+    end
+    object ScrollBar4: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 72
+      Width = 250
+      PageSize = 0
+      TabOrder = 3
+    end
+    object Label3: TLabel
+      Left = 8
+      Height = 15
+      Top = 0
+      Width = 61
+      Caption = 'Attack time'
+      ParentColor = False
+    end
+    object Label4: TLabel
+      Left = 8
+      Height = 15
+      Top = 24
+      Width = 65
+      Caption = 'Sustain time'
+      ParentColor = False
+    end
+    object Label5: TLabel
+      Left = 8
+      Height = 15
+      Top = 48
+      Width = 75
+      Caption = 'Sustain punch'
+      ParentColor = False
+    end
+    object Label6: TLabel
+      Left = 8
+      Height = 15
+      Top = 72
+      Width = 59
+      Caption = 'Decay time'
+      ParentColor = False
+    end
+  end
+  object GroupBox2: TGroupBox
+    Left = 152
+    Height = 161
+    Top = 184
+    Width = 409
+    ClientHeight = 141
+    ClientWidth = 405
+    TabOrder = 10
+    object ScrollBar5: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 0
+      Width = 250
+      PageSize = 0
+      TabOrder = 0
+    end
+    object ScrollBar6: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 24
+      Width = 250
+      PageSize = 0
+      TabOrder = 1
+    end
+    object ScrollBar7: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 48
+      Width = 250
+      PageSize = 0
+      TabOrder = 2
+    end
+    object ScrollBar8: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 71
+      Width = 250
+      PageSize = 0
+      TabOrder = 3
+    end
+    object ScrollBar9: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 96
+      Width = 250
+      PageSize = 0
+      TabOrder = 4
+    end
+    object ScrollBar10: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 119
+      Width = 250
+      PageSize = 0
+      TabOrder = 5
+    end
+    object Label7: TLabel
+      Left = 8
+      Height = 15
+      Top = 0
+      Width = 80
+      Caption = 'Start frequency'
+      ParentColor = False
+    end
+    object Label8: TLabel
+      Left = 8
+      Height = 15
+      Top = 24
+      Width = 79
+      Caption = 'Min Frequency'
+      ParentColor = False
+    end
+    object Label9: TLabel
+      Left = 8
+      Height = 15
+      Top = 48
+      Width = 25
+      Caption = 'Slide'
+      ParentColor = False
+    end
+    object Label10: TLabel
+      Left = 8
+      Height = 15
+      Top = 71
+      Width = 54
+      Caption = 'Delta slide'
+      ParentColor = False
+    end
+    object Label11: TLabel
+      Left = 8
+      Height = 15
+      Top = 96
+      Width = 72
+      Caption = 'Vibrato depth'
+      ParentColor = False
+    end
+    object Label12: TLabel
+      Left = 8
+      Height = 15
+      Top = 119
+      Width = 72
+      Caption = 'Vibrato speed'
+      ParentColor = False
+    end
+  end
+  object GroupBox3: TGroupBox
+    Left = 152
+    Height = 64
+    Top = 345
+    Width = 409
+    ClientHeight = 44
+    ClientWidth = 405
+    TabOrder = 11
+    object ScrollBar11: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 0
+      Width = 250
+      PageSize = 0
+      TabOrder = 0
+    end
+    object ScrollBar12: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 24
+      Width = 250
+      PageSize = 0
+      TabOrder = 1
+    end
+    object Label13: TLabel
+      Left = 8
+      Height = 15
+      Top = 0
+      Width = 86
+      Caption = 'Change amount'
+      ParentColor = False
+    end
+    object Label14: TLabel
+      Left = 8
+      Height = 15
+      Top = 24
+      Width = 75
+      Caption = 'Change speed'
+      ParentColor = False
+    end
+  end
+  object GroupBox4: TGroupBox
+    Left = 152
+    Height = 64
+    Top = 409
+    Width = 409
+    ClientHeight = 44
+    ClientWidth = 405
+    TabOrder = 12
+    object ScrollBar13: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 0
+      Width = 250
+      PageSize = 0
+      TabOrder = 0
+    end
+    object ScrollBar14: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 24
+      Width = 250
+      PageSize = 0
+      TabOrder = 1
+    end
+    object Label15: TLabel
+      Left = 8
+      Height = 15
+      Top = 0
+      Width = 63
+      Caption = 'Square duty'
+      ParentColor = False
+    end
+    object Label16: TLabel
+      Left = 8
+      Height = 15
+      Top = 24
+      Width = 61
+      Caption = 'Duty sweep'
+      ParentColor = False
+    end
+  end
+  object GroupBox5: TGroupBox
+    Left = 152
+    Height = 48
+    Top = 473
+    Width = 409
+    ClientHeight = 28
+    ClientWidth = 405
+    TabOrder = 13
+    object ScrollBar15: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 0
+      Width = 250
+      PageSize = 0
+      TabOrder = 0
+    end
+    object Label17: TLabel
+      Left = 8
+      Height = 15
+      Top = 0
+      Width = 70
+      Caption = 'Repeat speed'
+      ParentColor = False
+    end
+  end
+  object GroupBox6: TGroupBox
+    Left = 152
+    Height = 64
+    Top = 521
+    Width = 409
+    ClientHeight = 44
+    ClientWidth = 405
+    TabOrder = 14
+    object ScrollBar16: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 0
+      Width = 250
+      PageSize = 0
+      TabOrder = 0
+    end
+    object ScrollBar17: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 24
+      Width = 250
+      PageSize = 0
+      TabOrder = 1
+    end
+    object Label18: TLabel
+      Left = 8
+      Height = 15
+      Top = 0
+      Width = 68
+      Caption = 'Phaser offset'
+      ParentColor = False
+    end
+    object Label19: TLabel
+      Left = 8
+      Height = 15
+      Top = 24
+      Width = 71
+      Caption = 'Phaser sweep'
+      ParentColor = False
+    end
+  end
+  object GroupBox7: TGroupBox
+    Left = 152
+    Height = 136
+    Top = 585
+    Width = 409
+    ClientHeight = 116
+    ClientWidth = 405
+    TabOrder = 15
+    object ScrollBar18: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 0
+      Width = 250
+      PageSize = 0
+      TabOrder = 0
+    end
+    object ScrollBar19: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 24
+      Width = 250
+      PageSize = 0
+      TabOrder = 1
+    end
+    object ScrollBar20: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 48
+      Width = 250
+      PageSize = 0
+      TabOrder = 2
+    end
+    object ScrollBar21: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 72
+      Width = 250
+      PageSize = 0
+      TabOrder = 3
+    end
+    object ScrollBar22: TScrollBar
+      Left = 144
+      Height = 14
+      Top = 96
+      Width = 250
+      PageSize = 0
+      TabOrder = 4
+    end
+    object Label20: TLabel
+      Left = 8
+      Height = 15
+      Top = 0
+      Width = 75
+      Caption = 'LP filter cutoff'
+      ParentColor = False
+    end
+    object Label21: TLabel
+      Left = 8
+      Height = 15
+      Top = 24
+      Width = 111
+      Caption = 'LP filter cutoff sweep'
+      ParentColor = False
+    end
+    object Label22: TLabel
+      Left = 8
+      Height = 15
+      Top = 48
+      Width = 97
+      Caption = 'LP filter resonance'
+      ParentColor = False
+    end
+    object Label23: TLabel
+      Left = 8
+      Height = 15
+      Top = 72
+      Width = 78
+      Caption = 'HP filter cutoff'
+      ParentColor = False
+    end
+    object Label24: TLabel
+      Left = 8
+      Height = 15
+      Top = 96
+      Width = 114
+      Caption = 'HP filter cutoff sweep'
+      ParentColor = False
+    end
+  end
+  object ScrollBar23: TScrollBar
+    Left = 568
+    Height = 14
+    Top = 256
+    Width = 121
+    PageSize = 0
+    TabOrder = 16
+  end
+  object Button14: TButton
+    Left = 576
+    Height = 25
+    Top = 288
+    Width = 121
+    Caption = 'Play sound'
+    TabOrder = 17
+    OnClick = Button14Click
+  end
+  object Button15: TButton
+    Left = 576
+    Height = 25
+    Top = 424
+    Width = 121
+    Caption = 'Load settings'
+    TabOrder = 18
+    OnClick = Button15Click
+  end
+  object Button16: TButton
+    Left = 576
+    Height = 25
+    Top = 456
+    Width = 121
+    Caption = 'Save settings'
+    TabOrder = 19
+    OnClick = Button16Click
+  end
+  object Button17: TButton
+    Left = 576
+    Height = 25
+    Top = 616
+    Width = 121
+    Caption = 'Export .wav'
+    TabOrder = 20
+    OnClick = Button17Click
+  end
+  object ComboBox1: TComboBox
+    Left = 576
+    Height = 23
+    Top = 648
+    Width = 121
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      '44 100 HZ'
+      '22 050 Hz'
+    )
+    Style = csDropDownList
+    TabOrder = 21
+    Text = '44 100 HZ'
+    OnChange = ComboBox1Change
+  end
+  object ComboBox2: TComboBox
+    Left = 576
+    Height = 23
+    Top = 680
+    Width = 121
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      '16-Bit'
+      '8-Bit'
+    )
+    Style = csDropDownList
+    TabOrder = 22
+    Text = '16-Bit'
+    OnChange = ComboBox2Change
+  end
+  object Label25: TLabel
+    Left = 618
+    Height = 15
+    Top = 239
+    Width = 40
+    Caption = 'Volume'
+    ParentColor = False
+  end
+  object RadioGroup1: TRadioGroup
+    Left = 152
+    Height = 41
+    Top = 24
+    Width = 409
+    AutoFill = True
+    Caption = ' Wave Type '
+    ChildSizing.LeftRightSpacing = 6
+    ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+    ChildSizing.EnlargeVertical = crsHomogenousChildResize
+    ChildSizing.ShrinkHorizontal = crsScaleChilds
+    ChildSizing.ShrinkVertical = crsScaleChilds
+    ChildSizing.Layout = cclLeftToRightThenTopToBottom
+    ChildSizing.ControlsPerLine = 4
+    ClientHeight = 21
+    ClientWidth = 405
+    Columns = 4
+    ItemIndex = 0
+    Items.Strings = (
+      'Squarewave'
+      'Sawtooth'
+      'Sinewave'
+      'Noise'
+    )
+    OnClick = RadioGroup1Click
+    TabOrder = 23
+  end
+  object SaveDialog1: TSaveDialog
+    DefaultExt = '.wav'
+    Filter = 'Audio File|*.wav|All files|*.*'
+    Left = 648
+    Top = 568
+  end
+  object SaveDialog2: TSaveDialog
+    DefaultExt = '.sfs'
+    Filter = 'Sound maker settings|*.sfs|All|*.*'
+    Left = 648
+    Top = 488
+  end
+  object OpenDialog1: TOpenDialog
+    DefaultExt = '.sfs'
+    Filter = 'Sound maker settings|*.sfs|All|*.*'
+    Left = 648
+    Top = 368
+  end
+end

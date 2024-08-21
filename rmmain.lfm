@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 27
-  Height = 1077
-  Top = 9
+  Left = 106
+  Height = 1057
+  Top = 244
   Width = 1824
   Align = alClient
   Caption = 'Raster Master'
@@ -13,7 +13,7 @@ object RMMainForm: TRMMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poDefault
-  LCLVersion = '2.0.10.0'
+  LCLVersion = '3.4.0.0'
   Scaled = False
   object RightPanel: TPanel
     AnchorSideLeft.Control = RightHSplitter
@@ -392,10 +392,10 @@ object RMMainForm: TRMMainForm
         Top = 9
         Width = 54
         Caption = 'HFLIP'
-        OnClick = ToolFlipHorizMenuClick
         ParentShowHint = False
         ShowHint = True
         TabOrder = 0
+        OnClick = ToolFlipHorizMenuClick
       end
       object ToolVFLIPButton: TButton
         Left = 354
@@ -404,10 +404,10 @@ object RMMainForm: TRMMainForm
         Top = 8
         Width = 54
         Caption = 'VFLIP'
-        OnClick = ToolFlipVirtMenuClick
         ParentShowHint = False
         ShowHint = True
         TabOrder = 1
+        OnClick = ToolFlipVirtMenuClick
       end
       object ToolScrollLeftIcon: TImage
         Left = 256
@@ -1451,6 +1451,10 @@ object RMMainForm: TRMMainForm
       object SpriteImportMenu: TMenuItem
         Caption = 'Sprite Import '
         OnClick = SpriteImportMenuClick
+      end
+      object SoundGenerator: TMenuItem
+        Caption = 'Sound Generator (SFXR)'
+        OnClick = SoundGeneratorClick
       end
     end
     object ScriptMenu: TMenuItem

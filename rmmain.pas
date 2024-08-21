@@ -11,7 +11,7 @@ uses
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard;
+  fileprops,rmconfig,rmclipboard,soundgen;
 
 
 type
@@ -75,6 +75,7 @@ type
     gccRayLibCustom: TMenuItem;
     EditProperties: TMenuItem;
     BAMRGBPutData: TMenuItem;
+    SoundGenerator: TMenuItem;
     QBJS: TMenuItem;
     qbjsRGBAFuchsia: TMenuItem;
     qbjsRGBAIndex0: TMenuItem;
@@ -360,6 +361,7 @@ type
     procedure ListView1Click(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
+    procedure SoundGeneratorClick(Sender: TObject);
     procedure TMTPaletteExportClick(Sender: TObject);
     procedure OpenWatcomCClick(Sender: TObject);
     procedure PaletteExportOWCClick(Sender: TObject);
@@ -3668,6 +3670,11 @@ begin
  MapEdit.UpdateTileView;
  MapEdit.Show;
  MapEdit.WindowState:=wsNormal;
+end;
+
+procedure TRMMainForm.SoundGeneratorClick(Sender: TObject);
+begin
+  SoundGeneratorForm.Show;
 end;
 
 procedure TRMMainForm.TMTPaletteExportClick(Sender: TObject);
