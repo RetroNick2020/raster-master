@@ -1,0 +1,219 @@
+object SpriteSheetExportForm: TSpriteSheetExportForm
+  Left = 215
+  Height = 703
+  Top = 274
+  Width = 1264
+  Caption = 'Sprite Sheet Export'
+  ClientHeight = 703
+  ClientWidth = 1264
+  OnActivate = FormActivate
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '3.4.0.0'
+  object Splitter1: TSplitter
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Cursor = crVSplit
+    Left = 0
+    Height = 16
+    Top = 162
+    Width = 1264
+    Align = alNone
+    Anchors = [akLeft, akRight]
+    AutoSnap = False
+    Color = 11625216
+    ParentColor = False
+    ResizeAnchor = akBottom
+  end
+  object ScrollBox1: TScrollBox
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Splitter1
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 525
+    Top = 178
+    Width = 1264
+    HorzScrollBar.Page = 105
+    HorzScrollBar.Tracking = True
+    VertScrollBar.Page = 105
+    VertScrollBar.Tracking = True
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderStyle = bsNone
+    ClientHeight = 525
+    ClientWidth = 1264
+    TabOrder = 1
+    object SpriteSheetPaintBox: TPaintBox
+      Left = 0
+      Height = 105
+      Top = 0
+      Width = 105
+      OnPaint = SpriteSheetPaintBoxPaint
+    end
+  end
+  object Panel1: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = ZoomTrackBar
+    AnchorSideBottom.Control = Splitter1
+    Left = 0
+    Height = 162
+    Top = 0
+    Width = 1207
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ClientHeight = 162
+    ClientWidth = 1207
+    TabOrder = 2
+    object StaticText1: TStaticText
+      Left = 16
+      Height = 17
+      Top = 20
+      Width = 65
+      Caption = 'Sprite Sheet'
+      TabOrder = 0
+    end
+    object SpriteSheet: TComboBox
+      Left = 88
+      Height = 23
+      Top = 20
+      Width = 100
+      ItemHeight = 15
+      ItemIndex = 0
+      Items.Strings = (
+        '320X200'
+        '640X200'
+        '640X350'
+        '640X480'
+        '800X600'
+        '1024X768'
+      )
+      Style = csDropDownList
+      TabOrder = 1
+      Text = '320X200'
+      OnChange = SpriteSheetChange
+    end
+    object StaticText2: TStaticText
+      Left = 208
+      Height = 17
+      Top = 20
+      Width = 65
+      Caption = 'Sprite Size'
+      TabOrder = 2
+    end
+    object SpriteSize: TComboBox
+      Left = 280
+      Height = 23
+      Top = 20
+      Width = 100
+      ItemHeight = 15
+      ItemIndex = 2
+      Items.Strings = (
+        '8X8'
+        '16X16'
+        '32X32'
+        '64X64'
+        '128X128'
+        '256X256'
+      )
+      Style = csDropDownList
+      TabOrder = 3
+      Text = '32X32'
+      OnChange = SpriteSheetChange
+    end
+    object StaticText3: TStaticText
+      Left = 408
+      Height = 17
+      Top = 20
+      Width = 65
+      Caption = 'Direction'
+      TabOrder = 4
+    end
+    object Direction: TComboBox
+      Left = 464
+      Height = 23
+      Top = 20
+      Width = 100
+      ItemHeight = 15
+      ItemIndex = 0
+      Items.Strings = (
+        'Horizontal'
+        'Vertical'
+      )
+      Style = csDropDownList
+      TabOrder = 5
+      Text = 'Horizontal'
+      OnChange = DirectionChange
+    end
+    object StaticText4: TStaticText
+      Left = 584
+      Height = 17
+      Top = 24
+      Width = 137
+      Caption = 'Items Per Row / Column'
+      TabOrder = 6
+    end
+    object ItemsPerRow: TSpinEdit
+      Left = 728
+      Height = 23
+      Top = 24
+      Width = 48
+      MaxValue = 1000
+      MinValue = 1
+      TabOrder = 7
+      Value = 5
+    end
+    object Apply: TButton
+      Left = 792
+      Height = 25
+      Top = 24
+      Width = 75
+      Caption = 'Apply'
+      TabOrder = 8
+      OnClick = ApplyClick
+    end
+    object ExportToClipBoard: TButton
+      Left = 16
+      Height = 25
+      Top = 75
+      Width = 131
+      Caption = 'Export to Clipboard'
+      TabOrder = 9
+      OnClick = ExportToClipBoardClick
+    end
+    object ExportToFile: TButton
+      Left = 208
+      Height = 25
+      Top = 75
+      Width = 99
+      Caption = 'Export to File'
+      TabOrder = 10
+      OnClick = ExportToFileClick
+    end
+  end
+  object ZoomTrackBar: TTrackBar
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 1207
+    Height = 100
+    Top = 20
+    Width = 41
+    Min = 1
+    OnChange = ZoomTrackBarChange
+    Orientation = trVertical
+    Position = 1
+    TickMarks = tmTopLeft
+    Anchors = [akRight]
+    BorderSpacing.Right = 16
+    TabOrder = 3
+  end
+  object SaveDialog1: TSaveDialog
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
+    Left = 1142
+    Top = 123
+  end
+end

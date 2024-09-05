@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 106
+  Left = 375
   Height = 1057
-  Top = 244
+  Top = 71
   Width = 1824
   Align = alClient
   Caption = 'Raster Master'
@@ -1449,8 +1449,12 @@ object RMMainForm: TRMMainForm
         OnClick = MapEditMenuClick
       end
       object SpriteImportMenu: TMenuItem
-        Caption = 'Sprite Import '
+        Caption = 'Sprite Sheet Import '
         OnClick = SpriteImportMenuClick
+      end
+      object SpriteExportMenu: TMenuItem
+        Caption = 'Sprite Sheet Export'
+        OnClick = SpriteExportMenuClick
       end
       object SoundGenerator: TMenuItem
         Caption = 'Sound Generator (SFXR)'

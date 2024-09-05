@@ -2,21 +2,21 @@ object SpriteImportForm: TSpriteImportForm
   Left = 414
   Height = 620
   Top = 374
-  Width = 1106
-  Caption = 'Sprite Import'
+  Width = 1165
+  Caption = 'Sprite Sheet Import'
   ClientHeight = 620
-  ClientWidth = 1106
+  ClientWidth = 1165
   OnCreate = FormCreate
-  LCLVersion = '2.0.10.0'
+  LCLVersion = '3.4.0.0'
   object TopPanel: TPanel
     AnchorSideBottom.Control = SpriteSheetScrollBox
     Left = 0
     Height = 147
     Top = 0
-    Width = 1041
+    Width = 1100
     Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 147
-    ClientWidth = 1041
+    ClientWidth = 1100
     ParentFont = False
     TabOrder = 0
     object SpriteImage: TImage
@@ -31,9 +31,9 @@ object SpriteImportForm: TSpriteImportForm
       Top = 13
       Width = 166
       Caption = 'Import Sprite Sheet'
-      OnClick = OpenSpriteSheetClick
       ParentFont = False
       TabOrder = 0
+      OnClick = OpenSpriteSheetClick
     end
     object SpriteSizeLabel: TLabel
       Left = 339
@@ -47,7 +47,7 @@ object SpriteImportForm: TSpriteImportForm
     object SpriteSizeComboBox: TComboBox
       Left = 416
       Height = 23
-      Top = 15
+      Top = 13
       Width = 100
       ItemHeight = 15
       ItemIndex = 2
@@ -59,11 +59,11 @@ object SpriteImportForm: TSpriteImportForm
         '128 X 128'
         '256 X 256'
       )
-      OnChange = SpriteSizeComboBoxChange
       ParentFont = False
       Style = csDropDownList
       TabOrder = 1
       Text = '32 X 32'
+      OnChange = SpriteSizeComboBoxChange
     end
     object NewPaletteComboBox: TComboBox
       Left = 728
@@ -77,11 +77,11 @@ object SpriteImportForm: TSpriteImportForm
         'New Palette(From Entire Image)'
         'Use Current Sprite Palette'
       )
-      OnChange = NewPaletteComboBoxChange
       ParentFont = False
       Style = csDropDownList
       TabOrder = 2
       Text = 'New Palette(From Entire Image)'
+      OnChange = NewPaletteComboBoxChange
     end
     object PaletteComboBox: TComboBox
       Left = 552
@@ -105,11 +105,11 @@ object SpriteImportForm: TSpriteImportForm
         'Amiga Palette 4'
         'Amiga Palette 2'
       )
-      OnChange = PaletteComboBoxChange
       ParentFont = False
       Style = csDropDownList
       TabOrder = 3
       Text = 'VGA Palette'
+      OnChange = PaletteComboBoxChange
     end
     object ImportFromClipboard: TButton
       Left = 160
@@ -117,26 +117,26 @@ object SpriteImportForm: TSpriteImportForm
       Top = 48
       Width = 166
       Caption = 'Import From Clipboard'
-      OnClick = ImportFromClipboardClick
       ParentFont = False
       TabOrder = 4
+      OnClick = ImportFromClipboardClick
     end
     object CheckBoxDisplayGrid: TCheckBox
       Left = 416
       Height = 19
       Top = 54
-      Width = 83
+      Width = 81
       Caption = 'Display Grid'
       Checked = True
-      OnChange = CheckBoxDisplayGridChange
       State = cbChecked
       TabOrder = 5
+      OnChange = CheckBoxDisplayGridChange
     end
     object CheckBoxSnapToGrid: TCheckBox
       Left = 416
       Height = 19
       Top = 88
-      Width = 85
+      Width = 83
       Caption = 'Snap to Grid'
       Checked = True
       State = cbChecked
@@ -150,7 +150,7 @@ object SpriteImportForm: TSpriteImportForm
       Left = 146
       Height = 23
       Top = 112
-      Width = 884
+      Width = 943
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -166,7 +166,7 @@ object SpriteImportForm: TSpriteImportForm
     Left = 0
     Height = 473
     Top = 147
-    Width = 1106
+    Width = 1165
     HorzScrollBar.Page = 105
     HorzScrollBar.Tracking = True
     VertScrollBar.Page = 105
@@ -174,7 +174,7 @@ object SpriteImportForm: TSpriteImportForm
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderStyle = bsNone
     ClientHeight = 473
-    ClientWidth = 1106
+    ClientWidth = 1165
     ParentFont = False
     TabOrder = 1
     object SpriteSheetPaintBox: TPaintBox
@@ -189,7 +189,7 @@ object SpriteImportForm: TSpriteImportForm
     end
   end
   object ZoomTrackBar: TTrackBar
-    Left = 1056
+    Left = 1115
     Height = 100
     Top = 19
     Width = 25
