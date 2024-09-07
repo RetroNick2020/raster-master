@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, ComCtrls,Clipbrd,rmthumb,rmconfig,rwpng;
+  Spin, ComCtrls,Clipbrd,rmthumb,rmconfig,rwpng,rmcodegen,LazFileUtils;
 
 type
 
@@ -14,9 +14,13 @@ type
 
   TSpriteSheetExportForm = class(TForm)
     Apply: TButton;
+    DescExport: TButton;
     ExportToClipBoard: TButton;
     ExportToFile: TButton;
+    CSWidth: TSpinEdit;
+    CSHeight: TSpinEdit;
     SaveDialog1: TSaveDialog;
+    SaveDialog2: TSaveDialog;
     SpriteSheet: TComboBox;
     SpriteSize: TComboBox;
     Direction: TComboBox;
@@ -25,12 +29,19 @@ type
     ScrollBox1: TScrollBox;
     ItemsPerRow: TSpinEdit;
     Splitter1: TSplitter;
+    DescriptionFile: TComboBox;
     StaticText1: TStaticText;
     StaticText2: TStaticText;
     StaticText3: TStaticText;
     StaticText4: TStaticText;
+    StaticText5: TStaticText;
+    StaticText6: TStaticText;
+    StaticText7: TStaticText;
+    StaticText8: TStaticText;
+    StaticText9: TStaticText;
     ZoomTrackBar: TTrackBar;
     procedure ApplyClick(Sender: TObject);
+    procedure DescExportClick(Sender: TObject);
     procedure DirectionChange(Sender: TObject);
     procedure ExportToClipBoardClick(Sender: TObject);
     procedure ExportToFileClick(Sender: TObject);
@@ -70,6 +81,33 @@ implementation
 {$R *.lfm}
 
 { TSpriteSheetExportForm }
+
+
+procedure calcHoriz(snum,CSWidth,CSHeight,ipr : integer; var x,y,x2,y2 : integer);
+var
+  row,col : integer;
+begin
+  row:=(snum+ipr-1) div ipr;
+  col:=snum-((row-1)*ipr);
+
+  y:=(row-1)*CSHeight;
+  x:=(col-1)*CSWidth;
+  x2:=x+CSWidth-1;
+  y2:=y+CSHeight-1;
+end;
+
+procedure calcVirt(snum,CSWidth,CSHeight,ipr : integer; var x,y,x2,y2 : integer);
+var
+  row,col : integer;
+begin
+  col:=(snum+ipr-1) div ipr;
+  row:=snum-((col-1)*ipr);
+
+  y:=(row-1)*CSHeight;
+  x:=(col-1)*CSWidth;
+  x2:=x+CSWidth-1;
+  y2:=y+CSHeight-1;
+end;
 
 procedure TSpriteSheetExportForm.FormCreate(Sender: TObject);
 begin
@@ -122,6 +160,46 @@ begin
    ImportSprites;
    SpriteSheetPaintBox.Invalidate;
 end;
+
+procedure TSpriteSheetExportForm.DescExportClick(Sender: TObject);
+  var
+    DescName : String;
+    F : Text;
+    c : integer;
+    snum : integer;
+    SWidth,SHeight,x,y,x2,y2 : integer;
+  begin
+   SaveDialog2.Filter := 'BAS|*.bas|All Files|*.*';
+   if NOT SaveDialog2.Execute then exit;
+
+   {$I-}
+    System.Assign(F,SaveDialog2.FileName);
+    Rewrite(F);
+
+    Writeln(F,#39,' Sprite Sheet Description Created By Raster Master');
+    snum:=ImageThumbBase.GetCount;
+    for c:=0 to snum-1 do
+    begin
+      DescName:=ImageThumbBase.GetExportName(c);
+      SWidth:=ImageThumbBase.GetWidth(c);
+      SHeight:=ImageThumbBase.GetHeight(c);
+      if ItemsPerRow.Value = 0 then
+        CalcHoriz(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2)
+      else CalcVirt(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2);
+      Writeln(F,DescName,'Desc:');
+      Writeln(F,#39,' Width=',SWidth,' Height=',SHeight);
+      Writeln(F,'DATA ',x,',',y,',',x2,',',y2);
+    end;
+
+
+    {$I+}
+    if IORESULT<>0 then exit;
+
+    {$I-}
+    System.close(F);
+  {$I+}
+end;
+
 
 procedure TSpriteSheetExportForm.DirectionChange(Sender: TObject);
 begin
@@ -285,6 +363,11 @@ begin
                         SpriteSheetWidth:=1024;
                         SpriteSheetHeight:=768;
                        end;
+                     6:begin
+                        SpriteSheetWidth:=CSWidth.Value;
+                        SpriteSheetHeight:=CSHeight.Value;
+                       end;
+
   end;
 
 end;

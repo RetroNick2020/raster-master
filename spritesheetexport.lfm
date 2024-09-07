@@ -1,11 +1,11 @@
 object SpriteSheetExportForm: TSpriteSheetExportForm
-  Left = 215
+  Left = 246
   Height = 703
   Top = 274
-  Width = 1264
+  Width = 1233
   Caption = 'Sprite Sheet Export'
   ClientHeight = 703
-  ClientWidth = 1264
+  ClientWidth = 1233
   OnActivate = FormActivate
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -19,7 +19,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     Left = 0
     Height = 16
     Top = 162
-    Width = 1264
+    Width = 1233
     Align = alNone
     Anchors = [akLeft, akRight]
     AutoSnap = False
@@ -38,7 +38,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     Left = 0
     Height = 525
     Top = 178
-    Width = 1264
+    Width = 1233
     HorzScrollBar.Page = 105
     HorzScrollBar.Tracking = True
     VertScrollBar.Page = 105
@@ -46,7 +46,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderStyle = bsNone
     ClientHeight = 525
-    ClientWidth = 1264
+    ClientWidth = 1233
     TabOrder = 1
     object SpriteSheetPaintBox: TPaintBox
       Left = 0
@@ -64,10 +64,10 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     Left = 0
     Height = 162
     Top = 0
-    Width = 1207
+    Width = 1176
     Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 162
-    ClientWidth = 1207
+    ClientWidth = 1176
     TabOrder = 2
     object StaticText1: TStaticText
       Left = 16
@@ -91,6 +91,8 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
         '640X480'
         '800X600'
         '1024X768'
+        'Custom'
+        ''
       )
       Style = csDropDownList
       TabOrder = 1
@@ -177,7 +179,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnClick = ApplyClick
     end
     object ExportToClipBoard: TButton
-      Left = 16
+      Left = 280
       Height = 25
       Top = 75
       Width = 131
@@ -186,19 +188,107 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnClick = ExportToClipBoardClick
     end
     object ExportToFile: TButton
-      Left = 208
+      Left = 280
       Height = 25
-      Top = 75
-      Width = 99
+      Top = 104
+      Width = 131
       Caption = 'Export to File'
       TabOrder = 10
       OnClick = ExportToFileClick
+    end
+    object DescExport: TButton
+      Left = 568
+      Height = 25
+      Top = 75
+      Width = 75
+      Caption = 'Export'
+      TabOrder = 11
+      OnClick = DescExportClick
+    end
+    object StaticText5: TStaticText
+      Left = 464
+      Height = 17
+      Top = 56
+      Width = 129
+      Caption = 'Export Description File'
+      TabOrder = 12
+    end
+    object DescriptionFile: TComboBox
+      Left = 464
+      Height = 23
+      Top = 75
+      Width = 100
+      ItemHeight = 15
+      ItemIndex = 0
+      Items.Strings = (
+        'QB64'
+        ''
+      )
+      Style = csDropDownList
+      TabOrder = 13
+      Text = 'QB64'
+      OnChange = SpriteSheetChange
+    end
+    object StaticText6: TStaticText
+      Left = 280
+      Height = 17
+      Top = 56
+      Width = 105
+      Caption = 'Sprite Sheet Export'
+      TabOrder = 14
+    end
+    object StaticText7: TStaticText
+      Left = 16
+      Height = 17
+      Top = 64
+      Width = 120
+      Caption = 'Custom Sprite Sheet'
+      ParentBidiMode = False
+      TabOrder = 15
+    end
+    object StaticText8: TStaticText
+      Left = 16
+      Height = 17
+      Top = 88
+      Width = 65
+      Alignment = taRightJustify
+      Caption = 'Width'
+      TabOrder = 16
+    end
+    object StaticText9: TStaticText
+      Left = 16
+      Height = 17
+      Top = 120
+      Width = 65
+      Alignment = taRightJustify
+      Caption = 'Height'
+      TabOrder = 17
+    end
+    object CSWidth: TSpinEdit
+      Left = 88
+      Height = 23
+      Top = 88
+      Width = 64
+      MaxValue = 4000
+      MinValue = 256
+      TabOrder = 18
+      Value = 2000
+    end
+    object CSHeight: TSpinEdit
+      Left = 88
+      Height = 23
+      Top = 120
+      Width = 64
+      MaxValue = 4000
+      MinValue = 256
+      TabOrder = 19
+      Value = 2000
     end
   end
   object ZoomTrackBar: TTrackBar
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    Left = 1207
+    Left = 1176
     Height = 100
     Top = 20
     Width = 41
@@ -212,8 +302,15 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     TabOrder = 3
   end
   object SaveDialog1: TSaveDialog
+    Title = 'Export'
     Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
     Left = 1142
     Top = 123
+  end
+  object SaveDialog2: TSaveDialog
+    Title = 'Export Description File'
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
+    Left = 1148
+    Top = 57
   end
 end
