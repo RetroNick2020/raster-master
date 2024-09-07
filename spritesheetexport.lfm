@@ -271,6 +271,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       Width = 64
       MaxValue = 4000
       MinValue = 256
+      OnChange = SpriteSheetChange
       TabOrder = 18
       Value = 2000
     end
@@ -281,6 +282,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       Width = 64
       MaxValue = 4000
       MinValue = 256
+      OnChange = SpriteSheetChange
       TabOrder = 19
       Value = 2000
     end
