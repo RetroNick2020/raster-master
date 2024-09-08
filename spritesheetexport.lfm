@@ -196,14 +196,14 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       TabOrder = 10
       OnClick = ExportToFileClick
     end
-    object DescExport: TButton
+    object DescExportToClipboard: TButton
       Left = 568
       Height = 25
       Top = 75
-      Width = 75
-      Caption = 'Export'
+      Width = 131
+      Caption = 'Export To Clipboard'
       TabOrder = 11
-      OnClick = DescExportClick
+      OnClick = DescExportToFileClick
     end
     object StaticText5: TStaticText
       Left = 464
@@ -285,6 +285,15 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnChange = SpriteSheetChange
       TabOrder = 19
       Value = 2000
+    end
+    object DescExportToFile: TButton
+      Left = 568
+      Height = 25
+      Top = 104
+      Width = 131
+      Caption = 'Export to File'
+      TabOrder = 20
+      OnClick = DescExportToFileClick
     end
   end
   object ZoomTrackBar: TTrackBar

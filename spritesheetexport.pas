@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, ComCtrls,Clipbrd,rmthumb,rmconfig,rwpng,rmcodegen,LazFileUtils;
+  Spin, ComCtrls,Clipbrd,rmclipboard,rmthumb,rmconfig,rwpng,rmcodegen,LazFileUtils;
 
 type
 
@@ -14,11 +14,12 @@ type
 
   TSpriteSheetExportForm = class(TForm)
     Apply: TButton;
-    DescExport: TButton;
+    DescExportToClipboard: TButton;
     ExportToClipBoard: TButton;
     ExportToFile: TButton;
     CSWidth: TSpinEdit;
     CSHeight: TSpinEdit;
+    DescExportToFile: TButton;
     SaveDialog1: TSaveDialog;
     SaveDialog2: TSaveDialog;
     SpriteSheet: TComboBox;
@@ -41,7 +42,7 @@ type
     StaticText9: TStaticText;
     ZoomTrackBar: TTrackBar;
     procedure ApplyClick(Sender: TObject);
-    procedure DescExportClick(Sender: TObject);
+    procedure DescExportToFileClick(Sender: TObject);
     procedure DirectionChange(Sender: TObject);
     procedure ExportToClipBoardClick(Sender: TObject);
     procedure ExportToFileClick(Sender: TObject);
@@ -161,19 +162,28 @@ begin
    SpriteSheetPaintBox.Invalidate;
 end;
 
-procedure TSpriteSheetExportForm.DescExportClick(Sender: TObject);
+procedure TSpriteSheetExportForm.DescExportToFileClick(Sender: TObject);
   var
     DescName : String;
     F : Text;
     c : integer;
     snum : integer;
     SWidth,SHeight,x,y,x2,y2 : integer;
+    FileName : string;
   begin
-   SaveDialog2.Filter := 'BAS|*.bas|All Files|*.*';
-   if NOT SaveDialog2.Execute then exit;
-
+   if (Sender As TButton).Name = 'DescExportToFile' then
+   begin
+     SaveDialog2.Filter := 'BAS|*.bas|All Files|*.*';
+     if NOT SaveDialog2.Execute then exit;
+     FileName:=SaveDialog2.FileName;
+   end
+   else
+   begin
+     FileName:=GetTemporaryPathAndFileName;
+   end;
    {$I-}
-    System.Assign(F,SaveDialog2.FileName);
+
+    System.Assign(F,FileName);
     Rewrite(F);
 
     Writeln(F,#39,' Sprite Sheet Description Created By Raster Master');
@@ -183,7 +193,7 @@ procedure TSpriteSheetExportForm.DescExportClick(Sender: TObject);
       DescName:=ImageThumbBase.GetExportName(c);
       SWidth:=ImageThumbBase.GetWidth(c);
       SHeight:=ImageThumbBase.GetHeight(c);
-      if ItemsPerRow.Value = 0 then
+      if Direction.ItemIndex = 0 then
         CalcHoriz(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2)
       else CalcVirt(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2);
       Writeln(F,DescName,'Desc:');
@@ -198,6 +208,13 @@ procedure TSpriteSheetExportForm.DescExportClick(Sender: TObject);
     {$I-}
     System.close(F);
   {$I+}
+  if (Sender As TButton).Name = 'DescExportToClipboard' then
+  begin
+    ReadFileAndCopyToClipboard(FileName);
+    EraseFile(FileName);
+  end;
+
+
 end;
 
 
