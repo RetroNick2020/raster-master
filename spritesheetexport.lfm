@@ -222,7 +222,18 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       ItemIndex = 0
       Items.Strings = (
         'QB64'
-        ''
+        'QBasic'
+        'Freepascal'
+        'Turbo Pascal'
+        'TMT Pascal'
+        'Amiga Pascal'
+        'Quick Pascal'
+        'gcc'
+        'Open Watcom C'
+        'Turbo C'
+        'Quick C'
+        'Amiga C'
+        'JSON'
       )
       Style = csDropDownList
       TabOrder = 13

@@ -31,6 +31,7 @@ Const
    BAMLan  = 18; //Basic Anywhere Machine
    TMTLan  = 19; // TMT Pascal Compiler - 32bit DOS
    QBJSLan = 20; // QB to JS transpiler
+   JsonLan = 21; //for sprite sheet description
 
    NoExportFormat = 0;
    PutImageExportFormat = 1;  //for all compilers the use put/putimage

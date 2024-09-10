@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, ComCtrls,Clipbrd,rmclipboard,rmthumb,rmconfig,rwpng,rmcodegen,LazFileUtils;
+  Spin, ComCtrls,Clipbrd,rmcodegen,rwxgf,rmclipboard,rmthumb,rmconfig,rwpng,LazFileUtils;
 
 type
 
@@ -162,18 +162,93 @@ begin
    SpriteSheetPaintBox.Invalidate;
 end;
 
+
+function menuToLan(menuid : integer) : integer;
+begin
+  case menuid of 0:menutoLan:=QB64Lan;
+                 1:menutoLan:=QBLan;
+                 2:menutoLan:=FPLan;
+                 3:menutoLan:=TPLan;
+                 4:menutoLan:=TMTLan;
+                 5:menutoLan:=APLan;
+                 6:menutoLan:=QPLan;
+                 7:menutoLan:=gccLan;
+                 8:menutoLan:=OWLan;
+                 9:menutoLan:=TCLan;
+                10:menutoLan:=QCLan;
+                11:menutoLan:=ACLan;
+                12:menutoLan:=JSonLan;
+
+
+  end;
+end;
+
+function LanToFileFilter(Lan : integer) : string;
+begin
+  case Lan of QB64Lan,QBLan:LanToFileFilter:='BAS|*.bas|All Files|*.*';
+              FPLan,TPLan,TMTLan,APLan:LanToFileFilter:='PAS|*.pas|All Files|*.*';
+              QCLan,gccLan,OWLan,TCLan,ACLan:LanToFileFilter:='C|*.c|All Files|*.*';
+              JSonLan:LanToFileFilter:='JSON|*.json|All Files|*.*';
+  end;
+end;
+
+procedure WriteHeader(var F : Text;lan : integer);
+var
+   headstr : string;
+begin
+  headstr:='Sprite Sheet Description Created By Raster Master';
+  case Lan of QB64Lan,QBLan:Writeln(F,#39,' ',headstr);
+              FPLan,TPLan,TMTLan,APLan:Writeln(F,'(* ',headstr,' *)');
+              QCLan,gccLan,OWLan,TCLan,ACLan:Writeln(F,'/* ',headstr,' */');
+  end;
+end;
+
+procedure WriteDesc(var F : Text;lan : integer;DescName : string; swidth,sheight,x,y,x2,y2 : integer;csprite,snum : integer);
+begin
+  case Lan of QBLan,QB64Lan:begin
+                        Writeln(F,DescName,'Desc:');
+                        Writeln(F,#39,' Width=',SWidth,' Height=',SHeight);
+                        Writeln(F,'DATA ',x,',',y,',',x2,',',y2);
+                      end;
+          APLan,QPLan,TMTLan,FPLan,TPLan:begin
+                         Writeln(F,'(* ',DescName,' Width=',SWidth,' Height=',SHeight,' *)');
+                         Writeln(F,DescName,'Desc: Array[1..4] of Integer=(',x,',',y,',',x2,',',y2,');');
+                      end;
+           gccLan,OWLan,TCLan,QCLan,ACLan:begin
+                         Writeln(F,'/* ',DescName,' Width=',SWidth,' Height=',SHeight,' */');
+                         Writeln(F,'int ',DescName,'[] = {',x,',',y,',',x2,',',y2,'};');
+                                 end;
+               JsonLan:begin
+                         if csprite = 1 then Writeln(F,'[');
+                         Writeln(F,' {');
+                         Writeln(F,'  DescName: "',DescName,'",');
+                         Writeln(F,'  Width:',SWidth,',');
+                         Writeln(F,'  Height:',SHeight,',');
+                         Writeln(F,'  x:',x,',');
+                         Writeln(F,'  y:',y,',');
+                         Writeln(F,'  x2:',x2,',');
+                         Writeln(F,'  y2:',y2);
+                         if csprite < snum then Writeln(F,'  },') else Writeln(F,'  }');
+                         if csprite = snum then Writeln(F,']');
+                       end;
+
+  end;
+end;
+
 procedure TSpriteSheetExportForm.DescExportToFileClick(Sender: TObject);
   var
     DescName : String;
     F : Text;
     c : integer;
-    snum : integer;
+    Lan,snum : integer;
     SWidth,SHeight,x,y,x2,y2 : integer;
     FileName : string;
   begin
+   Lan:=menutoLan(DescriptionFile.ItemIndex);
    if (Sender As TButton).Name = 'DescExportToFile' then
    begin
-     SaveDialog2.Filter := 'BAS|*.bas|All Files|*.*';
+//     SaveDialog2.Filter := 'BAS|*.bas|All Files|*.*';
+     SaveDialog2.Filter := LanToFileFilter(Lan);
      if NOT SaveDialog2.Execute then exit;
      FileName:=SaveDialog2.FileName;
    end
@@ -186,7 +261,8 @@ procedure TSpriteSheetExportForm.DescExportToFileClick(Sender: TObject);
     System.Assign(F,FileName);
     Rewrite(F);
 
-    Writeln(F,#39,' Sprite Sheet Description Created By Raster Master');
+//    Writeln(F,#39,' Sprite Sheet Description Created By Raster Master');
+    WriteHeader(F,Lan);
     snum:=ImageThumbBase.GetCount;
     for c:=0 to snum-1 do
     begin
@@ -196,11 +272,12 @@ procedure TSpriteSheetExportForm.DescExportToFileClick(Sender: TObject);
       if Direction.ItemIndex = 0 then
         CalcHoriz(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2)
       else CalcVirt(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2);
-      Writeln(F,DescName,'Desc:');
-      Writeln(F,#39,' Width=',SWidth,' Height=',SHeight);
-      Writeln(F,'DATA ',x,',',y,',',x2,',',y2);
-    end;
 
+//      Writeln(F,DescName,'Desc:');
+//      Writeln(F,#39,' Width=',SWidth,' Height=',SHeight);
+//      Writeln(F,'DATA ',x,',',y,',',x2,',',y2);
+      WriteDesc(F,Lan,DescName,swidth,sheight,x,y,x2,y2,c+1,snum);
+    end;
 
     {$I+}
     if IORESULT<>0 then exit;
