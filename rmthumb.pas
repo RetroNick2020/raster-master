@@ -551,10 +551,20 @@ begin
    width:=ImageMain[index].Props.Width;
    height:=ImageMain[index].Props.Height;
 
+   //DstBitMap := TBitmap.Create;
+   //DstBitMap.SetSize(256,256);
+   //DstBitMap.PixelFormat:=pf24bit;
+   //DstBitMap.TransparentColor:=RGBToColor(255,0,255);
+   //DstBitMap.Transparent:=true;
+   //DstBitMap.TransparentMode:=tmFixed;
+   //SrcBitMap := TBitmap.Create;
+   //SrcBitMap.SetSize(width,height);
+   //SrcBitMap.PixelFormat:=pf24bit;
    DstBitMap := TBitmap.Create;
    DstBitMap.SetSize(256,256);
    SrcBitMap := TBitmap.Create;
    SrcBitMap.SetSize(width,height);
+
 
    for j:=0 to height-1 do
    begin

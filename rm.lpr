@@ -12,7 +12,7 @@ uses
   rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
   fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr, 
-SpriteSheetExport
+SpriteSheetExport, animate, AnimBase
      { you can add units after this };
 
 {$R *.res}
@@ -34,6 +34,7 @@ begin
   Application.CreateForm(TFileProperties, FilePropertiesDialog);
   Application.CreateForm(TSoundGeneratorForm, SoundGeneratorForm);
   Application.CreateForm(TSpriteSheetExportForm, SpriteSheetExportForm);
+  Application.CreateForm(TAnimationForm, AnimationForm);
   Application.Run;
 end.
 

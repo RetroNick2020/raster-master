@@ -11,7 +11,7 @@ uses
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard,soundgen;
+  fileprops,rmconfig,rmclipboard,soundgen,animate;
 
 
 type
@@ -75,6 +75,7 @@ type
     gccRayLibCustom: TMenuItem;
     EditProperties: TMenuItem;
     BAMRGBPutData: TMenuItem;
+    SpriteAnimationMenu: TMenuItem;
     SpriteExportMenu: TMenuItem;
     SoundGenerator: TMenuItem;
     QBJS: TMenuItem;
@@ -363,6 +364,7 @@ type
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
     procedure SoundGeneratorClick(Sender: TObject);
+    procedure SpriteAnimationMenuClick(Sender: TObject);
     procedure SpriteExportMenuClick(Sender: TObject);
     procedure TMTPaletteExportClick(Sender: TObject);
     procedure OpenWatcomCClick(Sender: TObject);
@@ -3677,6 +3679,13 @@ end;
 procedure TRMMainForm.SoundGeneratorClick(Sender: TObject);
 begin
   SoundGeneratorForm.Show;
+  SoundGeneratorForm.WindowState:=wsNormal;
+end;
+
+procedure TRMMainForm.SpriteAnimationMenuClick(Sender: TObject);
+begin
+ AnimationForm.Show;
+ AnimationForm.WindowState:=wsNormal;
 end;
 
 procedure TRMMainForm.SpriteExportMenuClick(Sender: TObject);

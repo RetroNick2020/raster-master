@@ -25,6 +25,7 @@ type
     ReSizeMap128x128: TMenuItem;
     StatusBar1: TStatusBar;
     StatusBar2: TStatusBar;
+    TileImageList: TImageList;
     ToolPencilMenu: TMenuItem;
     ToolLineMenu: TMenuItem;
     ToolRectangleMenu: TMenuItem;
@@ -48,7 +49,6 @@ type
     Undo: TMenuItem;
     PasteFromClipBoard: TMenuItem;
     Panel2: TPanel;
-    TileImageList: TImageList;
     MenuItem10: TMenuItem;
     Clear: TMenuItem;
     ExportCArray: TMenuItem;
@@ -85,7 +85,6 @@ type
     TileModeErase: TMenuItem;
     SelectedTileImage: TImage;
     MainMenu1: TMainMenu;
-    ImageList1: TImageList;
     FileMenuItem: TMenuItem;
     MenuItem1: TMenuItem;
     ReSize8x8: TMenuItem;

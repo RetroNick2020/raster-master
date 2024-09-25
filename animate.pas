@@ -1,0 +1,616 @@
+unit animate;
+
+{$mode ObjFPC}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, ExtCtrls,
+  ComCtrls, Menus, StdCtrls,AnimBase,rmthumb,rwpng,fileprops;
+
+type
+
+  { TAnimationForm }
+
+  TAnimationForm = class(TForm)
+    CurrentAnimationImageList: TImageList;
+    AnimThumbImageList: TImageList;
+    CopyMenu: TMenuItem;
+    AddFrameMenu: TMenuItem;
+    DeleteMenu: TMenuItem;
+    CopyFromThumbView: TMenuItem;
+    AnimDeleteMenu: TMenuItem;
+    MainMenu1: TMainMenu;
+    MenuItem1: TMenuItem;
+    MenuItem10: TMenuItem;
+    MenuItem11: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    MenuItem4: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
+    MenuItem9: TMenuItem;
+    NewAnimationMenu: TMenuItem;
+    OpenDialog1: TOpenDialog;
+    Panel1: TPanel;
+    PasteMenu: TMenuItem;
+    PopupMenu1: TPopupMenu;
+    PopupMenu2: TPopupMenu;
+    PopupMenu3: TPopupMenu;
+    SaveDialog1: TSaveDialog;
+    SelectDirectoryDialog1: TSelectDirectoryDialog;
+    SpriteListView: TListView;
+    CurrentAnimListView: TListView;
+    AllAnimListView: TListView;
+    LeftPanel: TPanel;
+    MiddlePanel: TPanel;
+    RightPanel: TPanel;
+    Timer1: TTimer;
+    TopSplitter: TSplitter;
+    LeftSplitter: TSplitter;
+    RightSplitter: TSplitter;
+    procedure AddFrameMenuClick(Sender: TObject);
+    procedure AllAnimListViewClick(Sender: TObject);
+    procedure AllAnimListViewShowHint(Sender: TObject; HintInfo: PHintInfo);
+    procedure AnimDeleteMenuClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure CopyFromThumbViewClick(Sender: TObject);
+    procedure CopyMenuClick(Sender: TObject);
+
+    procedure CurrentAnimListViewDragDrop(Sender, Source: TObject; X, Y: Integer
+      );
+    procedure CurrentAnimListViewDragOver(Sender, Source: TObject; X,
+      Y: Integer; State: TDragState; var Accept: Boolean);
+    procedure DeleteMenuClick(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormPaint(Sender: TObject);
+    procedure AnimExportMenuClick(Sender: TObject);
+    procedure AnimCopyMenuClick(Sender: TObject);
+    procedure AnimPasteMenuClick(Sender: TObject);
+    procedure MenuItem10Click(Sender: TObject);
+    procedure MenuItem11Click(Sender: TObject);
+    procedure MenuItem2Click(Sender: TObject);
+    procedure MenuItem3Click(Sender: TObject);
+    procedure MenuItem9Click(Sender: TObject);
+    procedure NewAnimationMenuClick(Sender: TObject);
+    procedure PasteMenuClick(Sender: TObject);
+    procedure SpriteListViewDblClick(Sender: TObject);
+    procedure SpriteListViewDragDrop(Sender, Source: TObject; X, Y: Integer);
+
+    procedure Timer1StartTimer(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+  private
+
+  public
+    AnimFrameCounter : integer;
+
+    procedure LoadImageThumbList;
+    procedure LoadCurrentAnimList;
+    procedure LoadAnimThumbList;
+    procedure AddFrame(ImageIndex : integer);
+    procedure InsertFrame(FrameIndex,ImageIndex : integer);
+    procedure MoveFrame(FromFrameIndex,ToFrameIndex : integer);
+    procedure DeleteFrame(ImageIndex : integer);
+    procedure AddEmptyFrame;
+
+    procedure AddAnimation;
+    procedure DeleteAnimation(AnimationIndex : integer);
+    procedure SelectAnimation(AnimationIndex : integer);
+
+  end;
+
+var
+  AnimationForm: TAnimationForm;
+
+implementation
+       uses rmmain;
+{$R *.lfm}
+
+{ TAnimationForm }
+
+procedure TAnimationForm.FormCreate(Sender: TObject);
+begin
+//    SpriteListView.Hint:='hello';
+//    SpriteListView.ShowHint:=true;
+
+ //   CurrentAnimListView.Hint:='hello2';
+ //   CurrentAnimListView.ShowHint:=true;
+
+end;
+
+procedure TAnimationForm.FormPaint(Sender: TObject);
+begin
+  //CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,AnimFrameCounter,true);
+end;
+
+procedure TAnimationForm.AnimExportMenuClick(Sender: TObject);
+  var
+   PngRGBA : PngRGBASettingsRec;
+   FileName : String;
+   i : integer;
+   ImageIndex : integer;
+   count      : integer;
+  begin
+   //ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+   count:=0;
+   FilePropertiesDialog.GetProps(PngRGBA);
+   if SelectDirectoryDialog1.Execute then
+   begin
+     for i:=0 to AnimateBase.GetFrameCount-1 do
+     begin
+       ImageIndex:=AnimateBase.GetImageIndex(i);
+       inc(count);
+       FileName:=IncludeTrailingPathDelimiter(SelectDirectoryDialog1.filename)+'Animation'+IntToStr(count)+'.png';
+       SaveFromThumbAsPNG(ImageIndex,FileName,PngRGBA);
+     end;
+   end;
+end;
+
+
+procedure TAnimationForm.AnimCopyMenuClick(Sender: TObject);
+ var
+  index : integer;
+ begin
+ if SpriteListView.ItemIndex > -1  then
+ begin
+    index:=SpriteListView.ItemIndex;
+    if index > -1 then AnimateBase.CopyToClipBoard(index,ImageThumbBase.GetUID(index));
+ end
+ else if CurrentAnimListView.ItemIndex > -1 then
+ begin
+   index:=CurrentAnimListView.ItemIndex;
+   if index > -1 then AnimateBase.CopyToClipBoard(AnimateBase.GetImageIndex(index),AnimateBase.GetUID(index));
+ end
+ else if AllAnimListView.ItemIndex > -1 then
+ begin
+
+ end;
+end;
+
+procedure TAnimationForm.AnimPasteMenuClick(Sender: TObject);
+var
+ index : integer;
+ ImageIndex : integer;
+ uid : TGUID;
+begin
+  index:=CurrentAnimListView.ItemIndex;
+  if index > -1 then
+  begin
+    if AnimateBase.GetClipBoardStatus then
+    begin
+     AnimateBase.PasteFromClipBoard(ImageIndex,uid);
+     AnimateBase.ChangeFrame(index,ImageIndex,uid);
+     //add code to check if image still exists - it may have been deleted since it was copied to clipboard
+     CurrentAnimListView.Items[index].ImageIndex:=ImageIndex;
+    end;
+  end;
+end;
+
+procedure TAnimationForm.MenuItem10Click(Sender: TObject);
+begin
+  AddEmptyFrame;
+end;
+
+procedure TAnimationForm.MenuItem11Click(Sender: TObject);
+var
+  index : integer;
+begin
+  index:=CurrentAnimListView.ItemIndex;
+  if index > -1 then DeleteFrame(Index);
+
+  index:=AllAnimListView.ItemIndex;
+  if index > -1 then DeleteAnimation(Index);
+
+end;
+
+procedure TAnimationForm.MenuItem2Click(Sender: TObject);
+begin
+ OpenDialog1.Filter := 'RM Animation Files|*.rma|All Files|*.*';
+ if OpenDialog1.Execute then
+ begin
+  AnimateBase.Open(OpenDialog1.FileName);
+  LoadCurrentAnimList;
+  LoadAnimThumbList;
+
+  CurrentAnimListView.Repaint;
+  AllAnimListView.Repaint;
+ end;
+end;
+
+procedure TAnimationForm.MenuItem3Click(Sender: TObject);
+begin
+ SaveDialog1.Filter := 'RM Animation Files|*.rma|All Files|*.*';
+ if SaveDialog1.Execute then
+ begin
+   AnimateBase.Save(SaveDialog1.FileName);
+ end;
+end;
+
+procedure TAnimationForm.MenuItem9Click(Sender: TObject);
+begin
+  AddAnimation;
+end;
+
+procedure TAnimationForm.AddAnimation;
+begin
+  AnimateBase.AddAnimation;
+
+  LoadCurrentAnimList;
+  LoadAnimThumbList;
+
+  CurrentAnimListView.Repaint;
+  AllAnimListView.Repaint;
+end;
+
+
+procedure TAnimationForm.DeleteAnimation(AnimationIndex : integer);
+begin
+  AnimateBase.DeleteAnimation(AnimationIndex);
+
+  LoadCurrentAnimList;
+  LoadAnimThumbList;
+
+  CurrentAnimListView.Repaint;
+  AllAnimListView.Repaint;
+end;
+
+procedure TAnimationForm.SelectAnimation(AnimationIndex : integer);
+begin
+  AnimateBase.SetCurrentAnimation(AnimationIndex);
+  LoadCurrentAnimList;
+  LoadAnimThumbList;
+
+  CurrentAnimListView.Repaint;
+  AllAnimListView.Repaint;
+end;
+
+
+procedure TAnimationForm.NewAnimationMenuClick(Sender: TObject);
+begin
+ AddAnimation;
+end;
+
+procedure TAnimationForm.PasteMenuClick(Sender: TObject);
+var
+  index,ImageIndex : integer;
+  uid : TGUID;
+begin
+  index:=CurrentAnimListView.ItemIndex;
+  if index > -1 then
+  begin
+    if AnimateBase.GetClipBoardStatus then
+    begin
+      AnimateBase.PasteFromClipBoard(ImageIndex,uid);
+      AnimateBase.ChangeFrame(index,ImageIndex,uid);
+      //add code to check if image still exists - it may have been deleted since it was copied to clipboard
+      CurrentAnimListView.Items[index].ImageIndex:=ImageIndex;
+    end;
+  end
+  else    //if paste in area where there is no empty frame or other image
+  begin
+     if AnimateBase.GetClipBoardStatus then
+     begin
+       AnimateBase.PasteFromClipBoard(ImageIndex,uid);
+       AddFrame(ImageIndex);
+     end;
+  end;
+end;
+
+procedure TAnimationForm.SpriteListViewDblClick(Sender: TObject);
+begin
+//  ShowMessage(IntToStr((Sender as TListView).ItemIndex));
+   AddFrame((Sender as TListView).ItemIndex);
+end;
+
+procedure TAnimationForm.LoadCurrentAnimList;
+var
+  ImageCount,i : integer;
+  MEBitMap  : TBitMap;  //missing extra bitmap
+  FoundImage     : integer;
+
+begin
+   CurrentAnimationImageList.Clear;
+   CurrentAnimationImageList.Width:=128;
+   CurrentAnimationImageList.Height:=128;
+   CurrentAnimationImageList.AddImages(RmMainForm.ImageList1);
+
+   MEBitMap:=TBitMap.Create;
+   MEBitMap.SetSize(128,128);
+   MEBitMap.Canvas.FillRect(0,0,127,127);
+
+   CurrentAnimationImageList.Add(MEBitMap,nil);
+   MEBitMap.Free;
+   ImageCount:=AnimateBase.GetFrameCount;
+   CurrentAnimListView.Clear;
+   for i:=0 to ImageCount-1 do
+   begin
+     CurrentAnimListView.AddItem('Frame '+IntToStr(i+1), self);
+     if IsEqualGUID(AnimateBase.GetUID(i),ImageThumbBase.GetUID(i)) then          //verify that image still exist
+     begin
+         CurrentAnimListView.Items[i].ImageIndex:=AnimateBase.GetImageIndex(i);
+     end
+     else
+     begin
+       FoundImage:=ImageThumbBase.FindUID(AnimateBase.GetUID(i));
+       if FoundImage<>-1 then
+       begin
+          AnimateBase.ChangeFrame(i,FoundImage,AnimateBase.GetUID(i));
+          CurrentAnimListView.Items[i].ImageIndex:=AnimateBase.GetImageIndex(i);
+       end
+       else
+       begin
+         //CreateGUID(uid);
+         //AnimateBase.ChangeFrame(i,-1,uid);
+         CurrentAnimListView.Items[i].ImageIndex:=CurrentAnimationImageList.Count-1;
+       end;
+     end;
+   end;
+end;
+
+procedure TAnimationForm.LoadImageThumbList;
+var
+  ImageCount,i : integer;
+begin
+   SpriteListView.Items.Clear;
+   ImageCount:=ImageThumbBase.GetCount;
+   for i:=0 to ImageCount-1 do
+   begin
+     SpriteListView.AddItem('Image '+IntToStr(i+1), self);
+     SpriteListView.Items[i].ImageIndex:=i;
+   end;
+   CurrentAnimationImageList.Clear;
+   CurrentAnimationImageList.Width:=128;
+   CurrentAnimationImageList.Height:=128;
+   CurrentAnimationImageList.AddImages(RMMainForm.ImageList1);
+end;
+
+procedure TAnimationForm.LoadAnimThumbList;
+var
+  AnimCount,i : integer;
+begin
+   AnimThumbImageList.Clear;
+   AnimThumbImageList.Width:=128;
+   AnimThumbImageList.Height:=128;
+   AnimThumbImageList.AddImages(CurrentAnimationImageList);
+
+   AllAnimListView.Items.Clear;
+   AnimCount:=AnimateBase.GetAnimationCount;
+   for i:=0 to AnimCount-1 do
+   begin
+     AllAnimListView.AddItem('Animation '+IntToStr(i+1), self);
+     if AnimateBase.GetImageIndex(i,0) <> -1 then
+        AllAnimListView.Items[i].ImageIndex:=AnimateBase.GetImageIndex(i,0)
+     else
+        AllAnimListView.Items[i].ImageIndex:=AnimThumbImageList.Count-1; //empty frame icon
+   end;
+end;
+
+procedure TAnimationForm.SpriteListViewDragDrop(Sender, Source: TObject; X,
+  Y: Integer);
+begin
+
+end;
+
+
+
+procedure TAnimationForm.Timer1StartTimer(Sender: TObject);
+begin
+  AnimFrameCounter:=0;
+//  if AnimateBase.GetFrameCount > 0 then AnimFrameCounter:=1;
+//  if AnimFrameCounter > 0 then CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,AnimateBase.GetImageIndex(AnimFrameCounter-1),true);
+//  info.Caption:=IntToStr(AnimFrameCounter);
+end;
+
+procedure TAnimationForm.Timer1Timer(Sender: TObject);
+var
+   ImageIndex : integer;
+begin
+  inc(AnimFrameCounter);
+  if AnimFrameCounter > AnimateBase.GetFrameCount then
+  begin
+      AnimFrameCounter:=1;
+  end;
+
+  if  AnimateBase.GetFrameCount > 0 then
+  begin
+    ImageIndex:=AnimateBase.GetImageIndex(AnimFrameCounter-1);
+ //   if ImageIndex <> -1 then
+ //   begin
+        CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,ImageIndex,true);
+ //   end;
+// if AnimFrameCounter > 0 then info.Caption:='Frame: '+IntToStr(AnimFrameCounter-1)+' Image Index:'+IntToStr(ImageIndex)+' Frame count'+IntToStr(AnimateBase.GetFrameCount);
+
+ end;
+end;
+
+procedure TAnimationForm.FormActivate(Sender: TObject);
+begin
+   LoadImageThumbList;
+   LoadCurrentAnimList;
+   LoadAnimThumbList;
+
+   SpriteListView.Repaint;
+   CurrentAnimListView.Repaint;
+   AllAnimListView.Repaint;
+end;
+
+procedure TAnimationForm.AddFrame(ImageIndex : integer);
+var
+  uid  : TGUID;
+begin
+   uid:=ImageThumbBase.GetUID(ImageIndex);
+   AnimateBase.AddFrame(ImageIndex,uid);
+   LoadCurrentAnimList;
+   CurrentAnimListView.Repaint;
+   LoadAnimThumbList;
+   AllAnimListView.Repaint;
+
+//   CurrentAnimListView.AddItem('Frame '+IntToStr(AnimateBase.GetFrameCount),self);
+//   CurrentAnimListView.Items[AnimateBase.GetFrameCount-1].ImageIndex:=ImageIndex;
+end;
+
+
+procedure TAnimationForm.AddEmptyFrame;
+var
+  uid  : TGUID;
+begin
+   AnimateBase.AddFrame(-1,uid);
+   LoadCurrentAnimList;
+   CurrentAnimListView.Repaint;
+   LoadAnimThumbList;
+   AllAnimListView.Repaint;
+end;
+
+procedure TAnimationForm.DeleteFrame(ImageIndex : integer);
+begin
+   AnimateBase.DeleteFrame(ImageIndex);
+   LoadCurrentAnimList;
+   CurrentAnimListView.Repaint;
+   LoadAnimThumbList;
+   AllAnimListView.Repaint;
+end;
+
+
+procedure TAnimationForm.InsertFrame(FrameIndex,ImageIndex : integer);
+var
+  uid  : TGUID;
+begin
+   uid:=ImageThumbBase.GetUID(ImageIndex);
+   AnimateBase.InsertFrame(FrameIndex, ImageIndex,uid);
+   LoadCurrentAnimList;
+   CurrentAnimListView.Repaint;
+   if FrameIndex = 0 then
+   begin
+     LoadAnimThumbList;
+     AllAnimListView.Repaint;
+   end;
+end;
+
+
+procedure TAnimationForm.MoveFrame(FromFrameIndex,ToFrameIndex : integer);
+begin
+   if FromFrameIndex <> ToFrameIndex then
+   begin
+     AnimateBase.MoveFrame(FromFrameIndex, ToFrameIndex);
+     LoadCurrentAnimList;
+     CurrentAnimListView.Repaint;
+
+     if ToFrameIndex = 0 then
+     begin
+       LoadAnimThumbList;
+       AllAnimListView.Repaint;
+     end;
+   end;
+end;
+
+procedure TAnimationForm.CurrentAnimListViewDragDrop(Sender, Source: TObject;
+  X, Y: Integer);
+var
+  index,destindex : integer;
+  item  : TListItem;
+begin
+   destindex:=-1;
+   index:=(Source as TListView).ItemIndex;
+   //  showMessage(IntToStr(index));
+   item:=CurrentAnimListView.GetItemAt(x,y);
+
+   if assigned(item) then
+   begin
+     destindex:=item.Index;
+   end;
+
+   if Source = Sender then     //Move Frame
+   begin
+       if destindex > -1 then
+       begin
+         MoveFrame(index,destindex);
+         //ShowMessage('Move: '+IntToStr(destindex)+' '+IntToStr(index));
+       end;
+   end
+   else
+   begin
+     if (destindex <> -1) and  (AnimateBase.GetFrameCount > 0) then
+     begin
+         //ShowMessage('Dest:'+IntToStr(destindex)+' Image Index:'+IntTostr(index));
+         InsertFrame(destindex,index);
+     end
+     else  AddFrame(index);
+   end;
+end;
+
+procedure TAnimationForm.AllAnimListViewShowHint(Sender: TObject;
+  HintInfo: PHintInfo);
+begin
+ //  (Sender As TListView).Hint:='New Hint';
+
+end;
+
+procedure TAnimationForm.AnimDeleteMenuClick(Sender: TObject);
+var
+  index : integer;
+begin
+   index:=AllAnimListView.ItemIndex;
+   if index > -1 then  DeleteAnimation(index);
+end;
+
+procedure TAnimationForm.Button1Click(Sender: TObject);
+begin
+//  Panel1.Canvas.Draw(10,10,AnimThumbImageList.
+//  CurrentAnimationImageList.bkColor:=RGBToColor(0,0,0);
+  CurrentAnimationImageList.BlendColor:=RGBToColor(0,0,0);
+  CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,0,true);
+
+end;
+
+procedure TAnimationForm.AddFrameMenuClick(Sender: TObject);
+begin
+  AddEmptyFrame;
+end;
+
+procedure TAnimationForm.AllAnimListViewClick(Sender: TObject);
+var
+  index : integer;
+begin
+   index:=(Sender As TListView).ItemIndex;
+   if (index > -1) and (index<>AnimateBase.GetCurrentAnimation) then SelectAnimation(index);
+end;
+
+procedure TAnimationForm.CopyFromThumbViewClick(Sender: TObject);
+var
+  index : integer;
+begin
+  index:=SpriteListView.ItemIndex;
+  if index > -1 then AnimateBase.CopyToClipBoard(index,ImageThumbBase.GetUID(index));
+end;
+
+procedure TAnimationForm.CopyMenuClick(Sender: TObject);
+var
+  index : integer;
+begin
+  index:=CurrentAnimListView.ItemIndex;
+  if index > -1 then AnimateBase.CopyToClipBoard(AnimateBase.GetImageIndex(index),AnimateBase.GetUID(index));
+//  info.Caption:='Copy: '+IntToStr(index)+' '+IntToStr(AnimateBase.GetImageIndex(index));
+end;
+
+
+
+procedure TAnimationForm.CurrentAnimListViewDragOver(Sender, Source: TObject;
+  X, Y: Integer; State: TDragState; var Accept: Boolean);
+begin
+
+end;
+
+procedure TAnimationForm.DeleteMenuClick(Sender: TObject);
+var
+  index : integer;
+begin
+  index:=CurrentAnimListView.ItemIndex;
+//  info.Caption:='Delete: '+IntToStr(index)+' '+IntToStr(AnimateBase.GetImageIndex(index));
+  DeleteFrame(Index);
+end;
+
+end.
+

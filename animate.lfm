@@ -1,0 +1,309 @@
+object AnimationForm: TAnimationForm
+  Left = 279
+  Height = 747
+  Top = 223
+  Width = 1152
+  Caption = 'Sprite Animation'
+  ClientHeight = 747
+  ClientWidth = 1152
+  Menu = MainMenu1
+  OnActivate = FormActivate
+  OnCreate = FormCreate
+  LCLVersion = '3.4.0.0'
+  object Panel1: TPanel
+    Left = 32
+    Height = 144
+    Top = 8
+    Width = 144
+    TabOrder = 6
+  end
+  object TopSplitter: TSplitter
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Cursor = crVSplit
+    Left = 0
+    Height = 9
+    Top = 245
+    Width = 1152
+    Align = alNone
+    Anchors = [akLeft, akRight]
+    Color = 11625216
+    ParentColor = False
+    ResizeAnchor = akTop
+  end
+  object LeftSplitter: TSplitter
+    AnchorSideTop.Control = TopSplitter
+    AnchorSideTop.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 175
+    Height = 493
+    Top = 254
+    Width = 9
+    Align = alNone
+    Anchors = [akTop, akLeft, akBottom]
+    Color = 11625216
+    ParentColor = False
+  end
+  object RightSplitter: TSplitter
+    AnchorSideTop.Control = TopSplitter
+    AnchorSideTop.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 952
+    Height = 493
+    Top = 254
+    Width = 9
+    Align = alNone
+    Anchors = [akTop, akLeft, akBottom]
+    Color = 11625216
+    ParentColor = False
+  end
+  object LeftPanel: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = TopSplitter
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = LeftSplitter
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 493
+    Top = 254
+    Width = 175
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Caption = 'LeftPanel'
+    ClientHeight = 493
+    ClientWidth = 175
+    Color = 15790320
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 3
+    object SpriteListView: TListView
+      AnchorSideLeft.Control = LeftPanel
+      AnchorSideTop.Control = LeftPanel
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = LeftPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 1
+      Height = 491
+      Top = 1
+      Width = 173
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Color = 15790320
+      Columns = <>
+      DragMode = dmAutomatic
+      IconOptions.AutoArrange = True
+      LargeImages = RMMainForm.ImageList1
+      LargeImagesWidth = 128
+      PopupMenu = PopupMenu2
+      ReadOnly = True
+      TabOrder = 0
+      ViewStyle = vsIcon
+      OnDblClick = SpriteListViewDblClick
+      OnDragDrop = SpriteListViewDragDrop
+    end
+  end
+  object MiddlePanel: TPanel
+    AnchorSideLeft.Control = LeftSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = TopSplitter
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = RightSplitter
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 184
+    Height = 493
+    Top = 254
+    Width = 768
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Caption = 'MiddlePanel'
+    ClientHeight = 493
+    ClientWidth = 768
+    TabOrder = 4
+    object CurrentAnimListView: TListView
+      AnchorSideLeft.Control = MiddlePanel
+      AnchorSideTop.Control = MiddlePanel
+      AnchorSideRight.Control = MiddlePanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = MiddlePanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 1
+      Height = 491
+      Top = 1
+      Width = 766
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Color = 15790320
+      Columns = <>
+      ColumnClick = False
+      DragMode = dmAutomatic
+      IconOptions.AutoArrange = True
+      LargeImages = CurrentAnimationImageList
+      LargeImagesWidth = 128
+      ParentShowHint = False
+      PopupMenu = PopupMenu1
+      ReadOnly = True
+      ShowColumnHeaders = False
+      TabOrder = 0
+      ViewStyle = vsIcon
+      OnDragDrop = CurrentAnimListViewDragDrop
+      OnDragOver = CurrentAnimListViewDragOver
+    end
+  end
+  object RightPanel: TPanel
+    AnchorSideLeft.Control = RightSplitter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = TopSplitter
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 961
+    Height = 493
+    Top = 254
+    Width = 191
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Caption = 'RightPanel'
+    ClientHeight = 493
+    ClientWidth = 191
+    TabOrder = 5
+    object AllAnimListView: TListView
+      AnchorSideLeft.Control = RightPanel
+      AnchorSideTop.Control = RightPanel
+      AnchorSideRight.Control = RightPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = RightPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 1
+      Height = 491
+      Hint = 'My Hint'
+      Top = 1
+      Width = 189
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      Color = 15790320
+      Columns = <>
+      IconOptions.AutoArrange = True
+      LargeImages = AnimThumbImageList
+      ParentShowHint = False
+      PopupMenu = PopupMenu3
+      ReadOnly = True
+      ShowHint = True
+      TabOrder = 0
+      ViewStyle = vsIcon
+      OnClick = AllAnimListViewClick
+    end
+  end
+  object CurrentAnimationImageList: TImageList
+    Left = 816
+    Top = 64
+  end
+  object AnimThumbImageList: TImageList
+    Left = 816
+    Top = 8
+  end
+  object PopupMenu1: TPopupMenu
+    Left = 392
+    Top = 144
+    object CopyMenu: TMenuItem
+      Caption = 'Copy'
+      OnClick = CopyMenuClick
+    end
+    object PasteMenu: TMenuItem
+      Caption = 'Paste'
+      OnClick = PasteMenuClick
+    end
+    object AddFrameMenu: TMenuItem
+      Caption = 'Add Frame'
+      OnClick = AddFrameMenuClick
+    end
+    object DeleteMenu: TMenuItem
+      Caption = 'Delete Frame'
+      OnClick = DeleteMenuClick
+    end
+  end
+  object PopupMenu2: TPopupMenu
+    Left = 264
+    Top = 144
+    object CopyFromThumbView: TMenuItem
+      Caption = 'Copy'
+      OnClick = CopyFromThumbViewClick
+    end
+  end
+  object PopupMenu3: TPopupMenu
+    Left = 840
+    Top = 136
+    object NewAnimationMenu: TMenuItem
+      Caption = 'New Animation'
+      OnClick = NewAnimationMenuClick
+    end
+    object AnimDeleteMenu: TMenuItem
+      Caption = 'Delete'
+      OnClick = AnimDeleteMenuClick
+    end
+  end
+  object Timer1: TTimer
+    OnTimer = Timer1Timer
+    OnStartTimer = Timer1StartTimer
+    Left = 216
+    Top = 56
+  end
+  object MainMenu1: TMainMenu
+    Left = 296
+    Top = 56
+    object MenuItem1: TMenuItem
+      Caption = 'File'
+      object MenuItem8: TMenuItem
+        Caption = 'New'
+        object MenuItem9: TMenuItem
+          Caption = 'Animation'
+          OnClick = MenuItem9Click
+        end
+        object MenuItem10: TMenuItem
+          Caption = 'Frame'
+          OnClick = MenuItem10Click
+        end
+      end
+      object MenuItem2: TMenuItem
+        Caption = 'Open'
+        OnClick = MenuItem2Click
+      end
+      object MenuItem3: TMenuItem
+        Caption = 'Save'
+        OnClick = MenuItem3Click
+      end
+      object MenuItem11: TMenuItem
+        Caption = 'Delete'
+        OnClick = MenuItem11Click
+      end
+      object MenuItem7: TMenuItem
+        Caption = 'Export Anim As PNG''s'
+        OnClick = AnimExportMenuClick
+      end
+    end
+    object MenuItem4: TMenuItem
+      Caption = 'Edit'
+      object MenuItem5: TMenuItem
+        Caption = 'Copy'
+        OnClick = AnimCopyMenuClick
+      end
+      object MenuItem6: TMenuItem
+        Caption = 'Paste'
+        OnClick = AnimPasteMenuClick
+      end
+    end
+  end
+  object SelectDirectoryDialog1: TSelectDirectoryDialog
+    Left = 352
+    Top = 56
+  end
+  object SaveDialog1: TSaveDialog
+    Left = 525
+    Top = 21
+  end
+  object OpenDialog1: TOpenDialog
+    Left = 608
+    Top = 32
+  end
+end

@@ -140,7 +140,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="36">
+    <Units Count="38">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -325,6 +325,18 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="SpriteSheetExport"/>
       </Unit35>
+      <Unit36>
+        <Filename Value="animate.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="AnimationForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit36>
+      <Unit37>
+        <Filename Value="animbase.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="AnimBase"/>
+      </Unit37>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

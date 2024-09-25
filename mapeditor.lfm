@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 195
+  Left = 395
   Height = 860
-  Top = 329
+  Top = 153
   Width = 1333
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -527,10 +527,6 @@ object MapEdit: TMapEdit
       end
     end
   end
-  object ImageList1: TImageList
-    Left = 70
-    Top = 192
-  end
   object MainMenu1: TMainMenu
     Left = 70
     Top = 275
@@ -783,7 +779,7 @@ object MapEdit: TMapEdit
   object TileImageList: TImageList
     Height = 256
     Width = 256
-    Left = 156
-    Top = 210
+    Left = 70
+    Top = 240
   end
 end
