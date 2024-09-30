@@ -1,7 +1,7 @@
 Unit rmthumb;
 
 Interface
-  uses rmcore,rmtools,graphics,controls,types,dialogs,sysutils,mapcore,rwmap;
+  uses rmcore,rmtools,graphics,controls,types,dialogs,sysutils,mapcore,rwmap,animbase;
 
 Const
   RMProjectSig = 'RMP';
@@ -51,7 +51,7 @@ type
                         version : word;
                         ImageCount : word;
                         MapCount   : word;
-                        Future1    : word;   //try and future proof changing project file
+                        AnimCount  : word;   //try and future proof changing project file
                         Future2    : word;
                         Future3    : word;
  end;
@@ -675,6 +675,8 @@ begin
    end;
 
    ReadAllMapsF(F,head.MapCount,insertmode);
+
+   if head.AnimCount > 0 then AnimateBase.ReadAnimations(F,head.AnimCount,InsertMode);
  end;
 {$I-}
  close(f);
@@ -696,7 +698,7 @@ begin
 
  head.ImageCount:=count;
  head.MapCount:=MapCoreBase.GetMapCount;
- head.Future1:=0;
+ head.AnimCount:=AnimateBase.GetAnimationCount;
  head.Future2:=0;
  head.Future3:=0;
 
@@ -710,7 +712,10 @@ begin
  begin
      WriteImageToProject(F,i);
  end;
+
  WriteAllMapsF(F);
+
+ if AnimateBase.GetAnimationCount > 0 then AnimateBase.WriteAnimations(F,AnimateBase.GetAnimationCount);
 {$I-}
  close(f);
 {$I+}

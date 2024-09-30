@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, ExtCtrls,
-  ComCtrls, Menus, StdCtrls,AnimBase,rmthumb,rwpng,fileprops;
+  ComCtrls, Menus, StdCtrls, Arrow,AnimBase,rmthumb,rwpng,fileprops;
 
 type
 
@@ -20,6 +20,8 @@ type
     DeleteMenu: TMenuItem;
     CopyFromThumbView: TMenuItem;
     AnimDeleteMenu: TMenuItem;
+    Image1: TImage;
+    Image2: TImage;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
@@ -51,10 +53,12 @@ type
     TopSplitter: TSplitter;
     LeftSplitter: TSplitter;
     RightSplitter: TSplitter;
+    FPSTrackBar: TTrackBar;
     procedure AddFrameMenuClick(Sender: TObject);
     procedure AllAnimListViewClick(Sender: TObject);
     procedure AllAnimListViewShowHint(Sender: TObject; HintInfo: PHintInfo);
     procedure AnimDeleteMenuClick(Sender: TObject);
+    procedure Arrow1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure CopyFromThumbViewClick(Sender: TObject);
     procedure CopyMenuClick(Sender: TObject);
@@ -77,15 +81,21 @@ type
     procedure MenuItem9Click(Sender: TObject);
     procedure NewAnimationMenuClick(Sender: TObject);
     procedure PasteMenuClick(Sender: TObject);
+    procedure PlayButtonClick(Sender: TObject);
     procedure SpriteListViewDblClick(Sender: TObject);
     procedure SpriteListViewDragDrop(Sender, Source: TObject; X, Y: Integer);
+    procedure SpriteListViewDragOver(Sender, Source: TObject; X, Y: Integer;
+      State: TDragState; var Accept: Boolean);
+    procedure StopButtonClick(Sender: TObject);
 
     procedure Timer1StartTimer(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure FPSTrackBarChange(Sender: TObject);
   private
 
   public
     AnimFrameCounter : integer;
+    FPSDelay         : integer;
 
     procedure LoadImageThumbList;
     procedure LoadCurrentAnimList;
@@ -118,7 +128,7 @@ begin
 
  //   CurrentAnimListView.Hint:='hello2';
  //   CurrentAnimListView.ShowHint:=true;
-
+  FPSDelay:=1000 Div FPSTrackBar.Position;
 end;
 
 procedure TAnimationForm.FormPaint(Sender: TObject);
@@ -299,6 +309,11 @@ begin
   end;
 end;
 
+procedure TAnimationForm.PlayButtonClick(Sender: TObject);
+begin
+  Timer1.Enabled:=true;
+end;
+
 procedure TAnimationForm.SpriteListViewDblClick(Sender: TObject);
 begin
 //  ShowMessage(IntToStr((Sender as TListView).ItemIndex));
@@ -394,14 +409,23 @@ begin
 
 end;
 
+procedure TAnimationForm.SpriteListViewDragOver(Sender, Source: TObject; X,
+  Y: Integer; State: TDragState; var Accept: Boolean);
+begin
+
+end;
+
+procedure TAnimationForm.StopButtonClick(Sender: TObject);
+begin
+  Timer1.Enabled:=false;
+end;
+
 
 
 procedure TAnimationForm.Timer1StartTimer(Sender: TObject);
 begin
   AnimFrameCounter:=0;
-//  if AnimateBase.GetFrameCount > 0 then AnimFrameCounter:=1;
-//  if AnimFrameCounter > 0 then CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,AnimateBase.GetImageIndex(AnimFrameCounter-1),true);
-//  info.Caption:=IntToStr(AnimFrameCounter);
+
 end;
 
 procedure TAnimationForm.Timer1Timer(Sender: TObject);
@@ -417,13 +441,14 @@ begin
   if  AnimateBase.GetFrameCount > 0 then
   begin
     ImageIndex:=AnimateBase.GetImageIndex(AnimFrameCounter-1);
- //   if ImageIndex <> -1 then
- //   begin
-        CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,ImageIndex,true);
- //   end;
-// if AnimFrameCounter > 0 then info.Caption:='Frame: '+IntToStr(AnimFrameCounter-1)+' Image Index:'+IntToStr(ImageIndex)+' Frame count'+IntToStr(AnimateBase.GetFrameCount);
+    CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,ImageIndex,true);
+  end;
+end;
 
- end;
+procedure TAnimationForm.FPSTrackBarChange(Sender: TObject);
+begin
+  FPSDelay:=1000 div FPSTrackBar.Position;
+  Timer1.Interval:=FPSDelay;
 end;
 
 procedure TAnimationForm.FormActivate(Sender: TObject);
@@ -431,7 +456,6 @@ begin
    LoadImageThumbList;
    LoadCurrentAnimList;
    LoadAnimThumbList;
-
    SpriteListView.Repaint;
    CurrentAnimListView.Repaint;
    AllAnimListView.Repaint;
@@ -447,9 +471,6 @@ begin
    CurrentAnimListView.Repaint;
    LoadAnimThumbList;
    AllAnimListView.Repaint;
-
-//   CurrentAnimListView.AddItem('Frame '+IntToStr(AnimateBase.GetFrameCount),self);
-//   CurrentAnimListView.Items[AnimateBase.GetFrameCount-1].ImageIndex:=ImageIndex;
 end;
 
 
@@ -541,6 +562,12 @@ begin
    end;
 end;
 
+procedure TAnimationForm.CurrentAnimListViewDragOver(Sender, Source: TObject;
+  X, Y: Integer; State: TDragState; var Accept: Boolean);
+begin
+
+end;
+
 procedure TAnimationForm.AllAnimListViewShowHint(Sender: TObject;
   HintInfo: PHintInfo);
 begin
@@ -554,6 +581,11 @@ var
 begin
    index:=AllAnimListView.ItemIndex;
    if index > -1 then  DeleteAnimation(index);
+end;
+
+procedure TAnimationForm.Arrow1Click(Sender: TObject);
+begin
+
 end;
 
 procedure TAnimationForm.Button1Click(Sender: TObject);
@@ -597,11 +629,7 @@ end;
 
 
 
-procedure TAnimationForm.CurrentAnimListViewDragOver(Sender, Source: TObject;
-  X, Y: Integer; State: TDragState; var Accept: Boolean);
-begin
 
-end;
 
 procedure TAnimationForm.DeleteMenuClick(Sender: TObject);
 var

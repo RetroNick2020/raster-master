@@ -76,6 +76,9 @@ TAnimateBase = Class
 
                  procedure Save(filename : string);
                  procedure Open(filename : string);
+
+                 procedure WriteAnimations(var F : File; count : word);
+                 procedure ReadAnimations(var F: File; count : word;InsertMode : boolean);
 end;
 
 var
@@ -302,6 +305,42 @@ begin
  end;
 end;
 
+procedure TAnimateBase.WriteAnimations(var F : File; count : word);
+var
+ i : word;
+begin
+//  Blockwrite(f,Animations.AnimCount,sizeof(Animations.AnimCount));
+  Blockwrite(f,Animations.CurrentAnimation,sizeof(Animations.CurrentAnimation));
+
+  for i:=0 to Count-1 do
+  begin
+    Blockwrite(f,Animations.AnimationList[i],sizeof(Animations.AnimationList[i]));
+  end;
+end;
+
+
+procedure TAnimateBase.ReadAnimations(var F: File; count : word;InsertMode : boolean);
+var
+ i : word;
+ canimation : integer;
+begin
+//  Blockread(f,Animations.AnimCount,sizeof(Animations.AnimCount));
+  if NOT InsertMode then Animations.AnimCount:=count;
+
+  if  InsertMode then Blockread(f,canimation,sizeof(canimation))
+  else Blockread(f,Animations.CurrentAnimation,sizeof(Animations.CurrentAnimation));
+
+  for i:=0 to Count-1 do
+  begin
+    if InsertMode then
+    begin
+       AddAnimation;
+       Blockread(f,Animations.AnimationList[Animations.AnimCount-1],sizeof(Animations.AnimationList[Animations.AnimCount-1]));
+    end
+    else Blockread(f,Animations.AnimationList[i],sizeof(Animations.AnimationList[i]))
+  end;
+end;
+
 procedure TAnimateBase.Save(filename : string);
 var
  F : file;
@@ -309,7 +348,7 @@ var
 begin
  Assign(f,filename);
  Rewrite(f,1);
- Blockwrite(f,Animations.AnimCount,sizeof(Animations.AnimCount));
+// Blockwrite(f,Animations.AnimCount,sizeof(Animations.AnimCount));
  Blockwrite(f,Animations.CurrentAnimation,sizeof(Animations.CurrentAnimation));
 
  for i:=0 to Animations.AnimCount-1 do

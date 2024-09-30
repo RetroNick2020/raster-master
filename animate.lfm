@@ -12,10 +12,85 @@ object AnimationForm: TAnimationForm
   LCLVersion = '3.4.0.0'
   object Panel1: TPanel
     Left = 32
-    Height = 144
+    Height = 209
     Top = 8
-    Width = 144
+    Width = 208
+    ClientHeight = 209
+    ClientWidth = 208
     TabOrder = 6
+    object FPSTrackBar: TTrackBar
+      Left = 168
+      Height = 128
+      Top = 8
+      Width = 25
+      Max = 60
+      Min = 1
+      OnChange = FPSTrackBarChange
+      Orientation = trVertical
+      Position = 1
+      TickMarks = tmTopLeft
+      TabOrder = 0
+    end
+    object Image2: TImage
+      Left = 88
+      Height = 32
+      Top = 168
+      Width = 32
+      OnClick = StopButtonClick
+      Picture.Data = {
+        07544269746D617076020000424D760200000000000076000000280000002000
+        0000200000000100040000000000000200000000000000000000000000000000
+        000000000000AA00000000AA0000AAAA00000000AA00AA00AA000055AA00AAAA
+        AA0055555500FA55550055FA5500FAFA55005555FA00FA55FA0055FAFA00FAFA
+        FA00000000000000000000000000000000000FF0000000000000000000000000
+        00000FF000000000000000000000000000000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777700000000000000000777700000FF7777000000000000000007777
+        00000FF777700000000000000000777700000FF7777000000000000000007777
+        00000FF777700000000000000000777700000FF7777000000000000000007777
+        00000FF777700000000000000000777700000FF7777000000000000000007777
+        00000FF777700000000000000000777700000FF7777000000000000000007777
+        00000FF777700000000000000000777700000FF7777000000000000000007777
+        00000FF777700000000000000000777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FFFFFFFFFFFFFFFFFFFFFFFFFFF
+        FF000FFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000000000
+        0000
+      }
+    end
+    object Image1: TImage
+      Left = 48
+      Height = 32
+      Top = 168
+      Width = 32
+      OnClick = PlayButtonClick
+      Picture.Data = {
+        07544269746D617076020000424D760200000000000076000000280000002000
+        0000200000000100040000000000000200000000000000000000000000000000
+        000000000000AA00000000AA0000AAAA00000000AA00AA00AA000055AA00AAAA
+        AA0055555500FA55550055FA5500FAFA55005555FA00FA55FA0055FAFA00FAFA
+        FA00000000000000000000000000000000000FF0000000000000000000000000
+        00000FF000000000000000000000000000000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777707777777777777700000FF7777777777007777777777777
+        00000FF777777777700077777777777700000FF7777777777000077777777777
+        00000FF777777777700000777777777700000FF7777777777000000777777777
+        00000FF777777777700000007777777700000FF7777777777000000777777777
+        00000FF777777777700000777777777700000FF7777777777000077777777777
+        00000FF777777777700077777777777700000FF7777777777007777777777777
+        00000FF777777777707777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FF7777777777777777777777777
+        00000FF777777777777777777777777700000FFFFFFFFFFFFFFFFFFFFFFFFFFF
+        FF000FFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000000000
+        0000
+      }
+    end
   end
   object TopSplitter: TSplitter
     AnchorSideLeft.Control = Owner
@@ -78,7 +153,7 @@ object AnimationForm: TAnimationForm
     Color = 15790320
     ParentBackground = False
     ParentColor = False
-    TabOrder = 3
+    TabOrder = 1
     object SpriteListView: TListView
       AnchorSideLeft.Control = LeftPanel
       AnchorSideTop.Control = LeftPanel
@@ -103,6 +178,7 @@ object AnimationForm: TAnimationForm
       ViewStyle = vsIcon
       OnDblClick = SpriteListViewDblClick
       OnDragDrop = SpriteListViewDragDrop
+      OnDragOver = SpriteListViewDragOver
     end
   end
   object MiddlePanel: TPanel
@@ -121,7 +197,7 @@ object AnimationForm: TAnimationForm
     Caption = 'MiddlePanel'
     ClientHeight = 493
     ClientWidth = 768
-    TabOrder = 4
+    TabOrder = 2
     object CurrentAnimListView: TListView
       AnchorSideLeft.Control = MiddlePanel
       AnchorSideTop.Control = MiddlePanel
@@ -168,7 +244,7 @@ object AnimationForm: TAnimationForm
     Caption = 'RightPanel'
     ClientHeight = 493
     ClientWidth = 191
-    TabOrder = 5
+    TabOrder = 3
     object AllAnimListView: TListView
       AnchorSideLeft.Control = RightPanel
       AnchorSideTop.Control = RightPanel
@@ -178,7 +254,6 @@ object AnimationForm: TAnimationForm
       AnchorSideBottom.Side = asrBottom
       Left = 1
       Height = 491
-      Hint = 'My Hint'
       Top = 1
       Width = 189
       Anchors = [akTop, akLeft, akRight, akBottom]
@@ -196,16 +271,16 @@ object AnimationForm: TAnimationForm
     end
   end
   object CurrentAnimationImageList: TImageList
-    Left = 816
-    Top = 64
+    Left = 808
+    Top = 592
   end
   object AnimThumbImageList: TImageList
-    Left = 816
-    Top = 8
+    Left = 792
+    Top = 520
   end
   object PopupMenu1: TPopupMenu
-    Left = 392
-    Top = 144
+    Left = 424
+    Top = 664
     object CopyMenu: TMenuItem
       Caption = 'Copy'
       OnClick = CopyMenuClick
@@ -224,16 +299,16 @@ object AnimationForm: TAnimationForm
     end
   end
   object PopupMenu2: TPopupMenu
-    Left = 264
-    Top = 144
+    Left = 224
+    Top = 664
     object CopyFromThumbView: TMenuItem
       Caption = 'Copy'
       OnClick = CopyFromThumbViewClick
     end
   end
   object PopupMenu3: TPopupMenu
-    Left = 840
-    Top = 136
+    Left = 816
+    Top = 664
     object NewAnimationMenu: TMenuItem
       Caption = 'New Animation'
       OnClick = NewAnimationMenuClick
@@ -246,12 +321,12 @@ object AnimationForm: TAnimationForm
   object Timer1: TTimer
     OnTimer = Timer1Timer
     OnStartTimer = Timer1StartTimer
-    Left = 216
-    Top = 56
+    Left = 224
+    Top = 312
   end
   object MainMenu1: TMainMenu
-    Left = 296
-    Top = 56
+    Left = 312
+    Top = 312
     object MenuItem1: TMenuItem
       Caption = 'File'
       object MenuItem8: TMenuItem
@@ -295,15 +370,15 @@ object AnimationForm: TAnimationForm
     end
   end
   object SelectDirectoryDialog1: TSelectDirectoryDialog
-    Left = 352
-    Top = 56
+    Left = 384
+    Top = 328
   end
   object SaveDialog1: TSaveDialog
-    Left = 525
-    Top = 21
+    Left = 624
+    Top = 424
   end
   object OpenDialog1: TOpenDialog
-    Left = 608
-    Top = 32
+    Left = 616
+    Top = 344
   end
 end

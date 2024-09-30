@@ -9,12 +9,18 @@ uses
   ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
   rmconfig;
 
+const
+  AddImage = 1;
+  InsertImage = 2;
+  UpdateImage = 3;
+
 type
   { TMapEdit }
 
   TMapEdit = class(TForm)
     CopyToClipBoard: TMenuItem;
     GroupBox1: TGroupBox;
+    MapImageList: TImageList;
     MenuItem15: TMenuItem;
     CloneMap: TMenuItem;
     Properties: TMenuItem;
@@ -122,6 +128,7 @@ type
     RightSplitter: TSplitter;
     TileZoom: TTrackBar;
 
+    procedure Button1Click(Sender: TObject);
     procedure CheckBoxDisplayGridChange(Sender: TObject);
     procedure CloneMapClick(Sender: TObject);
     procedure CopyToClipBoardClick(Sender: TObject);
@@ -243,6 +250,10 @@ type
     procedure UpdateEditMenus;
 
     function ExportTextFileToClipboard(Sender: TObject) : boolean;
+
+    procedure MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
+    Procedure UpdateMapPreviewImageIcons(var ImageList : TImageList; MapIndex,ImageAction : integer);
+
 
   end;
 
@@ -418,6 +429,8 @@ procedure TMapEdit.CheckBoxDisplayGridChange(Sender: TObject);
 begin
   MapPaintBox.Invalidate;
 end;
+
+
 
 procedure TMapEdit.CloneMapClick(Sender: TObject);
 begin
@@ -613,42 +626,7 @@ begin
   MapPaintBox.Invalidate;
 end;
 
-procedure TMapEdit.MapListViewClick(Sender: TObject);
-var
-  item : TListItem;
-  zs,tw,th : integer;
-begin
-   if (MapListView.SelCount > 0) then
-   begin
-     item:=MapListView.LastSelected;
-     MapCoreBase.SetMapScrollHorizPos(MapCoreBase.GetCurrentMap,MapScrollBox.HorzScrollBar.Position);
-     MapCoreBase.SetMapScrollVertPos(MapCoreBase.GetCurrentMap,MapScrollBox.VertScrollBar.Position);
 
-     MapCoreBase.SetCurrentMap(item.Index);
-     CurrentMap:=MapCoreBase.GetCurrentMap;
-
-     tw:=MapCoreBase.GetMapTileWidth(CurrentMap);
-     th:=MapCoreBase.GetMapTileHeight(CurrentMap);
-     zs:=MapCoreBase.GetZoomSize(CurrentMap);
-     MapCoreBase.SetZoomSize(CurrentMap,zs);
-     TileZoom.Position:=zs;
-     MapCoreBase.SetMapTileSize(CurrentMap,tw,th);
-
-     TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
-     TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
-
-     UpdatePageSize;
-     MapScrollBox.HorzScrollBar.Position:=MapCoreBase.GetMapScrollHorizPos(MapCoreBase.GetCurrentMap);
-     MapScrollBox.VertScrollBar.Position:=MapCoreBase.GetMapScrollVertPos(MapCoreBase.GetCurrentMap);
-     SetDrawTool(MapCoreBase.GetMapDrawTool(CurrentMap));
-     TileMode:=MapCoreBase.GetMapTileMode(CurrentMap);
-     UpdateToolSelectionIcons;
-     UpdateMenus;
-     UpdateEditMenus;
-     //UpdateMapView;
-     MapPaintBox.Invalidate;
-   end;
-end;
 
 Procedure TMapEdit.DrawGrid;
 var
@@ -950,6 +928,8 @@ begin
  UpdatePageSize;
 // UpdateMapView;
  MapPaintBox.Invalidate;
+ UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+ MapListView.Repaint;
 end;
 
 procedure TMapEdit.TileModeDrawClick(Sender: TObject);
@@ -1210,21 +1190,118 @@ begin
  end;
 end;
 
+
+procedure TMapEdit.Button1Click(Sender: TObject);
+begin
+ UpdateMapPreviewImageIcons(MapImageList,MapCoreBase.GetCurrentMap,AddImage);
+// ShowMessage('working');
+end;
+
+procedure TMapEdit.MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
+var
+  gx,gy : integer;
+begin
+ gx:=mx*TileWidth;
+ gy:=my*TileHeight;
+ TileImageList.Draw(MPCanvas,gx,gy,TTile.ImageIndex,true);
+end;
+
+Procedure TMapEdit.UpdateMapPreviewImageIcons(var ImageList : TImageList; MapIndex,ImageAction : integer);
+var
+  i,j : integer;
+  T   : TileRec;
+  SrcBitMap,DstBitMap : TBitMap;
+begin
+ SrcBitMap:=TBitMap.Create;
+ SrcBitMap.SetSize(MapCoreBase.GetMapWidth(MapIndex)*TileWidth,MapCoreBase.GetMapHeight(MapIndex)*TileHeight);
+
+ DstBitMap:=TBitMap.Create;
+ DstBitMap.SetSize(256,256);
+
+ for j:=0 to MapCoreBase.GetMapWidth(MapIndex)-1 do
+  begin
+    for i:=0 to MapCoreBase.GetMapHeight(MapIndex)-1 do
+    begin
+      MapCoreBase.GetMapTile(MapIndex,i,j,T);
+       if T.ImageIndex > TileClear then   //we don't care about missing tile here
+       begin
+         MapPreviewPlotTile(SrcBitMap.Canvas,i,j,T);
+       end;
+    end;
+  end;
+  DstBitMap.canvas.CopyRect(Rect(0, 0, DstBitMap.Width, DstBitMap.Height), SrcBitMap.Canvas, Rect(0, 0, SrcBitMap.Width, SrcBitMap.Height));
+//  MapImageList.clear;
+
+  if ImageAction = AddImage then
+  begin
+     ImageList.add(DstBitMap,nil);
+  end
+  else if ImageAction = UpdateImage then
+  begin
+     ImageList.Replace(MapIndex,DstBitMap,nil,false);
+  end;
+//  MapListView.Repaint;
+  SrcBitMap.Free;
+  DstBitMap.Free;
+
+end;
+
+procedure TMapEdit.MapListViewClick(Sender: TObject);
+var
+  item : TListItem;
+  zs,tw,th : integer;
+begin
+   if (MapListView.SelCount > 0) then
+   begin
+     item:=MapListView.LastSelected;
+     MapCoreBase.SetMapScrollHorizPos(MapCoreBase.GetCurrentMap,MapScrollBox.HorzScrollBar.Position);
+     MapCoreBase.SetMapScrollVertPos(MapCoreBase.GetCurrentMap,MapScrollBox.VertScrollBar.Position);
+
+     MapCoreBase.SetCurrentMap(item.Index);
+     CurrentMap:=MapCoreBase.GetCurrentMap;
+
+     tw:=MapCoreBase.GetMapTileWidth(CurrentMap);
+     th:=MapCoreBase.GetMapTileHeight(CurrentMap);
+     zs:=MapCoreBase.GetZoomSize(CurrentMap);
+     MapCoreBase.SetZoomSize(CurrentMap,zs);
+     TileZoom.Position:=zs;
+     MapCoreBase.SetMapTileSize(CurrentMap,tw,th);
+
+     TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
+     TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
+
+     UpdatePageSize;
+     MapScrollBox.HorzScrollBar.Position:=MapCoreBase.GetMapScrollHorizPos(MapCoreBase.GetCurrentMap);
+     MapScrollBox.VertScrollBar.Position:=MapCoreBase.GetMapScrollVertPos(MapCoreBase.GetCurrentMap);
+     SetDrawTool(MapCoreBase.GetMapDrawTool(CurrentMap));
+     TileMode:=MapCoreBase.GetMapTileMode(CurrentMap);
+     UpdateToolSelectionIcons;
+     UpdateMenus;
+     UpdateEditMenus;
+     //UpdateMapView;
+     MapPaintBox.Invalidate;
+   end;
+end;
+
 Procedure TMapEdit.UpdateMapListView;
 var
   i,count : integer;
 begin
  count:=MapCoreBase.GetMapCount;
  MapListView.items.Clear;
+ MapListView.LargeImages.Width:=256;
+ MapListView.LargeImages.Height:=256;
 
- for i:=1 to count do
+ MapImageList.Clear;
+ MapImageList.Width:=256;
+ MapImageList.Height:=256;
+ For i:=0 to count-1 do
  begin
    MapListView.Items.Add;
- end;
-
- For i:=0 to MapListView.Items.Count-1 do
- begin
    MapListView.Items[i].Caption:='Map '+IntToStr(i+1);
+   MapListView.Items[i].ImageIndex:=i;
+
+   UpdateMapPreviewImageIcons(MapImageList,i,AddImage);
  end;
 end;
 
@@ -1475,6 +1552,8 @@ begin
                DrawShapeEllipse,DrawShapeFEllipse:MPaintBoxMouseUpXYX2Y2Tool(Sender,Button,Shift,X,Y);
 
  end;
+ UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+ MapListView.Repaint;
 end;
 
 procedure TMapEdit.ToolGridIconClick(Sender: TObject);
@@ -1498,6 +1577,8 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.Hflip(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 procedure TMapEdit.ToolIconClick(Sender: TObject);
@@ -1551,6 +1632,8 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollDown(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 procedure TMapEdit.ToolScrollLeftIconClick(Sender: TObject);
@@ -1560,6 +1643,8 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollLeft(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 procedure TMapEdit.ToolScrollRightIconClick(Sender: TObject);
@@ -1569,6 +1654,8 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollRight(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 procedure TMapEdit.ToolScrollUpIconClick(Sender: TObject);
@@ -1578,12 +1665,16 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollUp(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 procedure TMapEdit.ToolUndoIconClick(Sender: TObject);
 begin
  MapCoreBase.Undo(MapCoreBase.GetCurrentMap);
  MapPaintBox.Invalidate;
+ UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+ MapListView.Repaint;
 end;
 
 procedure TMapEdit.ToolVFLIPButtonClick(Sender: TObject);
@@ -1593,6 +1684,8 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.Vflip(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 Procedure TMapEdit.LoadResourceIcons;

@@ -75,6 +75,7 @@ type
     gccRayLibCustom: TMenuItem;
     EditProperties: TMenuItem;
     BAMRGBPutData: TMenuItem;
+    DeleteImage: TMenuItem;
     SpriteAnimationMenu: TMenuItem;
     SpriteExportMenu: TMenuItem;
     SoundGenerator: TMenuItem;
@@ -345,6 +346,7 @@ type
       Shift: TShiftState);
     procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
       var AText: String);
+    procedure DeleteImageClick(Sender: TObject);
     procedure EditClearClick(Sender: TObject);
     procedure EditCloneClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
@@ -517,6 +519,7 @@ type
 
   public
        procedure UpdateImportedImage;
+       procedure DeleteImageByIndex(index : integer);
 
   end;
 
@@ -1354,6 +1357,41 @@ begin
   else
   begin
     AText:='Color Index: '+IntToStr(ColorPalette1.MouseIndex);
+  end;
+end;
+
+procedure TRMMainForm.DeleteImageClick(Sender: TObject);
+ var
+  item  : TListItem;
+  index : integer;
+ begin
+  if ImageThumbBase.GetCount = 1 then
+  begin
+     if (Listview1.SelCount > 0) then
+     begin
+       Clear;
+     end
+     else
+     begin
+       if MessageDlg('No Image Selected', 'Delete Current Image?', mtConfirmation,
+         [mbYes, mbNo],0) = mrNo  then  Exit;
+       Clear;
+     end;
+      // display message to select clear as it is the only item
+  end
+  else
+  begin
+    if (Listview1.SelCount = 0)  then
+    begin
+      if MessageDlg('No Image Selected','Please Select Image to Delete', mtConfirmation, [mbOk],0) = mrOk  then exit;
+    end;
+
+    if MessageDlg('Delete Selected Image', 'Are you sure you want to do this?', mtConfirmation, [mbYes, mbNo],0) = mrNo  then exit;
+
+    item:=ListView1.LastSelected;
+    index:=item.index;
+
+    DeleteImageByIndex(index);
   end;
 end;
 
@@ -3638,6 +3676,7 @@ begin
  ActualBox.Height:=ImgHeight;
  RMCoreBase.SetWidth(ImgWidth);
  RMCoreBase.SetHeight(ImgHeight);
+ RMDrawTools.SetZoomSize(1);
 
  RMCoreBase.ClearBuf(0);
  RMCoreBase.SetCurColor(1);
@@ -4084,10 +4123,54 @@ begin
   Listview1.Refresh;
 end;
 
+
+procedure TRMMainForm.DeleteImageByIndex(index : integer);
+var i: integer;
+begin
+if index > -1 then
+begin
+      listview1.Items.Delete(index);
+      imagelist1.Delete(index);
+
+      for i:=0 to listview1.Items.Count -1 do
+      begin
+        listview1.Items[i].Caption:='Image '+intToStr(i+1);
+        listview1.Items[i].ImageIndex:=i;
+      end;
+      ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+      ImageThumbBase.DeleteImage(index);
+      if ImageThumbBase.GetCurrent > (ImageThumbBase.GetCount-1) then
+      begin
+        ImageThumbBase.SetCurrent(ImageThumbBase.GetCount-1);
+      end;
+
+      ImageThumbBase.CopyIndexImageToCore(ImageThumbBase.GetCurrent);   //to future nick - do not delete this line - it is important
+      listview1.refresh;
+      ActualBox.Width:=RMCoreBase.GetWidth;
+      ActualBox.Height:=RMCoreBase.GetHeight;
+
+      ZoomPaintBox.Width:=1;
+      ZoomPaintBox.Height:=1;
+      ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+      ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+      //  ZoomPaintBox.Canvas.Clear;
+      //  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
+      RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
+      RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
+      ZoomSize:=RMDrawTools.GetZoomSize;
+      CoreToPalette;
+      UpdateColorBox;
+      UpdatePalette;
+      UpdateActualArea;
+      UpdateZoomArea;
+      UpdateEditMenu;
+   end;
+end;
+
 procedure TRMMainForm.FileDeleteClick(Sender: TObject);
 var
   item  : TListItem;
-  i,index : integer;
+  index : integer;
 begin
  if ImageThumbBase.GetCount = 1 then
  begin
@@ -4115,50 +4198,7 @@ begin
    item:=ListView1.LastSelected;
    index:=item.index;
 
-   if index > -1 then
-   begin
-      listview1.Items.Delete(index);
-      imagelist1.Delete(index);
-
-      for i:=0 to listview1.Items.Count -1 do
-      begin
-        listview1.Items[i].Caption:='Image '+intToStr(i+1);
-        listview1.Items[i].ImageIndex:=i;
-      end;
-      ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
-      ImageThumbBase.DeleteImage(index);
-      if ImageThumbBase.GetCurrent > (ImageThumbBase.GetCount-1) then
-      begin
-        ImageThumbBase.SetCurrent(ImageThumbBase.GetCount-1);
-      end;
-
-      ImageThumbBase.CopyIndexImageToCore(ImageThumbBase.GetCurrent);   //to future nick - do not delete this line - it is important
-      listview1.refresh;
-      ActualBox.Width:=RMCoreBase.GetWidth;
-      ActualBox.Height:=RMCoreBase.GetHeight;
-
-      //RMDrawTools.SetZoomSize(1);
-      //RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
-      //RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
-      //RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
-      //ZoomSize:=RMDrawTools.GetZoomSize;
-
-      ZoomPaintBox.Width:=1;
-      ZoomPaintBox.Height:=1;
-      ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
-      ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
-      //  ZoomPaintBox.Canvas.Clear;
-      //  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
-      RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
-      RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
-      ZoomSize:=RMDrawTools.GetZoomSize;
-      CoreToPalette;
-      UpdateColorBox;
-      UpdatePalette;
-      UpdateActualArea;
-      UpdateZoomArea;
-      UpdateEditMenu;
-   end;
+   DeleteImageByIndex(index);
  end;
 end;
 
@@ -4176,8 +4216,6 @@ procedure TRMMainForm.TMTPaletteCommandsClick(Sender: TObject);
 begin
 
 end;
-
-
 
 procedure TRMMainForm.NewClick(Sender: TObject);
 begin

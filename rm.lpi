@@ -335,7 +335,6 @@
       <Unit37>
         <Filename Value="animbase.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="AnimBase"/>
       </Unit37>
     </Units>
   </ProjectOptions>

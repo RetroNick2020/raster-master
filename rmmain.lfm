@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 45
+  Left = 113
   Height = 1057
-  Top = 25
+  Top = 234
   Width = 1824
   Align = alClient
   Caption = 'Raster Master'
@@ -1527,11 +1527,15 @@ object RMMainForm: TRMMainForm
     Top = 592
   end
   object ExportPropsMenu: TPopupMenu
-    Left = 1624
-    Top = 40
+    Left = 168
+    Top = 376
     object NewImage: TMenuItem
       Caption = 'New Image'
       OnClick = NewClick
+    end
+    object DeleteImage: TMenuItem
+      Caption = 'Delete'
+      OnClick = DeleteImageClick
     end
     object ExportInclude: TMenuItem
       Caption = 'Export Include'
