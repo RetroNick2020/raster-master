@@ -614,8 +614,6 @@ begin
  ZoomY2:=0;
  OldZoomX:=-1;
  OldZoomY:=-1;
-
-
 end;
 
 procedure TRMMainForm.FormDestroy(Sender: TObject);
@@ -1016,7 +1014,10 @@ var
   i,j : integer;
   zoommode : integer;
   tc : TColor;
+  ACBitMap : TBitMap;
 begin
+   ACBitMap:=TBitMap.Create;
+   ACBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
    zoommode:=RMDrawTools.GetZoomMode;
    RMDrawTools.SetZoomMode(0);
    for i:=0 to RMCoreBase.GetWidth -1 do
@@ -1024,10 +1025,15 @@ begin
      for j:=0 to RMCoreBase.GetHeight-1 do
      begin
         tc:=ColorPalette1.Colors[RMCoreBase.GetPixel(i,j)];
-        RMDrawTools.PutPixel(ActualBox.Canvas,i,j,tc,0);
+//        RMDrawTools.PutPixel(ActualBox.Canvas,i,j,tc,0);
+        RMDrawTools.PutPixel(ACBitMap.Canvas,i,j,tc,0);
      end;
    end;
+   ActualBox.Picture.Bitmap.SetSize(256, 256);
+   ActualBox.canvas.CopyRect(Rect(0, 0,  256,256), ACBitMap.Canvas, Rect(0, 0,ACBitMap.Width,  ACBitMap.Height));
+
    RMDrawTools.SetZoomMode(zoommode);
+   ACBitMap.Free;
 end;
 
 procedure TRMMainForm.updateZoomArea;
@@ -1525,9 +1531,10 @@ begin
     UpdateRenderBitMap;
     RMDrawTools.CreateRandomSprayPoints;
     RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
-    RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+ //   RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
     ZoomPaintBox.Invalidate;
     RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
+ //   UpdateActualArea;
   end;
 end;
 
@@ -1550,9 +1557,10 @@ begin
 
   RMDrawTools.CreateRandomSprayPoints;
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
-  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+//  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
   ZoomPaintBox.Invalidate;
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
+
 end;
 
 // xy mouse up event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
@@ -1591,6 +1599,7 @@ begin
   RenderBitMap2.Canvas.CopyRect(rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height),RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
   ZoomPaintBox.Invalidate;
+
 end;
 
 // xyx2y2 mouse move event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
@@ -1638,6 +1647,7 @@ begin
   DrawTool:=RMDRAWTools.GetDrawTool;
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,1);
   RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+ // UpdateActualArea;
 end;
 
 procedure TRMMainForm.ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
@@ -1680,6 +1690,7 @@ begin
 
  end;
  UpdateThumbview;
+ UpdateActualArea;
 end;
 
 procedure TRMMainForm.ZoomPaintBoxPaint(Sender: TObject);
@@ -2270,8 +2281,8 @@ begin
     ImgWidth:=256;
     ImgHeight:=256;
   end;
-  ActualBox.Width:=ImgWidth;
-  ActualBox.Height:=ImgHeight;
+ // ActualBox.Width:=ImgWidth;
+ // ActualBox.Height:=ImgHeight;
   RMCoreBase.SetWidth(ImgWidth);
   RMCoreBase.SetHeight(ImgHeight);
   RMDrawTools.SetZoomSize(1);
@@ -3635,8 +3646,8 @@ begin
    ImageThumbBase.CopyIndexImageToCore(Item.Index);
    ImageThumbBase.SetCurrent(item.Index);
 
-   ActualBox.Width:=RMCoreBase.GetWidth;
-   ActualBox.Height:=RMCoreBase.GetHeight;
+  // ActualBox.Width:=RMCoreBase.GetWidth;
+  // ActualBox.Height:=RMCoreBase.GetHeight;
 
    ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
    ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
@@ -3667,33 +3678,38 @@ procedure TRMMainForm.DeleteAllClick(Sender: TObject);
 var
   ImgWidth,ImgHeight : integer;
 begin
- if MessageDlg('Delete All Images', 'Are you sure you want to do this?', mtConfirmation,
+ if MessageDlg('Delete All Images, Maps, and Sprite Animations!', 'Are you sure you want to do this?', mtConfirmation,
    [mbYes, mbNo],0) = mrNo    then  Exit;
 
  ImgWidth:=256;
  ImgHeight:=256;
- ActualBox.Width:=ImgWidth;
- ActualBox.Height:=ImgHeight;
+ //ActualBox.Width:=ImgWidth;
+ //ActualBox.Height:=ImgHeight;
  RMCoreBase.SetWidth(ImgWidth);
  RMCoreBase.SetHeight(ImgHeight);
- RMDrawTools.SetZoomSize(1);
-
  RMCoreBase.ClearBuf(0);
  RMCoreBase.SetCurColor(1);
  RMDrawTools.SetDrawTool(DrawShapePencil);
- UpdateToolSelectionIcons;
 
+ UpdateToolSelectionIcons;
  UpdateColorBox;
  UpdateActualArea;
+
  RMDrawTools.SetClipStatus(0);
  RMDrawTools.SetZoomSize(2);
+
+ ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+ ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+ RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
+ RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
+
+ ZoomSize:=RMDrawTools.GetZoomSize;
  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
  UpdateZoomArea;
  ZoomTrackBar.Position:=RMDrawTools.getZoomSize;
 
  ImageThumbBase.SetCount(1);
  ImageThumbBase.SetCurrent(0);
-
  ImageList1.Clear;
 
  ListView1.Items.Clear;
@@ -3705,6 +3721,9 @@ begin
  ListView1.Items[0].Caption:='Image '+IntToStr(1);
  ListView1.Items[0].ImageIndex :=0;
 
+
+ MapEdit.DeleteAll;
+ AnimationForm.DeleteAll;
 end;
 
 procedure TRMMainForm.MapEditMenuClick(Sender: TObject);
@@ -4074,12 +4093,18 @@ begin
       ImageThumbBase.SetCurrent(0);
       ImageThumbBase.CopyIndexImageToCore(0);  //update view with this image
 
-      ActualBox.Width:=RMCoreBase.GetWidth;
-      ActualBox.Height:=RMCoreBase.GetHeight;
+  //    ActualBox.Width:=RMCoreBase.GetWidth;
+  //    ActualBox.Height:=RMCoreBase.GetHeight;
 
       RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
-      RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
-      RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
+   //   RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
+   //   RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
+      RMDrawTools.SetZoomSize(1);
+
+      ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+      ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+      RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
+      RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
 
       ZoomSize:=RMDrawTools.GetZoomSize;
       CopyScrollPositionFromCore;
@@ -4146,8 +4171,8 @@ begin
 
       ImageThumbBase.CopyIndexImageToCore(ImageThumbBase.GetCurrent);   //to future nick - do not delete this line - it is important
       listview1.refresh;
-      ActualBox.Width:=RMCoreBase.GetWidth;
-      ActualBox.Height:=RMCoreBase.GetHeight;
+     // ActualBox.Width:=RMCoreBase.GetWidth;
+     // ActualBox.Height:=RMCoreBase.GetHeight;
 
       ZoomPaintBox.Width:=1;
       ZoomPaintBox.Height:=1;

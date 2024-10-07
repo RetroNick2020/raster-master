@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 237
+  Left = 175
   Height = 860
-  Top = 153
+  Top = 269
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -38,11 +38,11 @@ object MapEdit: TMapEdit
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVertSplitter
       Left = 1
-      Height = 221
+      Height = 287
       Top = 1
       Width = 287
       Anchors = [akTop, akLeft, akRight, akBottom]
-      ClientHeight = 221
+      ClientHeight = 287
       ClientWidth = 287
       ParentFont = False
       TabOrder = 0
@@ -50,11 +50,12 @@ object MapEdit: TMapEdit
         AnchorSideLeft.Control = SelectedTilePanel
         AnchorSideTop.Control = SelectedTilePanel
         Left = 13
-        Height = 90
+        Height = 256
         Top = 13
-        Width = 90
+        Width = 256
         BorderSpacing.Left = 12
         BorderSpacing.Top = 12
+        ImageWidth = 256
       end
     end
     object LeftVertSplitter: TSplitter
@@ -66,7 +67,7 @@ object MapEdit: TMapEdit
       Cursor = crVSplit
       Left = 1
       Height = 9
-      Top = 222
+      Top = 288
       Width = 287
       Align = alNone
       Anchors = [akLeft, akRight]
@@ -84,19 +85,19 @@ object MapEdit: TMapEdit
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 628
-      Top = 231
+      Height = 562
+      Top = 297
       Width = 287
       Anchors = [akTop, akLeft, akRight, akBottom]
       Caption = 'LeftBottomPanel'
-      ClientHeight = 628
+      ClientHeight = 562
       ClientWidth = 287
       ParentColor = False
       ParentFont = False
       TabOrder = 2
       object TileListView: TListView
         Left = 1
-        Height = 626
+        Height = 560
         Top = 1
         Width = 285
         Align = alClient
@@ -553,6 +554,10 @@ object MapEdit: TMapEdit
         Caption = 'Delete'
         OnClick = MenuDeleteClick
       end
+      object MenuDeleteAll: TMenuItem
+        Caption = 'Delete All'
+        OnClick = MenuDeleteAllClick
+      end
       object MenuItem3: TMenuItem
         Caption = 'Export'
         object MenuItem2: TMenuItem
@@ -776,6 +781,14 @@ object MapEdit: TMapEdit
   object ExportMapsPropsMenu: TPopupMenu
     Left = 64
     Top = 506
+    object MenuPopupNew: TMenuItem
+      Caption = 'New'
+      OnClick = MenuNewClick
+    end
+    object MenuPopupDelete: TMenuItem
+      Caption = 'Delete'
+      OnClick = MenuDeleteClick
+    end
     object MenuMapProps: TMenuItem
       Caption = 'Properties'
       OnClick = MenuMapPropsClick

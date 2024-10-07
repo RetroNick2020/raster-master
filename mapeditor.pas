@@ -23,6 +23,9 @@ type
     MapImageList: TImageList;
     MenuItem15: TMenuItem;
     CloneMap: TMenuItem;
+    MenuDeleteAll: TMenuItem;
+    MenuPopupNew: TMenuItem;
+    MenuPopupDelete: TMenuItem;
     Properties: TMenuItem;
     Panel1: TPanel;
     RadioDraw: TRadioButton;
@@ -141,13 +144,12 @@ type
     procedure MapImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure MapImageMouseLeave(Sender: TObject);
-    procedure MapImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
-      );
     procedure MapImageMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ClearMapClick(Sender: TObject);
     procedure MapListViewClick(Sender: TObject);
     procedure MapPaintBoxPaint(Sender: TObject);
+    procedure MenuDeleteAllClick(Sender: TObject);
 
     procedure MenuDeleteClick(Sender: TObject);
     procedure MenuExportBasicLNMapData(Sender: TObject);
@@ -157,6 +159,8 @@ type
     procedure MenuMapPropsClick(Sender: TObject);
     procedure MenuOpenClick(Sender: TObject);
     procedure MenuNewClick(Sender: TObject);
+
+    procedure MenuPopupNewClick(Sender: TObject);
     procedure MenuSaveClick(Sender: TObject);
     procedure PasteFromClipBoardClick(Sender: TObject);
     procedure ReSizeMapClick(Sender: TObject);
@@ -212,6 +216,7 @@ type
 
     MapX,MapY,MapX2,MapY2,OldMapX,OldMapY : integer;
 
+    procedure Init;
     function GetMapX(x : integer) : integer;
     function GetMapY(y : integer) : integer;
 
@@ -254,6 +259,7 @@ type
     procedure MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
     Procedure UpdateMapPreviewImageIcons(var ImageList : TImageList; MapIndex,ImageAction : integer);
 
+    procedure DeleteAll;
 
   end;
 
@@ -299,22 +305,27 @@ end;
 
 procedure TMapEdit.FormCreate(Sender: TObject);
 begin
+ CTileBitmap:=TBitMap.Create;
+ FormShowActivate:=false;
  LoadResourceIcons;
  SetDrawPixelProc(@DrawTileCB);
  SetGetPixelProc(@GetTileTB);
+
+ Init;
+end;
+
+procedure TMapEdit.Init;
+begin
  SetMapTileMode(1);  //draw
  SetDrawTool(DrawShapePencil);
  CurrentMap:=MapCoreBase.GetCurrentMap;
  MapCoreBase.SetZoomSize(CurrentMap,4);
  MapCoreBase.SetMapTileSize(CurrentMap,32,32);
 
- CTileBitmap:=TBitMap.Create;
-
  TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
  TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
-
  CTile.ImageIndex:=TileMissing;
- FormShowActivate:=false;
+ LoadTile(0);
 
  MapX:=0;
  MapY:=0;
@@ -326,6 +337,25 @@ begin
  RenderDrawToolShape:=False;
  UpdateToolSelectionIcons;
  UpdateEditMenus;
+
+// MapCoreBase.SetCurrentMap(MapCoreBase.GetMapCount-1);
+//  CurrentMap:=MapCoreBase.GetCurrentMap;
+  TileMode:=1; //draw
+  MapCoreBase.SetMapTileMode(CurrentMap,TileMode); // we set to draw because the copied data from map 0 may be in erase mode
+
+//  TileZoom.Position:=4;
+//  MapCoreBase.SetZoomSize(CurrentMap,TileZoom.Position);
+
+  UpdateMapListView;
+  UpdatePageSize;
+  MapScrollBox.HorzScrollBar.Position:=0;
+  MapScrollBox.VertScrollBar.Position:=0;
+  SetDrawTool(DrawShapePencil);
+//  UpdateToolSelectionIcons;
+  UpdateMenus;
+//  UpdateEditMenus;
+  MapPaintBox.Invalidate;
+
 end;
 
 procedure TMapEdit.FormDestroy(Sender: TObject);
@@ -515,23 +545,6 @@ begin
   PlotTile(mx,my,TTile);
 end;
 
-procedure TMapEdit.MapImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-begin
- (*
- UpdateMapInfo(x,y);
-
- if MDOwnLeft and (TileMode=1) then
- begin
-   APlotTile(x,y,CTile);
-   //MapCoreBase.SetMapTile(CurrentMap,mx,my,CTile);
- end
- else if (MDOwnRight=true) or ((MDownLeft=true) and (TileMode=0)) then
- begin
-   AClearTile(x,y);
- end;
- MapPaintBox.Invalidate;
- *)
-end;
 
 procedure TMapEdit.APlotTile(x,y : integer;var TTile : TileRec);
 var
@@ -688,27 +701,53 @@ begin
   if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then DrawOverLayOnClipArea;
 end;
 
+procedure TMapEdit.MenuDeleteAllClick(Sender: TObject);
+begin
+ DeleteAll;
+end;
+
+procedure TMapEdit.DeleteAll;
+begin
+  MapCoreBase.Init;  //init core to default values
+  Init;              //init map editor to default values
+end;
+
 procedure TMapEdit.MenuDeleteClick(Sender: TObject);
+var
+  index : integer;
+  item  : TListItem;
 begin
   if MapCoreBase.GetMapCount > 1 then
   begin
-    if (MapListView.SelCount > 0) then
+    if (MapListView.SelCount > 0) then    //if map is selected
     begin
-      MapCoreBase.DeleteMap(CurrentMap);
-      if CurrentMap > (MapCoreBase.GetMapCount-1) then
-      begin
-        CurrentMap:=MapCoreBase.GetMapCount-1;
-      end;
-      UpdateMapListView;
-      UpdatePageSize;
+       item:=MapListView.LastSelected;
+       index:=item.index;
+       if index > -1 then
+       begin
+         MapCoreBase.DeleteMap(Index);
+       end
+       else
+       begin
+         MapCoreBase.DeleteMap(CurrentMap);
+       end;
+
+       if CurrentMap > (MapCoreBase.GetMapCount-1) then
+       begin
+         CurrentMap:=MapCoreBase.GetMapCount-1;
+         MapCoreBase.SetCurrentMap(CurrentMap);
+       end;
+       UpdateMapListView;
+       UpdatePageSize;
       //UpdateMapView;
-      MapPaintBox.Invalidate;
+       MapPaintBox.Invalidate;
     end;
   end
   else
   begin
     MapCoreBase.ClearMap(0,TileClear);  // if there is only one map we just clear it
     UpdatePageSize;
+    UpdateMapListView;
     //UpdateMapView;
     MapPaintBox.Invalidate;
   end;
@@ -832,6 +871,17 @@ begin
   UpdateEditMenus;
   MapPaintBox.Invalidate;
 end;
+
+
+
+
+
+procedure TMapEdit.MenuPopupNewClick(Sender: TObject);
+begin
+
+end;
+
+
 
 procedure TMapEdit.MenuOpenClick(Sender: TObject);
 begin
@@ -1130,19 +1180,20 @@ end;
 procedure TMapEdit.TileListViewClick(Sender: TObject);
 var
   item  : TListItem;
-  awidth,aheight : integer;
+//  awidth,aheight : integer;
 begin
  if (TileListview.SelCount > 0)  then
  begin
     item:=TileListView.LastSelected;
-    aheight:=ImageThumbBase.GetHeight(item.index);
-    awidth:=ImageThumbBase.GetWidth(item.index);
+  //  aheight:=ImageThumbBase.GetHeight(item.index);
+  //  awidth:=ImageThumbBase.GetWidth(item.index);
 
-    SelectedTilePanel.AutoSize:=true;
-    SelectedTileImage.AutoSize:=true;
-    SelectedTileImage.Picture.Bitmap.SetSize(awidth,aheight);
-    SelectedTilePanel.AutoSize:=false;
-    SelectedTileImage.AutoSize:=false;
+  //  SelectedTilePanel.AutoSize:=true;
+  //  SelectedTileImage.AutoSize:=true;
+  //  SelectedTileImage.Picture.Bitmap.SetSize(awidth,aheight);
+
+  //  SelectedTilePanel.AutoSize:=false;
+  //  SelectedTileImage.AutoSize:=false;
 
     LoadTile(item.Index);
     UpdateCurrentTile;
@@ -1193,8 +1244,10 @@ end;
 
 procedure TMapEdit.Button1Click(Sender: TObject);
 begin
- UpdateMapPreviewImageIcons(MapImageList,MapCoreBase.GetCurrentMap,AddImage);
-// ShowMessage('working');
+// UpdateMapPreviewImageIcons(MapImageList,MapCoreBase.GetCurrentMap,AddImage);
+ ShowMessage(IntToStr(SelectedTileImage.Picture.Bitmap.Width)+' '+IntToStr(SelectedTileImage.Picture.Bitmap.Height));
+
+// UpdateCurrentTile;
 end;
 
 procedure TMapEdit.MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
@@ -1318,8 +1371,16 @@ end;
 
 procedure TMapEdit.UpdateCurrentTile;
 begin
-  SelectedTileImage.Picture.Bitmap.SetSize(CTileBitMap.Width, CTileBitMap.Height);
-  SelectedTileImage.canvas.CopyRect(Rect(0, 0, CTileBitMap.Width, CTileBitMap.Height), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
+// SelectedTileImage.Picture.Bitmap.SetSize(CTileBitMap.Width, CTileBitMap.Height);
+
+ //SelectedTileImage.Picture.Bitmap.SetSize(256, 256);
+// SelectedTileImage.Picture.Bitmap.Width:=256;
+// SelectedTileImage.Picture.Bitmap.Height:=256;
+
+ //  SelectedTileImage.canvas.CopyRect(Rect(0, 0, CTileBitMap.Width, CTileBitMap.Height), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
+  SelectedTileImage.canvas.CopyRect(Rect(0, 0,  256,256), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width,  CTileBitMap.Height));
+//        ActualBox.canvas.CopyRect(Rect(0, 0,  256,256), ACBitMap.Canvas, Rect(0, 0,ACBitMap.Width,  ACBitMap.Height));
+
 end;
 
 procedure TMapEdit.UpdateInfoBarX1Y1X2Y2;

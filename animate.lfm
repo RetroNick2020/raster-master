@@ -352,6 +352,10 @@ object AnimationForm: TAnimationForm
         Caption = 'Delete'
         OnClick = MenuItem11Click
       end
+      object MenuDeleteAll: TMenuItem
+        Caption = 'Delete All'
+        OnClick = MenuDeleteAllClick
+      end
       object MenuItem7: TMenuItem
         Caption = 'Export Anim As PNG''s'
         OnClick = AnimExportMenuClick

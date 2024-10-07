@@ -47,6 +47,8 @@ TAnimateBase = Class
 
                  procedure AddAnimation;
                  procedure DeleteAnimation(AnimationIndex : integer);
+                 procedure DeleteAll;
+
 
                  procedure InitAnimation;
                  function GetAnimationCount : integer;
@@ -98,6 +100,11 @@ begin
  Animations.Animcount:=0;
  Animations.CurrentAnimation:=0;   //zero is the first index item
  Animations.AnimationList[Animations.CurrentAnimation].FrameCount:=0;
+end;
+
+procedure TAnimateBase.DeleteAll;
+begin
+ InitAnimation;
 end;
 
 procedure TAnimateBase.InitClipBoard;

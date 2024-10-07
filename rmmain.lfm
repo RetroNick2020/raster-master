@@ -1,12 +1,12 @@
 object RMMainForm: TRMMainForm
-  Left = 113
-  Height = 1057
-  Top = 234
-  Width = 1824
+  Left = 383
+  Height = 854
+  Top = 155
+  Width = 1491
   Align = alClient
   Caption = 'Raster Master'
-  ClientHeight = 1057
-  ClientWidth = 1824
+  ClientHeight = 854
+  ClientWidth = 1491
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
   OnClose = FormClose
@@ -23,13 +23,13 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1532
-    Height = 1057
+    Left = 1253
+    Height = 854
     Top = 0
-    Width = 292
+    Width = 238
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 1057
-    ClientWidth = 292
+    ClientHeight = 854
+    ClientWidth = 238
     TabOrder = 5
     object RMPanel: TPanel
       AnchorSideRight.Control = RightPanel
@@ -37,9 +37,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Cursor = crNo
-      Left = 118
+      Left = 64
       Height = 121
-      Top = 925
+      Top = 722
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
@@ -104,22 +104,22 @@ object RMMainForm: TRMMainForm
     AnchorSideRight.Control = RightHSplitter
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 308
-    Height = 945
+    Left = 307
+    Height = 742
     Top = 112
-    Width = 1213
+    Width = 935
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 945
-    ClientWidth = 1213
+    ClientHeight = 742
+    ClientWidth = 935
     TabOrder = 1
     object ZoomScrollBox: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
       AnchorSideTop.Control = MiddleBottomPanel
       Left = 0
-      Height = 945
+      Height = 742
       Top = 0
-      Width = 1213
+      Width = 935
       HorzScrollBar.Increment = 93
       HorzScrollBar.Page = 862
       HorzScrollBar.Tracking = True
@@ -129,8 +129,8 @@ object RMMainForm: TRMMainForm
       Align = alClient
       Anchors = [akRight, akBottom]
       BorderStyle = bsNone
-      ClientHeight = 945
-      ClientWidth = 1213
+      ClientHeight = 742
+      ClientWidth = 935
       TabOrder = 0
       object ZoomPaintBox: TPaintBox
         AnchorSideLeft.Control = ZoomScrollBox
@@ -155,13 +155,13 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 1057
+    Height = 854
     Top = 0
-    Width = 308
+    Width = 307
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 1057
-    ClientWidth = 308
+    ClientHeight = 854
+    ClientWidth = 307
     TabOrder = 0
     object LeftVSplitter: TSplitter
       AnchorSideLeft.Control = LeftPanel
@@ -173,8 +173,8 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 282
-      Width = 308
+      Top = 280
+      Width = 305
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -190,9 +190,9 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 762
-      Top = 295
-      Width = 297
+      Height = 561
+      Top = 293
+      Width = 296
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
       Color = 15790320
@@ -213,20 +213,20 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 282
+      Height = 280
       Top = 0
-      Width = 293
+      Width = 292
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 282
-      ClientWidth = 293
+      ClientHeight = 280
+      ClientWidth = 292
       TabOrder = 0
       object ActualBox: TImage
         Left = 16
-        Height = 144
+        Height = 256
         Top = 8
-        Width = 104
+        Width = 256
       end
     end
   end
@@ -235,8 +235,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 297
-    Height = 1057
+    Left = 296
+    Height = 854
     Top = 0
     Width = 11
     Align = alNone
@@ -249,8 +249,8 @@ object RMMainForm: TRMMainForm
     AnchorSideTop.Control = Owner
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 1521
-    Height = 1057
+    Left = 1242
+    Height = 854
     Top = 0
     Width = 11
     Align = alNone
@@ -263,19 +263,19 @@ object RMMainForm: TRMMainForm
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = RightHSplitter
-    Left = 308
+    Left = 307
     Height = 112
     Top = 0
-    Width = 1213
+    Width = 935
     Anchors = [akTop, akLeft, akRight]
     ClientHeight = 112
-    ClientWidth = 1213
+    ClientWidth = 935
     TabOrder = 2
     object ToolPanel: TPanel
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 728
+      Left = 450
       Height = 88
       Top = 8
       Width = 434
@@ -481,7 +481,7 @@ object RMMainForm: TRMMainForm
       end
     end
     object ZoomTrackBar: TTrackBar
-      Left = 1177
+      Left = 899
       Height = 110
       Hint = 'Zoom Level'
       Top = 1
@@ -502,7 +502,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 8
-      Width = 702
+      Width = 424
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -513,7 +513,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 40
-      Width = 702
+      Width = 424
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -521,8 +521,8 @@ object RMMainForm: TRMMainForm
     end
   end
   object MainMenu1: TMainMenu
-    Left = 1624
-    Top = 128
+    Left = 1176
+    Top = 248
     object FileExitMenu: TMenuItem
       Caption = 'File'
       object NewFile: TMenuItem
@@ -1485,8 +1485,8 @@ object RMMainForm: TRMMainForm
     end
   end
   object ActionList1: TActionList
-    Left = 1624
-    Top = 208
+    Left = 1176
+    Top = 336
     object EditCut1: TEditCut
       Category = 'Edit'
       Caption = 'Cu&t'
@@ -1506,25 +1506,25 @@ object RMMainForm: TRMMainForm
   object OpenDialog1: TOpenDialog
     Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|All Files|*.*'
     Options = [ofFileMustExist, ofEnableSizing, ofViewDetail]
-    Left = 1624
-    Top = 304
+    Left = 1176
+    Top = 416
   end
   object SaveDialog1: TSaveDialog
     Title = 'Save'
     Filter = 'Windows BMP|*.bmp|PC Paintbrush |*.pcx|*.lbm|Amiga ILBM|*.ilbm|Amiga ILBM|All Files|*.*'
     Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
-    Left = 1624
-    Top = 400
+    Left = 1176
+    Top = 496
   end
   object ExportDialog: TSaveDialog
     Title = 'Export'
     Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
-    Left = 1624
-    Top = 488
+    Left = 1176
+    Top = 568
   end
   object ImageList1: TImageList
-    Left = 1624
-    Top = 592
+    Left = 1176
+    Top = 648
   end
   object ExportPropsMenu: TPopupMenu
     Left = 168
@@ -1553,12 +1553,12 @@ object RMMainForm: TRMMainForm
       item
       end>
     UsePreProcessor = False
-    Left = 1592
-    Top = 8
+    Left = 1176
+    Top = 160
   end
   object SelectDirectoryDialog: TSelectDirectoryDialog
     Title = 'Select Export Directory'
-    Left = 1640
-    Top = 672
+    Left = 1176
+    Top = 704
   end
 end

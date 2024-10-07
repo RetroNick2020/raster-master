@@ -72,6 +72,7 @@ Type
              public
 
              Constructor create;
+             procedure Init;
 
              procedure DClip(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : integer);
              procedure ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode,shape,full : Integer);
@@ -127,9 +128,6 @@ Type
              procedure SaveClipCoords(x,y,x2,y2 : integer);
              procedure DrawOverlayOnClipArea(Image : TCanvas;color : TColor; mode : integer);
 
-
-
-
              procedure SetDrawTool(Tool : integer);
              function GetDrawTool : integer;
 
@@ -167,18 +165,18 @@ implementation
 
 Constructor TRMDrawTools.create;
 begin
-  //SetCellWidth(30);
-  //SetCellHeight(30);
-SetZoomMode(1);
-SetZoomSize(2);
-  //SetGridThickY(1);
-  //SetGridThickX(1);
-   SetGridMode(1);
-  SetDrawTool(DrawShapePencil);
-  SetClipStatus(0); //off
-  SetClipSizedStatus(0);
+  Init;
 end;
 
+procedure TRMDrawTools.Init;
+begin
+ SetZoomMode(1);
+ SetZoomSize(2);
+ SetGridMode(1);
+ SetDrawTool(DrawShapePencil);
+ SetClipStatus(0); //off
+ SetClipSizedStatus(0);
+end;
 
 procedure TRMDrawTools.SetClipStatus(mode : integer);
 begin
@@ -1022,7 +1020,6 @@ begin
   if RMCoreBase.GetWidth = 8 then
   begin
    If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
-
   end
   else if RMCoreBase.GetWidth = 16 then
   begin

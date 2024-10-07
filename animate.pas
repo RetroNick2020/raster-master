@@ -26,6 +26,7 @@ type
     MenuItem1: TMenuItem;
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
+    MenuDeleteAll: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
@@ -70,10 +71,11 @@ type
     procedure DeleteMenuClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure FormPaint(Sender: TObject);
+
     procedure AnimExportMenuClick(Sender: TObject);
     procedure AnimCopyMenuClick(Sender: TObject);
     procedure AnimPasteMenuClick(Sender: TObject);
+    procedure MenuDeleteAllClick(Sender: TObject);
     procedure MenuItem10Click(Sender: TObject);
     procedure MenuItem11Click(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
@@ -108,6 +110,7 @@ type
 
     procedure AddAnimation;
     procedure DeleteAnimation(AnimationIndex : integer);
+    procedure DeleteAll;
     procedure SelectAnimation(AnimationIndex : integer);
 
   end;
@@ -123,18 +126,10 @@ implementation
 
 procedure TAnimationForm.FormCreate(Sender: TObject);
 begin
-//    SpriteListView.Hint:='hello';
-//    SpriteListView.ShowHint:=true;
-
- //   CurrentAnimListView.Hint:='hello2';
- //   CurrentAnimListView.ShowHint:=true;
   FPSDelay:=1000 Div FPSTrackBar.Position;
 end;
 
-procedure TAnimationForm.FormPaint(Sender: TObject);
-begin
-  //CurrentAnimationImageList.Draw(Panel1.Canvas,10,10,AnimFrameCounter,true);
-end;
+
 
 procedure TAnimationForm.AnimExportMenuClick(Sender: TObject);
   var
@@ -197,6 +192,11 @@ begin
      CurrentAnimListView.Items[index].ImageIndex:=ImageIndex;
     end;
   end;
+end;
+
+procedure TAnimationForm.MenuDeleteAllClick(Sender: TObject);
+begin
+  DeleteAll;
 end;
 
 procedure TAnimationForm.MenuItem10Click(Sender: TObject);
@@ -265,6 +265,18 @@ begin
 
   CurrentAnimListView.Repaint;
   AllAnimListView.Repaint;
+end;
+
+procedure TAnimationForm.DeleteAll;
+begin
+ AnimateBase.DeleteAll;
+ AnimateBase.AddAnimation;   //we need atleast one animation
+
+ LoadCurrentAnimList;
+ LoadAnimThumbList;
+
+ CurrentAnimListView.Repaint;
+ AllAnimListView.Repaint;
 end;
 
 procedure TAnimationForm.SelectAnimation(AnimationIndex : integer);
@@ -623,7 +635,13 @@ var
   index : integer;
 begin
   index:=CurrentAnimListView.ItemIndex;
-  if index > -1 then AnimateBase.CopyToClipBoard(AnimateBase.GetImageIndex(index),AnimateBase.GetUID(index));
+  if index > -1 then
+  begin
+    if AnimateBase.GetImageIndex(index) > -1 then     //prevent copying empty frame - just use add frame
+    begin
+      AnimateBase.CopyToClipBoard(AnimateBase.GetImageIndex(index),AnimateBase.GetUID(index));
+    end;
+  end;
 //  info.Caption:='Copy: '+IntToStr(index)+' '+IntToStr(AnimateBase.GetImageIndex(index));
 end;
 
@@ -637,7 +655,7 @@ var
 begin
   index:=CurrentAnimListView.ItemIndex;
 //  info.Caption:='Delete: '+IntToStr(index)+' '+IntToStr(AnimateBase.GetImageIndex(index));
-  DeleteFrame(Index);
+  if index > -1 then DeleteFrame(Index);
 end;
 
 end.

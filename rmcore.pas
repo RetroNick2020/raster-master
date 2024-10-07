@@ -33,6 +33,7 @@ Type
 
                public
                Constructor Create;
+               procedure Init;
                procedure AddColor(r,g,b : integer);
                procedure DeleteColor(index : integer);
                procedure ClearColors;
@@ -101,6 +102,7 @@ Type
                  public
 
                  Constructor create;
+                 procedure Init;
                  procedure PutPixel(x,y,Color : Integer);
                  procedure PutPixel(x,y : integer);
                  function GetPixel(x,y : Integer) : Integer;
@@ -812,6 +814,12 @@ end;
 
 Constructor TRMPalette.create;
 begin
+ Init;
+end;
+
+
+procedure TRMPalette.Init;
+begin
   ColorCount:=0;
   SetPaletteMode(PaletteModeNone);
   SetCBPaletteMode(PaletteModeNone);
@@ -1125,12 +1133,17 @@ end;
 Constructor TRMCoreBase.create;
 begin
     Palette:=TRMPalette.Create;
-    SetWidth(256);
-    SetHeight(256);
-    SetCurColor(1);
-    ClearBuf(0);
-    CopyToUndoBuf;
- end;
+    Init;
+end;
+
+procedure TRMCoreBase.Init;
+begin
+  SetWidth(256);
+  SetHeight(256);
+  SetCurColor(1);
+  ClearBuf(0);
+  CopyToUndoBuf;
+end;
 
 procedure TRMCoreBase.SetWidth(width : integer);
 begin

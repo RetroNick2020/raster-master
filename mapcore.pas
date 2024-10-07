@@ -90,7 +90,9 @@ type
 
                     CurrentMap : integer;
                     MapCount   : integer;
+
                     constructor Create;
+                    procedure Init;
 
 
                     procedure SetListSize(size : integer);
@@ -190,21 +192,27 @@ implementation
 
 constructor TMapCoreBase.Create;
 begin
-  SetCurrentMap(0);
-  SetListSize(MaxListSize);
-  SetZoomSize(0,4);
-  //  SetMapSize(0,DefMaxMapWidth,DefMaxMapHeight);
-  SetMapSize(0,16,16);
-  SetMapTileSize(0,64,64);
-  SetMapCount(1);
-  SetMapGridStatus(0,1); //grid on
-  SetMapClipStatus(0,0); //clip off
-  SetMapDrawTool(0,1);  //pencil
-  SetMapTileMode(0,1); //draw
-  SetMapScrollVertPos(0,0);
-  SetMapScrollHorizPos(0,0);
-  CopyToUndo(0);     //copy map 0 to undo - to init it
-  InitClipBoard;
+  Init;
+end;
+
+procedure TMapCoreBase.Init;
+begin
+ SetCurrentMap(0);
+ SetListSize(MaxListSize);
+ SetZoomSize(0,4);
+ //  SetMapSize(0,DefMaxMapWidth,DefMaxMapHeight);
+ SetMapSize(0,16,16);
+ SetMapTileSize(0,64,64);
+ SetMapCount(1);
+ SetMapGridStatus(0,1); //grid on
+ SetMapClipStatus(0,0); //clip off
+ SetMapDrawTool(0,1);  //pencil
+ SetMapTileMode(0,1); //draw
+ SetMapScrollVertPos(0,0);
+ SetMapScrollHorizPos(0,0);
+ CopyToUndo(0);     //copy map 0 to undo - to init it
+ InitClipBoard;
+
 end;
 
 procedure TMapCoreBase.SetListSize(size : integer);
