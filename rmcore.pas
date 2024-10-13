@@ -1138,8 +1138,8 @@ end;
 
 procedure TRMCoreBase.Init;
 begin
-  SetWidth(256);
-  SetHeight(256);
+  SetWidth(32);
+  SetHeight(32);
   SetCurColor(1);
   ClearBuf(0);
   CopyToUndoBuf;

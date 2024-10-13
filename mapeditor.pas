@@ -257,7 +257,7 @@ type
     function ExportTextFileToClipboard(Sender: TObject) : boolean;
 
     procedure MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
-    Procedure UpdateMapPreviewImageIcons(var ImageList : TImageList; MapIndex,ImageAction : integer);
+    Procedure UpdateMapPreviewImageIcons(MapIndex,ImageAction : integer);
 
     procedure DeleteAll;
 
@@ -978,7 +978,7 @@ begin
  UpdatePageSize;
 // UpdateMapView;
  MapPaintBox.Invalidate;
- UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+ UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
  MapListView.Repaint;
 end;
 
@@ -1259,9 +1259,9 @@ begin
  TileImageList.Draw(MPCanvas,gx,gy,TTile.ImageIndex,true);
 end;
 
-Procedure TMapEdit.UpdateMapPreviewImageIcons(var ImageList : TImageList; MapIndex,ImageAction : integer);
+Procedure TMapEdit.UpdateMapPreviewImageIcons(MapIndex,ImageAction : integer);
 var
-  i,j : integer;
+  i,j,index : integer;
   T   : TileRec;
   SrcBitMap,DstBitMap : TBitMap;
 begin
@@ -1287,11 +1287,12 @@ begin
 
   if ImageAction = AddImage then
   begin
-     ImageList.add(DstBitMap,nil);
+     index:=MapImageList.add(DstBitMap,nil);
+     MapListView.Items[MapIndex].ImageIndex:=index;
   end
   else if ImageAction = UpdateImage then
   begin
-     ImageList.Replace(MapIndex,DstBitMap,nil,false);
+     MapImageList.Replace(MapIndex,DstBitMap,nil,false);
   end;
 //  MapListView.Repaint;
   SrcBitMap.Free;
@@ -1348,13 +1349,15 @@ begin
  MapImageList.Clear;
  MapImageList.Width:=256;
  MapImageList.Height:=256;
+// ShowMessage(IntToStr(count));
  For i:=0 to count-1 do
  begin
    MapListView.Items.Add;
-   MapListView.Items[i].Caption:='Map '+IntToStr(i+1);
-   MapListView.Items[i].ImageIndex:=i;
+   UpdateMapPreviewImageIcons(i,AddImage);
 
-   UpdateMapPreviewImageIcons(MapImageList,i,AddImage);
+   MapListView.Items[i].Caption:='Map '+IntToStr(i+1);
+  // MapListView.Items[i].ImageIndex:=i;
+
  end;
 end;
 
@@ -1387,8 +1390,8 @@ procedure TMapEdit.UpdateInfoBarX1Y1X2Y2;
 var
   XYStr,WHStr   : string;
 begin
- XYStr:='X = '+IntToStr(MapX)+' Y = '+IntToStr(MapY)+#13#10+
-        'X2 = '+IntToStr(MapX2)+' Y2 = '+IntToStr(MapY2)+#13#10;
+ XYStr:='X = '+IntToStr(MapX)+' Y = '+IntToStr(MapY)+' '+
+        'X2 = '+IntToStr(MapX2)+' Y2 = '+IntToStr(MapY2)+' ';
  WHStr:='Width = '+IntToStr(ABS(MapX2-MapX+1))+' Height = '+IntToStr(ABS(MapY2-MapY+1));
  StatusBar1.SimpleText:=XYStr;
  StatusBar2.SimpleText:=WHStr;
@@ -1406,7 +1409,7 @@ begin
   mx:=x div TileWidth;
   my:=y div TileHeight;
 
-  XYStr:='X = '+IntToStr(MX)+' Y = '+IntToStr(MY)+#13#10;
+  XYStr:='X = '+IntToStr(MX)+' Y = '+IntToStr(MY)+' ';
   ColIndexStr:='';
   if (mx >= 0) and (my >= 0) then
    begin
@@ -1417,8 +1420,8 @@ begin
    if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then
    begin
         MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
-        ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
-                 'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
+        ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+' '+
+                 'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+' ';
    end;
 
   StatusBar1.SimpleText:=XYStr+ColIndexStr;
@@ -1613,7 +1616,7 @@ begin
                DrawShapeEllipse,DrawShapeFEllipse:MPaintBoxMouseUpXYX2Y2Tool(Sender,Button,Shift,X,Y);
 
  end;
- UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+ UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
  MapListView.Repaint;
 end;
 
@@ -1638,7 +1641,7 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.Hflip(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
-  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
 end;
 
@@ -1693,7 +1696,7 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollDown(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
-  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
 end;
 
@@ -1704,7 +1707,7 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollLeft(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
-  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
 end;
 
@@ -1715,7 +1718,7 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollRight(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
-  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
 end;
 
@@ -1726,7 +1729,7 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.ScrollUp(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
-  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
 end;
 
@@ -1734,7 +1737,7 @@ procedure TMapEdit.ToolUndoIconClick(Sender: TObject);
 begin
  MapCoreBase.Undo(MapCoreBase.GetCurrentMap);
  MapPaintBox.Invalidate;
- UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+ UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
  MapListView.Repaint;
 end;
 
@@ -1745,7 +1748,7 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapCoreBase.Vflip(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
   MapPaintBox.Invalidate;
-  UpdateMapPreviewImageIcons(MapImageList,CurrentMap,UpdateImage);
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
 end;
 

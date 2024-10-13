@@ -41,7 +41,7 @@ Interface
  * you can switch off usage of bass.
  * Save will still work, but no sound preview.
  *)
-{$define .UseBass}
+{$define UseBass}
 
 Uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,

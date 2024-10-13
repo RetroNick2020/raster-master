@@ -580,8 +580,8 @@ begin
  ZoomSize:=RMDrawTools.GetZoomMode;
  DrawMode:=False;
  DrawFirst:=False;
- ActualBox.Width:=256;
- ActualBox.Height:=256;
+// ActualBox.Width:=256;
+// ActualBox.Height:=256;
  ActualBox.Canvas.Brush.Style := bsSolid;
  ActualBox.Canvas.Brush.Color := clblack;
  ActualBox.Canvas.FillRect(0,0,256,256);
@@ -595,7 +595,7 @@ begin
 
  ZoomTrackBar.Position:=RMDrawTools.getZoomSize;
 
- RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
+ RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA256);
  LoadDefaultPalette;
 
  ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
@@ -603,7 +603,7 @@ begin
 
  RMDrawTools.SetDrawTool(DrawShapePencil);
  ClearSelectedToolsMenu;
- PaletteVGA.Checked:=true; // set vga palette
+ PaletteXGA256.Checked:=true; // set xga 256 palette
  UpdateToolSelectionIcons;
  UpdateEditMenu;
  InitThumbView;
@@ -1469,7 +1469,7 @@ var
 begin
  zx:=RMDrawTools.GetZoomX(x);
  zy:=RMDrawTools.GetZoomy(y);
- XYStr:='X = '+IntToStr(ZX)+' Y = '+IntToStr(ZY)+#13#10;
+ XYStr:='X = '+IntToStr(ZX)+' Y = '+IntToStr(ZY)+' ';
  ColIndexStr:='';
  if (zx >= 0) and (zy >= 0) then
  begin
@@ -1479,8 +1479,8 @@ begin
  if RMDrawTools.GetClipStatus = 1 then
  begin
       RMDrawTools.GetClipAreaCoords(ca);
-      ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+#13#10+
-               'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+#13#10;
+      ClipStr:='Select Area '+'X = '+IntToStr(ca.x)+' Y = '+IntToStr(ca.y)+' X2 = '+IntToStr(ca.x2)+' Y2 = '+IntToStr(ca.y2)+' '+
+               'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+' ';
  end;
 // InfoBarLabel.Caption:=XYStr+ClipStr+ColIndexStr;
  StatusBar1.SimpleText:=XYStr+ColIndexStr;
@@ -1491,8 +1491,8 @@ procedure TRMMainForm.UpdateInfoBarDetail;
 var
   XYStr,WHStr   : string;
 begin
- XYStr:='X = '+IntToStr(ZoomX)+' Y = '+IntToStr(ZoomY)+#13#10+
-        'X2 = '+IntToStr(ZoomX2)+' Y2 = '+IntToStr(ZoomY2)+#13#10;
+ XYStr:='X = '+IntToStr(ZoomX)+' Y = '+IntToStr(ZoomY)+' '+
+        'X2 = '+IntToStr(ZoomX2)+' Y2 = '+IntToStr(ZoomY2)+' ';
  WHStr:='Width = '+IntToStr(ABS(ZoomX2-ZoomX+1))+' Height = '+IntToStr(ABS(ZoomY2-ZoomY+1));
 // InfoBarLabel.Caption:=XYStr;
  StatusBar1.SimpleText:=XYStr;
@@ -1843,7 +1843,7 @@ var
  UsePBM  : boolean;
 begin
    GetOpenSaveRegion(x,y,x2,y2);
-   SaveDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush|*.pcx|DP-Amiga IFF|*.iff|DP-Amiga IFF Brush|*.brush|DP-PC IFF LBM(PBM)|*.lbm|DP-PC BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
+   SaveDialog1.Filter := 'PNG|*.png|Windows BMP|*.bmp|PC Paintbrush|*.pcx|DP-Amiga IFF|*.iff|DP-Amiga IFF Brush|*.brush|DP-PC IFF LBM(PBM)|*.lbm|DP-PC BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*';
    if SaveDialog1.Execute then
    begin
       ext:=UpperCase(ExtractFileExt(SaveDialog1.Filename));
@@ -1914,7 +1914,7 @@ begin
    pm:=RMCoreBase.Palette.GetPaletteMode;
 
    if RMDrawTools.GetClipStatus = 1 then lp:=0;
-   OpenDialog1.Filter := 'Windows BMP|*.bmp|PNG|*.png|PC Paintbrush |*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF|*.iff|DP-Amiga IFF Brush|*.brush|DP-PC IFF LBM(PBM)|*.lbm|DP-PC BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
+   OpenDialog1.Filter := 'PNG|*.png|Windows BMP|*.bmp|PC Paintbrush |*.pcx|DP-Amiga IFF LBM|*.lbm|DP-Amiga IFF|*.iff|DP-Amiga IFF Brush|*.brush|DP-PC IFF LBM(PBM)|*.lbm|DP-PC BBM Brush|*.bbm|GIF|*.gif|RM RAW Files|*.raw|All Files|*.*' ;
 
    if OpenDialog1.Execute then
    begin
@@ -3681,8 +3681,8 @@ begin
  if MessageDlg('Delete All Images, Maps, and Sprite Animations!', 'Are you sure you want to do this?', mtConfirmation,
    [mbYes, mbNo],0) = mrNo    then  Exit;
 
- ImgWidth:=256;
- ImgHeight:=256;
+ ImgWidth:=32;
+ ImgHeight:=32;
  //ActualBox.Width:=ImgWidth;
  //ActualBox.Height:=ImgHeight;
  RMCoreBase.SetWidth(ImgWidth);
@@ -4266,11 +4266,14 @@ begin
  ImageThumbBase.AddImage;
  ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
 
- with ListView1.Items.Add do
- begin
-   ImageIndex :=ImageThumbBase.GetCount-1;
-   Caption:='Image '+IntToStr(ImageThumbBase.GetCount);
- end;
+ ListView1.AddItem('Image '+IntToStr(ImageThumbBase.GetCount),nil);
+ ListView1.Items[ImageThumbBase.GetCount-1].ImageIndex:=ImageThumbBase.GetCount-1;
+
+ //with ListView1.Items.Add do
+ //begin
+ //  ImageIndex :=ImageThumbBase.GetCount-1;
+ //  Caption:='Image '+IntToStr(ImageThumbBase.GetCount);
+ //end;
 
  ImageThumbBase.SetCurrent(ImageThumbBase.GetCount-1);
  Listview1.Refresh;
