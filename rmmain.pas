@@ -573,9 +573,12 @@ end;
 procedure TRMMainForm.FormCreate(Sender: TObject);
 begin
  RenderBitMap:=TBitMap.Create;
- RenderBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
+ //size should be set to biggest bitmap to create
+ RenderBitMap.SetSize(256,256);
+
  RenderBitMap2:=TBitMap.Create;
- RenderBitMap2.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
+ //size should be set to biggest bitmap to create
+RenderBitMap2.SetSize(256,256);
 
  ZoomSize:=RMDrawTools.GetZoomMode;
  DrawMode:=False;
@@ -1531,7 +1534,8 @@ begin
     UpdateRenderBitMap;
     RMDrawTools.CreateRandomSprayPoints;
     RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
- //   RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+    //this
+   // RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
     ZoomPaintBox.Invalidate;
     RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
  //   UpdateActualArea;
@@ -1557,7 +1561,8 @@ begin
 
   RMDrawTools.CreateRandomSprayPoints;
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
-//  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+  //this
+  //RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
   ZoomPaintBox.Invalidate;
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
 

@@ -494,7 +494,7 @@ object MapEdit: TMapEdit
     Top = 126
     Width = 862
     Anchors = [akTop, akLeft, akRight, akBottom]
-    Caption = 'MiddlePanel'
+    Caption = ' '
     ClientHeight = 734
     ClientWidth = 862
     ParentColor = False
