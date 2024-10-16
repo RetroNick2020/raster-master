@@ -4,13 +4,9 @@ Raster Master Sprite/Icon/Map editor for Windows 10/11 (64 bit) that generates R
 
 ![](https://github.com/nickshardware/raster-master/wiki/images/rm47.png)
 ![](https://github.com/nickshardware/raster-master/wiki/images/me1.png)
-
+![](https://github.com/nickshardware/raster-master/wiki/images/rm55_3.png) 
 
 For DOS programming in VGA modex I have added support for DOS XLIB library LBM/PBM formats. Javascript putimagedata was added to the export options just because is so popular these days. My interest in Amiga coding also expanded to incluse Pascal and C instead of Just AmigaBASIC. I have added support for Hisoft and freepascal 68k and well as vbcc. 
-
-![](https://github.com/nickshardware/raster-master/wiki/images/rm55.png)  
-![](https://github.com/nickshardware/raster-master/wiki/images/rm55_2.png)  
-![](https://github.com/nickshardware/raster-master/wiki/images/rm55_3.png) 
 
 Why did this program return from the dead?
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I will continue to work on this and even though i have managed to get most of the features from the original DOS version I did not get everything. Here is a list of things I did not get to yet or plan on supporting.
