@@ -37,7 +37,7 @@ Unit soundgen;
 Interface
 
 (*
- * In case you downloaded and just want to test the app without ocnfiguring Bass
+  * In case you downloaded and just want to test the app without ocnfiguring Bass
  * you can switch off usage of bass.
  * Save will still work, but no sound preview.
  *)

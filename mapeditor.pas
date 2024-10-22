@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,
   ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
-  rmconfig;
+  rmconfig, LCLType,setcustommapsize;
 
 const
   AddImage = 1;
@@ -24,6 +24,8 @@ type
     MenuItem15: TMenuItem;
     CloneMap: TMenuItem;
     MenuDeleteAll: TMenuItem;
+    ShowCustomSize: TMenuItem;
+    SetCustomSize: TMenuItem;
     MenuPopupNew: TMenuItem;
     MenuPopupDelete: TMenuItem;
     Properties: TMenuItem;
@@ -135,6 +137,8 @@ type
     procedure CheckBoxDisplayGridChange(Sender: TObject);
     procedure CloneMapClick(Sender: TObject);
     procedure CopyToClipBoardClick(Sender: TObject);
+    procedure CustomSizeMapDrawItem(Sender: TObject; ACanvas: TCanvas;
+      ARect: TRect; AState: TOwnerDrawState);
     procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -164,6 +168,7 @@ type
     procedure MenuSaveClick(Sender: TObject);
     procedure PasteFromClipBoardClick(Sender: TObject);
     procedure ReSizeMapClick(Sender: TObject);
+    procedure SetCustomSizeClick(Sender: TObject);
     procedure TileModeDrawClick(Sender: TObject);
     procedure TileModeEraseClick(Sender: TObject);
     procedure RadioDrawClick(Sender: TObject);
@@ -483,6 +488,12 @@ begin
  MapCoreBase.CopyToClipBoard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
 end;
 
+procedure TMapEdit.CustomSizeMapDrawItem(Sender: TObject; ACanvas: TCanvas;
+  ARect: TRect; AState: TOwnerDrawState);
+begin
+
+end;
+
 procedure TMapEdit.PasteFromClipBoardClick(Sender: TObject);
 var
   ca : MapClipAreaRec;
@@ -682,10 +693,10 @@ var
   i,j : integer;
   T   : TileRec;
 begin
- for j:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
-  begin
-    for i:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
-    begin
+ for j:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
+ begin
+    for i:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
+   begin
       MapCoreBase.GetMapTile(CurrentMap,i,j,T);
       if T.ImageIndex = TileMissing then PlotMissingTile(i,j)
       else if T.ImageIndex <> TileClear then ImageListPlotTile(i,j,T);
@@ -842,7 +853,7 @@ begin
   if MapExportForm.ShowModal = mrOK then
   begin
      MapExportForm.GetExportProps(EO);
-     MapCoreBase.SetMapExportProps(index,EO)
+     MapCoreBase.SetMapExportProps(index,EO);
   end;
 end;
 
@@ -907,6 +918,8 @@ end;
 
 
 procedure TMapEdit.UpdateEditMenus;
+var
+  mwidth,mheight : integer;
 begin
  ReSizeMap8x8.Checked:=false;
  ReSizeMap16x16.Checked:=false;
@@ -914,15 +927,28 @@ begin
  ReSizeMap64x64.Checked:=false;
  ReSizeMap128x128.Checked:=false;
  ReSizeMap256x256.Checked:=false;
+ //clear show custom size menu
+ ShowCustomSize.Checked:=false;
+ ShowCustomSize.Caption:='';
 
- case MapCoreBase.GetMapWidth(MapCoreBase.GetCurrentMap) of 8: ReSizeMap8x8.Checked:=true;
-                                                           16: ReSizeMap16x16.Checked:=true;
-                                                           32: ReSizeMap32x32.Checked:=true;
-                                                           64: ReSizeMap64x64.Checked:=true;
-                                                           128: ReSizeMap128x128.Checked:=true;
-                                                           256: ReSizeMap256x256.Checked:=true;
+ mwidth:=MapCoreBase.GetMapWidth(MapCoreBase.GetCurrentMap);
+ mheight:=MapCoreBase.GetMapHeight(MapCoreBase.GetCurrentMap);
 
+ if (mwidth=8) and (mheight=8) then ReSizeMap8x8.Checked:=true
+ else if (mwidth=16) and (mheight=16) then ReSizeMap16x16.Checked:=true
+ else if (mwidth=32) and (mheight=32) then ReSizeMap32x32.Checked:=true
+ else if (mwidth=64) and (mheight=64) then ReSizeMap64x64.Checked:=true
+ else if (mwidth=128) and (mheight=128) then ReSizeMap128x128.Checked:=true
+ else if (mwidth=256) and (mheight=256) then ReSizeMap256x256.Checked:=true
+ else
+ begin
+   //if custom set checked and dimensions
+   ShowCustomSize.Checked:=true;
+   ShowCustomSize.Caption:=IntToStr(mwidth)+'x'+IntToStr(mheight);
  end;
+
+
+
  ReSize8x8.Checked:=false;
  ReSize16x16.Checked:=false;
  ReSize32x32.Checked:=false;
@@ -980,6 +1006,21 @@ begin
  MapPaintBox.Invalidate;
  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
  MapListView.Repaint;
+end;
+
+procedure TMapEdit.SetCustomSizeClick(Sender: TObject);
+begin
+    if SetCustomMapSizeForm.ShowModal = mrOK then
+    begin
+       MapCoreBase.ResizeMapSize(CurrentMap,SetCustomMapSizeForm.SpinEditCustomWidth.Value,
+                                            SetCustomMapSizeForm.SpinEditCustomHeight.Value);
+
+       UpdateEditMenus;
+       UpdatePageSize;
+       MapPaintBox.Invalidate;
+       UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+       MapListView.Repaint;
+    end;
 end;
 
 procedure TMapEdit.TileModeDrawClick(Sender: TObject);
@@ -1245,7 +1286,7 @@ end;
 procedure TMapEdit.Button1Click(Sender: TObject);
 begin
 // UpdateMapPreviewImageIcons(MapImageList,MapCoreBase.GetCurrentMap,AddImage);
- ShowMessage(IntToStr(SelectedTileImage.Picture.Bitmap.Width)+' '+IntToStr(SelectedTileImage.Picture.Bitmap.Height));
+ //ShowMessage(IntToStr(SelectedTileImage.Picture.Bitmap.Width)+' '+IntToStr(SelectedTileImage.Picture.Bitmap.Height));
 
 // UpdateCurrentTile;
 end;
@@ -1271,9 +1312,9 @@ begin
  DstBitMap:=TBitMap.Create;
  DstBitMap.SetSize(256,256);
 
- for j:=0 to MapCoreBase.GetMapWidth(MapIndex)-1 do
+ for j:=0 to MapCoreBase.GetMapHeight(MapIndex)-1 do
   begin
-    for i:=0 to MapCoreBase.GetMapHeight(MapIndex)-1 do
+    for i:=0 to MapCoreBase.GetMapWidth(MapIndex)-1 do
     begin
       MapCoreBase.GetMapTile(MapIndex,i,j,T);
        if T.ImageIndex > TileClear then   //we don't care about missing tile here

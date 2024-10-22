@@ -5,25 +5,26 @@ unit mapexiportprops;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,mapcore,rwmap,rmcodegen;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, SpinEx,
+  mapcore, rwmap, rmcodegen;
 
 type
 
   { TMapExportForm }
 
   TMapExportForm = class(TForm)
-    Button1: TButton;
+    OKButton: TButton;
     ComboCompiler: TComboBox;
     ComboMap: TComboBox;
     CompilerType: TLabel;
-    EditHeight: TEdit;
     EditName: TEdit;
-    EditWidth: TEdit;
     HeightLabel: TLabel;
     MapName: TLabel;
     MapType: TLabel;
+    SpinEditExportWidth: TSpinEditEx;
+    SpinEditExportHeight: TSpinEditEx;
     WidthLabel: TLabel;
-    procedure Button1Click(Sender: TObject);
+    procedure OKButtonClick(Sender: TObject);
     procedure ComboCompilerChange(Sender: TObject);
   private
 
@@ -47,7 +48,7 @@ begin
    UpdateComboBoxes(ComboCompiler.ItemIndex);
 end;
 
-procedure TMapExportForm.Button1Click(Sender: TObject);
+procedure TMapExportForm.OKButtonClick(Sender: TObject);
 begin
   modalresult:= mrOk;
 end;
@@ -58,8 +59,8 @@ begin
    EditName.caption:=EO.Name;
    ComboCompiler.ItemIndex:=EO.Lan;
    ComboMap.ItemIndex:=EO.MapFormat;
-   EditWidth.Text:=IntToStr(props.Width);
-   EditHeight.Text:=IntToStr(props.Height);
+   SpinEditExportWidth.Value:=props.Width;
+   SpinEditExportHeight.Value:=props.Height;
    UpdateComboBoxes(ComboCompiler.ItemIndex);
 end;
 
@@ -68,8 +69,8 @@ begin
   props.Name:=EditName.caption;
   props.Lan:=ComboCompiler.ItemIndex;
   props.MapFormat:=ComboMap.ItemIndex;
-  props.Width:=StrToIntDef(EditWidth.Text,0);
-  props.Height:=StrToIntDef(EditHeight.Text,0);
+  props.Width:=SpinEditExportWidth.Value;
+  props.Height:=SpinEditExportHeight.Value;
 end;
 
 procedure TMapExportForm.InitComboBoxes;
@@ -91,8 +92,8 @@ begin
    ComboMap.Items.Add('None');
    ComboMap.ItemIndex:=0;
 
-   EditWidth.Text:='0';
-   EditHeight.Text:='0';
+   SpinEditExportWidth.Value:=24;
+   SpinEditExportHeight.Value:=8;
 end;
 
 procedure TMapExportForm.UpdateComboBoxes(compiler : integer);

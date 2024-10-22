@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 175
+  Left = 92
   Height = 860
-  Top = 269
+  Top = 173
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -534,8 +534,8 @@ object MapEdit: TMapEdit
     end
   end
   object MainMenu1: TMainMenu
-    Left = 70
-    Top = 275
+    Left = 72
+    Top = 304
     object FileMenuItem: TMenuItem
       Caption = 'File'
       object MenuNew: TMenuItem
@@ -636,6 +636,14 @@ object MapEdit: TMapEdit
         object ReSizeMap256x256: TMenuItem
           Caption = '256 X 256'
           OnClick = ReSizeMapClick
+        end
+        object ShowCustomSize: TMenuItem
+          Enabled = False
+          OnClick = ReSizeMapClick
+        end
+        object SetCustomSize: TMenuItem
+          Caption = 'Set Custom Size'
+          OnClick = SetCustomSizeClick
         end
       end
       object MenuItem9: TMenuItem

@@ -129,18 +129,24 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="5">
       <Item1>
-        <PackageName Value="pascalscript"/>
+        <PackageName Value="LazControls"/>
       </Item1>
       <Item2>
-        <PackageName Value="LazColorPalette"/>
+        <PackageName Value="LazControlDsgn"/>
       </Item2>
       <Item3>
-        <PackageName Value="LCL"/>
+        <PackageName Value="pascalscript"/>
       </Item3>
+      <Item4>
+        <PackageName Value="LazColorPalette"/>
+      </Item4>
+      <Item5>
+        <PackageName Value="LCL"/>
+      </Item5>
     </RequiredPackages>
-    <Units Count="38">
+    <Units Count="39">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -336,6 +342,12 @@
         <Filename Value="animbase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit37>
+      <Unit38>
+        <Filename Value="setcustommapsize.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="SetCustomMapSizeForm"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit38>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

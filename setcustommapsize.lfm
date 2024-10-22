@@ -1,0 +1,60 @@
+object SetCustomMapSizeForm: TSetCustomMapSizeForm
+  Left = 616
+  Height = 166
+  Top = 440
+  Width = 313
+  BorderStyle = bsDialog
+  Caption = 'Set Custom Map Size'
+  ClientHeight = 166
+  ClientWidth = 313
+  LCLVersion = '3.4.0.0'
+  object SpinEditCustomWidth: TSpinEditEx
+    Left = 80
+    Height = 23
+    Top = 24
+    Width = 73
+    MaxLength = 0
+    NumbersOnly = True
+    TabOrder = 0
+    MaxValue = 256
+    MinValue = 8
+    NullValue = 0
+    Value = 32
+  end
+  object SpinEditCustomHeight: TSpinEditEx
+    Left = 80
+    Height = 23
+    Top = 56
+    Width = 73
+    MaxLength = 0
+    NumbersOnly = True
+    TabOrder = 1
+    MaxValue = 256
+    MinValue = 8
+    NullValue = 0
+    Value = 16
+  end
+  object CustWidthLabel: TLabel
+    Left = 32
+    Height = 15
+    Top = 24
+    Width = 32
+    Caption = 'Width'
+  end
+  object CustHeightLabel: TLabel
+    Left = 32
+    Height = 15
+    Top = 56
+    Width = 36
+    Caption = 'Height'
+  end
+  object OKButton: TButton
+    Left = 208
+    Height = 25
+    Top = 120
+    Width = 75
+    Caption = 'OK'
+    TabOrder = 2
+    OnClick = OKButtonClick
+  end
+end

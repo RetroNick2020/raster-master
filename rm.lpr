@@ -7,12 +7,12 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, pascalscript, lazcolorpalette, rmmain, rmcore, rmtools, rmcolor,
-  rmcolorvga, rmabout, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
+  Forms, pascalscript, lazcontrols, lazcolorpalette, rmmain, rmcore, rmtools,
+  rmcolor, rmcolorvga, rmabout, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
   rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
-  fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr, 
-SpriteSheetExport, animate, AnimBase
+  fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr,
+  SpriteSheetExport, animate, AnimBase, setcustommapsize
      { you can add units after this };
 
 {$R *.res}
@@ -35,6 +35,7 @@ begin
   Application.CreateForm(TSoundGeneratorForm, SoundGeneratorForm);
   Application.CreateForm(TSpriteSheetExportForm, SpriteSheetExportForm);
   Application.CreateForm(TAnimationForm, AnimationForm);
+  Application.CreateForm(TSetCustomMapSizeForm, SetCustomMapSizeForm);
   Application.Run;
 end.
 

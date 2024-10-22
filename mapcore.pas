@@ -182,6 +182,8 @@ type
 
                     procedure ClearMap(index,value : integer);
 
+                    function IsMapCustomSize(index : integer) : boolean;
+
               end;
 
 var
@@ -830,6 +832,16 @@ begin
     SetMapTile(MapCount-1,i,j,Tile);
    end;
  end;
+end;
+
+function TMapCoreBase.IsMapCustomSize(index : integer) : boolean;
+var
+ width,height : integer;
+begin
+ width:=GetMapWidth(index);
+ height:=GetMapHeight(index);
+ result:=NOT((width=8) or (width=16) or (width=32) or (width=64) or (width=128) or (width=256)) and
+         ((height=8) or (height=16) or (height=32) or (height=64) or (height=128) or (height=256))
 end;
 
 begin

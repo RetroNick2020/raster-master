@@ -1,24 +1,24 @@
 object MapExportForm: TMapExportForm
-  Left = 1143
-  Height = 254
-  Top = 268
-  Width = 320
+  Left = 1400
+  Height = 265
+  Top = 397
+  Width = 358
   BorderStyle = bsDialog
-  Caption = 'Map Export Properties'
-  ClientHeight = 254
-  ClientWidth = 320
-  LCLVersion = '2.0.10.0'
+  Caption = 'Map Properties'
+  ClientHeight = 265
+  ClientWidth = 358
+  LCLVersion = '3.4.0.0'
   object EditName: TEdit
-    Left = 83
+    Left = 96
     Height = 23
-    Top = 26
+    Top = 24
     Width = 211
     MaxLength = 20
     ParentFont = False
     TabOrder = 0
   end
   object MapName: TLabel
-    Left = 42
+    Left = 53
     Height = 15
     Top = 26
     Width = 32
@@ -27,7 +27,7 @@ object MapExportForm: TMapExportForm
     ParentFont = False
   end
   object MapType: TLabel
-    Left = 22
+    Left = 34
     Height = 15
     Top = 102
     Width = 51
@@ -36,7 +36,7 @@ object MapExportForm: TMapExportForm
     ParentFont = False
   end
   object ComboMap: TComboBox
-    Left = 83
+    Left = 96
     Height = 23
     Top = 102
     Width = 211
@@ -46,7 +46,7 @@ object MapExportForm: TMapExportForm
     TabOrder = 1
   end
   object CompilerType: TLabel
-    Left = 26
+    Left = 36
     Height = 15
     Top = 64
     Width = 49
@@ -55,64 +55,66 @@ object MapExportForm: TMapExportForm
     ParentFont = False
   end
   object ComboCompiler: TComboBox
-    Left = 83
+    Left = 96
     Height = 23
     Top = 64
     Width = 211
     ItemHeight = 15
-    OnChange = ComboCompilerChange
     ParentFont = False
     Style = csDropDownList
     TabOrder = 2
-  end
-  object EditWidth: TEdit
-    Left = 83
-    Height = 23
-    Top = 141
-    Width = 38
-    MaxLength = 3
-    NumbersOnly = True
-    ParentFont = False
-    TabOrder = 3
-    Text = '0'
+    OnChange = ComboCompilerChange
   end
   object WidthLabel: TLabel
-    Left = 42
+    Left = 16
     Height = 15
-    Top = 141
-    Width = 32
-    Caption = 'Width'
+    Top = 152
+    Width = 69
+    Caption = 'Export Width'
     ParentColor = False
     ParentFont = False
-  end
-  object EditHeight: TEdit
-    Left = 83
-    Height = 23
-    Top = 173
-    Width = 38
-    MaxLength = 3
-    NumbersOnly = True
-    ParentFont = False
-    TabOrder = 4
-    Text = '0'
   end
   object HeightLabel: TLabel
-    Left = 38
+    Left = 12
     Height = 15
-    Top = 173
-    Width = 36
-    Caption = 'Height'
+    Top = 184
+    Width = 73
+    Caption = 'Export Height'
     ParentColor = False
     ParentFont = False
   end
-  object Button1: TButton
-    Left = 224
+  object OKButton: TButton
+    Left = 248
     Height = 25
-    Top = 211
+    Top = 216
     Width = 75
     Caption = 'OK'
-    OnClick = Button1Click
     ParentFont = False
+    TabOrder = 3
+    OnClick = OKButtonClick
+  end
+  object SpinEditExportWidth: TSpinEditEx
+    Left = 96
+    Height = 23
+    Top = 152
+    Width = 71
+    MaxLength = 0
+    NumbersOnly = True
+    TabOrder = 4
+    MaxValue = 256
+    NullValue = 0
+    Value = 0
+  end
+  object SpinEditExportHeight: TSpinEditEx
+    Left = 96
+    Height = 23
+    Top = 184
+    Width = 71
+    MaxLength = 0
+    NumbersOnly = True
     TabOrder = 5
+    MaxValue = 256
+    NullValue = 0
+    Value = 0
   end
 end
