@@ -1,7 +1,7 @@
 # raster-master
 Raster Master Sprite/Icon/Map/Sound editor for Windows 7/8/10/11 (64/32 bit) that generates embeded code for many compilers and interpeters. Create graphics from scratch or import from various sources. Use sprite sheets, clipboard, or common graphic formats such as png/jpg/bmp. Create your own sprite sheets that can be loaded into many popular graphics or game libraries. 
 
-Use Raster Master with raylib/emscripten compiler to generate fully accessible web browser games that can be published on itch.io
+Use Raster Master with raylib/emscripten compiler to generate fully accessible web browser games that can be published on itch.io. Or use raylib and Raster Master to create windows/linux/mac games with your favourite supported compiler.
 
 Retro Game Creation Fully Supported
 Raster Master is a modern recreation of my first sprite editor created for Turbo Pascal. Support has been increased to support all those legacy compilers and interpeters you loved back in the day. No fancy libraries needed to import graphics.  putimage and map code can easily be imported and used with various legacy compilers. The following have been tested and fully working:  Open Watcom, gcc, AmigaBASIC, Amiga C, Amiga Pascal ,QuickBasic, QB64, Quick C, Turbo Pascal, freepascal, Turbo C, Turbo Basic, Power Basic, FreeBASIC, GWBASIC, BASICA, and PC-BASIC.  
