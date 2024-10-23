@@ -1,13 +1,26 @@
 # raster-master
-Raster Master Sprite/Icon/Map editor for Windows 7/8/10/11 (64/32 bit) that generates RayLib code / putimage and map code for  Open Watcom, gcc, AmigaBASIC, Amiga C, Amiga Pascal ,QuickBasic, QB64, Quick C, Turbo Pascal, freepascal, Turbo C, Turbo Basic, Power Basic, FreeBASIC, GWBASIC, BASICA, and PC-BASIC. 
+Raster Master Sprite/Icon/Map/Sound editor for Windows 7/8/10/11 (64/32 bit) that generates embeded code for many compilers and interpeters. Create graphics from scratch or import from various sources. Use sprite sheets, clipboard, or common graphic formats such as png/jpg/bmp. Create your own sprite sheets that can be loaded into many popular graphics or game libraries. 
+
+Use Raster Master with raylib/emscripten compiler to generate fully accessible web browser games that can be published on itch.io
+
+Retro Game Creation Fully Supported
+Raster Master is a modern recreation of my first sprite editor created for Turbo Pascal. Support has been increased to support all those legacy compilers and interpeters you loved back in the day. No fancy libraries needed to import graphics.  putimage and map code can easily be imported and used with various legacy compilers. The following have been tested and fully working:  Open Watcom, gcc, AmigaBASIC, Amiga C, Amiga Pascal ,QuickBasic, QB64, Quick C, Turbo Pascal, freepascal, Turbo C, Turbo Basic, Power Basic, FreeBASIC, GWBASIC, BASICA, and PC-BASIC.  
 
 
 ![](https://github.com/nickshardware/raster-master/wiki/images/rm47.png)
 ![](https://github.com/nickshardware/raster-master/wiki/images/me1.png)
 ![](https://github.com/nickshardware/raster-master/wiki/images/rm55_3.png) 
 
-For DOS programming in VGA modex I have added support for DOS XLIB library LBM/PBM formats. Javascript putimagedata was added to the export options just because is so popular these days. My interest in Amiga coding also expanded to incluse Pascal and C instead of Just AmigaBASIC. I have added support for Hisoft and freepascal 68k and well as vbcc. 
+For DOS programmer
+VGA modex is supported with DOS XLIB library using LBM/PBM formats. 
 
+Javascript Programmers
+Javascript putimagedata was added to the export options just because javascipt is so popular these days. You can transform this data into various other useable formats. 
+
+Amiga Programmers
+My interest in Amiga coding also expanded to incluse Pascal and C instead of Just AmigaBASIC. I have added support for Hisoft and freepascal 68k and well as vbcc. 
+
+History of Raster Master
 Why did this program return from the dead?
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I will continue to work on this and even though i have managed to get most of the features from the original DOS version I did not get everything. Here is a list of things I did not get to yet or plan on supporting.
 
