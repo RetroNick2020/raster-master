@@ -25,6 +25,7 @@ Amiga Programmers
 My interest in Amiga coding also expanded to incluse Pascal and C instead of Just AmigaBASIC. I have added support for Hisoft and freepascal 68k and well as vbcc. 
 
 History of Raster Master
+
 Why did this program return from the dead?
 30 years ago i wrote a small uility in Turbo Pascal (DOS) that would allow me to create simple sprites/icons and generate code. I have always wanted to do a port of this utility to Windows and provide some updates. I may be the slowest programmer in the world but i have managed to get the hard parts completed. I will continue to work on this and even though i have managed to get most of the features from the original DOS version I did not get everything. Here is a list of things I did not get to yet or plan on supporting.
 
