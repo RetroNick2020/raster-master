@@ -12,7 +12,8 @@ uses
   rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
   fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr,
-  SpriteSheetExport, animate, AnimBase, setcustommapsize
+  SpriteSheetExport, animate, AnimBase, setcustommapsize, animationexport,
+rwspriteanim
      { you can add units after this };
 
 {$R *.res}
@@ -36,6 +37,7 @@ begin
   Application.CreateForm(TSpriteSheetExportForm, SpriteSheetExportForm);
   Application.CreateForm(TAnimationForm, AnimationForm);
   Application.CreateForm(TSetCustomMapSizeForm, SetCustomMapSizeForm);
+  Application.CreateForm(TAnimationExportForm, AnimationExportForm);
   Application.Run;
 end.
 

@@ -746,7 +746,7 @@ object RMMainForm: TRMMainForm
           end
         end
         object gcc: TMenuItem
-          Caption = 'gcc'
+          Caption = 'gcc \ Emscripten'
           object gccRayLibFuchsia: TMenuItem
             Caption = 'RayLib (RGBA - Fuchsia) Array'
             OnClick = RayLibExportClick

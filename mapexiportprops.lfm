@@ -4,7 +4,7 @@ object MapExportForm: TMapExportForm
   Top = 397
   Width = 358
   BorderStyle = bsDialog
-  Caption = 'Map Properties'
+  Caption = 'Map Export Properties'
   ClientHeight = 265
   ClientWidth = 358
   LCLVersion = '3.4.0.0'

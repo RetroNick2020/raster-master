@@ -164,7 +164,7 @@ type
     procedure MenuOpenClick(Sender: TObject);
     procedure MenuNewClick(Sender: TObject);
 
-    procedure MenuPopupNewClick(Sender: TObject);
+
     procedure MenuSaveClick(Sender: TObject);
     procedure PasteFromClipBoardClick(Sender: TObject);
     procedure ReSizeMapClick(Sender: TObject);
@@ -315,7 +315,6 @@ begin
  LoadResourceIcons;
  SetDrawPixelProc(@DrawTileCB);
  SetGetPixelProc(@GetTileTB);
-
  Init;
 end;
 
@@ -395,7 +394,7 @@ begin
   MapScrollBox.HorzScrollBar.Position:=hpos;
   MapScrollBox.VertScrollBar.Position:=vpos;
 
-  FormShowActivate:=true; //this is going to also trigger an onfocus even - letting event handler know it was because of onopen
+  FormShowActivate:=true; //this is going to also trigger an onfocus event - letting event handler know it was because of onopen
 end;
 
 procedure TMapEdit.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -887,11 +886,6 @@ end;
 
 
 
-procedure TMapEdit.MenuPopupNewClick(Sender: TObject);
-begin
-
-end;
-
 
 
 procedure TMapEdit.MenuOpenClick(Sender: TObject);
@@ -1305,16 +1299,23 @@ var
   i,j,index : integer;
   T   : TileRec;
   SrcBitMap,DstBitMap : TBitMap;
+  mwidth,mheight : integer;
 begin
+ mwidth:=MapCoreBase.GetMapHeight(MapIndex);
+ if mwidth > 32 then mwidth:=32;
+ mheight:=MapCoreBase.GetMapWidth(MapIndex);
+ if mheight > 32 then mheight:=32;
+
  SrcBitMap:=TBitMap.Create;
- SrcBitMap.SetSize(MapCoreBase.GetMapWidth(MapIndex)*TileWidth,MapCoreBase.GetMapHeight(MapIndex)*TileHeight);
+ SrcBitMap.SetSize(mwidth*TileWidth,mheight*TileHeight);
 
  DstBitMap:=TBitMap.Create;
  DstBitMap.SetSize(256,256);
 
- for j:=0 to MapCoreBase.GetMapHeight(MapIndex)-1 do
+
+ for j:=0 to mheight-1 do
   begin
-    for i:=0 to MapCoreBase.GetMapWidth(MapIndex)-1 do
+    for i:=0 to mwidth-1 do
     begin
       MapCoreBase.GetMapTile(MapIndex,i,j,T);
        if T.ImageIndex > TileClear then   //we don't care about missing tile here

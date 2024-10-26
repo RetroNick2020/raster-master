@@ -12,6 +12,12 @@ Const
   MaxAnimationList = 100;
 
 Type
+  AnimExportFormatRec = Packed Record
+            Name            : String[20]; // user = RES file used in name/description, in Text output used in array name, for palettes we add pal to name
+            Lan             : integer; // auto -ahould be for what compiler eg PascalLan,BasicLan,CLan
+            AnimateFormat   : integer; // 0 = do not export, Animate Format, 1 = Simple format
+  end;
+
   FrameRec = Packed Record
                  ImageIndex : integer;
                  UID        : TGUID;
@@ -20,9 +26,10 @@ Type
 
   FrameList = array[0..MaxFrameList-1] of FrameRec;
   FrameListRec = Packed Record
-                   FrameCount : integer;
-                   Frames     : FrameList;
-                   Tagged     : Boolean;
+                   ExportFormat : AnimExportFormatRec;
+                   FrameCount   : integer;
+                   Frames       : FrameList;
+                   Tagged       : Boolean;
   end;
 
   AnimationListRec = Packed Record
@@ -53,6 +60,8 @@ TAnimateBase = Class
                  procedure InitAnimation;
                  function GetAnimationCount : integer;
                  function GetFrameCount : integer;
+                 function GetFrameCount(AnimationIndex : integer) : integer;
+
                  function GetImageIndex(FrameIndex : integer) : integer;
                  function GetImageIndex(AnimationIndex,FrameIndex : integer) : integer;
 
@@ -81,6 +90,16 @@ TAnimateBase = Class
 
                  procedure WriteAnimations(var F : File; count : word);
                  procedure ReadAnimations(var F: File; count : word;InsertMode : boolean);
+
+                 procedure GetAnimExportProps(index : integer;var props : AnimExportFormatRec);
+                 procedure SetAnimExportProps(index : integer; props : AnimExportFormatRec);
+
+                 function GetExportAnimCount : integer;
+                 function GetExportName(index : integer) : string;
+                 procedure ClearExportProperties(index : integer);
+
+
+
 end;
 
 var
@@ -92,14 +111,25 @@ constructor TAnimateBase.Create;
 begin
  InitClipBoard;
  InitAnimation;
- AddAnimation;
+// AddAnimation;
 end;
 
 procedure TAnimateBase.InitAnimation;
 begin
- Animations.Animcount:=0;
+ Animations.Animcount:=1;
  Animations.CurrentAnimation:=0;   //zero is the first index item
  Animations.AnimationList[Animations.CurrentAnimation].FrameCount:=0;
+ ClearExportProperties(Animations.Animcount-1)
+end;
+
+procedure TAnimateBase.AddAnimation;
+begin
+ if Animations.AnimCount < MaxAnimationList then
+ begin
+   inc(Animations.AnimCount);
+   Animations.AnimationList[Animations.AnimCount-1].FrameCount:=0;
+   ClearExportProperties(Animations.Animcount-1)
+ end;
 end;
 
 procedure TAnimateBase.DeleteAll;
@@ -130,15 +160,6 @@ begin
  uid:=AnimClipBoard.UID;
 end;
 
-procedure TAnimateBase.AddAnimation;
-begin
- if Animations.AnimCount < MaxAnimationList then
- begin
-   inc(Animations.AnimCount);
-   Animations.AnimationList[Animations.AnimCount].FrameCount:=0;
- end;
-end;
-
 procedure TAnimateBase.DeleteAnimation(AnimationIndex : integer);
 var
  i : integer;
@@ -150,12 +171,12 @@ begin
       Animations.AnimationList[i]:=Animations.AnimationList[i+1];
     end;
     dec(Animations.AnimCount);
+    if GetCurrentAnimation > (Animations.AnimCount-1) then SetCurrentAnimation(Animations.AnimCount-1);
  end
  else if Animations.AnimCount = 1 then
  begin
    InitAnimation;
-   AddAnimation;
- end;
+  end;
 end;
 
 procedure TAnimateBase.SetCurrentAnimation(AnimationIndex : integer);
@@ -218,6 +239,12 @@ function TAnimateBase.GetFrameCount : integer;
 begin
   result:=Animations.AnimationList[Animations.CurrentAnimation].FrameCount;
 end;
+
+function TAnimateBase.GetFrameCount(AnimationIndex : integer) : integer;
+begin
+  result:=Animations.AnimationList[AnimationIndex].FrameCount;
+end;
+
 
 function TAnimateBase.GetImageIndex(FrameIndex : integer) : integer;
 begin
@@ -380,6 +407,43 @@ begin
    Blockread(f,Animations.AnimationList[i],sizeof(Animations.AnimationList[i]));
  end;
  close(f);
+end;
+
+procedure TAnimateBase.GetAnimExportProps(index : integer;var props : AnimExportFormatRec);
+begin
+  props:=Animations.AnimationList[index].ExportFormat;
+end;
+
+
+procedure TAnimateBase.SetAnimExportProps(index : integer; props : AnimExportFormatRec);
+begin
+ Animations.AnimationList[index].ExportFormat:=props;
+end;
+
+
+function TAnimateBase.GetExportAnimCount : integer;
+var
+ i : integer;
+ Exportcount : integer;
+begin
+ ExportCount:=0;
+ for i:=0 to GetAnimationCount-1 do
+ begin
+   if Animations.AnimationList[i].ExportFormat.AnimateFormat  > 0 then inc(ExportCount);
+ end;
+ GetExportAnimCount:=ExportCount;
+end;
+
+function TAnimateBase.GetExportName(index : integer) : string;
+begin
+  result:= Animations.AnimationList[index].ExportFormat.Name;
+end;
+
+procedure TAnimateBase.ClearExportProperties(index : integer);
+begin
+  Animations.AnimationList[index].ExportFormat.AnimateFormat:=0;
+  Animations.AnimationList[index].ExportFormat.Lan:=0;
+  Animations.AnimationList[index].ExportFormat.Name:='Anim'+IntToStr(index+1);
 end;
 
 

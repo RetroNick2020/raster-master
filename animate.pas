@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, ExtCtrls,
-  ComCtrls, Menus, StdCtrls, Arrow,AnimBase,rmthumb,rwpng,fileprops;
+  ComCtrls, Menus, StdCtrls, Arrow,AnimBase,animationexport,rmthumb,rwpng,
+  fileprops,rwspriteanim,rmcodegen,rmconfig,rmclipboard;
 
 type
 
@@ -27,6 +28,18 @@ type
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
     MenuDeleteAll: TMenuItem;
+    AnimProperties: TMenuItem;
+    MenuItem12: TMenuItem;
+    MenuItem13: TMenuItem;
+    ExportCAnimArray: TMenuItem;
+    MenuItem15: TMenuItem;
+    ExportEmscriptenAnimArray: TMenuItem;
+    ExportPascalAnimArray: TMenuItem;
+    FileExportBasicData: TMenuItem;
+    ExportBasicAnimData: TMenuItem;
+    pascal: TMenuItem;
+    MenuItem17: TMenuItem;
+    ExportgccAnimArray: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
@@ -59,7 +72,8 @@ type
     procedure AllAnimListViewClick(Sender: TObject);
     procedure AllAnimListViewShowHint(Sender: TObject; HintInfo: PHintInfo);
     procedure AnimDeleteMenuClick(Sender: TObject);
-    procedure Arrow1Click(Sender: TObject);
+    procedure AnimPropertiesClick(Sender: TObject);
+
     procedure Button1Click(Sender: TObject);
     procedure CopyFromThumbViewClick(Sender: TObject);
     procedure CopyMenuClick(Sender: TObject);
@@ -69,6 +83,7 @@ type
     procedure CurrentAnimListViewDragOver(Sender, Source: TObject; X,
       Y: Integer; State: TDragState; var Accept: Boolean);
     procedure DeleteMenuClick(Sender: TObject);
+    procedure ExportBasicAnimDataClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
 
@@ -78,10 +93,13 @@ type
     procedure MenuDeleteAllClick(Sender: TObject);
     procedure MenuItem10Click(Sender: TObject);
     procedure MenuItem11Click(Sender: TObject);
+    procedure ExportEmscriptenAnimArrayClick(Sender: TObject);
+    procedure FileExportPascalArrayClick(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
     procedure MenuItem9Click(Sender: TObject);
     procedure NewAnimationMenuClick(Sender: TObject);
+
     procedure PasteMenuClick(Sender: TObject);
     procedure PlayButtonClick(Sender: TObject);
     procedure SpriteListViewDblClick(Sender: TObject);
@@ -113,6 +131,7 @@ type
     procedure DeleteAll;
     procedure SelectAnimation(AnimationIndex : integer);
 
+    function ExportTextFileToClipboard(Sender: TObject) : boolean;
   end;
 
 var
@@ -204,17 +223,6 @@ begin
   AddEmptyFrame;
 end;
 
-procedure TAnimationForm.MenuItem11Click(Sender: TObject);
-var
-  index : integer;
-begin
-  index:=CurrentAnimListView.ItemIndex;
-  if index > -1 then DeleteFrame(Index);
-
-  index:=AllAnimListView.ItemIndex;
-  if index > -1 then DeleteAnimation(Index);
-
-end;
 
 procedure TAnimationForm.MenuItem2Click(Sender: TObject);
 begin
@@ -247,6 +255,7 @@ end;
 procedure TAnimationForm.AddAnimation;
 begin
   AnimateBase.AddAnimation;
+  AnimateBase.SetCurrentAnimation(AnimateBase.GetAnimationCount-1);    //animation will be added to end of list - switch to that
 
   LoadCurrentAnimList;
   LoadAnimThumbList;
@@ -267,10 +276,94 @@ begin
   AllAnimListView.Repaint;
 end;
 
+procedure TAnimationForm.MenuItem11Click(Sender: TObject);
+var
+  index : integer;
+begin
+  index:=CurrentAnimListView.ItemIndex;
+  if index > -1 then DeleteFrame(Index);
+
+  index:=AllAnimListView.ItemIndex;
+  if index > -1 then DeleteAnimation(Index);
+end;
+
+procedure TAnimationForm.ExportEmscriptenAnimArrayClick(Sender: TObject);
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  SaveDialog1.Filter := 'C Source Files|*.c|C Header Files|*.h|All Files|*.*';
+  if SaveDialog1.Execute then
+  begin
+    ExportAnimation(SaveDialog1.FileName,cLan);
+  end;
+end;
+
+procedure TAnimationForm.FileExportPascalArrayClick(Sender: TObject);
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  SaveDialog1.Filter := 'Pascal Source Files|*.pas|Pascal Include Files|*.inc|All Files|*.*';
+  if SaveDialog1.Execute then
+  begin
+    ExportAnimation(SaveDialog1.FileName,PascalLan);
+  end;
+end;
+
+procedure TAnimationForm.ExportBasicAnimDataClick(Sender: TObject);
+begin
+if ExportTextFileToClipboard(Sender) then exit;
+
+SaveDialog1.Filter := 'Basic Source Files|*.bas|Basic Include Files|*.bi|All Files|*.*';
+if SaveDialog1.Execute then
+begin
+  ExportAnimation(SaveDialog1.FileName,PascalLan);
+end;
+
+end;
+
+function TAnimationForm.ExportTextFileToClipboard(Sender: TObject) : boolean;
+var
+ filename : string;
+begin
+ if rmconfigbase.GetExportTextFileToClipStatus = false then
+ begin
+   result:=false;
+   exit;
+ end;
+
+ filename:=GetTemporaryPathAndFileName;
+ Case (Sender As TMenuItem).Name of  'ExportBasicAnimData':ExportAnimation(FileName,BasicLan);
+                                     'ExportBasicLNAnimData':ExportAnimation(FileName,BasicLNLan);
+                                     'ExportCAnimArray','ExportEmscriptenAnimArray','ExportgccAnimArray': ExportAnimation(FileName,CLan);
+                                     'ExportPascalAnimArray':ExportAnimation(FileName,PascalLan);
+
+ else
+   result:=false;  //did not find a supported format return false
+   exit;
+ End;
+
+ result:=true;  //found supported format - return true
+
+ ReadFileAndCopyToClipboard(filename);
+ EraseFile(filename);
+ ShowMessage('Exported to Clipboard!');
+end;
+
+
+procedure TAnimationForm.AnimDeleteMenuClick(Sender: TObject);
+var
+  index : integer;
+begin
+   index:=AllAnimListView.ItemIndex;
+   if index > -1 then  DeleteAnimation(index);
+end;
+
+
+
 procedure TAnimationForm.DeleteAll;
 begin
- AnimateBase.DeleteAll;
- AnimateBase.AddAnimation;   //we need atleast one animation
+// AnimateBase.DeleteAll;
+ AnimateBase.InitAnimation;
 
  LoadCurrentAnimList;
  LoadAnimThumbList;
@@ -294,6 +387,8 @@ procedure TAnimationForm.NewAnimationMenuClick(Sender: TObject);
 begin
  AddAnimation;
 end;
+
+
 
 procedure TAnimationForm.PasteMenuClick(Sender: TObject);
 var
@@ -587,18 +682,26 @@ begin
 
 end;
 
-procedure TAnimationForm.AnimDeleteMenuClick(Sender: TObject);
-var
-  index : integer;
-begin
-   index:=AllAnimListView.ItemIndex;
-   if index > -1 then  DeleteAnimation(index);
+
+
+procedure TAnimationForm.AnimPropertiesClick(Sender: TObject);
+  var
+    EO : AnimExportFormatRec;
+    index : integer;
+  begin
+    index:=AllAnimListView.ItemIndex;
+    if index = -1 then exit;
+    AnimateBase.GetAnimExportProps(index,EO);
+    AnimationExportForm.InitComboBoxes;
+    AnimationExportForm.SetExportProps(EO);
+    if AnimationExportForm.ShowModal = mrOK then
+    begin
+       AnimationExportForm.GetExportProps(EO);
+       AnimateBase.SetAnimExportProps(index,EO);
+    end;
 end;
 
-procedure TAnimationForm.Arrow1Click(Sender: TObject);
-begin
 
-end;
 
 procedure TAnimationForm.Button1Click(Sender: TObject);
 begin
@@ -657,6 +760,8 @@ begin
 //  info.Caption:='Delete: '+IntToStr(index)+' '+IntToStr(AnimateBase.GetImageIndex(index));
   if index > -1 then DeleteFrame(Index);
 end;
+
+
 
 end.
 

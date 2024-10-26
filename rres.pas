@@ -4,7 +4,7 @@ Unit rres;
 
 Interface
    uses rmcore,rmthumb,rmxgfcore,rwxgf,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
-     wraylib,rwaqb,wmouse;
+     wraylib,rwaqb,wmouse,rwspriteanim;
 
 //Function RESInclude(filename:string):word;
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
@@ -1026,9 +1026,10 @@ begin
    end;
  end;
 
- if ExportOnlyIndex = false then     //export the maps
+ if ExportOnlyIndex = false then     //export the maps  and  sprite animations
  begin
      WriteMapsCodeToBuffer(data.fText);
+     WriteAllAnimationCodeToBuffer(data.fText);
  end;
  close(data.fText);
  {$I+}
