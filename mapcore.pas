@@ -621,11 +621,16 @@ end;
 procedure TMapCoreBase.SetMapTileSize(index, twidth,theight : integer);
 var
   zsize : integer;
+  nzwidth,nzheight : integer;
 begin
   Map[index].Props.TileWidth:=twidth;
   Map[index].Props.TileHeight:=theight;
-  zsize:=GetZoomTileSize(Map[index].Props.ZoomSize);
-  SetZoomMapTileSize(index,zsize,zsize);
+
+  zsize:=GetZoomSize(index);
+  nzwidth:=5*zsize+twidth;
+  nzheight:=5*zsize+theight;
+
+  SetZoomMapTileSize(index,nzwidth,nzheight);
 end;
 
 procedure TMapCoreBase.SetZoomMapTileSize(index, twidth,theight : integer);
@@ -635,6 +640,8 @@ begin
 end;
 
 
+
+//not using this function - will remove in future versions
 //returns how big the tile will be when zoom is applied
 function TMapCoreBase.GetZoomTileSize(ZoomSize : integer) : integer;
 var

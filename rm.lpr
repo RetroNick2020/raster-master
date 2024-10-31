@@ -13,7 +13,7 @@ uses
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
   fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr,
   SpriteSheetExport, animate, AnimBase, setcustommapsize, animationexport,
-rwspriteanim
+rwspriteanim, setcustomspritesize, setcustomtilesize, SetCustomCellSize
      { you can add units after this };
 
 {$R *.res}
@@ -38,6 +38,9 @@ begin
   Application.CreateForm(TAnimationForm, AnimationForm);
   Application.CreateForm(TSetCustomMapSizeForm, SetCustomMapSizeForm);
   Application.CreateForm(TAnimationExportForm, AnimationExportForm);
+  Application.CreateForm(Tsetcustomspritesizeform, setcustomspritesizeform);
+  Application.CreateForm(TSetCustomTileSizeForm, SetCustomTileSizeForm);
+  Application.CreateForm(TSetCustomCellSizeForm, SetCustomCellSizeForm);
   Application.Run;
 end.
 

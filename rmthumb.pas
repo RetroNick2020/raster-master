@@ -656,7 +656,7 @@ begin
  if IORESULT <>0 then exit;
  if (head.sig=RMProjectSig) and (head.version=RMProjectVersion) then
  begin
-   //delete all current images - use should be warn when oopening files
+   //delete all current images - user should be warn when oopening files
    count:=head.ImageCount;
 
    IndexOffset:=0;
@@ -674,7 +674,7 @@ begin
      ReadImageFromProject(F,i+indexoffset);
    end;
 
-   ReadAllMapsF(F,head.MapCount,insertmode);
+   ReadAllMapsF(F,head.MapCount,insertmode);  //there is always atleast one map - even if it blank
 
    if head.AnimCount > 0 then AnimateBase.ReadAnimations(F,head.AnimCount,InsertMode);
  end;

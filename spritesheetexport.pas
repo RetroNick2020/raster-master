@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, ComCtrls,Clipbrd,rmcodegen,rwxgf,rmclipboard,rmthumb,rmconfig,rwpng,LazFileUtils;
+  Spin, ComCtrls, Clipbrd, rmcodegen, rwxgf, rmclipboard, rmthumb, rmconfig,
+  rwpng, LazFileUtils, SpinEx;
 
 type
 
@@ -20,8 +21,13 @@ type
     CSWidth: TSpinEdit;
     CSHeight: TSpinEdit;
     DescExportToFile: TButton;
+    Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
     SaveDialog1: TSaveDialog;
     SaveDialog2: TSaveDialog;
+    SpinEditCustomSpriteWidth: TSpinEditEx;
+    SpinEditCustomSpriteHeight: TSpinEditEx;
     SpriteSheet: TComboBox;
     SpriteSize: TComboBox;
     Direction: TComboBox;
@@ -427,6 +433,10 @@ begin
                         SpriteWidth:=256;
                         SpriteHeight:=256;
                        end;
+                     6:begin
+                        SpriteWidth:=SpinEditCustomSpriteWidth.Value;
+                        SpriteHeight:=SpinEditCustomSpriteHeight.Value;
+                     end;
   end;
 
 end;

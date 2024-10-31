@@ -11,7 +11,7 @@ uses
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard,soundgen,animate;
+  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize;
 
 
 type
@@ -35,14 +35,7 @@ type
     EditCopy: TMenuItem;
     EditPaste: TMenuItem;
     EditColor: TMenuItem;
-    EditResizeTo128: TMenuItem;
-    EditResizeTo256: TMenuItem;
     EditUndo: TMenuItem;
-    EditResizeTo: TMenuItem;
-    EditResizeTo8: TMenuItem;
-    EditResizeTo16: TMenuItem;
-    EditResizeTo32: TMenuItem;
-    EditResizeTo64: TMenuItem;
     EditClear: TMenuItem;
     JavaScript: TMenuItem;
     ACVSpriteColorArray: TMenuItem;
@@ -76,6 +69,22 @@ type
     EditProperties: TMenuItem;
     BAMRGBPutData: TMenuItem;
     DeleteImage: TMenuItem;
+    MenuItem17: TMenuItem;
+    MenuItem18: TMenuItem;
+    EditResizeTo8: TMenuItem;
+    EditResizeTo16: TMenuItem;
+    EditResizeTo32: TMenuItem;
+    EditResizeTo64: TMenuItem;
+    EditResizeTo128: TMenuItem;
+    EditResizeTo256: TMenuItem;
+    ShowCustomSize: TMenuItem;
+    EditResizeCustom: TMenuItem;
+    MenuItem27: TMenuItem;
+    gcNormal: TMenuItem;
+    gcWide: TMenuItem;
+    gcTall: TMenuItem;
+    gcCustomShow: TMenuItem;
+    gcCustom: TMenuItem;
     SpriteAnimationMenu: TMenuItem;
     SpriteExportMenu: TMenuItem;
     SoundGenerator: TMenuItem;
@@ -358,6 +367,8 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure FreeBASICClick(Sender: TObject);
     procedure FreePascalClick(Sender: TObject);
+    procedure SetCustomGridCellClick(Sender: TObject);
+    procedure SetGridCellClick(Sender: TObject);
     procedure GWBASICClick(Sender: TObject);
     procedure EditResizeToNewSize(Sender: TObject);
     procedure javaScriptArrayClick(Sender: TObject);
@@ -365,6 +376,7 @@ type
     procedure ListView1Click(Sender: TObject);
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
+    procedure EditResizeCustomClick(Sender: TObject);
     procedure SoundGeneratorClick(Sender: TObject);
     procedure SpriteAnimationMenuClick(Sender: TObject);
     procedure SpriteExportMenuClick(Sender: TObject);
@@ -2203,6 +2215,52 @@ begin
    end;
 end;
 
+procedure TRMMainForm.SetCustomGridCellClick(Sender: TObject);
+begin
+   if SetCustomCellSizeForm.ShowModal = mrOK then
+  begin
+    SetGridCellClick(Sender);
+  end;
+end;
+
+procedure TRMMainForm.SetGridCellClick(Sender: TObject);
+begin
+  if (Sender As TMenuItem).Name = 'gcNormal' then
+  begin
+    RMDrawTools.SetCellWidthMin(10);
+    RMDrawTools.SetCellHeightMin(9);
+  end
+  else if (Sender As TMenuItem).Name = 'gcWide' then
+  begin
+    RMDrawTools.SetCellWidthMin(16);
+    RMDrawTools.SetCellHeightMin(8);
+  end
+  else if (Sender As TMenuItem).Name = 'gcTall' then
+  begin
+    RMDrawTools.SetCellWidthMin(8);
+    RMDrawTools.SetCellHeightMin(16);
+  end
+  else if (Sender As TMenuItem).Name = 'gcCustom' then
+  begin
+    RMDrawTools.SetCellWidthMin(setcustomcellsizeform.SpinEditCellWidth.Value);
+    RMDrawTools.SetCellHeightMin(setcustomcellsizeform.SpinEditCellHeight.Value);
+  end;
+
+  RMDrawTools.SetZoomSize(ZoomSize);
+  ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+  ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+
+  RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
+  RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
+  RMDrawTools.SetClipStatus(0); // turn off in case clip area is bigger than work area
+
+  ZoomTrackBar.Position:=RMDrawTools.GetZoomSize;;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbView;
+  UpdateEditMenu;
+end;
+
 
 
 procedure TRMMainForm.GWBASICClick(Sender: TObject);
@@ -2234,6 +2292,9 @@ begin
 end;
 
 Procedure TRMMainForm.UpdateEditMenu;
+var
+ swidth,sheight : integer;
+ gcWidth,gcHeight : integer;
 begin
   EditResizeTo8.Checked:=false;
   EditResizeTo16.Checked:=false;
@@ -2241,30 +2302,50 @@ begin
   EditResizeTo64.Checked:=false;
   EditResizeTo128.Checked:=false;
   EditResizeTo256.Checked:=false;
-  case RMCoreBase.GetWidth           of 8:  EditResizeTo8.Checked:=true;
-                                       16:  EditResizeTo16.Checked:=true;
-                                       32:  EditResizeTo32.Checked:=true;
-                                       64:  EditResizeTo64.Checked:=true;
-                                       128:  EditResizeTo128.Checked:=true;
-                                       256:  EditResizeTo256.Checked:=true;
+  ShowCustomSize.Checked:=false;
+  ShowCustomSize.Caption:='';
 
+  swidth:=RMCoreBase.GetWidth;
+  sheight:=RMCoreBase.GetHeight;
+  if (swidth=8) and (sheight=8) then  EditResizeTo8.Checked:=true
+  else if (swidth=16) and (sheight=16) then EditResizeTo16.Checked:=true
+  else if (swidth=32) and (sheight=32) then EditResizeTo32.Checked:=true
+  else if (swidth=64) and (sheight=64) then EditResizeTo64.Checked:=true
+  else if (swidth=128) and (sheight=128) then EditResizeTo128.Checked:=true
+  else if (swidth=256) and (sheight=256) then EditResizeTo256.Checked:=true
+  else
+  begin
+    ShowCustomSize.Caption:=IntToStr(swidth)+'x'+IntToStr(sheight);
+    ShowCustomSize.Checked:=true;
+    RMCoreBase.SetWidth(swidth);
+    RMCoreBase.SetHeight(sheight);
   end;
+
+  gcNormal.Checked:=false;
+  gcWide.Checked:=false;
+  gcTall.Checked:=false;
+  gcCustomShow.Checked:=false;
+  gcWidth:=RMDrawTools.GetCellWidth;
+  gcHeight:=RMDrawTools.GetCellHeight;
+
 end;
 
 procedure TRMMainForm.EditResizeToNewSize(Sender: TObject);
 var
- ImgWidth,ImgHeight : integer;
+ ImgWidth,ImgHeight,zsize : integer;
 begin
-
+  zsize:=2;
   if (Sender As TMenuItem).Name = 'EditResizeTo8' then
   begin
     ImgWidth:=8;
     ImgHeight:=8;
+    zsize:=9;
   end
   else if (Sender As TMenuItem).Name = 'EditResizeTo16' then
   begin
     ImgWidth:=16;
     ImgHeight:=16;
+    zsize:=4;
   end
   else if (Sender As TMenuItem).Name = 'EditResizeTo32' then
   begin
@@ -2285,12 +2366,20 @@ begin
   begin
     ImgWidth:=256;
     ImgHeight:=256;
+  end
+  else if (Sender As TMenuItem).Name = 'EditResizeCustom' then
+  begin
+    ImgWidth:=setcustomspritesizeform.SpinEditWidth.Value;
+    ImgHeight:=setcustomspritesizeform.SpinEditHeight.Value;
   end;
- // ActualBox.Width:=ImgWidth;
+
+
+
+  // ActualBox.Width:=ImgWidth;
  // ActualBox.Height:=ImgHeight;
   RMCoreBase.SetWidth(ImgWidth);
   RMCoreBase.SetHeight(ImgHeight);
-  RMDrawTools.SetZoomSize(1);
+  RMDrawTools.SetZoomSize(zsize);
 
   ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
   ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
@@ -2299,7 +2388,7 @@ begin
   RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
   RMDrawTools.SetClipStatus(0); // turn off in case clip area is bigger than work area
   ZoomSize:=RMDrawTools.GetZoomSize;
-
+  ZoomTrackBar.Position:=ZoomSize;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbView;
@@ -3737,6 +3826,14 @@ begin
  MapEdit.UpdateTileView;
  MapEdit.Show;
  MapEdit.WindowState:=wsNormal;
+end;
+
+procedure TRMMainForm.EditResizeCustomClick(Sender: TObject);
+begin
+  if SetCustomSpriteSizeForm.ShowModal = mrOK then
+  begin
+    EditResizeToNewSize(Sender);
+  end;
 end;
 
 procedure TRMMainForm.SoundGeneratorClick(Sender: TObject);

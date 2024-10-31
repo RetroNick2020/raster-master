@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 97
+  Left = 105
   Height = 860
-  Top = 366
+  Top = 217
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -240,7 +240,6 @@ object MapEdit: TMapEdit
       Hint = 'Zoom Level'
       Top = 13
       Width = 25
-      Max = 6
       Min = 1
       OnChange = TileZoomChange
       Orientation = trVertical
@@ -534,7 +533,7 @@ object MapEdit: TMapEdit
     end
   end
   object MainMenu1: TMainMenu
-    Left = 72
+    Left = 80
     Top = 304
     object FileMenuItem: TMenuItem
       Caption = 'File'
@@ -590,7 +589,7 @@ object MapEdit: TMapEdit
         end
       end
     end
-    object MenuItem4: TMenuItem
+    object MenuItem17: TMenuItem
       Caption = 'Edit'
       object Clear: TMenuItem
         Caption = 'Clear'
@@ -598,6 +597,7 @@ object MapEdit: TMapEdit
       end
       object Undo: TMenuItem
         Caption = 'Undo'
+        OnClick = ToolUndoIconClick
       end
       object CloneMap: TMenuItem
         Caption = 'Clone'
@@ -611,6 +611,13 @@ object MapEdit: TMapEdit
         Caption = 'Paste'
         OnClick = PasteFromClipBoardClick
       end
+      object Properties: TMenuItem
+        Caption = 'Properties'
+        OnClick = MenuMapPropsClick
+      end
+    end
+    object MenuItem4: TMenuItem
+      Caption = 'View'
       object MenuItem5: TMenuItem
         Caption = 'Resize Map To'
         object ReSizeMap8x8: TMenuItem
@@ -641,9 +648,9 @@ object MapEdit: TMapEdit
           Enabled = False
           OnClick = ReSizeMapClick
         end
-        object SetCustomSize: TMenuItem
+        object SetMapCustomSize: TMenuItem
           Caption = 'Set Custom Size'
-          OnClick = SetCustomSizeClick
+          OnClick = SetMapCustomSizeClick
         end
       end
       object MenuItem9: TMenuItem
@@ -672,16 +679,13 @@ object MapEdit: TMapEdit
           Caption = '256 X 256'
           OnClick = ReSizeTiles
         end
-      end
-      object Properties: TMenuItem
-        Caption = 'Properties'
-        OnClick = MenuMapPropsClick
-      end
-    end
-    object MenuItem17: TMenuItem
-      Caption = 'View'
-      object MenuItem18: TMenuItem
-        Caption = 'Refresh'
+        object ShowTileCustomSize: TMenuItem
+          Enabled = False
+        end
+        object SetTileCustomSize: TMenuItem
+          Caption = 'Set Custom Size'
+          OnClick = SetTileCustomSizeClick
+        end
       end
     end
     object MenuItem19: TMenuItem

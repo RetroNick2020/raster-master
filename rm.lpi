@@ -146,7 +146,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="41">
+    <Units Count="44">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -360,6 +360,26 @@
         <Filename Value="rwspriteanim.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit40>
+      <Unit41>
+        <Filename Value="setcustomspritesize.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="setcustomspritesizeform"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="setcustomtilesize.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="SetCustomTileSizeForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit42>
+      <Unit43>
+        <Filename Value="setcustomcellsize.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="SetCustomCellSizeForm"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit43>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

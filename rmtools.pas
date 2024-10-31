@@ -42,7 +42,10 @@ Type
   end;
 
   TGridAreaRec = Record
-                   CellWidth : integer;
+                   CellWidthMin  : integer; //the starting cell width and height
+                   CellHeightMin : integer;
+
+                   CellWidth : integer;    //cell width is the result of zoomsize*CellWidthMin
                    CellHeight : integer;
                    GridThickX : integer;
                    GridThickY : integer;
@@ -94,8 +97,18 @@ Type
              procedure Rect(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,full : integer);
              procedure SetGridThickX(amount : integer);
              procedure SetGridThickY(amount : integer);
+
              procedure SetCellWidth(cWidth : integer);
              procedure SetCellHeight(cHeight : integer);
+             function GetCellWidth : integer;
+             function GetCellHeight : integer;
+
+             procedure SetCellWidthMin(cWidthMin : integer);
+             procedure SetCellHeightMin(cHeightMin : integer);
+             function GetCellWidthMin : integer;
+             function GetCellHeightMin : integer;
+
+
              function GetCellsPerRow(ImageWidth : integer) : integer;
              function GetCellsPerCol(ImageHeight : integer) : integer;
              function GetMaxXOffset(ActualImageWidth,ZoomImageWidth : integer) : integer;
@@ -170,9 +183,12 @@ end;
 
 procedure TRMDrawTools.Init;
 begin
+ SetCellWidthMin(10);
+ SetCellHeightMin(9);
  SetZoomMode(1);
  SetZoomSize(2);
  SetGridMode(1);
+
  SetDrawTool(DrawShapePencil);
  SetClipStatus(0); //off
  SetClipSizedStatus(0);
@@ -920,6 +936,39 @@ begin
   GridArea.CellHeight:=cHeight;
 end;
 
+procedure TRMDrawTools.SetCellWidthMin(cWidthMin : integer);
+begin
+  GridArea.CellWidthMin:=cWidthMin;
+end;
+
+procedure TRMDrawTools.SetCellHeightMin(cHeightMin : integer);
+begin
+  GridArea.CellHeightMin:=cHeightMin;
+end;
+
+
+function TRMDrawTools.GetCellWidth : integer;
+begin
+  result:=GridArea.CellWidth;
+end;
+
+function TRMDrawTools.GetCellHeight : integer;
+begin
+  result:=GridArea.CellHeight;
+end;
+
+function TRMDrawTools.GetCellWidthMin : integer;
+begin
+  result:=GridArea.CellWidthMin;
+end;
+
+function TRMDrawTools.GetCellHeightMin : integer;
+begin
+  result:=GridArea.CellHeightMin;
+end;
+
+
+
 function TRMDrawTools.GetCellsPerRow(ImageWidth : integer) : integer;
 begin
    GetCellsPerRow:=(ImageWidth div GridArea.CellWidth);
@@ -1004,19 +1053,13 @@ begin
 end;
 
 procedure TRMDrawTools.SetZoomSize(size : integer);
-var
- XMulti : integer;
- YMulti : integer;
-
 begin
 
-  if size > 10 then size:=10;
+  if size > 20 then size:=20;
   if size < 1 then size:=1;
   GridArea.ZoomSize:=size;
 
-  XMulti:=10;
-  YMulti:=9;
-
+   (*
   if RMCoreBase.GetWidth = 8 then
   begin
    If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
@@ -1029,8 +1072,9 @@ begin
   begin
    If GridArea.ZoomSize < 2 then GridArea.ZoomSize:=2;
   end;
-  SetCellWidth(GridArea.ZoomSize*XMulti);
-  SetCellHeight(GridArea.ZoomSize*YMulti);
+  *)
+  SetCellWidth(GridArea.ZoomSize*GetCellWidthMin);
+  SetCellHeight(GridArea.ZoomSize*GetCellHeightMin);
 end;
 
 function TRMDrawTools.GetZoomSize : integer;

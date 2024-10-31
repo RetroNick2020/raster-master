@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  StdCtrls, ExtDlgs,Clipbrd,LCLIntf,LCLType,rwpng,rmcore,rmthumb;
+  StdCtrls, ExtDlgs,Clipbrd,LCLIntf,LCLType, SpinEx,rwpng,rmcore,rmthumb;
 
 type
 
@@ -15,8 +15,12 @@ type
   TSpriteImportForm = class(TForm)
     CheckBoxDisplayGrid: TCheckBox;
     CheckBoxSnapToGrid: TCheckBox;
+    Label1: TLabel;
+    Label2: TLabel;
     OpenDialog1: TOpenDialog;
     ImportFromClipboard: TButton;
+    SpinEditWidth: TSpinEditEx;
+    SpinEditHeight: TSpinEditEx;
     SpriteSheetPaintBox: TPaintBox;
     SpriteSizeComboBox: TComboBox;
     NewPaletteComboBox: TComboBox;
@@ -33,6 +37,7 @@ type
     procedure ImportFromClipboardClick(Sender: TObject);
     procedure NewPaletteComboBoxChange(Sender: TObject);
     procedure OpenSpriteSheetClick(Sender: TObject);
+    procedure SpinEditWidthHeightChange(Sender: TObject);
     procedure SpriteSheetPaintBoxMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
     procedure SpriteSheetPaintBoxPaint(Sender: TObject);
@@ -106,6 +111,11 @@ begin
       EasyPNG.BuildHashes(0,0,SourceImageWidth-1,SourceImageHeight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
       TopColorCount:=EasyPNG.BuildTopColors(TopColors);
   end;
+end;
+
+procedure TSpriteImportForm.SpinEditWidthHeightChange(Sender: TObject);
+begin
+  if SpriteSize = 6 then SpriteSizeComboBoxChange(Sender);
 end;
 
 procedure TSpriteImportForm.SpriteSheetPaintBoxMouseMove(Sender: TObject;
@@ -389,6 +399,10 @@ begin
                         SpriteWidth:=256;
                         SpriteHeight:=256;
                        end;
+                     6:begin
+                        SpriteWidth:=SpinEditWidth.Value;
+                        SpriteHeight:=SpinEditHeight.Value;
+                       end;
 
   end;
   ClipWidth:=ZoomSize*SpriteWidth;
@@ -442,8 +456,10 @@ begin
   ClipWidth:=ZoomSize*SpriteWidth;
   ClipHeight:=ZoomSize*SpriteHeight;
 
-  NewPaletteFrom:=1;   //new palette from entire image
-  NewPaletteMode:=4;   //vga
+  NewPaletteFrom:=0;   //new palette from clip area
+  NewPaletteMode:=7;   //xga 256
+  PaletteComboBox.ItemIndex:=NewPaletteMode;
+  NewPaletteComboBox.ItemIndex:=NewPaletteFrom;
 end;
 
 procedure TSpriteImportForm.CheckBoxDisplayGridChange(Sender: TObject);

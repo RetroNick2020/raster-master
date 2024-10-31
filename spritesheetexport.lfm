@@ -1,7 +1,7 @@
 object SpriteSheetExportForm: TSpriteSheetExportForm
-  Left = 606
+  Left = 451
   Height = 703
-  Top = 230
+  Top = 254
   Width = 1233
   Caption = 'Sprite Sheet Export'
   ClientHeight = 703
@@ -92,7 +92,6 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
         '800X600'
         '1024X768'
         'Custom'
-        ''
       )
       Style = csDropDownList
       TabOrder = 1
@@ -121,6 +120,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
         '64X64'
         '128X128'
         '256X256'
+        'Custom'
       )
       Style = csDropDownList
       TabOrder = 3
@@ -179,7 +179,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnClick = ApplyClick
     end
     object ExportToClipBoard: TButton
-      Left = 280
+      Left = 433
       Height = 25
       Top = 75
       Width = 131
@@ -188,7 +188,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnClick = ExportToClipBoardClick
     end
     object ExportToFile: TButton
-      Left = 280
+      Left = 433
       Height = 25
       Top = 104
       Width = 131
@@ -197,7 +197,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnClick = ExportToFileClick
     end
     object DescExportToClipboard: TButton
-      Left = 568
+      Left = 688
       Height = 25
       Top = 75
       Width = 131
@@ -206,7 +206,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnClick = DescExportToFileClick
     end
     object StaticText5: TStaticText
-      Left = 464
+      Left = 584
       Height = 17
       Top = 56
       Width = 129
@@ -214,7 +214,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       TabOrder = 12
     end
     object DescriptionFile: TComboBox
-      Left = 464
+      Left = 584
       Height = 23
       Top = 75
       Width = 100
@@ -241,7 +241,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       OnChange = SpriteSheetChange
     end
     object StaticText6: TStaticText
-      Left = 280
+      Left = 408
       Height = 17
       Top = 56
       Width = 105
@@ -251,34 +251,34 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     object StaticText7: TStaticText
       Left = 16
       Height = 17
-      Top = 64
-      Width = 120
-      Caption = 'Custom Sprite Sheet'
+      Top = 56
+      Width = 136
+      Caption = 'Custom Sprite Sheet Size'
       ParentBidiMode = False
       TabOrder = 15
     end
     object StaticText8: TStaticText
-      Left = 16
+      Left = 8
       Height = 17
-      Top = 88
+      Top = 77
       Width = 65
       Alignment = taRightJustify
       Caption = 'Width'
       TabOrder = 16
     end
     object StaticText9: TStaticText
-      Left = 16
+      Left = 8
       Height = 17
-      Top = 120
+      Top = 112
       Width = 65
       Alignment = taRightJustify
       Caption = 'Height'
       TabOrder = 17
     end
     object CSWidth: TSpinEdit
-      Left = 88
+      Left = 80
       Height = 23
-      Top = 88
+      Top = 80
       Width = 64
       MaxValue = 4000
       MinValue = 256
@@ -287,9 +287,9 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       Value = 2000
     end
     object CSHeight: TSpinEdit
-      Left = 88
+      Left = 80
       Height = 23
-      Top = 120
+      Top = 112
       Width = 64
       MaxValue = 4000
       MinValue = 256
@@ -298,13 +298,60 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       Value = 2000
     end
     object DescExportToFile: TButton
-      Left = 568
+      Left = 688
       Height = 25
       Top = 104
       Width = 131
       Caption = 'Export to File'
       TabOrder = 20
       OnClick = DescExportToFileClick
+    end
+    object Label1: TLabel
+      Left = 232
+      Height = 15
+      Top = 80
+      Width = 32
+      Caption = 'Width'
+    end
+    object Label2: TLabel
+      Left = 232
+      Height = 15
+      Top = 112
+      Width = 36
+      Caption = 'Height'
+    end
+    object SpinEditCustomSpriteWidth: TSpinEditEx
+      Left = 277
+      Height = 23
+      Top = 80
+      Width = 67
+      MaxLength = 0
+      NumbersOnly = True
+      TabOrder = 21
+      MaxValue = 256
+      MinValue = 8
+      NullValue = 0
+      Value = 48
+    end
+    object SpinEditCustomSpriteHeight: TSpinEditEx
+      Left = 277
+      Height = 23
+      Top = 112
+      Width = 67
+      MaxLength = 0
+      NumbersOnly = True
+      TabOrder = 22
+      MaxValue = 256
+      MinValue = 8
+      NullValue = 0
+      Value = 48
+    end
+    object Label3: TLabel
+      Left = 208
+      Height = 15
+      Top = 56
+      Width = 98
+      Caption = 'Custom Sprite Size'
     end
   end
   object ZoomTrackBar: TTrackBar

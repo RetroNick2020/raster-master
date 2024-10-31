@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 383
+  Left = 261
   Height = 854
-  Top = 155
+  Top = 190
   Width = 1491
   Align = alClient
   Caption = 'Raster Master'
@@ -486,6 +486,7 @@ object RMMainForm: TRMMainForm
       Hint = 'Zoom Level'
       Top = 1
       Width = 30
+      Max = 20
       Min = 1
       OnChange = ZoomTrackBarChange
       Orientation = trVertical
@@ -1056,8 +1057,35 @@ object RMMainForm: TRMMainForm
     end
     object MenuEdit: TMenuItem
       Caption = 'Edit'
-      object EditResizeTo: TMenuItem
-        Caption = 'Resize To'
+      object EditClear: TMenuItem
+        Caption = 'Clear'
+        OnClick = EditClearClick
+      end
+      object EditClone: TMenuItem
+        Caption = 'Clone'
+        OnClick = EditCloneClick
+      end
+      object EditUndo: TMenuItem
+        Caption = 'Undo'
+        OnClick = ToolUndoIconClick
+      end
+      object EditCopy: TMenuItem
+        Caption = 'Copy'
+        OnClick = EditCopyClick
+      end
+      object EditPaste: TMenuItem
+        Caption = 'Paste'
+        OnClick = EditPasteClick
+      end
+      object EditProperties: TMenuItem
+        Caption = 'Properties'
+        OnClick = PropertiesClick
+      end
+    end
+    object MenuItem17: TMenuItem
+      Caption = 'View'
+      object MenuItem18: TMenuItem
+        Caption = 'Sprite Size'
         object EditResizeTo8: TMenuItem
           Caption = '8 X 8'
           OnClick = EditResizeToNewSize
@@ -1082,30 +1110,35 @@ object RMMainForm: TRMMainForm
           Caption = '256 X 256'
           OnClick = EditResizeToNewSize
         end
+        object ShowCustomSize: TMenuItem
+          Enabled = False
+        end
+        object EditResizeCustom: TMenuItem
+          Caption = 'Set Custom Size'
+          OnClick = EditResizeCustomClick
+        end
       end
-      object EditClear: TMenuItem
-        Caption = 'Clear'
-        OnClick = EditClearClick
-      end
-      object EditClone: TMenuItem
-        Caption = 'Clone'
-        OnClick = EditCloneClick
-      end
-      object EditUndo: TMenuItem
-        Caption = 'Undo'
-        OnClick = ToolUndoIconClick
-      end
-      object EditCopy: TMenuItem
-        Caption = 'Copy'
-        OnClick = EditCopyClick
-      end
-      object EditPaste: TMenuItem
-        Caption = 'Paste'
-        OnClick = EditPasteClick
-      end
-      object EditProperties: TMenuItem
-        Caption = 'Properties'
-        OnClick = PropertiesClick
+      object MenuItem27: TMenuItem
+        Caption = 'Grid Cell Size'
+        object gcNormal: TMenuItem
+          Caption = 'Normal (10 X 9)'
+          OnClick = SetGridCellClick
+        end
+        object gcWide: TMenuItem
+          Caption = 'Wide (16 X 8)'
+          OnClick = SetGridCellClick
+        end
+        object gcTall: TMenuItem
+          Caption = 'Tall (10 X 18)'
+          OnClick = SetGridCellClick
+        end
+        object gcCustomShow: TMenuItem
+          Enabled = False
+        end
+        object gcCustom: TMenuItem
+          Caption = 'Set Custom Size'
+          OnClick = SetCustomGridCellClick
+        end
       end
     end
     object MenuItem4: TMenuItem

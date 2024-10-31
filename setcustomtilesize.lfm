@@ -1,0 +1,60 @@
+object SetCustomTileSizeForm: TSetCustomTileSizeForm
+  Left = 755
+  Height = 180
+  Top = 461
+  Width = 309
+  BorderStyle = bsDialog
+  Caption = 'Set Custom Tile Size'
+  ClientHeight = 180
+  ClientWidth = 309
+  LCLVersion = '3.4.0.0'
+  object Button1: TButton
+    Left = 216
+    Height = 25
+    Top = 136
+    Width = 75
+    Caption = 'OK'
+    TabOrder = 0
+    OnClick = Button1Click
+  end
+  object SpinEditTileWidth: TSpinEditEx
+    Left = 96
+    Height = 23
+    Top = 39
+    Width = 103
+    MaxLength = 0
+    NumbersOnly = True
+    TabOrder = 1
+    MaxValue = 256
+    MinValue = 8
+    NullValue = 0
+    Value = 48
+  end
+  object SpinEditTileHeight: TSpinEditEx
+    Left = 96
+    Height = 23
+    Top = 72
+    Width = 103
+    MaxLength = 0
+    NumbersOnly = True
+    TabOrder = 2
+    MaxValue = 256
+    MinValue = 8
+    NullValue = 0
+    Value = 48
+  end
+  object Label1: TLabel
+    Left = 52
+    Height = 15
+    Top = 39
+    Width = 32
+    Caption = 'Width'
+  end
+  object Label2: TLabel
+    Left = 48
+    Height = 15
+    Top = 72
+    Width = 36
+    Caption = 'Height'
+  end
+end

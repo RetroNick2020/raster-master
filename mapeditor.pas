@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,
   ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
-  rmconfig, LCLType,setcustommapsize;
+  rmconfig, LCLType,setcustommapsize,setcustomtilesize;
 
 const
   AddImage = 1;
@@ -18,17 +18,22 @@ type
   { TMapEdit }
 
   TMapEdit = class(TForm)
-    CopyToClipBoard: TMenuItem;
     GroupBox1: TGroupBox;
     MapImageList: TImageList;
-    MenuItem15: TMenuItem;
+    Clear: TMenuItem;
     CloneMap: TMenuItem;
+    CopyToClipBoard: TMenuItem;
+    Properties: TMenuItem;
+    PasteFromClipBoard: TMenuItem;
+    Undo: TMenuItem;
+    SetTileCustomSize: TMenuItem;
+    MenuItem15: TMenuItem;
     MenuDeleteAll: TMenuItem;
+    ShowTileCustomSize: TMenuItem;
     ShowCustomSize: TMenuItem;
-    SetCustomSize: TMenuItem;
+    SetMapCustomSize: TMenuItem;
     MenuPopupNew: TMenuItem;
     MenuPopupDelete: TMenuItem;
-    Properties: TMenuItem;
     Panel1: TPanel;
     RadioDraw: TRadioButton;
     RadioErase: TRadioButton;
@@ -57,11 +62,8 @@ type
     ScrollLeftMenu: TMenuItem;
     ScrollUpMenu: TMenuItem;
     ScrollDownMenu: TMenuItem;
-    Undo: TMenuItem;
-    PasteFromClipBoard: TMenuItem;
     Panel2: TPanel;
     MenuItem10: TMenuItem;
-    Clear: TMenuItem;
     ExportCArray: TMenuItem;
     ExportPascalArray: TMenuItem;
     MenuItem13: TMenuItem;
@@ -90,7 +92,6 @@ type
     ReSize256x256: TMenuItem;
     ReSizeMap64x64: TMenuItem;
     MenuItem17: TMenuItem;
-    MenuItem18: TMenuItem;
     MenuItem19: TMenuItem;
     TileModeDraw: TMenuItem;
     TileModeErase: TMenuItem;
@@ -136,9 +137,9 @@ type
     procedure Button1Click(Sender: TObject);
     procedure CheckBoxDisplayGridChange(Sender: TObject);
     procedure CloneMapClick(Sender: TObject);
+
     procedure CopyToClipBoardClick(Sender: TObject);
-    procedure CustomSizeMapDrawItem(Sender: TObject; ACanvas: TCanvas;
-      ARect: TRect; AState: TOwnerDrawState);
+
     procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -168,7 +169,8 @@ type
     procedure MenuSaveClick(Sender: TObject);
     procedure PasteFromClipBoardClick(Sender: TObject);
     procedure ReSizeMapClick(Sender: TObject);
-    procedure SetCustomSizeClick(Sender: TObject);
+    procedure SetMapCustomSizeClick(Sender: TObject);
+    procedure SetTileCustomSizeClick(Sender: TObject);
     procedure TileModeDrawClick(Sender: TObject);
     procedure TileModeEraseClick(Sender: TObject);
     procedure RadioDrawClick(Sender: TObject);
@@ -203,6 +205,7 @@ type
     procedure ToolScrollUpIconClick(Sender: TObject);
     procedure ToolUndoIconClick(Sender: TObject);
     procedure ToolVFLIPButtonClick(Sender: TObject);
+
 
   private
 
@@ -323,7 +326,9 @@ begin
  SetMapTileMode(1);  //draw
  SetDrawTool(DrawShapePencil);
  CurrentMap:=MapCoreBase.GetCurrentMap;
- MapCoreBase.SetZoomSize(CurrentMap,4);
+ MapCoreBase.SetZoomSize(CurrentMap,1);
+ TileZoom.Position:=MapCoreBase.GetZoomSize(CurrentMap);
+
  MapCoreBase.SetMapTileSize(CurrentMap,32,32);
 
  TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
@@ -479,6 +484,9 @@ begin
   ShowMessage('Map Cloned!');
 end;
 
+
+
+
 procedure TMapEdit.CopyToClipBoardClick(Sender: TObject);
 var
  ca : MapClipAreaRec;
@@ -487,11 +495,7 @@ begin
  MapCoreBase.CopyToClipBoard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
 end;
 
-procedure TMapEdit.CustomSizeMapDrawItem(Sender: TObject; ACanvas: TCanvas;
-  ARect: TRect; AState: TOwnerDrawState);
-begin
 
-end;
 
 procedure TMapEdit.PasteFromClipBoardClick(Sender: TObject);
 var
@@ -647,6 +651,8 @@ begin
   MapCoreBase.ClearMap(CurrentMap,TileClear);
   VerifyTileImageList;
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 
@@ -882,12 +888,6 @@ begin
   MapPaintBox.Invalidate;
 end;
 
-
-
-
-
-
-
 procedure TMapEdit.MenuOpenClick(Sender: TObject);
 begin
   OpenDialog1.Filter := 'RM MAP Files|*.map|All Files|*.*';
@@ -914,6 +914,7 @@ end;
 procedure TMapEdit.UpdateEditMenus;
 var
   mwidth,mheight : integer;
+  twidth,theight : integer;
 begin
  ReSizeMap8x8.Checked:=false;
  ReSizeMap16x16.Checked:=false;
@@ -941,24 +942,30 @@ begin
    ShowCustomSize.Caption:=IntToStr(mwidth)+'x'+IntToStr(mheight);
  end;
 
-
-
  ReSize8x8.Checked:=false;
  ReSize16x16.Checked:=false;
  ReSize32x32.Checked:=false;
  ReSize64x64.Checked:=false;
  ReSize128x128.Checked:=false;
  ReSize256x256.Checked:=false;
+ ShowTileCustomSize.Checked:=false;
+ ShowTileCustomSize.Caption:='';
 
- case MapCoreBase.GetMapTileWidth(MapCoreBase.GetCurrentMap) of 8: ReSize8x8.Checked:=true;
-                                                           16: ReSize16x16.Checked:=true;
-                                                           32: ReSize32x32.Checked:=true;
-                                                           64: ReSize64x64.Checked:=true;
-                                                           128: ReSize128x128.Checked:=true;
-                                                           256: ReSize256x256.Checked:=true;
+ twidth:=MapCoreBase.GetMapTileWidth(MapCoreBase.GetCurrentMap);
+ theight:=MapCoreBase.GetMapTileHeight(MapCoreBase.GetCurrentMap);
 
+ if (twidth=8) and (theight=8) then  ReSize8x8.Checked:=true
+ else if (twidth=16) and (theight=16) then  ReSize16x16.Checked:=true
+ else if (twidth=32) and (theight=32) then  ReSize32x32.Checked:=true
+ else if (twidth=64) and (theight=64) then  ReSize64x64.Checked:=true
+ else if (twidth=128) and (theight=128) then  ReSize128x128.Checked:=true
+ else if (twidth=256) and (theight=256) then  ReSize256x256.Checked:=true
+ else
+ begin
+   ShowTileCustomSize.Checked:=true;
+   ShowTileCustomSize.Caption:=IntToStr(twidth)+'x'+IntToStr(theight);
+   MapCoreBase.SetMapTileSize(MapCoreBase.GetCurrentMap,twidth,theight);
  end;
-
 end;
 
 procedure TMapEdit.ReSizeMapClick(Sender: TObject);
@@ -989,6 +996,10 @@ begin
                                                       mwidth:=256;
                                                       mheight:=256;
                                                     end;
+                                    'SetMapCustomSize' :begin
+                                                      mwidth:=setcustommapsizeform.SpinEditCustomWidth.Value;
+                                                      mheight:=setcustommapsizeform.SpinEditCustomHeight.Value;
+                                                    end;
 
  end;
  MapCoreBase.ResizeMapSize(CurrentMap,mwidth,mheight);
@@ -1002,19 +1013,20 @@ begin
  MapListView.Repaint;
 end;
 
-procedure TMapEdit.SetCustomSizeClick(Sender: TObject);
+procedure TMapEdit.SetMapCustomSizeClick(Sender: TObject);
 begin
     if SetCustomMapSizeForm.ShowModal = mrOK then
     begin
-       MapCoreBase.ResizeMapSize(CurrentMap,SetCustomMapSizeForm.SpinEditCustomWidth.Value,
-                                            SetCustomMapSizeForm.SpinEditCustomHeight.Value);
-
-       UpdateEditMenus;
-       UpdatePageSize;
-       MapPaintBox.Invalidate;
-       UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
-       MapListView.Repaint;
+       ReSizeMapClick(Sender);
     end;
+end;
+
+procedure TMapEdit.SetTileCustomSizeClick(Sender: TObject);
+begin
+    if SetCustomTileSizeForm.ShowModal = mrOK then
+      begin
+         ReSizeTiles(Sender);
+      end;
 end;
 
 procedure TMapEdit.TileModeDrawClick(Sender: TObject);
@@ -1059,28 +1071,33 @@ begin
                                     'ReSize16x16' :begin
                                                      tw:=16;
                                                      th:=16;
-                                                     zs:=2;
+                                                     zs:=1;
                                                    end;
                                     'ReSize32x32' :begin
                                                      tw:=32;
                                                      th:=32;
-                                                     zs:=3;
+                                                     zs:=1;
                                                    end;
                                     'ReSize64x64' :begin
                                                      tw:=64;
                                                      th:=64;
-                                                     zs:=4;
+                                                     zs:=1;
                                                    end;
                                     'ReSize128x128' :begin
                                                      tw:=128;
                                                      th:=128;
-                                                     zs:=5;
+                                                     zs:=1;
                                                    end;
                                     'ReSize256x256' :begin
                                                      tw:=256;
                                                      th:=256;
-                                                     zs:=6;
+                                                     zs:=1;
                                                    end;
+                                    'SetTileCustomSize':begin
+                                                          tw:=SetCustomTileSizeForm.SpinEditTileWidth.Value;
+                                                          th:=SetCustomTileSizeForm.SpinEditTileHeight.Value;
+                                                          zs:=1;
+                                                        end;
   End;
 
   MapCoreBase.SetZoomSize(CurrentMap,zs);

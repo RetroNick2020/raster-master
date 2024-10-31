@@ -1,0 +1,60 @@
+object setcustomspritesizeform: Tsetcustomspritesizeform
+  Left = 811
+  Height = 211
+  Top = 499
+  Width = 320
+  BorderStyle = bsDialog
+  Caption = 'Set Custom Sprite Size'
+  ClientHeight = 211
+  ClientWidth = 320
+  LCLVersion = '3.4.0.0'
+  object SpinEditWidth: TSpinEditEx
+    Left = 128
+    Height = 23
+    Top = 35
+    Width = 103
+    MaxLength = 0
+    NumbersOnly = True
+    TabOrder = 0
+    MaxValue = 256
+    MinValue = 8
+    NullValue = 0
+    Value = 48
+  end
+  object SpinEditHeight: TSpinEditEx
+    Left = 128
+    Height = 23
+    Top = 72
+    Width = 103
+    MaxLength = 0
+    NumbersOnly = True
+    TabOrder = 1
+    MaxValue = 256
+    MinValue = 8
+    NullValue = 0
+    Value = 48
+  end
+  object OKButton: TButton
+    Left = 208
+    Height = 25
+    Top = 152
+    Width = 75
+    Caption = 'OK'
+    TabOrder = 2
+    OnClick = OKButtonClick
+  end
+  object SpriteWidth: TLabel
+    Left = 32
+    Height = 15
+    Top = 40
+    Width = 65
+    Caption = 'Sprite Width'
+  end
+  object SpriteHeight: TLabel
+    Left = 32
+    Height = 15
+    Top = 72
+    Width = 69
+    Caption = 'Sprite Height'
+  end
+end
