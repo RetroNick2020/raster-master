@@ -1,7 +1,7 @@
 object AnimationForm: TAnimationForm
-  Left = 279
+  Left = 166
   Height = 747
-  Top = 223
+  Top = 282
   Width = 1152
   Caption = 'Sprite Animation'
   ClientHeight = 747

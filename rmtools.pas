@@ -185,6 +185,10 @@ procedure TRMDrawTools.Init;
 begin
  SetCellWidthMin(10);
  SetCellHeightMin(9);
+
+ SetCellWidth(10);
+ SetCellHeight(9);
+
  SetZoomMode(1);
  SetZoomSize(2);
  SetGridMode(1);

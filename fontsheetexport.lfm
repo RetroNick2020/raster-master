@@ -1,0 +1,454 @@
+object FontSheetExportForm: TFontSheetExportForm
+  Left = 306
+  Height = 703
+  Top = 231
+  Width = 1233
+  Caption = 'Font Sheet Export'
+  ClientHeight = 703
+  ClientWidth = 1233
+  OnActivate = FormActivate
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '3.4.0.0'
+  object Splitter1: TSplitter
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Cursor = crVSplit
+    Left = 0
+    Height = 16
+    Top = 162
+    Width = 1233
+    Align = alNone
+    Anchors = [akLeft, akRight]
+    AutoSnap = False
+    Color = 11625216
+    ParentColor = False
+    ResizeAnchor = akBottom
+  end
+  object ScrollBox1: TScrollBox
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Splitter1
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 525
+    Top = 178
+    Width = 1233
+    HorzScrollBar.Page = 105
+    HorzScrollBar.Tracking = True
+    VertScrollBar.Page = 105
+    VertScrollBar.Tracking = True
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderStyle = bsNone
+    ClientHeight = 525
+    ClientWidth = 1233
+    TabOrder = 1
+    object FontSheetPaintBox: TPaintBox
+      Left = 0
+      Height = 105
+      Top = 0
+      Width = 105
+      OnPaint = FontSheetPaintBoxPaint
+    end
+  end
+  object Panel1: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = ZoomTrackBar
+    AnchorSideBottom.Control = Splitter1
+    Left = 0
+    Height = 162
+    Top = 0
+    Width = 1176
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ClientHeight = 162
+    ClientWidth = 1176
+    TabOrder = 2
+    object StaticText1: TStaticText
+      Left = 16
+      Height = 17
+      Top = 20
+      Width = 65
+      Caption = 'Font Sheet'
+      TabOrder = 0
+    end
+    object FontSheet: TComboBox
+      Left = 88
+      Height = 23
+      Top = 20
+      Width = 100
+      ItemHeight = 15
+      ItemIndex = 0
+      Items.Strings = (
+        '320X200'
+        '640X200'
+        '640X350'
+        '640X480'
+        '800X600'
+        '1024X768'
+        'Custom'
+      )
+      Style = csDropDownList
+      TabOrder = 1
+      Text = '320X200'
+      OnChange = FontSheetChange
+    end
+    object StaticText2: TStaticText
+      Left = 208
+      Height = 17
+      Top = 20
+      Width = 65
+      Caption = 'Char Size'
+      TabOrder = 2
+    end
+    object SpriteSize: TComboBox
+      Left = 280
+      Height = 23
+      Top = 20
+      Width = 100
+      ItemHeight = 15
+      ItemIndex = 2
+      Items.Strings = (
+        '8X8'
+        '16X16'
+        '32X32'
+        '64X64'
+        '128X128'
+        '256X256'
+        'Custom'
+      )
+      Style = csDropDownList
+      TabOrder = 3
+      Text = '32X32'
+      OnChange = FontSheetChange
+    end
+    object StaticText3: TStaticText
+      Left = 408
+      Height = 17
+      Top = 20
+      Width = 65
+      Caption = 'Direction'
+      TabOrder = 4
+    end
+    object Direction: TComboBox
+      Left = 464
+      Height = 23
+      Top = 20
+      Width = 100
+      ItemHeight = 15
+      ItemIndex = 0
+      Items.Strings = (
+        'Horizontal'
+        'Vertical'
+      )
+      Style = csDropDownList
+      TabOrder = 5
+      Text = 'Horizontal'
+      OnChange = DirectionChange
+    end
+    object StaticText4: TStaticText
+      Left = 584
+      Height = 17
+      Top = 24
+      Width = 137
+      Caption = 'Items Per Row / Column'
+      TabOrder = 6
+    end
+    object ItemsPerRow: TSpinEdit
+      Left = 728
+      Height = 23
+      Top = 24
+      Width = 48
+      MaxValue = 1000
+      MinValue = 1
+      TabOrder = 7
+      Value = 5
+    end
+    object Apply: TButton
+      Left = 1056
+      Height = 46
+      Top = 49
+      Width = 80
+      Caption = 'Apply'
+      TabOrder = 8
+      OnClick = ApplyClick
+    end
+    object ExportToClipBoard: TButton
+      Left = 433
+      Height = 25
+      Top = 75
+      Width = 131
+      Caption = 'Export to Clipboard'
+      TabOrder = 9
+      OnClick = ExportToClipBoardClick
+    end
+    object ExportToFile: TButton
+      Left = 433
+      Height = 25
+      Top = 104
+      Width = 131
+      Caption = 'Export to File'
+      TabOrder = 10
+      OnClick = ExportToFileClick
+    end
+    object DescExportToClipboard: TButton
+      Left = 688
+      Height = 25
+      Top = 75
+      Width = 131
+      Caption = 'Export To Clipboard'
+      Enabled = False
+      TabOrder = 11
+      OnClick = DescExportToFileClick
+    end
+    object StaticText5: TStaticText
+      Left = 584
+      Height = 17
+      Top = 56
+      Width = 129
+      Caption = 'Export Description File'
+      TabOrder = 12
+    end
+    object DescriptionFile: TComboBox
+      Left = 584
+      Height = 23
+      Top = 75
+      Width = 100
+      Enabled = False
+      ItemHeight = 15
+      ItemIndex = 0
+      Items.Strings = (
+        'QB64'
+        'QBasic'
+        'Freepascal'
+        'Turbo Pascal'
+        'TMT Pascal'
+        'Amiga Pascal'
+        'Quick Pascal'
+        'gcc'
+        'Open Watcom C'
+        'Turbo C'
+        'Quick C'
+        'Amiga C'
+        'JSON'
+      )
+      Style = csDropDownList
+      TabOrder = 13
+      Text = 'QB64'
+      OnChange = FontSheetChange
+    end
+    object StaticText6: TStaticText
+      Left = 408
+      Height = 17
+      Top = 56
+      Width = 105
+      Caption = 'Font Sheet Export'
+      TabOrder = 14
+    end
+    object StaticText7: TStaticText
+      Left = 16
+      Height = 17
+      Top = 56
+      Width = 136
+      Caption = 'Custom Font Sheet Size'
+      ParentBidiMode = False
+      TabOrder = 15
+    end
+    object StaticText8: TStaticText
+      Left = 8
+      Height = 17
+      Top = 77
+      Width = 65
+      Alignment = taRightJustify
+      Caption = 'Width'
+      TabOrder = 16
+    end
+    object StaticText9: TStaticText
+      Left = 8
+      Height = 17
+      Top = 112
+      Width = 65
+      Alignment = taRightJustify
+      Caption = 'Height'
+      TabOrder = 17
+    end
+    object CSWidth: TSpinEdit
+      Left = 80
+      Height = 23
+      Top = 80
+      Width = 64
+      MaxValue = 4000
+      MinValue = 256
+      OnChange = FontSheetChange
+      TabOrder = 18
+      Value = 2000
+    end
+    object CSHeight: TSpinEdit
+      Left = 80
+      Height = 23
+      Top = 112
+      Width = 64
+      MaxValue = 4000
+      MinValue = 256
+      OnChange = FontSheetChange
+      TabOrder = 19
+      Value = 2000
+    end
+    object DescExportToFile: TButton
+      Left = 688
+      Height = 25
+      Top = 104
+      Width = 131
+      Caption = 'Export to File'
+      Enabled = False
+      TabOrder = 20
+      OnClick = DescExportToFileClick
+    end
+    object Label1: TLabel
+      Left = 232
+      Height = 15
+      Top = 80
+      Width = 32
+      Caption = 'Width'
+    end
+    object Label2: TLabel
+      Left = 232
+      Height = 15
+      Top = 112
+      Width = 36
+      Caption = 'Height'
+    end
+    object SpinEditCustomFontWidth: TSpinEditEx
+      Left = 277
+      Height = 23
+      Top = 80
+      Width = 67
+      MaxLength = 0
+      NumbersOnly = True
+      TabOrder = 21
+      OnChange = FontSheetChange
+      MaxValue = 256
+      MinValue = 8
+      NullValue = 0
+      Value = 48
+    end
+    object SpinEditCustomFontHeight: TSpinEditEx
+      Left = 277
+      Height = 23
+      Top = 112
+      Width = 67
+      MaxLength = 0
+      NumbersOnly = True
+      TabOrder = 22
+      OnChange = FontSheetChange
+      MaxValue = 256
+      MinValue = 8
+      NullValue = 0
+      Value = 48
+    end
+    object Label3: TLabel
+      Left = 208
+      Height = 15
+      Top = 56
+      Width = 119
+      Caption = 'Custom Character Size'
+    end
+    object Button1: TButton
+      Left = 840
+      Height = 25
+      Top = 40
+      Width = 131
+      Caption = 'Select Font'
+      TabOrder = 23
+      OnClick = Button1Click
+    end
+    object SpinStartChar: TSpinEditEx
+      Left = 904
+      Height = 23
+      Top = 76
+      Width = 67
+      MaxLength = 0
+      NumbersOnly = True
+      TabOrder = 24
+      MaxValue = 255
+      NullValue = 0
+      Value = 32
+    end
+    object SpinEndChar: TSpinEditEx
+      Left = 904
+      Height = 23
+      Top = 104
+      Width = 67
+      MaxLength = 0
+      NumbersOnly = True
+      TabOrder = 25
+      MaxValue = 255
+      NullValue = 0
+      Value = 127
+    end
+    object Label4: TLabel
+      Left = 840
+      Height = 15
+      Top = 83
+      Width = 52
+      Caption = 'Start Char'
+    end
+    object Label6: TLabel
+      Left = 840
+      Height = 15
+      Top = 112
+      Width = 48
+      Caption = 'End Char'
+    end
+  end
+  object ZoomTrackBar: TTrackBar
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 1176
+    Height = 100
+    Top = 20
+    Width = 41
+    Min = 1
+    OnChange = ZoomTrackBarChange
+    Orientation = trVertical
+    Position = 1
+    TickMarks = tmTopLeft
+    Anchors = [akRight]
+    BorderSpacing.Right = 16
+    TabOrder = 3
+  end
+  object Label5: TLabel
+    Left = 208
+    Height = 15
+    Top = 56
+    Width = 119
+    Caption = 'Custom Character Size'
+  end
+  object SaveDialog1: TSaveDialog
+    Title = 'Export'
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
+    Left = 1142
+    Top = 304
+  end
+  object SaveDialog2: TSaveDialog
+    Title = 'Export Description File'
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
+    Left = 1142
+    Top = 248
+  end
+  object FontDialog1: TFontDialog
+    Font.Color = clWhite
+    Font.Quality = fqNonAntialiased
+    MinFontSize = 0
+    MaxFontSize = 0
+    Options = [fdEffects, fdApplyButton]
+    OnApplyClicked = FontDialog1ApplyClicked
+    Left = 1142
+    Top = 200
+  end
+end

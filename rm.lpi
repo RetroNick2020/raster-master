@@ -146,7 +146,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="44">
+    <Units Count="46">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -329,7 +329,6 @@
         <ComponentName Value="SpriteSheetExportForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="SpriteSheetExport"/>
       </Unit35>
       <Unit36>
         <Filename Value="animate.pas"/>
@@ -378,8 +377,20 @@
         <Filename Value="setcustomcellsize.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="SetCustomCellSizeForm"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit43>
+      <Unit44>
+        <Filename Value="fontsheetexport.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FontSheetExportForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit44>
+      <Unit45>
+        <Filename Value="fontsheetexport.lfm"/>
+        <IsPartOfProject Value="True"/>
+      </Unit45>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

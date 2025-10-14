@@ -10,7 +10,7 @@ uses
   ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore, flood,
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
-  rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
+  rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
   fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize;
 
 
@@ -77,6 +77,7 @@ type
     EditResizeTo64: TMenuItem;
     EditResizeTo128: TMenuItem;
     EditResizeTo256: TMenuItem;
+    FontSheetExportMenu: TMenuItem;
     ShowCustomSize: TMenuItem;
     EditResizeCustom: TMenuItem;
     MenuItem27: TMenuItem;
@@ -360,6 +361,7 @@ type
     procedure EditCloneClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
+    procedure FontSheetExportMenuClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
 
 
@@ -2215,6 +2217,8 @@ begin
    end;
 end;
 
+
+
 procedure TRMMainForm.SetCustomGridCellClick(Sender: TObject);
 begin
    if SetCustomCellSizeForm.ShowModal = mrOK then
@@ -2304,7 +2308,6 @@ begin
   EditResizeTo256.Checked:=false;
   ShowCustomSize.Checked:=false;
   ShowCustomSize.Caption:='';
-
   swidth:=RMCoreBase.GetWidth;
   sheight:=RMCoreBase.GetHeight;
   if (swidth=8) and (sheight=8) then  EditResizeTo8.Checked:=true
@@ -2315,7 +2318,7 @@ begin
   else if (swidth=256) and (sheight=256) then EditResizeTo256.Checked:=true
   else
   begin
-    ShowCustomSize.Caption:=IntToStr(swidth)+'x'+IntToStr(sheight);
+    ShowCustomSize.Caption:=IntToStr(swidth)+'X'+IntToStr(sheight);
     ShowCustomSize.Checked:=true;
     RMCoreBase.SetWidth(swidth);
     RMCoreBase.SetHeight(sheight);
@@ -2324,9 +2327,19 @@ begin
   gcNormal.Checked:=false;
   gcWide.Checked:=false;
   gcTall.Checked:=false;
+  gcCustomShow.Caption:='';
   gcCustomShow.Checked:=false;
-  gcWidth:=RMDrawTools.GetCellWidth;
-  gcHeight:=RMDrawTools.GetCellHeight;
+  gcWidth:=RMDrawTools.GetCellWidthMin;
+  gcHeight:=RMDrawTools.GetCellHeightMin;
+  if (gcwidth=10) and (gcheight=9) then gcNormal.Checked:=true
+  else if (gcwidth=16) and (gcheight=8) then gcWide.Checked:=true
+  else if (gcwidth=8) and (gcheight=16) then gcTall.Checked:=true
+  else
+  begin
+    gcCustomShow.Checked:=true;
+    gcCustomShow.Caption:=IntToStr(gcwidth)+'X'+IntToStr(gcheight);
+  end;
+
 
 end;
 
@@ -3852,6 +3865,12 @@ procedure TRMMainForm.SpriteExportMenuClick(Sender: TObject);
 begin
   SpriteSheetExportForm.Show;
   SpriteSheetExportForm.WindowState:=wsNormal;
+end;
+
+procedure TRMMainForm.FontSheetExportMenuClick(Sender: TObject);
+begin
+  FontSheetExportForm.Show;
+  FontSheetExportForm.WindowState:=wsNormal;
 end;
 
 procedure TRMMainForm.TMTPaletteExportClick(Sender: TObject);

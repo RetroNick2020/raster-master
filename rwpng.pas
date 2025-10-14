@@ -18,6 +18,8 @@ type
     R,G,B,A       : integer;
   end;
 
+  TTColorLongMap = specialize TFPGMap<TColor, longint>;
+
   { TForm1 }
 
   TEasyPNG = class
@@ -28,7 +30,7 @@ type
     GlobalPalette : TRMPaletteBuf; //palette created after scanning entire image
     LocalPalette  : TRMPaletteBuf; //palette created after scanning location area of sprite image
 
-    Dictionary: specialize TFPGMap<string, longint>;
+    ColorHashMap :  TTColorLongMap;
 
     constructor Create;
     destructor destroy; override;
@@ -64,21 +66,9 @@ function FindPaletteIndex(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nCo
 
 
 implementation
-
+     (*
 function TColorToStr(Color : TColor) : string;
-(*
-var
- r,g,b : integer;*)
 begin
-   (*
-   r:=SixToEightBit(EightToSixBit(Red(Color)));
-   g:=SixToEightBit(EightToSixBit(Green(Color)));
-   b:=SixToEightBit(EightToSixBit(Blue(Color)));
-
-   TColorToStr := AddChar('0',IntToStr(r),3)+
-   AddChar('0',IntToStr(g),3)+
-   AddChar('0',IntToStr(b), 3);
-  *)
 
 
    TColorToStr := AddChar('0',IntToStr(Red(Color)),3)+
@@ -86,13 +76,13 @@ begin
    AddChar('0',IntToStr(Blue(Color)), 3);
 
 end;
+*)
 
-
-procedure ColorStrToRGB(colorstr : string;var r,g,b : integer);
+procedure ColorToRGB(color : TColor;var r,g,b : integer);
 begin
-   r:=StrToInt(copy(colorStr,1,3));
-   g:=StrToInt(copy(colorStr,4,3));
-   b:=StrToInt(copy(colorStr,7,3));
+   r:=RED(color);
+   g:=GREEN(color);
+   b:=BLUE(color);
 end;
 
 function FindColorInPalette(Var Palette : TRMPaletteBuf;nColors,r,g,b : integer) : integer;
@@ -157,7 +147,7 @@ end;
 constructor TEasyPNG.Create;
 begin
   Picture1:=TPicture.Create;
-  Dictionary := specialize TFPGMap<string, longint>.Create;
+  ColorHashMap := TTColorLongMap.Create;
 end;
 
 Function TEasyPNG.FindMostColorIndex : integer;
@@ -168,11 +158,11 @@ var
 begin
   v:=0;
   c:=-1;
-  for i:=0 to Dictionary.Count-1 do
+  for i:=0 to ColorHashMap.Count-1 do
   begin
-     if Dictionary.Data[i] > v then
+     if ColorHashMap.Data[i] > v then
      begin
-        v:=Dictionary.Data[i];
+        v:=ColorHashMap.Data[i];
         c:=i;
      end;
   end;
@@ -183,7 +173,6 @@ Procedure TEasyPNG.BuildHashes(x,y,x2,y2 : integer);
 var
  i,j : integer;
  color : TColor;
- colorStr : string;
  v  : longint;
  cc  : integer;
 width,height : integer;
@@ -194,21 +183,21 @@ begin
  if height > Picture1.height then height:=Picture1.height;
 
  cc:=0;
- Dictionary.Clear;
+ ColorHashMap.Clear;
  for j:=0 to height-1 do
  begin
    for i:=0 to width-1 do
    begin
      color:=Picture1.Bitmap.Canvas.Pixels[x+i,y+j];
-     colorstr:=TColorToStr(color);
-     if Dictionary.TryGetData(colorstr,v) then
+
+     if ColorHashMap.TryGetData(color,v) then
      begin
        inc(v);
-       Dictionary.AddOrSetData(colorstr,v);
+       ColorHashMap.AddOrSetData(color,v);
      end
      else
      begin
-       Dictionary.Add(colorstr,1);
+       ColorHashMap.Add(color,1);
        inc(cc);
      end;
    end;
@@ -219,17 +208,17 @@ function TEasyPNG.BuildTopColors(var  TopPalette : TRMPaletteBuf) : integer;
 var
  ColorCount : integer;
  MostColors : integer;
- ColorStr   : string;
+ Color   : TColor;
 begin
   ColorCount:=0;
-  while (Dictionary.Count > 0) and (ColorCount < 256)  do
+  while (ColorHashMap.Count > 0) and (ColorCount < 256)  do
   begin
    MostColors:=FindMostColorIndex;
    if MostColors<>-1 then
    begin
-     ColorStr:=Dictionary.keys[MostColors];
-     Dictionary.Delete(MostColors);
-     ColorStrToRGB(ColorStr,TopPalette[ColorCount].r,
+     Color:=ColorHashMap.keys[MostColors];
+     ColorHashMap.Delete(MostColors);
+     ColorToRGB(Color,TopPalette[ColorCount].r,
                             TopPalette[ColorCount].g,
                             TopPalette[ColorCount].b);
      inc(ColorCount);
@@ -455,9 +444,7 @@ var
  pm : integer;
  nColors : integer;
 begin
-// nColors:=RMCoreBase.Palette.GetColorCount;
  nColors:=ColorCount;
-// pm:=RMCoreBAse.Palette.GetPaletteMode;
  pm:=PaletteMode;
  width:=x2-x+1;
  height:=y2-y+1;
@@ -508,7 +495,7 @@ end;
 destructor TEasyPNG.destroy;
 begin
   Picture1.Free;
-  Dictionary.Free;
+  ColorHashMap.Free;
 end;
 
 function ReadPNG(x,y,x2,y2 : integer;filename : string; LoadPalette : Boolean) : integer;

@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, ExtCtrls,
   ComCtrls, Menus, StdCtrls, Arrow,AnimBase,animationexport,rmthumb,rwpng,
-  fileprops,rwspriteanim,rmcodegen,rmconfig,rmclipboard;
+  fileprops,rwspriteanim,rmcodegen,rmconfig,rmclipboard, Types;
 
 type
 
@@ -143,12 +143,11 @@ implementation
 
 { TAnimationForm }
 
+
 procedure TAnimationForm.FormCreate(Sender: TObject);
 begin
   FPSDelay:=1000 Div FPSTrackBar.Position;
 end;
-
-
 
 procedure TAnimationForm.AnimExportMenuClick(Sender: TObject);
   var
@@ -638,7 +637,7 @@ procedure TAnimationForm.CurrentAnimListViewDragDrop(Sender, Source: TObject;
   X, Y: Integer);
 var
   index,destindex : integer;
-  item  : TListItem;
+  item            : TListItem;
 begin
    destindex:=-1;
    index:=(Source as TListView).ItemIndex;

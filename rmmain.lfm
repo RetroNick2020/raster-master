@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
-  Left = 261
-  Height = 854
-  Top = 190
+  Left = 431
+  Height = 822
+  Top = 199
   Width = 1491
   Align = alClient
   Caption = 'Raster Master'
-  ClientHeight = 854
+  ClientHeight = 822
   ClientWidth = 1491
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
@@ -24,11 +24,11 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1253
-    Height = 854
+    Height = 822
     Top = 0
     Width = 238
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 854
+    ClientHeight = 822
     ClientWidth = 238
     TabOrder = 5
     object RMPanel: TPanel
@@ -39,7 +39,7 @@ object RMMainForm: TRMMainForm
       Cursor = crNo
       Left = 64
       Height = 121
-      Top = 722
+      Top = 690
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
@@ -105,19 +105,19 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 307
-    Height = 742
+    Height = 710
     Top = 112
     Width = 935
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 742
+    ClientHeight = 710
     ClientWidth = 935
     TabOrder = 1
     object ZoomScrollBox: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
       AnchorSideTop.Control = MiddleBottomPanel
       Left = 0
-      Height = 742
+      Height = 710
       Top = 0
       Width = 935
       HorzScrollBar.Increment = 93
@@ -129,7 +129,7 @@ object RMMainForm: TRMMainForm
       Align = alClient
       Anchors = [akRight, akBottom]
       BorderStyle = bsNone
-      ClientHeight = 742
+      ClientHeight = 710
       ClientWidth = 935
       TabOrder = 0
       object ZoomPaintBox: TPaintBox
@@ -155,12 +155,12 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 854
+    Height = 822
     Top = 0
     Width = 307
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 854
+    ClientHeight = 822
     ClientWidth = 307
     TabOrder = 0
     object LeftVSplitter: TSplitter
@@ -173,7 +173,7 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 280
+      Top = 269
       Width = 305
       Align = alNone
       Anchors = [akLeft, akRight]
@@ -190,8 +190,8 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 561
-      Top = 293
+      Height = 540
+      Top = 282
       Width = 296
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
@@ -213,13 +213,13 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 280
+      Height = 269
       Top = 0
       Width = 292
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 280
+      ClientHeight = 269
       ClientWidth = 292
       TabOrder = 0
       object ActualBox: TImage
@@ -236,7 +236,7 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 296
-    Height = 854
+    Height = 822
     Top = 0
     Width = 11
     Align = alNone
@@ -250,7 +250,7 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1242
-    Height = 854
+    Height = 822
     Top = 0
     Width = 11
     Align = alNone
@@ -1129,7 +1129,7 @@ object RMMainForm: TRMMainForm
           OnClick = SetGridCellClick
         end
         object gcTall: TMenuItem
-          Caption = 'Tall (10 X 18)'
+          Caption = 'Tall (8 X 16)'
           OnClick = SetGridCellClick
         end
         object gcCustomShow: TMenuItem
@@ -1488,6 +1488,10 @@ object RMMainForm: TRMMainForm
       object SpriteExportMenu: TMenuItem
         Caption = 'Sprite Sheet Export'
         OnClick = SpriteExportMenuClick
+      end
+      object FontSheetExportMenu: TMenuItem
+        Caption = 'Font Sheet Export'
+        OnClick = FontSheetExportMenuClick
       end
       object SpriteAnimationMenu: TMenuItem
         Caption = 'Sprite Animation'

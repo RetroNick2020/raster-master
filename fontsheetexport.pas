@@ -1,4 +1,4 @@
-unit spritesheetexport;
+unit fontsheetexport;
 
 {$mode ObjFPC}{$H+}
 
@@ -13,25 +13,34 @@ type
 
   { TSpriteSheetExportForm }
 
-  TSpriteSheetExportForm = class(TForm)
+  { TFontSheetExportForm }
+
+  TFontSheetExportForm = class(TForm)
     Apply: TButton;
+    Button1: TButton;
     DescExportToClipboard: TButton;
     ExportToClipBoard: TButton;
     ExportToFile: TButton;
     CSWidth: TSpinEdit;
     CSHeight: TSpinEdit;
     DescExportToFile: TButton;
+    FontDialog1: TFontDialog;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
+    Label4: TLabel;
+    Label5: TLabel;
+    Label6: TLabel;
     SaveDialog1: TSaveDialog;
     SaveDialog2: TSaveDialog;
-    SpinEditCustomSpriteWidth: TSpinEditEx;
-    SpinEditCustomSpriteHeight: TSpinEditEx;
-    SpriteSheet: TComboBox;
+    SpinEditCustomFontWidth: TSpinEditEx;
+    SpinEditCustomFontHeight: TSpinEditEx;
+    SpinStartChar: TSpinEditEx;
+    SpinEndChar: TSpinEditEx;
+    FontSheet: TComboBox;
     SpriteSize: TComboBox;
     Direction: TComboBox;
-    SpriteSheetPaintBox: TPaintBox;
+    FontSheetPaintBox: TPaintBox;
     Panel1: TPanel;
     ScrollBox1: TScrollBox;
     ItemsPerRow: TSpinEdit;
@@ -48,39 +57,43 @@ type
     StaticText9: TStaticText;
     ZoomTrackBar: TTrackBar;
     procedure ApplyClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
     procedure DescExportToFileClick(Sender: TObject);
     procedure DirectionChange(Sender: TObject);
     procedure ExportToClipBoardClick(Sender: TObject);
     procedure ExportToFileClick(Sender: TObject);
+    procedure FontDialog1ApplyClicked(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure SpriteSheetChange(Sender: TObject);
-    procedure SpriteSheetPaintBoxPaint(Sender: TObject);
+    procedure FontSheetChange(Sender: TObject);
+    procedure FontSheetPaintBoxPaint(Sender: TObject);
     procedure ZoomTrackBarChange(Sender: TObject);
   private
 
   public
-   //  Picture1 : TPicture;
-     SpriteSheetBitMap : TBitMap;
-     SpriteWidth : integer;
-     SpriteHeight: integer;
-     SpriteSheetWidth : integer;
-     SpriteSheetHeight: integer;
+     FontSheetBitMap : TBitMap;
+     CharBitMap      : TBitMap;
+
+     CharWidth : integer;
+     CharHeight: integer;
+     FontSheetWidth : integer;
+     FontSheetHeight: integer;
      ZoomSize    : integer;
 
-     procedure UpdateSpriteValues;
-     procedure UpdateSpriteSheetValues;
-     procedure UpdateSpriteSheet;
+     procedure UpdateFontValues;
+     procedure UpdateFontSheetValues;
+     procedure UpdateFontSheet;
      procedure UpdatePaintBoxSize;
      procedure UpdateSpriteSheetSize;
-
-     procedure ImportSprites;
-
+     procedure UpdateItemsPerRow;
+     procedure ImportFontCharacters;
+     procedure CharToBitMap(c : integer);
+     procedure ApplySettings;
   end;
 
 var
-  SpriteSheetExportForm: TSpriteSheetExportForm;
+  FontSheetExportForm: TFontSheetExportForm;
 
 implementation
 
@@ -116,56 +129,96 @@ begin
   y2:=y+CSHeight-1;
 end;
 
-procedure TSpriteSheetExportForm.FormCreate(Sender: TObject);
+procedure TFontSheetExportForm.FormCreate(Sender: TObject);
 begin
-   SpriteWidth:=32;
-   SpriteHeight:=32;
-   SpriteSheetWidth:=320;
-   SpriteSheetHeight:=200;
-   UpdateSpriteValues;
-   UpdateSpriteSheetValues;
+   CharWidth:=32;
+   CharHeight:=32;
+   FontSheetWidth:=320;
+   FontSheetHeight:=200;
 
    ZoomSize:=ZoomTrackBar.Position;
-   SpriteSheetBitMap:=TBitMap.Create;
+   FontSheetBitMap:=TBitMap.Create;
+
   // SpriteSheetBitMap.PixelFormat:=pf32bit;
-   SpriteSheetBitMap.SetSize(SpriteSheetWidth,SpriteSheetHeight);
-   SpriteSheetBitMap.Canvas.FillRect(0,0,SpriteSheetWidth,SpriteSheetHeight);
-   UpdateSpriteSheet;
+   FontSheetBitMap.SetSize(FontSheetWidth,FontSheetHeight);
+   FontSheetBitMap.Canvas.FillRect(0,0,FontSheetWidth,FontSheetHeight);
+   //UpdateSpriteSheet;
+
+
+   CharBitMap:=TBitMap.Create;
+   CharBitMap.SetSize(CharWidth,CharHeight);
+
+   CharBitMap.Canvas.Font:=FontDialog1.Font;
+
+
+
+   UpdateItemsPerRow;
+
+//   UpdateFontValues;
+//   UpdateFontSheetValues;
+
    //SpriteSheetBitMap.Clear;
-   SpriteSheetPaintBox.Width:=SpriteSheetWidth*ZoomSize;
-   SpriteSheetPaintBox.Height:=SpriteSheetHeight*ZoomSize;
-   SpriteSheetPaintBox.Invalidate;
+   FontSheetPaintBox.Width:=FontSheetWidth*ZoomSize;
+   FontSheetPaintBox.Height:=FontSheetHeight*ZoomSize;
+
+//   ImportFontCharacters;
+
+//   FontSheetPaintBox.Invalidate;
+ ApplySettings;
 end;
 
-procedure TSpriteSheetExportForm.FormDestroy(Sender: TObject);
+procedure TFontSheetExportForm.FormDestroy(Sender: TObject);
 begin
-   SpriteSheetBitMap.Free;
+  CharBitMap.Free;
+  FontSheetBitMap.Free;
 end;
 
-procedure TSpriteSheetExportForm.SpriteSheetChange(Sender: TObject);
+procedure TFontSheetExportForm.UpdateItemsPerRow;
 begin
-  UpdateSpriteSheetValues;
-  UpdateSpriteValues;
-  if Direction.ItemIndex = 0  then
+if Direction.ItemIndex = 0  then
+begin
+   ItemsPerRow.Value:=FontSheetWidth div CharWidth;
+end
+else
+begin
+  ItemsPerRow.Value:=FontSheetHeight div CharHeight;
+end;
+CharBitMap.SetSize(CharWidth,CharHeight);
+end;
+
+procedure TFontSheetExportForm.FontSheetChange(Sender: TObject);
+begin
+  UpdateFontSheetValues;
+  UpdateFontValues;
+  UpdateItemsPerRow;
+end;
+
+procedure TFontSheetExportForm.ApplySettings;
+begin
+// SpriteSheetBitMap.Clear;
+  UpdateFontValues;
+  UpdateFontSheetValues;
+  UpdateSpriteSheetSize;
+  FontSheetBitMap.Canvas.FillRect(0,0,FontSheetWidth,FontSheetHeight);
+  UpdatePaintBoxSize;
+  //ImportSprites;
+  ImportFontCharacters;
+  FontSheetPaintBox.Invalidate;
+end;
+
+procedure TFontSheetExportForm.ApplyClick(Sender: TObject);
+begin
+  ApplySettings;
+end;
+
+procedure TFontSheetExportForm.Button1Click(Sender: TObject);
+begin
+  if FontDialog1.Execute then
   begin
-     ItemsPerRow.Value:=SpriteSheetWidth div SpriteWidth;
-  end
-  else
-  begin
-    ItemsPerRow.Value:=SpriteSheetHeight div SpriteHeight;
+   CharBitMap.Canvas.Font:=FontDialog1.Font;
+   CharBitMap.Canvas.Font.Quality:=fqNonAntialiased;
+   ApplySettings;
   end;
-end;
-
-procedure TSpriteSheetExportForm.ApplyClick(Sender: TObject);
-begin
- // SpriteSheetBitMap.Clear;
-   UpdateSpriteValues;
-   UpdateSpriteSheetValues;
-   UpdateSpriteSheetSize;
-   SpriteSheetBitMap.Canvas.FillRect(0,0,SpriteSheetWidth,SpriteSheetHeight);
-   UpdatePaintBoxSize;
-   ImportSprites;
-   SpriteSheetPaintBox.Invalidate;
 end;
 
 
@@ -241,7 +294,7 @@ begin
   end;
 end;
 
-procedure TSpriteSheetExportForm.DescExportToFileClick(Sender: TObject);
+procedure TFontSheetExportForm.DescExportToFileClick(Sender: TObject);
   var
     DescName : String;
     F : Text;
@@ -301,24 +354,24 @@ procedure TSpriteSheetExportForm.DescExportToFileClick(Sender: TObject);
 end;
 
 
-procedure TSpriteSheetExportForm.DirectionChange(Sender: TObject);
+procedure TFontSheetExportForm.DirectionChange(Sender: TObject);
 begin
   if Direction.ItemIndex = 0  then
   begin
-     ItemsPerRow.Value:=SpriteSheetWidth div SpriteWidth;
+     ItemsPerRow.Value:=FontSheetWidth div CharWidth;
   end
   else
   begin
-    ItemsPerRow.Value:=SpriteSheetHeight div SpriteHeight;
+    ItemsPerRow.Value:=FontSheetHeight div CharHeight;
   end;
 end;
 
-procedure TSpriteSheetExportForm.ExportToClipBoardClick(Sender: TObject);
+procedure TFontSheetExportForm.ExportToClipBoardClick(Sender: TObject);
 begin
-  Clipboard.Assign(SpriteSheetBitMap);
+  Clipboard.Assign(FontSheetBitMap);
 end;
 
-procedure TSpriteSheetExportForm.ExportToFileClick(Sender: TObject);
+procedure TFontSheetExportForm.ExportToFileClick(Sender: TObject);
 var
  i,j   : integer;
  pixeldata  : PByte;
@@ -330,17 +383,17 @@ var
 begin
   RMConfigBase.GetProps(PngRGBA);
   Picture1:=TPicture.Create;
-  Picture1.Bitmap.Width:=SpriteSheetWidth;
-  Picture1.Bitmap.height:=SpriteSheetHeight;
+  Picture1.Bitmap.Width:=FontSheetWidth;
+  Picture1.Bitmap.height:=FontSheetHeight;
   Picture1.BitMap.PixelFormat:=pf32bit;         //change format to 32 bit/RGBA
 
   pixeldata:=picture1.Bitmap.RawImage.Data;
   pixelpos:=0;
-  for j:=0 to SpriteSheetHeight-1 do
+  for j:=0 to FontSheetHeight-1 do
   begin
-    for i:=0 to SpriteSheetWidth-1 do
+    for i:=0 to FontSheetWidth-1 do
     begin
-      cl:=SpriteSheetBitMap.Canvas.Pixels[i,j];
+      cl:=FontSheetBitMap.Canvas.Pixels[i,j];
       pixeldata[pixelpos]:=Blue(cl);     // Blue
       pixeldata[pixelpos+1]:=Green(cl);   // Green
       pixeldata[pixelpos+2]:=Red(cl);   // Red
@@ -373,130 +426,135 @@ begin
   Picture1.Free;
 end;
 
-procedure TSpriteSheetExportForm.FormActivate(Sender: TObject);
+procedure TFontSheetExportForm.FontDialog1ApplyClicked(Sender: TObject);
 begin
-  UpdateSpriteSheet;
+  ApplyClick(Sender);
 end;
 
-procedure TSpriteSheetExportForm.SpriteSheetPaintBoxPaint(Sender: TObject);
+procedure TFontSheetExportForm.FormActivate(Sender: TObject);
 begin
-  UpdateSpriteSheet;
+  UpdateFontSheet;
 end;
 
-procedure TSpriteSheetExportForm.UpdateSpriteSheet;
+procedure TFontSheetExportForm.FontSheetPaintBoxPaint(Sender: TObject);
 begin
-  SpriteSheetPaintBox.Canvas.CopyRect(Rect(0,0,SpriteSheetWidth*ZoomSize,SpriteSheetHeight*ZoomSize),SpriteSheetBitMap.Canvas,Rect(0,0,SpriteSheetWidth,SpriteSheetHeight));
+  UpdateFontSheet;
 end;
 
-procedure TSpriteSheetExportForm.UpdatePaintBoxSize;
+procedure TFontSheetExportForm.UpdateFontSheet;
 begin
-  SpriteSheetPaintBox.Width:=SpriteSheetWidth*ZoomSize;
-  SpriteSheetPaintBox.Height:=SpriteSheetHeight*ZoomSize;
+  FontSheetPaintBox.Canvas.CopyRect(Rect(0,0,FontSheetWidth*ZoomSize,FontSheetHeight*ZoomSize),FontSheetBitMap.Canvas,Rect(0,0,FontSheetWidth,FontSheetHeight));
 end;
 
-procedure TSpriteSheetExportForm.UpdateSpriteSheetSize;
+procedure TFontSheetExportForm.UpdatePaintBoxSize;
 begin
-  SpriteSheetBitMap.SetSize(SpriteSheetWidth,SpriteSheetHeight);
+  FontSheetPaintBox.Width:=FontSheetWidth*ZoomSize;
+  FontSheetPaintBox.Height:=FontSheetHeight*ZoomSize;
 end;
 
-procedure TSpriteSheetExportForm.ZoomTrackBarChange(Sender: TObject);
+procedure TFontSheetExportForm.UpdateSpriteSheetSize;
+begin
+  FontSheetBitMap.SetSize(FontSheetWidth,FontSheetHeight);
+end;
+
+procedure TFontSheetExportForm.ZoomTrackBarChange(Sender: TObject);
 begin
   ZoomSize:=ZoomTrackBar.Position;
-  SpriteSheetPaintBox.Width:=SpriteSheetWidth*ZoomSize;
-  SpriteSheetPaintBox.Height:=SpriteSheetHeight*ZoomSize;
-  SpriteSheetPaintBox.Invalidate;
+  FontSheetPaintBox.Width:=FontSheetWidth*ZoomSize;
+  FontSheetPaintBox.Height:=FontSheetHeight*ZoomSize;
+  FontSheetPaintBox.Invalidate;
 end;
 
-procedure TSpriteSheetExportForm.UpdateSpriteValues;
+procedure TFontSheetExportForm.UpdateFontValues;
 begin
   Case SpriteSize.ItemIndex of 0:begin
-                        SpriteWidth:=8;
-                        SpriteHeight:=8;
+                        CharWidth:=8;
+                        CharHeight:=8;
                        end;
                      1:begin
-                        SpriteWidth:=16;
-                        SpriteHeight:=16;
+                        CharWidth:=16;
+                        CharHeight:=16;
                        end;
                      2:begin
-                        SpriteWidth:=32;
-                        SpriteHeight:=32;
+                        CharWidth:=32;
+                        CharHeight:=32;
                        end;
                      3:begin
-                        SpriteWidth:=64;
-                        SpriteHeight:=64;
+                        CharWidth:=64;
+                        CharHeight:=64;
                        end;
                      4:begin
-                        SpriteWidth:=128;
-                        SpriteHeight:=128;
+                        CharWidth:=128;
+                        CharHeight:=128;
                        end;
                      5:begin
-                        SpriteWidth:=256;
-                        SpriteHeight:=256;
+                        CharWidth:=256;
+                        CharHeight:=256;
                        end;
                      6:begin
-                        SpriteWidth:=SpinEditCustomSpriteWidth.Value;
-                        SpriteHeight:=SpinEditCustomSpriteHeight.Value;
+                        CharWidth:=SpinEditCustomFontWidth.Value;
+                        CharHeight:=SpinEditCustomFontHeight.Value;
                      end;
   end;
-
 end;
 
-procedure TSpriteSheetExportForm.UpdateSpriteSheetValues;
+procedure TFontSheetExportForm.UpdateFontSheetValues;
 begin
-  Case SpriteSheet.ItemIndex of 0:begin
-                        SpriteSheetWidth:=320;
-                        SpriteSheetHeight:=200;
+  Case FontSheet.ItemIndex of 0:begin
+                        FontSheetWidth:=320;
+                        FontSheetHeight:=200;
                        end;
                      1:begin
-                       SpriteSheetWidth:=640;
-                        SpriteSheetHeight:=200;
+                        FontSheetWidth:=640;
+                        FontSheetHeight:=200;
                        end;
                      2:begin
-                        SpriteSheetWidth:=640;
-                        SpriteSheetHeight:=350;
+                        FontSheetWidth:=640;
+                        FontSheetHeight:=350;
                        end;
                      3:begin
-                         SpriteSheetWidth:=640;
-                        SpriteSheetHeight:=480;
+                        FontSheetWidth:=640;
+                        FontSheetHeight:=480;
                        end;
                      4:begin
-                          SpriteSheetWidth:=800;
-                        SpriteSheetHeight:=600;
+                        FontSheetWidth:=800;
+                        FontSheetHeight:=600;
                        end;
                      5:begin
-                        SpriteSheetWidth:=1024;
-                        SpriteSheetHeight:=768;
+                        FontSheetWidth:=1024;
+                        FontSheetHeight:=768;
                        end;
                      6:begin
-                        SpriteSheetWidth:=CSWidth.Value;
-                        SpriteSheetHeight:=CSHeight.Value;
+                        FontSheetWidth:=CSWidth.Value;
+                        FontSheetHeight:=CSHeight.Value;
                        end;
 
   end;
-
 end;
 
-procedure TSpriteSheetExportForm.ImportSprites;
+
+procedure TFontSheetExportForm.CharToBitMap(c : integer);
+begin
+  CharBitMap.Canvas.Clear;
+  CharBitMap.Canvas.Brush.Color:=clBlack;
+  CharBitMap.Canvas.Pen.Color:=clWhite;
+  CharBitMap.Canvas.TextOut(0,0,chr(c));
+end;
+
+procedure TFontSheetExportForm.ImportFontCharacters;
 var
-c,i,j : integer;
-cc: TColor;
+c : integer;
 ipr : integer;
 xstart,ystart : integer;
 begin
   ipr:=0;
   xstart:=0;
   ystart:=0;
-  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
-  for c:=0 to ImageThumbBase.GetCount-1 do
+  FontSheetBitMap.canvas.Clear;
+  for c:=SpinStartChar.Value to SpinEndChar.Value do
   begin
-    for i:=0 to ImageThumbBase.GetWidth(c)-1 do
-    begin
-      for j:=0 to ImageThumbBase.GetHeight(c)-1 do
-      begin
-        cc:=ImageThumbBase.GetPixelTColor(c,i,j);
-        SpriteSheetBitMap.Canvas.Pixels[i+xstart,j+ystart]:=cc;
-      end
-    end;
+    CharToBitMap(c);
+    FontSheetBitMap.Canvas.CopyRect(Rect(xstart,ystart,xstart+CharWidth,ystart+CharHeight),CharBitMap.Canvas,Rect(0,0,CharWidth,CharHeight));
     inc(ipr);
     if ipr = ItemsPerRow.Value then
     begin
@@ -504,17 +562,17 @@ begin
       if Direction.ItemIndex = 0 then
       begin
         xstart:=0;
-        inc(ystart,SpriteHeight);
+        inc(ystart,CharHeight);
       end
       else
       begin
         ystart:=0;
-        inc(xstart,SpriteWidth);
+        inc(xstart,CharWidth);
       end;
     end
     else
     begin
-      if Direction.ItemIndex = 0 then inc(xstart,Spritewidth) else inc(ystart,SpriteHeight);
+      if Direction.ItemIndex = 0 then inc(xstart,CharWidth) else inc(ystart,CharHeight);
     end;
   end;
 end;
