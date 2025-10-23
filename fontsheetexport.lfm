@@ -112,7 +112,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Top = 20
       Width = 100
       ItemHeight = 15
-      ItemIndex = 2
+      ItemIndex = 7
       Items.Strings = (
         '8X8'
         '16X16'
@@ -121,10 +121,11 @@ object FontSheetExportForm: TFontSheetExportForm
         '128X128'
         '256X256'
         'Custom'
+        'Auto'
       )
       Style = csDropDownList
       TabOrder = 3
-      Text = '32X32'
+      Text = 'Auto'
       OnChange = FontSheetChange
     end
     object StaticText3: TStaticText
@@ -185,7 +186,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 131
       Caption = 'Export to Clipboard'
       TabOrder = 9
-      OnClick = ExportToClipBoardClick
+      OnClick = ExportToClipboardClick
     end
     object ExportToFile: TButton
       Left = 433
@@ -204,7 +205,6 @@ object FontSheetExportForm: TFontSheetExportForm
       Caption = 'Export To Clipboard'
       Enabled = False
       TabOrder = 11
-      OnClick = DescExportToFileClick
     end
     object StaticText5: TStaticText
       Left = 584
@@ -223,23 +223,11 @@ object FontSheetExportForm: TFontSheetExportForm
       ItemHeight = 15
       ItemIndex = 0
       Items.Strings = (
-        'QB64'
-        'QBasic'
-        'Freepascal'
-        'Turbo Pascal'
-        'TMT Pascal'
-        'Amiga Pascal'
-        'Quick Pascal'
-        'gcc'
-        'Open Watcom C'
-        'Turbo C'
-        'Quick C'
-        'Amiga C'
-        'JSON'
+        'BM Font'
       )
       Style = csDropDownList
       TabOrder = 13
-      Text = 'QB64'
+      Text = 'BM Font'
       OnChange = FontSheetChange
     end
     object StaticText6: TStaticText
@@ -305,9 +293,8 @@ object FontSheetExportForm: TFontSheetExportForm
       Top = 104
       Width = 131
       Caption = 'Export to File'
-      Enabled = False
       TabOrder = 20
-      OnClick = DescExportToFileClick
+      OnClick = ExportToBMFontFiles
     end
     object Label1: TLabel
       Left = 232
@@ -416,7 +403,7 @@ object FontSheetExportForm: TFontSheetExportForm
     Min = 1
     OnChange = ZoomTrackBarChange
     Orientation = trVertical
-    Position = 1
+    Position = 3
     TickMarks = tmTopLeft
     Anchors = [akRight]
     BorderSpacing.Right = 16

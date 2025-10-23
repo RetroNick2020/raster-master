@@ -13,8 +13,8 @@ uses
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
   fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr,
   SpriteSheetExport, animate, AnimBase, setcustommapsize, animationexport,
-  rwspriteanim, setcustomspritesize, setcustomtilesize, SetCustomCellSize,
-  FontSheetExport
+  rwspriteanim, setcustomspritesize, setcustomtilesize, setcustomcellsize,
+  FontSheetExport, bmfontgen
      { you can add units after this };
 
 {$R *.res}

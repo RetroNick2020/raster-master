@@ -1,7 +1,7 @@
 object SpriteSheetExportForm: TSpriteSheetExportForm
-  Left = 451
+  Left = 463
   Height = 703
-  Top = 254
+  Top = 331
   Width = 1233
   Caption = 'Sprite Sheet Export'
   ClientHeight = 703
