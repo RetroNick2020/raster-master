@@ -1,7 +1,7 @@
 object SpriteSheetExportForm: TSpriteSheetExportForm
-  Left = 463
+  Left = 413
   Height = 703
-  Top = 331
+  Top = 323
   Width = 1233
   Caption = 'Sprite Sheet Export'
   ClientHeight = 703
@@ -170,9 +170,9 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       Value = 5
     end
     object Apply: TButton
-      Left = 792
-      Height = 25
-      Top = 24
+      Left = 880
+      Height = 58
+      Top = 42
       Width = 75
       Caption = 'Apply'
       TabOrder = 8
@@ -234,6 +234,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
         'Quick C'
         'Amiga C'
         'JSON'
+        'BM Font'
       )
       Style = csDropDownList
       TabOrder = 13
