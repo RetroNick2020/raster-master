@@ -10,18 +10,20 @@ const
   CellWidthBorderRemove  =2;
   CellHeightBorderRemove =2;
 
-  DrawShapeNothing = 0;
-  DrawShapePencil = 1;
-  DrawShapeLine = 2;
-  DrawShapeRectangle = 3;
+  DrawShapeNothing    = 0;
+  DrawShapePencil     = 1;
+  DrawShapeLine       = 2;
+  DrawShapeRectangle  = 3;
   DrawShapeFRectangle = 4;
-  DrawShapeCircle = 5;
-  DrawShapeFCircle = 6;
-  DrawShapeEllipse = 7;
-  DrawShapeFEllipse = 8;
-  DrawShapePaint = 9;
-  DrawShapeSpray = 10;
-  DrawShapeClip = 11;
+  DrawShapeCircle     = 5;
+  DrawShapeFCircle    = 6;
+  DrawShapeEllipse    = 7;
+  DrawShapeFEllipse   = 8;
+  DrawShapePaint      = 9;
+  DrawShapeSpray      = 10;
+  DrawShapeClip       = 11;
+  DrawShapeFontSelect = 12;
+  DrawShapeText       = 13;
 
   MaxSprayPoints = 3;
 
@@ -60,17 +62,25 @@ Type
                       x,y : integer;
   end;
 
+  TTextInfoRec = Record
+                   Active : Boolean;  //this flag is set when mouse pointer is in draw area (zoom area)
+                   x,y    : integer;
+                   Info   : string;
+                   Color  : TColor;
+                   Font   : TFont;
+  end;
+
   TRMDrawTools = class(TObject)
     // drawcircle(Sender,x1,x2,y2,y2,DrawMode); drawmode = Normal or Xor
     //if Sender is Zoom draws in Zoom TImage
     //if Sender is Actual it Draw in Actual TImage
              private
-
                 DrawTool  : integer;
                 GridArea  : TGridAreaRec;
                 ClipArea  : TClipAreaRec;
                 ScrollPos : TScrollPosRec;
 
+                TextInfo  : TTextInfoRec;
                 SprayPoints : array[1..MaxSprayPoints] of TSprayPointsRec;
              public
 
@@ -83,6 +93,8 @@ Type
 
              procedure _ARectangle(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : Integer);
              procedure PutPixel(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
+             procedure DText(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
+
              procedure SprayPaint(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
              procedure HLine(Image : TCanvas;x,x2,y : integer;color : TColor; mode : integer);
              procedure VLine(Image : TCanvas;y,y2,x : integer;color : TColor; mode : integer);
@@ -138,6 +150,14 @@ Type
              procedure  GetGridArea(var ga : TGridAreaRec);
              procedure  SetGridArea(var ga : TGridAreaRec);
 
+             procedure  SetTextInfo(var tinfo : TTextInfoRec);
+             procedure  GetTextInfo(var tinfo : TTextInfoRec);
+             procedure  SetTextInfoXY(x,y : integer);
+             procedure  SetTextInfoActive(active : boolean);
+             procedure  SetTextInfoText(info : string);
+             procedure  SetTextInfoTColor(color : TColor);
+             procedure  SetTextInfoFont(Font : TFont);
+
              procedure SaveClipCoords(x,y,x2,y2 : integer);
              procedure DrawOverlayOnClipArea(Image : TCanvas;color : TColor; mode : integer);
 
@@ -146,6 +166,7 @@ Type
 
              procedure DrawGrid(Image : TCanvas;x,y,gWidth,gHeight,mode : integer);
              procedure DrawOverlayGrid(Image : TCanvas;gcolor : TColor);
+             procedure DrawOverlayText(Image : TCanvas);
 
              procedure SetZoomMode(mode : integer);   //0 = off 1 = on
              function  GetZoomMode : integer;
@@ -218,6 +239,7 @@ begin
     GetClipSizedStatus:=ClipArea.sized;
 end;
 
+
 procedure  TRMDrawTools.GetClipAreaCoords(var ca : TClipAreaRec);
 begin
 
@@ -260,8 +282,6 @@ procedure  TRMDrawTools.SetScrollPos(var sp : TScrollPosRec);
 begin
    ScrollPos:=sp;
 end;
-
-
 
 procedure TRMDrawTools.SaveClipCoords(x,y,x2,y2 : integer);
 begin
@@ -430,6 +450,7 @@ begin
   end;
 end;
 
+
 Procedure TRMDrawTools.CreateRandomSprayPoints;
 var
  i : integer;
@@ -511,12 +532,10 @@ procedure TRMDrawTools.VLine(Image : TCanvas;y,y2,x : integer;color : TColor; mo
   begin
     PutPixel(Image,x,yy,color, mode);
   end;
-
 end;
 
 procedure TRMDrawTools.Rect(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,full : integer);
  var
-  xx,yy : integer;
    newy,newy2 : integer;
    newx, newx2 : integer;
    i,j : integer;
@@ -594,7 +613,6 @@ begin
   yr:=y1;
   repeat
    x:=x+dx;
-   //Rplot(x,round(yr),Rubber);
     PutPixel(Image,x,round(yr),color,mode);
    yr:=yr+dyr;
   until x=x2;
@@ -606,8 +624,7 @@ begin
    xr:=x1;
    repeat
     y:=y+dy;
-   //round(xr),y,Rubber);
-   PutPixel(Image,round(xr),y,color,mode);
+    PutPixel(Image,round(xr),y,color,mode);
     xr:=xr+dxr;
    until y=y2;
   end;
@@ -748,8 +765,7 @@ begin
      inc(x);
      inc(dxt,d2xt);
      inc(t,dxt);
-
-      inc(width,2);
+     inc(width,2);
     end
     else if ((t - a2*y) > crit2) then
     begin
@@ -821,7 +837,6 @@ procedure TRMDrawTools.ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : T
 begin
    if shape = DrawShapeRectangle then
    begin
-      //ARectangle(Image,x,y,x2,y2,color,mode);
     SetZoomMode(0);
     Rect(Image,x,y,x2,y2,color,mode,0);
     SetZoomMode(1);
@@ -868,6 +883,12 @@ begin
       PutPixel(Image,x,y,color,mode);
       SetZoomMode(1);
    end
+   else if shape = DrawShapeText then
+   begin
+      SetZoomMode(0);
+      DText(Image,x,y,color,mode);
+      SetZoomMode(1);
+   end
    else if shape = DrawShapeSpray then
    begin
       SetZoomMode(0);
@@ -909,6 +930,10 @@ begin
    else if shape = DrawShapePencil then
    begin
      PutPixel(Image,x,y,color,mode);
+   end
+   else if shape = DrawShapeText then
+   begin
+     DText(Image,x,y,color,mode);
    end
    else if shape = DrawShapeSpray then
    begin
@@ -1022,6 +1047,73 @@ procedure TRMDrawTools.DrawGrid(Image : TCanvas;x,y,gWidth,gHeight,mode : intege
 begin
    Image.Brush.Color := $f0f0f0;
    Image.FillRect(0, 0, Image.Width, Image.Height);
+end;
+
+procedure  TRMDrawTools.SetTextInfo(var tinfo : TTextInfoRec);
+begin
+    TextInfo:=tinfo;
+end;
+
+procedure  TRMDrawTools.SetTextInfoXY(x,y : integer);
+begin
+    TextInfo.x:=x;
+    TextInfo.y:=y;
+end;
+
+procedure  TRMDrawTools.SetTextInfoFont(Font : TFont);
+begin
+  TextInfo.Font:=Font;
+end;
+
+procedure  TRMDrawTools.GetTextInfo(var tinfo : TTextInfoRec);
+begin
+    tinfo:=TextInfo;
+end;
+
+procedure  TRMDrawTools.SetTextInfoActive(active : boolean);
+begin
+   textInfo.active:=active;
+end;
+
+procedure  TRMDrawTools.SetTextInfoText(info : string);
+begin
+   textInfo.Info:=info;
+end;
+
+procedure  TRMDrawTools.SetTextInfoTColor(color : TColor);
+begin
+   textInfo.color:=color;
+end;
+
+procedure TRMDrawTools.DText(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
+var
+ TextBitMap : TBitMap;
+ i,j,w,h    : integer;
+begin
+ TextBitMap:=TBitMap.Create;
+ TextBitMap.SetSize(256,256);
+ TextBitMap.Canvas.Font:=TextInfo.Font;
+ TextBitMap.Canvas.Font.Quality:=fqNonAntialiased;
+ TextBitMap.Canvas.Font.Color:=clRed;
+ TextBitMap.Canvas.TextOut(0,0,TextInfo.Info);
+ w:=TextBitMap.Canvas.TextWidth(TextInfo.Info);
+ h:=TextBitMap.Canvas.TextHeight(TextInfo.Info);
+
+ for i:=0 to w-1 do
+ begin
+   for j:=0 to h-1 do
+   begin
+     if TextBitMap.Canvas.Pixels[i,j] = clRed then PutPixel(Image,x+i-(w div 2),y+j-(h div 2),color,mode);
+   end;
+ end;
+ TextBitMap.Free;
+
+end;
+
+
+procedure TRMDrawTools.DrawOverlayText(Image : TCanvas);
+begin
+  if (DrawTool = DrawShapeText) and (TextInfo.active = TRUE) then DText(Image,TextInfo.x,TextInfo.y,TextInfo.Color,0);
 end;
 
 procedure TRMDrawTools.DrawOverlayGrid(Image : TCanvas;gcolor : TColor);

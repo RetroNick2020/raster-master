@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 431
+  Left = 325
   Height = 822
-  Top = 199
+  Top = 188
   Width = 1491
   Align = alClient
   Caption = 'Raster Master'
@@ -140,7 +140,10 @@ object RMMainForm: TRMMainForm
         Height = 670
         Top = 0
         Width = 862
+        OnClick = ZoomPaintBoxClick
         OnMouseDown = ZPaintBoxMouseDown
+        OnMouseEnter = ZoomPaintBoxMouseEnter
+        OnMouseLeave = ZoomPaintBoxMouseLeave
         OnMouseMove = ZPaintBoxMouseMove
         OnMouseUp = ZPaintBoxMouseUp
         OnPaint = ZoomPaintBoxPaint
@@ -275,15 +278,15 @@ object RMMainForm: TRMMainForm
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 450
+      Left = 410
       Height = 88
       Top = 8
-      Width = 434
+      Width = 474
       Anchors = [akTop, akRight]
       BorderSpacing.Top = 7
       BorderSpacing.Right = 50
       ClientHeight = 88
-      ClientWidth = 434
+      ClientWidth = 474
       TabOrder = 0
       object ToolCircleIcon: TImage
         Left = 96
@@ -385,32 +388,8 @@ object RMMainForm: TRMMainForm
         ParentShowHint = False
         ShowHint = True
       end
-      object ToolHFLIPButton: TButton
-        Left = 296
-        Height = 31
-        Hint = 'Horizontal Flip'
-        Top = 9
-        Width = 54
-        Caption = 'HFLIP'
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 0
-        OnClick = ToolFlipHorizMenuClick
-      end
-      object ToolVFLIPButton: TButton
-        Left = 354
-        Height = 31
-        Hint = 'Vertical Flip'
-        Top = 8
-        Width = 54
-        Caption = 'VFLIP'
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 1
-        OnClick = ToolFlipVirtMenuClick
-      end
       object ToolScrollLeftIcon: TImage
-        Left = 256
+        Left = 301
         Height = 32
         Hint = 'Scroll Left'
         Top = 48
@@ -420,7 +399,7 @@ object RMMainForm: TRMMainForm
         ShowHint = True
       end
       object ToolScrollRightIcon: TImage
-        Left = 296
+        Left = 341
         Height = 32
         Hint = 'Scroll Right'
         Top = 48
@@ -430,7 +409,7 @@ object RMMainForm: TRMMainForm
         ShowHint = True
       end
       object ToolScrollUpIcon: TImage
-        Left = 336
+        Left = 381
         Height = 32
         Hint = 'Scroll Up'
         Top = 48
@@ -440,7 +419,7 @@ object RMMainForm: TRMMainForm
         ShowHint = True
       end
       object ToolScrollDownIcon: TImage
-        Left = 376
+        Left = 421
         Height = 32
         Hint = 'Scroll Down'
         Top = 48
@@ -450,10 +429,10 @@ object RMMainForm: TRMMainForm
         ShowHint = True
       end
       object ToolUndoIcon: TImage
-        Left = 256
+        Left = 421
         Height = 32
         Hint = 'Undo'
-        Top = 8
+        Top = 7
         Width = 32
         OnClick = ToolUndoIconClick
         ParentShowHint = False
@@ -479,6 +458,38 @@ object RMMainForm: TRMMainForm
         ParentShowHint = False
         ShowHint = True
       end
+      object ToolTextIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Text'
+        Top = 7
+        Width = 32
+        OnClick = ToolTextMenuClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ToolFontIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Font Select'
+        Top = 48
+        Width = 32
+        OnClick = ToolFontIconClick
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object TextDrawEdit: TEdit
+        Left = 301
+        Height = 30
+        Top = 9
+        Width = 112
+        AutoSize = False
+        Font.Height = -16
+        ParentFont = False
+        TabOrder = 0
+        Text = 'HI!'
+        OnChange = TextDrawEditChange
+      end
     end
     object ZoomTrackBar: TTrackBar
       Left = 899
@@ -503,7 +514,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 8
-      Width = 424
+      Width = 384
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -514,7 +525,7 @@ object RMMainForm: TRMMainForm
       Left = 16
       Height = 23
       Top = 40
-      Width = 424
+      Width = 384
       Align = alNone
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Around = 10
@@ -1436,6 +1447,10 @@ object RMMainForm: TRMMainForm
         Caption = 'Spray Paint'
         OnClick = ToolMenuSprayPaintClick
       end
+      object ToolTextMenu: TMenuItem
+        Caption = 'Text'
+        OnClick = ToolTextMenuClick
+      end
       object ToolSelectAreaMenu: TMenuItem
         Caption = 'Select Area'
         OnClick = ToolMenuSelectAreaMenuClick
@@ -1463,7 +1478,6 @@ object RMMainForm: TRMMainForm
         end
         object ToolScrollLeftMenu: TMenuItem
           Caption = 'Left'
-          OnClick = ToolScrollLeftMenuClick
         end
         object ToolScrollUpMenu: TMenuItem
           Caption = 'Up'
@@ -1597,5 +1611,11 @@ object RMMainForm: TRMMainForm
     Title = 'Select Export Directory'
     Left = 1176
     Top = 704
+  end
+  object FontDialog1: TFontDialog
+    MinFontSize = 0
+    MaxFontSize = 0
+    Left = 1176
+    Top = 112
   end
 end

@@ -25,6 +25,8 @@ type
     ActualPane: TPanel;
     ColorBox: TShape;
     ColorPalette1: TColorPalette;
+    TextDrawEdit: TEdit;
+    FontDialog1: TFontDialog;
     FreePascal: TMenuItem;
     GWBASIC: TMenuItem;
     FreeBASIC: TMenuItem;
@@ -78,6 +80,7 @@ type
     EditResizeTo128: TMenuItem;
     EditResizeTo256: TMenuItem;
     FontSheetExportMenu: TMenuItem;
+    ToolTextMenu: TMenuItem;
     ShowCustomSize: TMenuItem;
     EditResizeCustom: TMenuItem;
     MenuItem27: TMenuItem;
@@ -132,6 +135,8 @@ type
     SelectDirectoryDialog: TSelectDirectoryDialog;
     StatusBar1: TStatusBar;
     StatusBar2: TStatusBar;
+    ToolTextIcon: TImage;
+    ToolFontIcon: TImage;
   //  ZoomScrollBox: TScrollBox;
     ZoomPaintBox: TPaintBox;
     ZoomScrollBox: TScrollBox;
@@ -162,7 +167,6 @@ type
     ToolFEllipseIcon: TImage;
     ToolFRectangleIcon: TImage;
     ToolGridIcon: TImage;
-    ToolHFLIPButton: TButton;
     ToolLineIcon: TImage;
     ToolPaintIcon: TImage;
     ToolPanel: TPanel;
@@ -175,7 +179,6 @@ type
     ToolSelectAreaIcon: TImage;
     ToolSprayPaintIcon: TImage;
     ToolUndoIcon: TImage;
-    ToolVFLIPButton: TButton;
     ZoomTrackBar: TTrackBar;
     Utilities: TMenuItem;
     MiddleBottomPanel: TPanel;
@@ -357,6 +360,7 @@ type
     procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
       var AText: String);
     procedure DeleteImageClick(Sender: TObject);
+    procedure TextDrawEditChange(Sender: TObject);
     procedure EditClearClick(Sender: TObject);
     procedure EditCloneClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
@@ -431,6 +435,7 @@ type
     procedure ToolFEllipseMenuClick(Sender: TObject);
     procedure ToolFlipHorizMenuClick(Sender: TObject);
     procedure ToolFlipVirtMenuClick(Sender: TObject);
+    procedure ToolFontIconClick(Sender: TObject);
     procedure ToolGridMenuClick(Sender: TObject);
     procedure ToolCircleMenuClick(Sender: TObject);
     procedure ToolFRectangleMenuClick(Sender: TObject);
@@ -455,6 +460,7 @@ type
     procedure ToolScrollLeftMenuClick(Sender: TObject);
     procedure ToolScrollRightMenuClick(Sender: TObject);
     procedure ToolScrollUpMenuClick(Sender: TObject);
+    procedure ToolTextMenuClick(Sender: TObject);
     procedure ToolUndoIconClick(Sender: TObject);
     procedure TurboPowerBasicClick(Sender: TObject);
     procedure TurboCClick(Sender: TObject);
@@ -465,6 +471,9 @@ type
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure FileExitMenuClick(Sender: TObject);
     procedure OpenFileClick(Sender: TObject);
+    procedure ZoomPaintBoxClick(Sender: TObject);
+    procedure ZoomPaintBoxMouseEnter(Sender: TObject);
+    procedure ZoomPaintBoxMouseLeave(Sender: TObject);
     procedure ZoomTrackBarChange(Sender: TObject);
     procedure ZoomPaintBoxPaint(Sender: TObject);
     procedure ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
@@ -473,6 +482,9 @@ type
       Y: Integer);
     procedure ZPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+
+    procedure ZPaintBoxMouseMoveDrawTextTool(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+
   private
        ZoomX,ZoomY,ZoomX2,ZoomY2 : integer;
        OldZoomX,OldZoomY : integer;
@@ -625,6 +637,10 @@ RenderBitMap2.SetSize(256,256);
  UpdateEditMenu;
  InitThumbView;
 
+ RMDrawTools.SetTextInfoText(TextDrawEdit.Text);
+ RMDrawTools.SetTextInfoFont(RenderBitMap.Canvas.Font);
+ RMDrawTools.SetTextInfoTColor(ColorBox.Brush.Color);
+
  ZoomX:=0;
  ZoomY:=0;
  ZoomX2:=0;
@@ -671,6 +687,14 @@ begin
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
+end;
+
+procedure TRMMainForm.ToolFontIconClick(Sender: TObject);
+begin
+  if FontDialog1.Execute then
+  begin
+    RMDrawTools.SetTextInfoFont(FontDialog1.Font);
+  end;
 end;
 
 procedure TRMMainForm.ToolGridMenuClick(Sender: TObject);
@@ -755,6 +779,14 @@ begin
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
+end;
+
+procedure TRMMainForm.ToolTextMenuClick(Sender: TObject);
+begin
+  ClearClipAreaOutline;
+  RMDrawTools.SetDrawTool(DrawShapeText);
+  UpdateToolSelectionIcons;
+  ToolTextMenu.Checked:=true;
 end;
 
 procedure TRMMainForm.ToolUndoIconClick(Sender: TObject);
@@ -1418,11 +1450,17 @@ procedure TRMMainForm.DeleteImageClick(Sender: TObject);
   end;
 end;
 
+procedure TRMMainForm.TextDrawEditChange(Sender: TObject);
+begin
+  RMDrawTools.SetTextInfoText(TextDrawEdit.Text);
+end;
+
 procedure TRMMainForm.ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
   Shift: TShiftState);
 begin
   ColorBox.Brush.Color:= AColor;
   RMCoreBase.SetCurColor(ColorPalette1.PickedIndex);
+  RMDrawTools.SetTextInfoTColor(AColor);
 end;
 
 //disable - not happy with zoom in with mouse wheel
@@ -1516,6 +1554,9 @@ begin
  StatusBar2.SimpleText:=WHStr;
 end;
 
+
+
+
 // xy mouse down event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
 procedure TRMMainForm.ZPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -1556,30 +1597,41 @@ begin
   end;
 end;
 
+
+procedure TRMMainForm.ZPaintBoxMouseMoveDrawTextTool(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+ ZoomX:=RMDrawTools.GetZoomX(x);
+ ZoomY:=RMDrawTools.GetZoomY(y);
+ UpdateInfoBarXY(x,y);
+ RMDrawTools.SetTextInfoXY(ZoomX,ZoomY);
+ ZoomPaintBox.Invalidate;
+end;
+
+
+
 // xy mouse move event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
 procedure TRMMainForm.ZPaintBoxMouseMoveXYTool(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
 var
  DrawTool : integer;
 begin
+  DrawTool:=RMDRAWTools.GetDrawTool;
   ZoomX:=RMDrawTools.GetZoomX(x);
   ZoomY:=RMDrawTools.GetZoomY(y);
 
   UpdateInfoBarXY(x,y);
-  if not ((ssLeft in Shift) or (ssRight in Shift)) then exit;
+  if not ((ssLeft in Shift) or (ssRight in Shift))  then exit;
 
   if (ZoomX=OldZoomX) and (ZoomY=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
   OldZoomX:=ZoomX;
   OldZoomY:=ZoomY;
-  DrawTool:=RMDRAWTools.GetDrawTool;
-
   RMDrawTools.CreateRandomSprayPoints;
+
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
   //this
   //RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
   ZoomPaintBox.Invalidate;
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
-
 end;
 
 // xy mouse up event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
@@ -1690,9 +1742,11 @@ var
 begin
  //UpdateInfoBarXY;
  DrawTool:=RMDRAWTools.GetDrawTool;
- Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:ZPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
-               DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
-               DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:ZPaintBoxMouseMoveXYX2Y2Tool(Sender,Shift,X,Y);
+ Case DrawTool of DrawShapeText:ZPaintBoxMouseMoveDrawTextTool(Sender,Shift,X,Y);
+                  DrawShapePencil,DrawShapeSpray,DrawShapePaint:ZPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
+                  DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
+                  DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:ZPaintBoxMouseMoveXYX2Y2Tool(Sender,Shift,X,Y);
+
 
  end;
 end;
@@ -1712,10 +1766,44 @@ begin
  UpdateActualArea;
 end;
 
+procedure TRMMainForm.ZoomPaintBoxClick(Sender: TObject);
+var
+  DrawTool : integer;
+begin
+  DrawTool:=RMDRAWTools.GetDrawTool;
+  if DrawTool <> DrawShapeText then exit;
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,1);
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.ZoomPaintBoxMouseEnter(Sender: TObject);
+begin
+  // set DrawText active
+  if RMDrawTools.GetDrawTool = DrawShapeText then
+  begin
+    RMDrawTools.SetTextInfoActive(true);
+    RMDrawTools.SetTextInfoTColor(ColorBox.Brush.Color);
+    ZoomPaintBox.Invalidate;
+  end;
+end;
+
+procedure TRMMainForm.ZoomPaintBoxMouseLeave(Sender: TObject);
+begin
+  //set DrawText not active
+  if RMDrawTools.GetDrawTool = DrawShapeText then
+  begin
+    RMDrawTools.SetTextInfoActive(false);
+    ZoomPaintBox.Invalidate;
+  end;
+end;
+
 procedure TRMMainForm.ZoomPaintBoxPaint(Sender: TObject);
 begin
   ZoomPaintBox.Canvas.CopyRect(rect(0,0,ZoomPaintBox.Width,ZoomPaintBox.Height),
                RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
+  //renter the text here
+  RMDrawTools.DrawOverlayText(ZoomPaintBox.Canvas);
   RMDrawTools.DrawOverlayGrid(ZoomPaintBox.Canvas,clWhite);
   RMDrawTools.DrawOverlayOnClipArea(ZoomPaintBox.Canvas,clYellow,0); //mode 0 is copy
 end;
@@ -1743,6 +1831,7 @@ end;
 procedure TRMMainForm.ClearSelectedToolsMenu;
 begin
   ToolPencilMenu.Checked:=false;
+  ToolTextMenu.Checked:=false;
   ToolLineMenu.Checked:=false;
 
   ToolFRectangleMenu.Checked:=false;
@@ -1780,6 +1869,11 @@ begin
   ToolScrollDownIcon.Picture.LoadFromResourceName(HInstance,'DOWN1');
   ToolScrollLeftIcon.Picture.LoadFromResourceName(HInstance,'LEFT1');
   ToolScrollRightIcon.Picture.LoadFromResourceName(HInstance,'RIGHT1');
+
+  ToolTextIcon.Picture.LoadFromResourceName(HInstance,'TEXT1');
+  ToolFontIcon.Picture.LoadFromResourceName(HInstance,'FONT1');
+
+
   RMLogo.Picture.LoadFromResourceName(HInstance,'RM');
  // RMLogo.Picture.Bitmap.MaskHandle:=0;
   RMLogo.Picture.Bitmap.Transparent := True;
@@ -1801,6 +1895,7 @@ begin
   ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT1');
   ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY1');
   ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT1');
+  TooltextIcon.Picture.LoadFromResourceName(HInstance,'TEXT1');
   ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT1');
 
   DT:=RMDRAWTools.GetDrawTool;
@@ -1813,7 +1908,9 @@ begin
            DrawShapeRectangle:ToolRectangleIcon.Picture.LoadFromResourceName(HInstance,'RECT2');
         DrawShapeFRectangle:ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT2');
              DrawShapeSpray:ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY2');
+             DrawShapeText:TooltextIcon.Picture.LoadFromResourceName(HInstance,'TEXT2');
              DrawShapePaint:ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT2');
+
               DrawShapeClip:ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT2');
 
   end;
@@ -1823,8 +1920,8 @@ end;
 
 procedure TRMMainForm.ShowSelectAreaTools;
 begin
-  ToolVFLIPButton.Visible:=true;
-  ToolHFLIPButton.Visible:=true;
+  //ToolVFLIPButton.Visible:=true;
+  //ToolHFLIPButton.Visible:=true;
   ToolScrollUpIcon.Visible:=true;
   ToolScrollDownIcon.Visible:=true;
   ToolScrollLeftIcon.Visible:=true;
@@ -1993,6 +2090,10 @@ begin
       UpdateThumbView;
    end;
 end;
+
+
+
+
 
 
 procedure TRMMainForm.PaletteExportQBasicClick(Sender: TObject);

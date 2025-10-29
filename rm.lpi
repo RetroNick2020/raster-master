@@ -15,7 +15,7 @@
         <DpiAware Value="True"/>
       </XPManifest>
       <Icon Value="0"/>
-      <Resources Count="31">
+      <Resources Count="35">
         <Resource_0 FileName="Images\CIRC1.BMP" Type="BITMAP" ResourceName="CIRC1"/>
         <Resource_1 FileName="Images\CIRC2.BMP" Type="BITMAP" ResourceName="CIRC2"/>
         <Resource_2 FileName="Images\DOWN1.BMP" Type="BITMAP" ResourceName="DOWN1"/>
@@ -47,6 +47,10 @@
         <Resource_28 FileName="Images\ELLIP2.bmp" Type="BITMAP" ResourceName="ELLIP2"/>
         <Resource_29 FileName="Images\FELLIP1.bmp" Type="BITMAP" ResourceName="FELLIP1"/>
         <Resource_30 FileName="Images\FELLIP2.bmp" Type="BITMAP" ResourceName="FELLIP2"/>
+        <Resource_31 FileName="Images\TEXT1.bmp" Type="BITMAP" ResourceName="TEXT1"/>
+        <Resource_32 FileName="Images\TEXT2.bmp" Type="BITMAP" ResourceName="TEXT2"/>
+        <Resource_33 FileName="Images\FONT1.bmp" Type="BITMAP" ResourceName="FONT1"/>
+        <Resource_34 FileName="Images\FONT2.bmp" Type="BITMAP" ResourceName="FONT2"/>
       </Resources>
     </General>
     <BuildModes Count="3">
