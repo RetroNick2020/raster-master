@@ -319,11 +319,11 @@ End;
 
 Procedure TSoundGeneratorForm.do_play;
 Begin
-{$IFDEF UseBass}
-  If UseBass Then Begin
+//{$IFDEF UseBass}
+//  If UseBass Then Begin
     Button14.Click;
-  End;
-{$ENDIF}
+//  End;
+//{$ENDIF}
 End;
 
 Procedure TSoundGeneratorForm.Link(Const ScrollBar: TScrollBar; Data: Pointer;
@@ -375,8 +375,10 @@ Begin
     showmessage('Could not start stream playback');
   End;
 {$ELSE}
-  showmessage('Application was build without use of bass, so no preview available.' + LineEnding +
-    'You have to store the result and play it with your own player of choise.');
+//  showmessage('Application was build without use of bass, so no preview available.' + LineEnding +
+//    'You have to store the result and play it with your own player of choise.');
+//  Sleep(500);
+  SFXR.PlaySound;
 {$ENDIF}
 End;
 

@@ -354,6 +354,16 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       Width = 98
       Caption = 'Custom Sprite Size'
     end
+    object SaveBackgroundAsTransparent: TCheckBox
+      Left = 688
+      Height = 19
+      Top = 136
+      Width = 245
+      Caption = 'Save Background Color (Black) Transparent'
+      Checked = True
+      State = cbChecked
+      TabOrder = 23
+    end
   end
   object ZoomTrackBar: TTrackBar
     AnchorSideRight.Control = Owner

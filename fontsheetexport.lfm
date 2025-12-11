@@ -1,7 +1,7 @@
 object FontSheetExportForm: TFontSheetExportForm
-  Left = 306
+  Left = 308
   Height = 703
-  Top = 231
+  Top = 353
   Width = 1233
   Caption = 'Font Sheet Export'
   ClientHeight = 703
@@ -391,6 +391,16 @@ object FontSheetExportForm: TFontSheetExportForm
       Top = 112
       Width = 48
       Caption = 'End Char'
+    end
+    object SavebackgroundAsTransparent: TCheckBox
+      Left = 688
+      Height = 19
+      Top = 136
+      Width = 245
+      Caption = 'Save Background Color (Black) Transparent'
+      Checked = True
+      State = cbChecked
+      TabOrder = 26
     end
   end
   object ZoomTrackBar: TTrackBar

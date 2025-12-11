@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 325
+  Left = 241
   Height = 822
-  Top = 188
+  Top = 240
   Width = 1491
   Align = alClient
   Caption = 'Raster Master'

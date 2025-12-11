@@ -1,6 +1,7 @@
 (******************************************************************************)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
+(*               Modified by RetroNick to remove BASS dependency              *)
 (*                                                                            *)
 (* This file is part of sfxr                                                  *)
 (*                                                                            *)
@@ -72,13 +73,9 @@ Type
     arp_time: integer;
     arp_limit: integer;
     arp_mod: double;
-    (*
-     * Buffer wird als 44100, 16-Bit Puffer beschrieben => Genau Richtig für Bass.dll
-     * m als das was eingestellt ist *g*
-     *)
-    Procedure SynthSample(len: integer; Const buffer: TStream; Const m: TStream);
-    Procedure PlaySample; // Initialisiert alles notwendige, damit noch mal abgespielt werden kann (keine Parameter Änderung)
 
+    Procedure SynthSample(len: integer; Const buffer: TStream; Const m: TStream);
+    Procedure PlaySample;
     Procedure ResetSample(restart: Boolean);
   public
     wave_type: integer; // 0..3
@@ -117,16 +114,25 @@ Type
 
     sound_vol: Single; // 0 .. 1
 
-    p_vib_delay: Single; // Egal wird nicht benutzt
-    filter_on: Boolean; // Egal wird nicht benutzt
+    p_vib_delay: Single; // Not used
+    filter_on: Boolean; // Not used
 
     Constructor Create;
     Destructor Destroy; override;
 
     Procedure ResetParams;
 
+    // Export to WAV file
     Function ExportWav(Const Filename: String): Boolean;
-    Procedure ExportBassStream(Const Stream: TStream);
+    
+    // Export to memory stream as WAV (for playback or further processing)
+    Function ExportWavToStream: TMemoryStream;
+    
+    // Play sound using Windows API (no external DLL needed)
+    Procedure PlaySound;
+    
+    // Stop any currently playing sound
+    Procedure StopSound;
 
     Function SaveSettings(Const Filename: String): Boolean;
     Function LoadSettings(Const Filename: String): Boolean;
@@ -137,7 +143,18 @@ Function rnd(n: integer): integer;
 
 Implementation
 
-Uses math;
+Uses 
+  math
+  {$IFDEF WINDOWS}
+  , Windows, MMSystem
+  {$ENDIF}
+  ;
+
+{$IFDEF WINDOWS}
+var
+  // Global buffer for async playback
+  GlobalWavBuffer: TMemoryStream = nil;
+{$ENDIF}
 
 Function rnd(n: integer): integer;
 Begin
@@ -169,7 +186,10 @@ End;
 
 Destructor TSFXR.Destroy;
 Begin
-
+  {$IFDEF WINDOWS}
+  StopSound;
+  {$ENDIF}
+  inherited Destroy;
 End;
 
 Procedure TSFXR.SynthSample(len: integer; Const buffer: TStream;
@@ -241,7 +261,6 @@ Begin
       sample := 0.0;
       phase := phase + 1;
       If (phase >= period) Then Begin
-        // phase:=0;
         phase := phase Mod period;
         If (wave_type = 3) Then Begin
           For ii := 0 To 31 Do Begin
@@ -298,13 +317,9 @@ Begin
     ssample := ssample / 8 * master_vol;
 
     ssample := ssample * 2.0 * sound_vol;
-    (*
-     * Dieser Code Ruiniert das ssample, wenn beide Puffer gleichzeitig
-     * Aktiv sind.
-     * => Es muss sicher gestellt sein, dass immer nur einer von Beiden definiert ist.
-     *)
+
     If assigned(buffer) Then Begin
-      ssample := ssample * 4.0; // arbitrary gain to get reasonable output volume...
+      ssample := ssample * 4.0;
       If (ssample > 1.0) Then ssample := 1.0;
       If (ssample < -1.0) Then ssample := -1.0;
       filesample := ssample;
@@ -312,9 +327,7 @@ Begin
       buffer.Write(isamplew, 2);
     End;
     If assigned(m) Then Begin
-      // quantize depending on format
-      // accumulate/count to accomodate variable sample rate?
-      ssample := ssample * 4.0; // arbitrary gain to get reasonable output volume...
+      ssample := ssample * 4.0;
       If (ssample > 1.0) Then ssample := 1.0;
       If (ssample < -1.0) Then ssample := -1.0;
       filesample := filesample + ssample;
@@ -446,42 +459,39 @@ Begin
   playing_sample := true;
 End;
 
-Function TSFXR.ExportWav(Const Filename: String): Boolean;
+Function TSFXR.ExportWavToStream: TMemoryStream;
 Var
-  F: Tfilestream;
-  m: TMemoryStream;
   dword: uInt32;
   word: uInt16;
   foutstream_datasize: Int64;
 Begin
-  result := false;
-  m := TMemoryStream.Create;
+  Result := TMemoryStream.Create;
 
   // write wav header
-  m.WriteBuffer('RIFF', 4); // "RIFF"
+  Result.WriteBuffer('RIFF', 4);
   dword := 0;
-  m.Write(dword, 4); // remaining file size
-  m.WriteBuffer('WAVE', 4); // "WAVE"
-  m.WriteBuffer('fmt ', 4); // "fmt "
+  Result.Write(dword, 4); // remaining file size (placeholder)
+  Result.WriteBuffer('WAVE', 4);
+  Result.WriteBuffer('fmt ', 4);
   dword := 16;
-  m.Write(dword, 4); // chunk size
+  Result.Write(dword, 4); // chunk size
   word := 1;
-  m.Write(word, 2); // compression code
+  Result.Write(word, 2); // compression code (PCM)
   word := 1;
-  m.Write(word, 2); // channels
+  Result.Write(word, 2); // channels (mono)
   dword := wav_freq;
-  m.Write(dword, 4); // sample rate
+  Result.Write(dword, 4); // sample rate
   dword := (wav_freq * wav_bits) Div 8;
-  m.Write(dword, 4); // bytes/sec
+  Result.Write(dword, 4); // bytes/sec
   word := wav_bits Div 8;
-  m.Write(word, 2); // block align
+  Result.Write(word, 2); // block align
   word := wav_bits;
-  m.Write(word, 2); // bits per sample
+  Result.Write(word, 2); // bits per sample
 
-  m.WriteBuffer('data', 4); // "data"
+  Result.WriteBuffer('data', 4);
   dword := 0;
-  foutstream_datasize := m.Position;
-  m.Write(dword, 4); // chunk size
+  foutstream_datasize := Result.Position;
+  Result.Write(dword, 4); // chunk size (placeholder)
 
   // write sample data
   mute_stream := true;
@@ -490,37 +500,74 @@ Begin
   fileacc := 0;
   PlaySample();
   While (playing_sample) Do Begin
-    SynthSample(256, Nil, m);
+    SynthSample(256, Nil, Result);
   End;
   mute_stream := false;
 
   // seek back to header and write size info
-  m.Position := 4;
+  Result.Position := 4;
   dword := foutstream_datasize - 4 + (file_sampleswritten * wav_bits) Div 8;
-  m.Write(dword, 4); // remaining file size
-  m.Position := foutstream_datasize;
+  Result.Write(dword, 4); // remaining file size
+  Result.Position := foutstream_datasize;
   dword := (file_sampleswritten * wav_bits) Div 8;
-  m.Write(dword, 4); // chunk size (data)
-  Try
-    f := Tfilestream.Create(Filename, fmOpenWrite Or fmCreate);
-  Except
-    m.free;
-    f.free;
-    exit;
-  End;
-  m.position := 0;
-  f.copyfrom(m, m.size);
-  f.free;
-  m.free;
-  result := true;
+  Result.Write(dword, 4); // chunk size (data)
+  
+  Result.Position := 0;
 End;
 
-Procedure TSFXR.ExportBassStream(Const Stream: TStream);
+Function TSFXR.ExportWav(Const Filename: String): Boolean;
+Var
+  F: TFileStream;
+  m: TMemoryStream;
 Begin
-  PlaySample;
-  While (playing_sample) Do Begin
-    SynthSample(256, Stream, Nil);
+  result := false;
+  m := ExportWavToStream;
+  Try
+    Try
+      F := TFileStream.Create(Filename, fmOpenWrite Or fmCreate);
+      Try
+        F.CopyFrom(m, m.Size);
+        result := true;
+      Finally
+        F.Free;
+      End;
+    Except
+      // File creation failed
+    End;
+  Finally
+    m.Free;
   End;
+End;
+
+Procedure TSFXR.PlaySound;
+{$IFDEF WINDOWS}
+Var
+  WavStream: TMemoryStream;
+{$ENDIF}
+Begin
+  {$IFDEF WINDOWS}
+  // Stop any currently playing sound
+  StopSound;
+  
+  // Generate WAV to memory
+  WavStream := ExportWavToStream;
+  
+  // Free previous buffer if exists
+  if GlobalWavBuffer <> nil then
+    GlobalWavBuffer.Free;
+  GlobalWavBuffer := WavStream;
+  
+  // Play using Windows API - SND_MEMORY plays from memory, SND_ASYNC returns immediately
+  MMSystem.PlaySound(PChar(GlobalWavBuffer.Memory), 0, SND_MEMORY or SND_ASYNC);
+  {$ENDIF}
+End;
+
+Procedure TSFXR.StopSound;
+Begin
+  {$IFDEF WINDOWS}
+  // Stop any playing sound
+  MMSystem.PlaySound(nil, 0, 0);
+  {$ENDIF}
 End;
 
 Function TSFXR.SaveSettings(Const Filename: String): Boolean;
@@ -529,47 +576,54 @@ Var
   Version: integer;
 Begin
   result := false;
-  f := TFileStream.Create(Filename, fmOpenWrite Or fmCreate);
-  version := 102;
-  f.write(version, sizeof(Version));
+  Try
+    f := TFileStream.Create(Filename, fmOpenWrite Or fmCreate);
+    Try
+      version := 102;
+      f.write(version, sizeof(Version));
 
-  f.write(wave_type, sizeof(wave_type));
+      f.write(wave_type, sizeof(wave_type));
 
-  f.write(sound_vol, sizeof(sound_vol));
+      f.write(sound_vol, sizeof(sound_vol));
 
-  f.write(p_base_freq, sizeof(p_base_freq));
-  f.write(p_freq_limit, sizeof(p_freq_limit));
-  f.write(p_freq_ramp, sizeof(p_freq_ramp));
-  f.write(p_freq_dramp, sizeof(p_freq_dramp));
-  f.write(p_duty, sizeof(p_duty));
-  f.write(p_duty_ramp, sizeof(p_duty_ramp));
+      f.write(p_base_freq, sizeof(p_base_freq));
+      f.write(p_freq_limit, sizeof(p_freq_limit));
+      f.write(p_freq_ramp, sizeof(p_freq_ramp));
+      f.write(p_freq_dramp, sizeof(p_freq_dramp));
+      f.write(p_duty, sizeof(p_duty));
+      f.write(p_duty_ramp, sizeof(p_duty_ramp));
 
-  f.write(p_vib_strength, sizeof(p_vib_strength));
-  f.write(p_vib_speed, sizeof(p_vib_speed));
-  f.write(p_vib_delay, sizeof(p_vib_delay));
+      f.write(p_vib_strength, sizeof(p_vib_strength));
+      f.write(p_vib_speed, sizeof(p_vib_speed));
+      f.write(p_vib_delay, sizeof(p_vib_delay));
 
-  f.write(p_env_attack, sizeof(p_env_attack));
-  f.write(p_env_sustain, sizeof(p_env_sustain));
-  f.write(p_env_decay, sizeof(p_env_decay));
-  f.write(p_env_punch, sizeof(p_env_punch));
+      f.write(p_env_attack, sizeof(p_env_attack));
+      f.write(p_env_sustain, sizeof(p_env_sustain));
+      f.write(p_env_decay, sizeof(p_env_decay));
+      f.write(p_env_punch, sizeof(p_env_punch));
 
-  f.write(filter_on, sizeof(filter_on));
-  f.write(p_lpf_resonance, sizeof(p_lpf_resonance));
-  f.write(p_lpf_freq, sizeof(p_lpf_freq));
-  f.write(p_lpf_ramp, sizeof(p_lpf_ramp));
-  f.write(p_hpf_freq, sizeof(p_hpf_freq));
-  f.write(p_hpf_ramp, sizeof(p_hpf_ramp));
+      f.write(filter_on, sizeof(filter_on));
+      f.write(p_lpf_resonance, sizeof(p_lpf_resonance));
+      f.write(p_lpf_freq, sizeof(p_lpf_freq));
+      f.write(p_lpf_ramp, sizeof(p_lpf_ramp));
+      f.write(p_hpf_freq, sizeof(p_hpf_freq));
+      f.write(p_hpf_ramp, sizeof(p_hpf_ramp));
 
-  f.write(p_pha_offset, sizeof(p_pha_offset));
-  f.write(p_pha_ramp, sizeof(p_pha_ramp));
+      f.write(p_pha_offset, sizeof(p_pha_offset));
+      f.write(p_pha_ramp, sizeof(p_pha_ramp));
 
-  f.write(p_repeat_speed, sizeof(p_repeat_speed));
+      f.write(p_repeat_speed, sizeof(p_repeat_speed));
 
-  f.write(p_arp_speed, sizeof(p_arp_speed));
-  f.write(p_arp_mod, sizeof(p_arp_mod));
+      f.write(p_arp_speed, sizeof(p_arp_speed));
+      f.write(p_arp_mod, sizeof(p_arp_mod));
 
-  f.free;
-  result := true;
+      result := true;
+    Finally
+      f.free;
+    End;
+  Except
+    // File creation failed
+  End;
 End;
 
 Function TSFXR.LoadSettings(Const Filename: String): Boolean;
@@ -578,61 +632,77 @@ Var
   f: TFileStream;
 Begin
   result := false;
-  f := TFileStream.Create(Filename, fmOpenRead);
+  Try
+    f := TFileStream.Create(Filename, fmOpenRead);
+    Try
+      version := 0;
+      f.Read(Version, sizeof(Version));
 
-  version := 0;
-  f.Read(Version, sizeof(Version));
+      If (version <> 100) And (version <> 101) And (version <> 102) Then Begin
+        exit;
+      End;
 
-  If (version <> 100) And (version <> 101) And (version <> 102) Then Begin
-    exit;
+      f.Read(wave_type, sizeof(wave_type));
+
+      sound_vol := 0.5;
+      If (version = 102) Then Begin
+        f.Read(sound_vol, sizeof(sound_vol));
+      End;
+
+      f.Read(p_base_freq, sizeof(p_base_freq));
+      f.Read(p_freq_limit, sizeof(p_freq_limit));
+      f.Read(p_freq_ramp, sizeof(p_freq_ramp));
+
+      If (version >= 101) Then Begin
+        f.Read(p_freq_dramp, sizeof(p_freq_dramp));
+      End;
+      f.Read(p_duty, sizeof(p_duty));
+      f.Read(p_duty_ramp, sizeof(p_duty_ramp));
+
+      f.Read(p_vib_strength, sizeof(p_vib_strength));
+      f.Read(p_vib_speed, sizeof(p_vib_speed));
+      f.Read(p_vib_delay, sizeof(p_vib_delay));
+
+      f.Read(p_env_attack, sizeof(p_env_attack));
+      f.Read(p_env_sustain, sizeof(p_env_sustain));
+      f.Read(p_env_decay, sizeof(p_env_decay));
+      f.Read(p_env_punch, sizeof(p_env_punch));
+
+      f.Read(filter_on, sizeof(filter_on));
+      f.Read(p_lpf_resonance, sizeof(p_lpf_resonance));
+      f.Read(p_lpf_freq, sizeof(p_lpf_freq));
+      f.Read(p_lpf_ramp, sizeof(p_lpf_ramp));
+      f.Read(p_hpf_freq, sizeof(p_hpf_freq));
+      f.Read(p_hpf_ramp, sizeof(p_hpf_ramp));
+
+      f.Read(p_pha_offset, sizeof(p_pha_offset));
+      f.Read(p_pha_ramp, sizeof(p_pha_ramp));
+
+      f.Read(p_repeat_speed, sizeof(p_repeat_speed));
+
+      If (version >= 101) Then Begin
+        f.Read(p_arp_speed, sizeof(p_arp_speed));
+        f.Read(p_arp_mod, sizeof(p_arp_mod));
+      End;
+
+      result := true;
+    Finally
+      f.free;
+    End;
+  Except
+    // File read failed
   End;
-
-  f.Read(wave_type, sizeof(wave_type));
-
-  sound_vol := 0.5;
-  If (version = 102) Then Begin
-    f.Read(sound_vol, sizeof(sound_vol));
-  End;
-
-  f.Read(p_base_freq, sizeof(p_base_freq));
-  f.Read(p_freq_limit, sizeof(p_freq_limit));
-  f.Read(p_freq_ramp, sizeof(p_freq_ramp));
-
-  If (version >= 101) Then Begin
-    f.Read(p_freq_dramp, sizeof(p_freq_dramp));
-  End;
-  f.Read(p_duty, sizeof(p_duty));
-  f.Read(p_duty_ramp, sizeof(p_duty_ramp));
-
-  f.Read(p_vib_strength, sizeof(p_vib_strength));
-  f.Read(p_vib_speed, sizeof(p_vib_speed));
-  f.Read(p_vib_delay, sizeof(p_vib_delay));
-
-  f.Read(p_env_attack, sizeof(p_env_attack));
-  f.Read(p_env_sustain, sizeof(p_env_sustain));
-  f.Read(p_env_decay, sizeof(p_env_decay));
-  f.Read(p_env_punch, sizeof(p_env_punch));
-
-  f.Read(filter_on, sizeof(filter_on));
-  f.Read(p_lpf_resonance, sizeof(p_lpf_resonance));
-  f.Read(p_lpf_freq, sizeof(p_lpf_freq));
-  f.Read(p_lpf_ramp, sizeof(p_lpf_ramp));
-  f.Read(p_hpf_freq, sizeof(p_hpf_freq));
-  f.Read(p_hpf_ramp, sizeof(p_hpf_ramp));
-
-  f.Read(p_pha_offset, sizeof(p_pha_offset));
-  f.Read(p_pha_ramp, sizeof(p_pha_ramp));
-
-  f.Read(p_repeat_speed, sizeof(p_repeat_speed));
-
-  If (version >= 101) Then Begin
-    f.Read(p_arp_speed, sizeof(p_arp_speed));
-    f.Read(p_arp_mod, sizeof(p_arp_mod));
-  End;
-
-  f.free;
-  result := true;
 End;
 
-End.
+initialization
+  {$IFDEF WINDOWS}
+  GlobalWavBuffer := nil;
+  {$ENDIF}
 
+finalization
+  {$IFDEF WINDOWS}
+  if GlobalWavBuffer <> nil then
+    GlobalWavBuffer.Free;
+  {$ENDIF}
+
+End.

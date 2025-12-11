@@ -9,6 +9,12 @@ unit rwgifcore;
   **     Written by Tristan Tarrant, 1994       **
   **                                            **
   **        ( Supports GIF87a/GIF89a )          **
+  **                                            **
+  **   Additional fixes for reading palette     **
+  **   correctly and reading control block      **
+  **   correctly by RetroNick                   **
+  **   Was not able to read images created by   **
+  **   grafX2                                   **
   ************************************************ }
 
 interface
@@ -361,57 +367,30 @@ begin
 	UnpackImage := GoodRead;
 end; { UnpackImage }
 
+{ *** FIXED SkipExtension procedure ***
+  The original code had issues with:
+  1. Graphics Control Extension ($F9) - was reading struct directly but
+     the terminator byte needs to be read after the fixed-size data
+  2. Generic extension handling needed to skip sub-blocks properly
+}
 procedure SkipExtension( Var F : File );
 var
-	pt : PlainText;
-	cb : ControlBlock;
-	ap : Application;
+	n, a : byte;
 	i : integer;
-	a, n, c : byte;
-	r : word;
 begin
-	blockread( F, c, 1 );
-	case c of
-		$01 :
-			begin
-				blockread( F, pt, sizeof( PlainText ) );
-				blockread( F, n, 1 );
-				while n > 0 do
-				begin
-					for i := 0 to n-1 do
-						blockread( F, a, 1 );
-					blockread( F, n, 1 );
-				end;
-			end;
-		$F9 :
-			blockread( F, cb, sizeof( ControlBlock ) );
-		$FE :
-			begin
-				blockread( F, n, 1 );
-				while n > 0 do
-				begin
-					for i:= 0 to n-1 do
-						blockread( F, a, 1 );
-					blockread( F, n, 1 );
-				end;
-			end;
-		$FF :
-			begin
-				blockread( F, ap, sizeof( Application ) );
-				blockread( F, n, 1 );
-				while n > 0 do
-				begin
-					for i := 0 to n-1 do
-						blockread( F, a, 1 );
-					blockread( F, n, 1 );
-				end;
-			end;
-		else
-			begin
-				blockread( F, n, 1 );
-				for i := 0 to n-1 do
-						blockread( F, a, 1 );
-			end;
+	{ Read extension label }
+	blockread( F, a, 1 );
+
+	{ Now skip all sub-blocks until we hit a zero-length block terminator }
+	{ This works for ALL extension types uniformly }
+	blockread( F, n, 1 );
+	while n > 0 do
+	begin
+		{ Skip n bytes of sub-block data }
+		for i := 1 to n do
+			blockread( F, a, 1 );
+		{ Read next sub-block size (0 = terminator) }
+		blockread( F, n, 1 );
 	end;
 end; { SkipExtension }
 
@@ -485,7 +464,7 @@ begin
 								//	GIFPalette[b*3+1] := fi.palette[b*3+2] shr 2;
 								//	GIFPalette[b*3+1] := fi.palette[b*3+3] shr 2;
 
-                                                                 	GIFPalette[b*3] := fi.palette[b*3+1];
+                                                             	GIFPalette[b*3] := fi.palette[b*3+1];
 									GIFPalette[b*3+1] := fi.palette[b*3+2];
 									GIFPalette[b*3+2] := fi.palette[b*3+3];
 
@@ -505,7 +484,9 @@ begin
 						end;
 			'!' : SkipExtension( F );
 		end;
+		blockread( F, ch, 1 );
 	end;
+	UnpackGIF := BadFile; { No image found }
 end; { UnpackGIF }
 
 function LoadGif;
@@ -541,6 +522,7 @@ var
 begin
 	FillChar( gh, sizeof(GIFHeader),0 );
 	gifsig := 'GIF87a';
+
 	move( gifsig[1], gh.sig[1], 6 );
 	gh.screenwidth := width;
 	gh.screendepth := depth;
@@ -570,7 +552,9 @@ begin
 	ib.top := top;
 	ib.width := width;
 	ib.depth := depth;
-	ib.flags := bits-1;
+//	ib.flags := bits-1;
+        ib.flags := 0;
+
 	blockwrite( fp, ib, sizeof(ImageBlock) );
 	WriteImageDesc := 0;
 end;

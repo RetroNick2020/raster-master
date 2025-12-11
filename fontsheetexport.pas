@@ -18,6 +18,7 @@ type
   TFontSheetExportForm = class(TForm)
     Apply: TButton;
     Button1: TButton;
+    SavebackgroundAsTransparent: TCheckBox;
     DescExportToClipboard: TButton;
     ExportToClipBoard: TButton;
     ExportToFile: TButton;
@@ -316,6 +317,12 @@ begin
       begin
         pixeldata[pixelpos+3]:=PngRGBA.A;  // use Custom Alpha level for transperancy
       end;
+
+      if SaveBackgroundAsTransparent.Checked and ((Red(cl)= 0) and (Green(cl)=0) and (Blue(cl)=0)) then   //if black then make transparent
+      begin
+        pixeldata[pixelpos+3]:=0;
+      end;
+
       inc(pixelpos,4);
     end;
   end;
