@@ -11,8 +11,12 @@ uses
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize;
+  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler;
 
+const
+  NoScript = 0;
+  PascalScript = 1;
+  QBScript = 2;
 
 type
 
@@ -352,14 +356,13 @@ type
     procedure AqbPsetBitMapClick(Sender: TObject);
     procedure BAMPutDataClick(Sender: TObject);
     procedure BulkExportPNGClick(Sender: TObject);
-
-
     procedure ColorBoxMouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
     procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
       var AText: String);
     procedure DeleteImageClick(Sender: TObject);
+
     procedure TextDrawEditChange(Sender: TObject);
     procedure EditClearClick(Sender: TObject);
     procedure EditCloneClick(Sender: TObject);
@@ -386,7 +389,6 @@ type
     procedure SoundGeneratorClick(Sender: TObject);
     procedure SpriteAnimationMenuClick(Sender: TObject);
     procedure SpriteExportMenuClick(Sender: TObject);
-    procedure TMTPaletteExportClick(Sender: TObject);
     procedure OpenWatcomCClick(Sender: TObject);
     procedure PaletteExportOWCClick(Sender: TObject);
     procedure PaletteXGA256Click(Sender: TObject);
@@ -412,7 +414,7 @@ type
     procedure RESExportClick(Sender: TObject);
     procedure FileDeleteClick(Sender: TObject);
     procedure SaveProjectFileClick(Sender: TObject);
-    procedure TMTPaletteCommandsClick(Sender: TObject);
+
     procedure ToolEllipseMenuClick(Sender: TObject);
     procedure PaletteExportQuickCClick(Sender: TObject);
     procedure PaletteExportTurboCClick(Sender: TObject);
@@ -497,6 +499,10 @@ type
        RenderBitMap  : TBitMap;
        RenderBitMap2 : TBitMap;
 
+       ScriptLoaded   : integer;
+       QBInterpreter  : TQBasicInterpreter;
+       ScriptFileName : String;
+
        procedure UpdateZoomArea;
        procedure UpdateZoomScroller;
        procedure UpdateActualArea;
@@ -547,6 +553,20 @@ type
        procedure UpdateImportedImage;
        procedure DeleteImageByIndex(index : integer);
 
+       procedure InitQBInterpreter;
+       procedure QBScriptRun;
+       procedure PascalScriptRun;
+       procedure API_PutPixel(const Args: array of Double; const StrArgs: array of string);
+       function  API_GetPixel(const Args: array of Double): Double;
+       function  API_GetWidth(const Args: array of Double): Double;
+       function  API_GetHeight(const Args: array of Double): Double;
+       function  API_GetMaxColor(const Args: array of Double): Double;
+       function  API_GetColorR(const Args: array of Double) : double;
+       function  API_GetColorG(const Args: array of Double) : double;
+       function  API_GetColorB(const Args: array of Double) : double;
+
+       procedure QBPrint(const AText: string);
+       function QBInput(const Prompt: string; var Value: string) : boolean;
   end;
 
 
@@ -559,10 +579,6 @@ implementation
 {$R *.lfm}
 
 { TRMMainForm }
-
-
-
-
 
 procedure TRMMainForm.PaletteToCore;
 var
@@ -598,6 +614,10 @@ end;
 
 procedure TRMMainForm.FormCreate(Sender: TObject);
 begin
+ //for which type of script to run PascalScript ot QBScript
+ ScriptLoaded := NoScript;
+ InitQBInterpreter;
+
  RenderBitMap:=TBitMap.Create;
  //size should be set to biggest bitmap to create
  RenderBitMap.SetSize(256,256);
@@ -651,6 +671,7 @@ end;
 
 procedure TRMMainForm.FormDestroy(Sender: TObject);
 begin
+  QBInterpreter.Free;
   RenderBitMap.Free;
   RenderBitMap2.Free;
 end;
@@ -1074,7 +1095,6 @@ begin
      for j:=0 to RMCoreBase.GetHeight-1 do
      begin
         tc:=ColorPalette1.Colors[RMCoreBase.GetPixel(i,j)];
-//        RMDrawTools.PutPixel(ActualBox.Canvas,i,j,tc,0);
         RMDrawTools.PutPixel(ACBitMap.Canvas,i,j,tc,0);
      end;
    end;
@@ -1449,6 +1469,7 @@ procedure TRMMainForm.DeleteImageClick(Sender: TObject);
     DeleteImageByIndex(index);
   end;
 end;
+
 
 procedure TRMMainForm.TextDrawEditChange(Sender: TObject);
 begin
@@ -2091,11 +2112,6 @@ begin
    end;
 end;
 
-
-
-
-
-
 procedure TRMMainForm.PaletteExportQBasicClick(Sender: TObject);
 var
  pm : integer;
@@ -2217,6 +2233,8 @@ begin
    end;
  end;
 end;
+
+
 
 procedure TRMMainForm.TMTPascalClick(Sender: TObject);
 var
@@ -2366,8 +2384,6 @@ begin
   UpdateEditMenu;
 end;
 
-
-
 procedure TRMMainForm.GWBASICClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -2487,10 +2503,6 @@ begin
     ImgHeight:=setcustomspritesizeform.SpinEditHeight.Value;
   end;
 
-
-
-  // ActualBox.Width:=ImgWidth;
- // ActualBox.Height:=ImgHeight;
   RMCoreBase.SetWidth(ImgWidth);
   RMCoreBase.SetHeight(ImgHeight);
   RMDrawTools.SetZoomSize(zsize);
@@ -2952,8 +2964,6 @@ begin
  ShowMessage('Exported to Clipboard!');
 end;
 
-
-
 procedure TRMMainForm.QuickPascalClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
@@ -3010,7 +3020,6 @@ begin
     end;
  end;
 end;
-
 
 procedure TRMMainForm.PaletteExportQuickCClick(Sender: TObject);
 var
@@ -3371,8 +3380,6 @@ begin
   end;
 end;
 
-
-
 procedure TRMMainForm.AmigaCPaletteClick(Sender: TObject);
 var
   error : word;
@@ -3580,8 +3587,6 @@ begin
       end;
    end;
 end;
-
-
 
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var
@@ -3854,9 +3859,6 @@ begin
    ImageThumbBase.CopyIndexImageToCore(Item.Index);
    ImageThumbBase.SetCurrent(item.Index);
 
-  // ActualBox.Width:=RMCoreBase.GetWidth;
-  // ActualBox.Height:=RMCoreBase.GetHeight;
-
    ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
    ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
    ZoomPaintBox.Canvas.Clear;
@@ -3870,7 +3872,6 @@ begin
    CoreToPalette;
    UpdateColorBox;
    UpdateToolSelectionIcons;      //calls updatetoolsmenu
-   //UpdateToolsMenu;
    UpdatePalette;
    UpdatePaletteMenu;
    UpdateEditMenu;
@@ -3891,8 +3892,6 @@ begin
 
  ImgWidth:=32;
  ImgHeight:=32;
- //ActualBox.Width:=ImgWidth;
- //ActualBox.Height:=ImgHeight;
  RMCoreBase.SetWidth(ImgWidth);
  RMCoreBase.SetHeight(ImgHeight);
  RMCoreBase.ClearBuf(0);
@@ -3928,7 +3927,6 @@ begin
 
  ListView1.Items[0].Caption:='Image '+IntToStr(1);
  ListView1.Items[0].ImageIndex :=0;
-
 
  MapEdit.DeleteAll;
  AnimationForm.DeleteAll;
@@ -3972,11 +3970,6 @@ procedure TRMMainForm.FontSheetExportMenuClick(Sender: TObject);
 begin
   FontSheetExportForm.Show;
   FontSheetExportForm.WindowState:=wsNormal;
-end;
-
-procedure TRMMainForm.TMTPaletteExportClick(Sender: TObject);
-begin
-
 end;
 
 procedure TRMMainForm.RayLibExportClick(Sender: TObject);
@@ -4119,84 +4112,6 @@ end;
 function rm_getsavefilename(var filename,ext : string; filter : string) : boolean;
 begin
  rm_getsavefilename:=RMMainForm.getsavefilename(filename,ext,filter);
-end;
-
-procedure TRMMainForm.RMScriptCompile(Sender: TPSScript);
-begin
-  Sender.AddFunction(@rm_putpixel, 'procedure putpixel(x,y,color : integer)');
-  Sender.AddFunction(@rm_getpixel, 'function getpixel(x,y : integer) : integer');
-
-  Sender.AddFunction(@rm_getwidth,'function getwidth : integer');
-  Sender.AddFunction(@rm_getheight,'function getheight : integer');
-
-  Sender.AddFunction(@rm_getopenfilename, 'function getopenfilename(var filename,ext : string; filter : string) : boolean');
-  Sender.AddFunction(@rm_getsavefilename, 'function getsavefilename(var filename,ext : string; filter : string) : boolean');
-
-  Sender.AddFunction(@rm_showmessage,'procedure showmessage(const aMsg : string)');
-
-  Sender.AddFunction(@rm_cg_open,'function cgopen(filename : string) : boolean');
-  Sender.AddFunction(@rm_cg_options,'procedure cgoptions(name, value : string)');
-  Sender.AddFunction(@rm_cg_close,'procedure cgclose');
-  Sender.AddFunction(@rm_cg_write,'procedure cgwrite(Line : string)');
-  Sender.AddFunction(@rm_cg_writeln,'procedure cgwriteln');
-  Sender.AddFunction(@rm_cg_write_byte,'procedure cgwritebyte(value : byte)');
-  Sender.AddFunction(@rm_cg_write_integer,'procedure cgwriteinteger(value : integer)');
-
-  Sender.AddFunction(@rm_getselectarea,'procedure getselectarea(var active,x1,y1,x2,y2 : integer)');
-
-  Sender.AddFunction(@rm_getmaxcolor,'function  getmaxcolor : integer');
-  Sender.AddFunction(@rm_getcolorrgb,'procedure getcolorrgb(index : integer;var r,g,b : byte)');
-  Sender.AddFunction(@rm_setcolorrgb,'procedure setcolorrgb(index : integer; r,g,b : byte)');
-
-  Sender.AddFunction(@rm_getpalettemode,'function getpalettemode : integer');
-  Sender.AddFunction(@rm_setpalettemode, 'procedure setpalettemode(mode : integer)');
-
-//FileCreate/FileWrite/FileClose lifted from Lazarus Pascal Script Example Page - don't seem to work - you let me know
-  Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer)');
-  Sender.AddFunction(@FileWrite, 'function FileWrite(Handle: Integer; const Buffer: pChar; Count: LongWord): Integer)');
-  Sender.AddFunction(@FileClose, 'Procedure FileClose(handle: integer)');
-end;
-
-
-procedure TRMMainForm.ScriptMenuLoadClick(Sender: TObject);
-var
- ext : string;
-begin
- OpenDialog1.Filter := 'Pascal Script|*.pas|All Files|*.*' ;
- if OpenDialog1.Execute then
- begin
-   ext:=UpperCase(ExtractFileExt(OpenDialog1.FileName));
-   if ext = '.PAS' then  RMScript.Script.LoadFromFile(OpenDialog1.FileName);
- end;
-end;
-
-procedure TRMMainForm.ScriptMenuRunClick(Sender: TObject);
-var
-  ErrorMsg : string;
-  i : integer;
-begin
-  if RMScript.compile then
-  begin
-    SetCoreActive;
-    if not RMScript.execute then
-    begin
-      ShowMessage('Run-time error:' + RMScript.ExecErrorToString);
-    end
-    else
-    begin
-      UpdateActualArea;
-      UpdateZoomArea;
-      UpdateThumbview;
-    end;
-  end
-  else
-  begin
-   ErrorMsg:='';
-   if RMScript.CompilerMessageCount > 0 then
-   for i:= 0 to RMScript.CompilerMessageCount-1 do
-          ErrorMsg:=ErrorMsg+RMScript.CompilerErrorToStr(i)+sLineBreak ;
-    ShowMessage('Failed to compile!'+sLineBreak+ErrorMsg);
-  end;
 end;
 
 procedure TRMMainForm.UpdateImportedImage;
@@ -4459,10 +4374,7 @@ begin
    end;
 end;
 
-procedure TRMMainForm.TMTPaletteCommandsClick(Sender: TObject);
-begin
 
-end;
 
 procedure TRMMainForm.NewClick(Sender: TObject);
 begin
@@ -4576,6 +4488,234 @@ begin
      ext:=ExtractFileExt(SaveDialog1.FileName)
  end;
 end;
+
+procedure TRMMainForm.RMScriptCompile(Sender: TPSScript);
+begin
+  Sender.AddFunction(@rm_putpixel, 'procedure putpixel(x,y,color : integer)');
+  Sender.AddFunction(@rm_getpixel, 'function getpixel(x,y : integer) : integer');
+
+  Sender.AddFunction(@rm_getwidth,'function getwidth : integer');
+  Sender.AddFunction(@rm_getheight,'function getheight : integer');
+
+  Sender.AddFunction(@rm_getopenfilename, 'function getopenfilename(var filename,ext : string; filter : string) : boolean');
+  Sender.AddFunction(@rm_getsavefilename, 'function getsavefilename(var filename,ext : string; filter : string) : boolean');
+
+  Sender.AddFunction(@rm_showmessage,'procedure showmessage(const aMsg : string)');
+
+  Sender.AddFunction(@rm_cg_open,'function cgopen(filename : string) : boolean');
+  Sender.AddFunction(@rm_cg_options,'procedure cgoptions(name, value : string)');
+  Sender.AddFunction(@rm_cg_close,'procedure cgclose');
+  Sender.AddFunction(@rm_cg_write,'procedure cgwrite(Line : string)');
+  Sender.AddFunction(@rm_cg_writeln,'procedure cgwriteln');
+  Sender.AddFunction(@rm_cg_write_byte,'procedure cgwritebyte(value : byte)');
+  Sender.AddFunction(@rm_cg_write_integer,'procedure cgwriteinteger(value : integer)');
+
+  Sender.AddFunction(@rm_getcliparea,'procedure getcliparea(var active,x1,y1,x2,y2 : integer)');
+
+  Sender.AddFunction(@rm_getmaxcolor,'function  getmaxcolor : integer');
+  Sender.AddFunction(@rm_getcolorrgb,'procedure getcolorrgb(index : integer;var r,g,b : byte)');
+  Sender.AddFunction(@rm_setcolorrgb,'procedure setcolorrgb(index : integer; r,g,b : byte)');
+
+  Sender.AddFunction(@rm_getpalettemode,'function getpalettemode : integer');
+  Sender.AddFunction(@rm_setpalettemode, 'procedure setpalettemode(mode : integer)');
+
+//  Sender.AddFunction(@rm_settileproperty,'procedure settileproperty(x,y : integer;tilepropertyname,value : string)');
+//  Sender.AddFunction(@rm_puttile, 'procedure puttile(x,y,index : integer)');
+//  Sender.AddFunction(@rm_gettile, 'function gettile(x,y : integer) : integer');
+
+
+//FileCreate/FileWrite/FileClose lifted from Lazarus Pascal Script Example Page - don't seem to work - you let me know
+  Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer)');
+  Sender.AddFunction(@FileWrite, 'function FileWrite(Handle: Integer; const Buffer: pChar; Count: LongWord): Integer)');
+  Sender.AddFunction(@FileClose, 'Procedure FileClose(handle: integer)');
+
+end;
+
+procedure TRMMainForm.ScriptMenuLoadClick(Sender: TObject);
+var
+ ext : string;
+begin
+ OpenDialog1.Filter := 'QBasic Script|*.bas|Pascal Script|*.pas|All Files|*.*';
+ if OpenDialog1.Execute then
+ begin
+   ScriptFileName:=OpenDialog1.FileName;
+   ext:=UpperCase(ExtractFileExt(ScriptFileName));
+   if ext = '.PAS' then
+   begin
+     ScriptLoaded:=PascalScript;
+   end
+   else if ext = '.BAS' then
+   begin
+     ScriptLoaded:=QBScript;
+   end;
+ end;
+end;
+
+procedure TRMMainForm.PascalScriptRun;
+var
+  ErrorMsg : string;
+  i : integer;
+begin
+  if ScriptLoaded = NoScript then exit;
+  RMScript.Script.LoadFromFile(ScriptFileName);
+
+  if RMScript.compile then
+  begin
+    SetCoreActive;
+    if not RMScript.execute then
+    begin
+      ShowMessage('Run-time error:' + RMScript.ExecErrorToString);
+    end
+    else
+    begin
+      UpdateActualArea;
+      UpdateZoomArea;
+      UpdateThumbview;
+    end;
+  end
+  else
+  begin
+   ErrorMsg:='';
+   if RMScript.CompilerMessageCount > 0 then
+   for i:= 0 to RMScript.CompilerMessageCount-1 do
+          ErrorMsg:=ErrorMsg+RMScript.CompilerErrorToStr(i)+sLineBreak ;
+    ShowMessage('Failed to compile!'+sLineBreak+ErrorMsg);
+  end;
+end;
+
+procedure TRMMainForm.QBScriptRun;
+var
+  Code: TStringList;
+  ErrorMsg : string;
+  CA,CX,CY,CX2,CY2 : integer;
+begin
+ if ScriptLoaded = NoScript then exit;
+ Code := TStringList.Create;
+ Code.LoadFromFile(ScriptFileName);
+
+ SetCoreActive;
+ ErrorMsg:='';
+ try
+  QBInterpreter.Reset;
+  QBInterpreter.LoadProgram(code.text);
+  rm_getcliparea(CA,CX,CY,CX2,CY2);
+  QBInterpreter.SetGlobalVariable('CLIP_ACTIVE',CA);
+  QBInterpreter.SetGlobalVariable('CLIP_X1',CX);
+  QBInterpreter.SetGlobalVariable('CLIP_Y1',CY);
+  QBInterpreter.SetGlobalVariable('CLIP_X2',CX2);
+  QBInterpreter.SetGlobalVariable('CLIP_Y2',CY2);
+  QBInterpreter.Execute;
+ except
+    on E: EQBasicError do
+    begin
+      ErrorMsg := 'ERROR at line ' + IntToStr(E.Line)+sLineBreak + E.Message;
+      ShowMessage(ErrorMsg);
+    end;
+    on E: Exception do
+    begin
+      ErrorMsg:= 'Error: ' + E.Message;
+      ShowMessage(ErrorMsg);
+    end;
+ end;
+
+ Code.Free;
+ UpdateActualArea;
+ UpdateZoomArea;
+ UpdateThumbview;
+end;
+
+procedure TRMMainForm.ScriptMenuRunClick(Sender: TObject);
+begin
+ if ScriptLoaded = QBScript then
+ begin
+   QBScriptRun;
+ end
+ else if ScriptLoaded = PascalScript then
+ begin
+   PascalScriptRun;
+ end;
+end;
+
+
+procedure TRMMainForm.QBPrint(const AText: string);
+begin
+ // will print to a console window in the future
+end;
+
+function TRMMainForm.QBinput(const Prompt: string; var Value: string) : boolean;
+begin
+ result:=true;
+ // will display and input dialog to enter value
+end;
+
+// the API functions will be moved somewhere else in the future
+procedure TRMMainForm.API_PutPixel(const Args: array of Double; const StrArgs: array of string);
+begin
+ rm_putpixel(Trunc(Args[0]),Trunc(Args[1]),Trunc(Args[2]));
+end;
+
+function TRMMainForm.API_GetPixel(const Args: array of Double): Double;
+begin
+ result:=rm_getpixel(Trunc(Args[0]),Trunc(Args[1]));
+end;
+
+function TRMMainForm.API_GetWidth(const Args: array of Double): Double;
+begin
+ result:=rm_getwidth;
+end;
+
+function TRMMainForm.API_GetHeight(const Args: array of Double): Double;
+begin
+ result:=rm_getheight;
+end;
+
+function TRMMainForm.API_GetMaxColor(const Args: array of Double): Double;
+begin
+ result:=rm_getmaxcolor;
+end;
+
+function TRMMainForm.API_GetColorR(const Args: array of Double) : double;
+var
+  r,g,b : byte;
+begin
+  rm_getcolorrgb(Trunc(Args[0]),r,g,b);
+  result:=r;
+end;
+
+function TRMMainForm.API_GetColorG(const Args: array of Double) : double;
+var
+  r,g,b : byte;
+begin
+  rm_getcolorrgb(Trunc(Args[0]),r,g,b);
+  result:=g;
+end;
+
+function TRMMainForm.API_GetColorB(const Args: array of Double) : double;
+var
+  r,g,b : byte;
+begin
+  rm_getcolorrgb(Trunc(Args[0]),r,g,b);
+  result:=b;
+end;
+
+procedure TRMMainForm.InitQBInterpreter;
+begin
+ QBInterpreter := TQBasicInterpreter.Create;
+ QBInterpreter.Reset;
+ QBInterpreter.OnPrint := @QBPrint;
+ QBInterpreter.OnInput := @QBInput;
+ QBInterpreter.RegisterProcedure('PUTPIXEL', 4, 4,@API_PUTPIXEL);
+ QBInterpreter.RegisterFunction('GETPIXEL', 3, 3,@API_GETPIXEL);
+ QBInterpreter.RegisterFunction('GETWIDTH', 0, 0,@API_GETWIDTH);
+ QBInterpreter.RegisterFunction('GETHEIGHT', 0, 0,@API_GETHEIGHT);
+ QBInterpreter.RegisterFunction('GETMAXCOLOR', 0, 0,@API_GETMAXCOLOR);
+ QBInterpreter.RegisterFunction('GETCOLORR', 3, 3,@API_GETCOLORR);
+ QBInterpreter.RegisterFunction('GETCOLORG', 3, 3,@API_GETCOLORG);
+ QBInterpreter.RegisterFunction('GETCOLORB', 3, 3,@API_GETCOLORB);
+end;
+
+
+begin
 
 end.
 

@@ -24,7 +24,7 @@ procedure rm_cg_writeln;
 procedure rm_cg_write_byte(value : byte);
 procedure rm_cg_write_integer(value : integer);
 
-procedure rm_getselectarea(var active,x1,y1,x2,y2 : integer);
+procedure rm_getcliparea(var active,x1,y1,x2,y2 : integer);
 
 function  rm_getmaxcolor : integer;
 
@@ -33,6 +33,17 @@ procedure rm_setcolorrgb(index : integer; r,g,b : byte);
 
 procedure rm_SetPaletteMode(mode : integer);
 function rm_GetPaletteMode : integer;
+
+procedure rm_settileproperty(x,y : integer;tilepropertyname,value : string);
+function rm_gettileproperty(x,y : integer;tilepropertyname : string) : string;
+function rm_gettileheight : integer;
+function rm_gettilewidth : integer;
+function rm_getmapheight(index : integer) : integer;
+function rm_getmapwidth : integer;
+function rm_gettilecount : integer;
+
+
+procedure rm_getmapselectarea(var active,x1,y1,x2,y2 : integer);
 
 
 implementation
@@ -75,8 +86,6 @@ procedure rm_setcolorrgb(index : integer; r,g,b : byte);
 begin
   SetColorRGB(index,r,g,b);
 end;
-
-
 
 
 function rm_cg_open(filename : string) : boolean;
@@ -179,7 +188,7 @@ begin
   MWWriteInteger(cg,value);
 end;
 
-procedure rm_getselectarea(var active,x1,y1,x2,y2 : integer);
+procedure rm_getcliparea(var active,x1,y1,x2,y2 : integer);
 var
   ca : TClipAreaRec;
 begin
@@ -215,7 +224,7 @@ begin
   rm_gettilewidth:=MapCoreBase.GetMapTileWidth(MapCoreBase.GetCurrentMap);
 end;
 
-function rm_gettileheight(index : integer) : integer;
+function rm_gettileheight : integer;
 begin
   rm_gettileheight:=MapCoreBase.GetMapTileHeight(MapCoreBase.GetCurrentMap);
 end;
@@ -252,6 +261,32 @@ begin
   end;
 end;
 
+function rm_gettilecount : integer;
+begin
+    result:=ImageThumbBase.GetCount;
+end;
+
+procedure rm_getmapselectarea(var active,x1,y1,x2,y2 : integer);
+var
+  ca : MapClipAreaRec;
+begin
+  active:=0;
+  x1:=0;
+  x2:=0;
+  y1:=0;
+  y2:=0;
+
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  if (ca.status=1) and (MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap)=1) then
+  begin
+    active:=1;
+    x1:=ca.x;
+    x2:=ca.x2;
+    y1:=ca.y;
+    y2:=ca.y2;
+  end;
+end;
+
 
 procedure rm_showmessage(const aMsg : string);
 begin
@@ -267,7 +302,6 @@ function rm_GetPaletteMode : integer;
 begin
    rm_GetPaletteMode:=GetPaletteMode;
 end;
-
 
 end.
 
