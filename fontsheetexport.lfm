@@ -9,6 +9,7 @@ object FontSheetExportForm: TFontSheetExportForm
   OnActivate = FormActivate
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object Splitter1: TSplitter
     AnchorSideLeft.Control = Owner

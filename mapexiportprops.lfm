@@ -7,6 +7,7 @@ object MapExportForm: TMapExportForm
   Caption = 'Map Export Properties'
   ClientHeight = 265
   ClientWidth = 358
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object EditName: TEdit
     Left = 96

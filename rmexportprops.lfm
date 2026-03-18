@@ -7,7 +7,8 @@ object ImageExportForm: TImageExportForm
   Caption = 'Image Export Properties'
   ClientHeight = 343
   ClientWidth = 337
-  LCLVersion = '2.0.10.0'
+  Position = poOwnerFormCenter
+  LCLVersion = '3.4.0.0'
   object EditName: TEdit
     Left = 83
     Height = 23
@@ -79,10 +80,10 @@ object ImageExportForm: TImageExportForm
     Top = 179
     Width = 211
     ItemHeight = 15
-    OnChange = ComboPaletteChange
     ParentFont = False
     Style = csDropDownList
     TabOrder = 4
+    OnChange = ComboPaletteChange
   end
   object Button1: TButton
     Left = 243
@@ -90,9 +91,9 @@ object ImageExportForm: TImageExportForm
     Top = 288
     Width = 75
     Caption = 'OK'
-    OnClick = Button1Click
     ParentFont = False
     TabOrder = 7
+    OnClick = Button1Click
   end
   object CompilerType: TLabel
     Left = 26
@@ -109,10 +110,10 @@ object ImageExportForm: TImageExportForm
     Top = 64
     Width = 211
     ItemHeight = 15
-    OnChange = ComboCompilerChange
     ParentFont = False
     Style = csDropDownList
     TabOrder = 1
+    OnChange = ComboCompilerChange
   end
   object EditWidth: TEdit
     Left = 83

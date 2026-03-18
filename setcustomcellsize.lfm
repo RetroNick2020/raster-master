@@ -7,6 +7,7 @@ object SetCustomCellSizeForm: TSetCustomCellSizeForm
   Caption = 'Set Custom Cell Size'
   ClientHeight = 179
   ClientWidth = 320
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object SpinEditCellWidth: TSpinEditEx
     Left = 80

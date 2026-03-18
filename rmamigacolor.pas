@@ -153,10 +153,8 @@ end;
 
 
 procedure TRMAmigaColorDialog.InitColorBox2;
-var
-  cr : TRMColorRec;
- begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+begin
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=1;
   AmigaColorPalette.ButtonHeight:=60;
@@ -171,10 +169,8 @@ var
 end;
 
 procedure TRMAmigaColorDialog.InitColorBox4;
-var
-  cr : TRMColorRec;
- begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+begin
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=2;
   AmigaColorPalette.ButtonHeight:=60;
@@ -190,10 +186,8 @@ end;
 
 
 procedure TRMAmigaColorDialog.InitColorBox8;
-var
-  cr : TRMColorRec;
- begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+begin
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=4;
   AmigaColorPalette.ButtonHeight:=60;
@@ -208,10 +202,8 @@ var
 end;
 
 procedure TRMAmigaColorDialog.InitColorBox16;
-var
-  cr : TRMColorRec;
- begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+begin
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=8;
   AmigaColorPalette.ButtonHeight:=60;
@@ -226,10 +218,8 @@ var
 end;
 
 procedure TRMAmigaColorDialog.InitColorBox32;
-var
-  cr : TRMColorRec;
 begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=16;
   AmigaColorPalette.ButtonHeight:=60;

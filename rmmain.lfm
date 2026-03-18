@@ -1,11 +1,11 @@
 object RMMainForm: TRMMainForm
   Left = 241
-  Height = 822
+  Height = 802
   Top = 240
   Width = 1491
   Align = alClient
   Caption = 'Raster Master'
-  ClientHeight = 822
+  ClientHeight = 802
   ClientWidth = 1491
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
@@ -24,11 +24,11 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1253
-    Height = 822
+    Height = 802
     Top = 0
     Width = 238
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 822
+    ClientHeight = 802
     ClientWidth = 238
     TabOrder = 5
     object RMPanel: TPanel
@@ -39,7 +39,7 @@ object RMMainForm: TRMMainForm
       Cursor = crNo
       Left = 64
       Height = 121
-      Top = 690
+      Top = 670
       Width = 158
       Anchors = [akRight, akBottom]
       BorderSpacing.Right = 15
@@ -66,15 +66,17 @@ object RMMainForm: TRMMainForm
         Transparent = True
       end
     end
-    object ColorBox: TShape
+    object ColorBox1: TShape
       Left = 8
       Height = 64
       Top = 8
       Width = 60
       Brush.Color = clSkyBlue
       ParentShowHint = False
-      OnMouseDown = ColorBoxMouseDown
-      OnMouseEnter = ColorBoxMouseEnter
+      Pen.Color = clRed
+      Pen.Width = 3
+      OnMouseDown = ColorBox1MouseDown
+      OnMouseEnter = ColorBox1MouseEnter
       ShowHint = True
     end
     object ColorPalette1: TColorPalette
@@ -95,6 +97,17 @@ object RMMainForm: TRMMainForm
       ParentShowHint = False
       ShowHint = True
     end
+    object ColorBox2: TShape
+      Left = 72
+      Height = 64
+      Top = 8
+      Width = 56
+      Brush.Color = clSkyBlue
+      ParentShowHint = False
+      OnMouseDown = ColorBox2MouseDown
+      OnMouseEnter = ColorBox2MouseEnter
+      ShowHint = True
+    end
   end
   object MiddleBottomPanel: TPanel
     AnchorSideLeft.Control = LeftHSplitter
@@ -105,19 +118,19 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 307
-    Height = 710
+    Height = 690
     Top = 112
     Width = 935
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 710
+    ClientHeight = 690
     ClientWidth = 935
     TabOrder = 1
     object ZoomScrollBox: TScrollBox
       AnchorSideLeft.Control = MiddleBottomPanel
       AnchorSideTop.Control = MiddleBottomPanel
       Left = 0
-      Height = 710
+      Height = 690
       Top = 0
       Width = 935
       HorzScrollBar.Increment = 93
@@ -129,7 +142,7 @@ object RMMainForm: TRMMainForm
       Align = alClient
       Anchors = [akRight, akBottom]
       BorderStyle = bsNone
-      ClientHeight = 710
+      ClientHeight = 690
       ClientWidth = 935
       TabOrder = 0
       object ZoomPaintBox: TPaintBox
@@ -158,12 +171,12 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 822
+    Height = 802
     Top = 0
     Width = 307
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
-    ClientHeight = 822
+    ClientHeight = 802
     ClientWidth = 307
     TabOrder = 0
     object LeftVSplitter: TSplitter
@@ -176,8 +189,8 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
-      Top = 269
-      Width = 305
+      Top = 262
+      Width = 306
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
@@ -193,8 +206,8 @@ object RMMainForm: TRMMainForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 0
-      Height = 540
-      Top = 282
+      Height = 527
+      Top = 275
       Width = 296
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 11
@@ -216,13 +229,13 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = LeftVSplitter
       Left = 0
-      Height = 269
+      Height = 262
       Top = 0
       Width = 292
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Right = 15
       BevelOuter = bvNone
-      ClientHeight = 269
+      ClientHeight = 262
       ClientWidth = 292
       TabOrder = 0
       object ActualBox: TImage
@@ -239,7 +252,7 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 296
-    Height = 822
+    Height = 802
     Top = 0
     Width = 11
     Align = alNone
@@ -253,7 +266,7 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 1242
-    Height = 822
+    Height = 802
     Top = 0
     Width = 11
     Align = alNone

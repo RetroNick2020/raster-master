@@ -17,6 +17,7 @@ type
     CustWidthLabel: TLabel;
     SpinEditCustomHeight: TSpinEditEx;
     SpinEditCustomWidth: TSpinEditEx;
+    procedure FormCreate(Sender: TObject);
     procedure OKButtonClick(Sender: TObject);
   private
 
@@ -36,6 +37,11 @@ implementation
 procedure TSetCustomMapSizeForm.OKButtonClick(Sender: TObject);
 begin
   modalresult:= mrOk;
+end;
+
+procedure TSetCustomMapSizeForm.FormCreate(Sender: TObject);
+begin
+
 end;
 
 end.

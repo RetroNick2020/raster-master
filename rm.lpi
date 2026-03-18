@@ -13,8 +13,9 @@
       <UseXPManifest Value="True"/>
       <XPManifest>
         <DpiAware Value="True"/>
+        <TextName Value="Raster Master"/>
+        <TextDesc Value="Sprite/Icon Editor"/>
       </XPManifest>
-      <Icon Value="0"/>
       <Resources Count="35">
         <Resource_0 FileName="Images\CIRC1.BMP" Type="BITMAP" ResourceName="CIRC1"/>
         <Resource_1 FileName="Images\CIRC2.BMP" Type="BITMAP" ResourceName="CIRC2"/>

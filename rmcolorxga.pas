@@ -27,9 +27,10 @@ type
     TrackBar3: TTrackBar;
     XGAIndexLabel: TLabel;
 
-     procedure Button1Click(Sender: TObject);
+
     procedure ColorPaletteColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
+
     procedure OKClick(Sender: TObject);
 
     procedure InitColorBox16;
@@ -116,16 +117,10 @@ begin
    UpdateTrackValues;
 end;
 
-procedure TRMXgaColorDialog.Button1Click(Sender: TObject);
-begin
-
-end;
 
 procedure TRMXgaColorDialog.InitColorBox16;
-var
-  cr : TRMColorRec;
  begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   ColorPalette.ColumnCount:=8;
   ColorPalette.ButtonHeight:=60;
@@ -143,11 +138,8 @@ var
 end;
 
 procedure TRMXgaColorDialog.InitColorBox256;
-var
-  cr : TRMColorRec;
-
 begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   ColorPalette.ColumnCount:=32;
   ColorPalette.ButtonHeight:=15;

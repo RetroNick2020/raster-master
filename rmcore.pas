@@ -7,9 +7,10 @@ uses
   Classes, Graphics, SysUtils,GraphUtil,Math,bits;
 
 
-//const
-//  MaxImagePixelWidth = 256;
-//  MaxImagePixelHeight = 256;
+Const
+ cbColorBox1 = 1;
+ cbColorBox2 = 2;
+
 
 Type
   TRMColorRec = Record
@@ -29,8 +30,6 @@ Type
                   CBPaletteBuf : TRMPaletteBuf;  //clipboard palette - use for copy and paste palette
                   CBColorCount : integer;
                  CBPalettemode : integer;
-
-
                public
                Constructor Create;
                procedure Init;
@@ -73,8 +72,6 @@ Type
                procedure UpToVGA;
                procedure UpToEGA;
                procedure UpToCGA;
-
-
   end;
 
 
@@ -94,7 +91,11 @@ Type
                   ImageBuf      : TRMImageBuf;
                   TempImageBuf  : TRMImageBuf;
                   UndoImageBuf  : TRMImageBuf;
-                  CurColor      : integer; // current color
+                  CurColor1      : integer; // current color1
+                  CurColor2     : integer; // current color2
+                  CurColorBox   : integer; // which colorbox is currently seleted (colorbox0 or colorbox1)
+
+                  ColorEx       : integer; //for PutPixelEx
 
                   ImgBufWidth         : integer;
                   ImgBufHeight        : integer;
@@ -105,11 +106,22 @@ Type
                  procedure Init;
                  procedure PutPixel(x,y,Color : Integer);
                  procedure PutPixel(x,y : integer);
+                 procedure PutPixelEx(x,y : integer);
+
                  function GetPixel(x,y : Integer) : Integer;
                  function GetPixelTColor(x,y : Integer) : TColor;
 
-                 procedure SetCurColor(Color : integer);
-                 function GetCurColor : integer;
+                 procedure SetColorEx(Color : integer);
+
+                 procedure SetCurColor1(Color : integer);
+                 function GetCurColor1 : integer;
+
+                 procedure SetCurColor2(Color : integer);     // set current color for ColorBox1
+                 function GetCurColor2 : integer;
+
+                 procedure SetCurColorBox(ColorBox : integer);  //  set current Color Box, 1 or 2
+                 function GetCurColorBox : integer;
+
 
                  procedure ClearBuf(Color : integer);
                  procedure CopyToUndoBuf;
@@ -845,8 +857,6 @@ begin
   CBPaletteBuf:=P;
 end;
 
-
-
 procedure TRMPalette.AddColor(r,g,b : integer);
 begin
   if (ColorCount > -1) AND (ColorCount < 256) then
@@ -1129,18 +1139,20 @@ begin
 
 end;
 
-
 Constructor TRMCoreBase.create;
 begin
-    Palette:=TRMPalette.Create;
-    Init;
+  Palette:=TRMPalette.Create;
+  Init;
 end;
 
 procedure TRMCoreBase.Init;
 begin
   SetWidth(32);
   SetHeight(32);
-  SetCurColor(1);
+  SetCurColor1(1);
+  SetCurColor2(1);
+  SetCurColorBox(1);
+  SetColorEx(1);
   ClearBuf(0);
   CopyToUndoBuf;
 end;
@@ -1176,14 +1188,39 @@ begin
     GetUndoImageBufPtr:=@UndoImageBuf;
 end;
 
-procedure TRMCoreBase.SetCurColor(Color : integer);
+procedure TRMCoreBase.SetCurColor1(Color : integer);
 begin
-    CurColor:=Color;
+    CurColor1:=Color;
 end;
 
-function TRMCoreBase.GetCurColor : integer;
+procedure TRMCoreBase.SetColorEx(Color : integer);
 begin
-    GetCurColor:=CurColor;
+    ColorEx:=Color;
+end;
+
+function TRMCoreBase.GetCurColor1 : integer;
+begin
+    GetCurColor1:=CurColor1;
+end;
+
+procedure TRMCoreBase.SetCurColor2(Color : integer);
+begin
+    CurColor2:=Color;
+end;
+
+function TRMCoreBase.GetCurColor2 : integer;
+begin
+    GetCurColor2:=CurColor2;
+end;
+
+procedure TRMCoreBase.SetCurColorBox(ColorBox : integer);
+begin
+  CurColorBox:=ColorBox;
+end;
+
+function TRMCoreBase.GetCurColorBox : integer;
+begin
+  GetCurColorBox:=CurColorBox;
 end;
 
 procedure TRMCoreBase.ClearBuf(Color : Integer);
@@ -1208,8 +1245,16 @@ end;
 procedure TRMCoreBase.PutPixel(x,y : Integer);
 begin
   if (x<0) or (x > (ImgBufWidth-1)) or (y<0) or (y > (ImgBufHeight-1))  then exit;
-  ImageBuf.Pixel[x,y]:=CurColor;
+//  ImageBuf.Pixel[x,y]:=CurColor1;
+  ImageBuf.Pixel[x,y]:=ColorEx;
 end;
+
+procedure TRMCoreBase.PutPixelEx(x,y : Integer);
+begin
+  if (x<0) or (x > (ImgBufWidth-1)) or (y<0) or (y > (ImgBufHeight-1))  then exit;
+  ImageBuf.Pixel[x,y]:=ColorEx;
+end;
+
 
 function TRMCoreBase.GetPixel(x,y : Integer) : Integer;
 begin

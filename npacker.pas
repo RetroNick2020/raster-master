@@ -39,16 +39,16 @@ function nPackRow(var unpackedBuf: LineBufType; BufferOffset : Word;
 //if n is 0 to 127 - read n+1 chracters fron stream
 //if n is -1 to -127 repeat next byte in stream abs(n)+1 , if we add 255 can can get rid of negative values and just use Byte
 var
- count,i,tc,rc : integer;
+ i,tc,rc : integer;
  TempBuf : array[0..130] of byte;
- newvalue,lastvalue : integer;
+ lastvalue : integer;
  packedSize : integer;
 begin
  packedSize:=0;
  tc:=0;
  rc:=0;
  FillChar(TempBuf,sizeof(TempBuf),0);
- newvalue:=-1;
+ //newvalue:=-1;
  lastvalue:=-1;
  packedsize:=0;
 // aaababbb

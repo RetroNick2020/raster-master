@@ -1,19 +1,20 @@
 object RMXgaColorDialog: TRMXgaColorDialog
-  Left = 599
+  Left = 500
   Height = 300
-  Top = 360
+  Top = 473
   Width = 514
   BorderStyle = bsDialog
   Caption = 'XGA Color'
   ClientHeight = 300
   ClientWidth = 514
-  LCLVersion = '2.0.10.0'
+  Position = poOwnerFormCenter
+  LCLVersion = '3.4.0.0'
   object ColorPalette: TColorPalette
     AnchorSideRight.Side = asrBottom
     Left = 16
     Height = 120
     Top = 8
-    Width = 475
+    Width = 474
     ButtonHeight = 60
     ButtonWidth = 60
     ColumnCount = 8
@@ -147,8 +148,8 @@ object RMXgaColorDialog: TRMXgaColorDialog
     BorderSpacing.Right = 8
     BorderSpacing.Bottom = 8
     Caption = 'OK'
-    OnClick = OKClick
     ParentFont = False
     TabOrder = 3
+    OnClick = OKClick
   end
 end

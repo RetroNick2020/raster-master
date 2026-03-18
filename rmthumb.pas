@@ -32,6 +32,8 @@ type
              Width       : Integer;
              Height      : Integer;
              CurColor    : Integer;
+             CurColor2   : integer;
+             ColorBox    : Integer;
              DrawTool    : integer;
              ClipArea    : TClipAreaRec;
              GridArea    : TGridAreaRec;
@@ -274,7 +276,6 @@ end;
 
 procedure TImageThumb.CreateNewImageProperties(index,width,height : integer);
 var
-
  i,j : integer;
 begin
 //  width:=RMCoreBase.GetWidth;
@@ -292,6 +293,10 @@ begin
   ImageMain[index].Props.PaletteMode:=PaletteModeVGA;
   ImageMain[index].Props.ColorCount:= 16;
   ImageMain[index].Props.CurColor:=1;  //blue in ega/vga mode
+  ImageMain[index].Props.CurColor2:=1;
+
+  ImageMain[index].Props.ColorBox:=1;  //selected ColorBox
+
   ImageMain[index].Props.DrawTool:=DrawShapePencil;
 
   ImageMain[index].Props.ClipArea.status:=0;
@@ -399,7 +404,10 @@ begin
   RMCoreBase.Palette.GetPalette(ImageMain[index].Props.Palette);
   ImageMain[index].Props.PaletteMode:=RMCoreBase.Palette.GetPaletteMode;
   ImageMain[index].Props.ColorCount:= RMCoreBase.Palette.GetColorCount;
-  ImageMain[index].Props.CurColor:=RMCoreBase.GetCurColor;
+  ImageMain[index].Props.CurColor:=RMCoreBase.GetCurColor1;
+  ImageMain[index].Props.CurColor2:=RMCoreBase.GetCurColor2;
+  ImageMain[index].Props.ColorBox:=RMCoreBase.GetCurColorBox;
+
   ImageMain[index].Props.DrawTool:=RMDrawTools.GetDrawTool;
 
   RMDrawTools.GetClipAreaCoords(ImageMain[index].Props.ClipArea);
@@ -430,7 +438,9 @@ begin
   RMCoreBase.Palette.SetPalette(ImageMain[index].Props.Palette);
   RMCoreBase.Palette.SetPaletteMode(ImageMain[index].Props.PaletteMode);
   RMCoreBase.Palette.SetColorCount(ImageMain[index].Props.ColorCount);
-  RMCoreBase.SetCurColor(ImageMain[index].Props.CurColor);
+  RMCoreBase.SetCurColor1(ImageMain[index].Props.CurColor);
+  RMCoreBase.SetCurColor2(ImageMain[index].Props.CurColor2);
+  RMCoreBase.SetCurColorBox(ImageMain[index].Props.ColorBox);
 
   RMDrawTools.SetDrawTool(ImageMain[index].Props.DrawTool);
   RMDrawTools.SetClipAreaCoords(ImageMain[index].Props.ClipArea);
@@ -479,7 +489,6 @@ begin
   ImageMain[index].Props.Palette[colorIndex].g:=cr.g;
   ImageMain[index].Props.Palette[colorIndex].b:=cr.b;
 end;
-
 
 function TImageThumb.GetWidth(index : integer) : integer;
 begin

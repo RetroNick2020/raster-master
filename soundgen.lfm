@@ -8,7 +8,7 @@ object SoundGeneratorForm: TSoundGeneratorForm
   ClientWidth = 706
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  Position = poScreenCenter
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object Button1: TButton
     Left = 8

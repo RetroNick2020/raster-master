@@ -7,6 +7,8 @@ object SetCustomMapSizeForm: TSetCustomMapSizeForm
   Caption = 'Set Custom Map Size'
   ClientHeight = 166
   ClientWidth = 313
+  OnCreate = FormCreate
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object SpinEditCustomWidth: TSpinEditEx
     Left = 80

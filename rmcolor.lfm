@@ -1,37 +1,37 @@
 object RMEGAColorDialog: TRMEGAColorDialog
   Left = 733
-  Height = 337
+  Height = 270
   Top = 337
-  Width = 626
+  Width = 501
   BorderStyle = bsDialog
   Caption = 'EGA Palette'
-  ClientHeight = 337
-  ClientWidth = 626
-  DesignTimePPI = 120
+  ClientHeight = 270
+  ClientWidth = 501
   OnCreate = FormCreate
-  LCLVersion = '2.0.10.0'
+  Position = poOwnerFormCenter
+  LCLVersion = '3.4.0.0'
   object OK: TButton
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 519
-    Height = 37
-    Top = 290
-    Width = 97
+    Left = 415
+    Height = 30
+    Top = 232
+    Width = 78
     Anchors = [akRight, akBottom]
-    BorderSpacing.Right = 10
-    BorderSpacing.Bottom = 10
+    BorderSpacing.Right = 8
+    BorderSpacing.Bottom = 8
     Caption = 'OK'
-    OnClick = OKClick
     TabOrder = 0
+    OnClick = OKClick
   end
   object ColorPalette1: TColorPalette
     AnchorSideRight.Side = asrBottom
-    Left = 16
+    Left = 13
     Height = 26
-    Top = 32
-    Width = 488
+    Top = 26
+    Width = 386
     ButtonHeight = 25
     ButtonWidth = 25
     ColumnCount = 16
@@ -43,24 +43,24 @@ object RMEGAColorDialog: TRMEGAColorDialog
     ParentColor = False
   end
   object Shape1: TShape
-    Left = 24
-    Height = 81
-    Top = 184
-    Width = 81
+    Left = 19
+    Height = 65
+    Top = 147
+    Width = 65
   end
   object EGAIndexLabel: TLabel
-    Left = 24
-    Height = 20
-    Top = 152
-    Width = 71
+    Left = 19
+    Height = 15
+    Top = 122
+    Width = 57
     Caption = 'EGA Index:'
     ParentColor = False
   end
   object TrackBar1: TTrackBar
-    Left = 143
-    Height = 39
-    Top = 184
-    Width = 253
+    Left = 114
+    Height = 31
+    Top = 147
+    Width = 202
     Max = 3
     OnChange = TrackBar1Change
     Position = 0
@@ -70,10 +70,10 @@ object RMEGAColorDialog: TRMEGAColorDialog
     TabOrder = 1
   end
   object TrackBar2: TTrackBar
-    Left = 143
-    Height = 39
-    Top = 216
-    Width = 253
+    Left = 114
+    Height = 31
+    Top = 173
+    Width = 202
     Max = 3
     OnChange = TrackBar2Change
     Position = 0
@@ -83,10 +83,10 @@ object RMEGAColorDialog: TRMEGAColorDialog
     TabOrder = 2
   end
   object TrackBar3: TTrackBar
-    Left = 143
-    Height = 39
-    Top = 246
-    Width = 253
+    Left = 114
+    Height = 31
+    Top = 197
+    Width = 202
     Max = 3
     OnChange = TrackBar3Change
     Position = 0
@@ -96,50 +96,50 @@ object RMEGAColorDialog: TRMEGAColorDialog
     TabOrder = 3
   end
   object Label1: TLabel
-    Left = 128
-    Height = 20
-    Top = 184
-    Width = 9
+    Left = 102
+    Height = 15
+    Top = 147
+    Width = 7
     Caption = 'R'
     ParentColor = False
   end
   object Label2: TLabel
-    Left = 128
-    Height = 20
-    Top = 216
-    Width = 10
+    Left = 102
+    Height = 15
+    Top = 173
+    Width = 8
     Caption = 'G'
     ParentColor = False
   end
   object Label3: TLabel
-    Left = 128
-    Height = 20
-    Top = 248
-    Width = 9
+    Left = 102
+    Height = 15
+    Top = 198
+    Width = 7
     Caption = 'B'
     ParentColor = False
   end
   object Label4: TLabel
-    Left = 407
-    Height = 20
-    Top = 184
-    Width = 9
+    Left = 326
+    Height = 15
+    Top = 147
+    Width = 7
     Caption = 'R'
     ParentColor = False
   end
   object Label5: TLabel
-    Left = 407
-    Height = 20
-    Top = 216
-    Width = 10
+    Left = 326
+    Height = 15
+    Top = 173
+    Width = 8
     Caption = 'G'
     ParentColor = False
   end
   object Label6: TLabel
-    Left = 407
-    Height = 20
-    Top = 248
-    Width = 9
+    Left = 326
+    Height = 15
+    Top = 198
+    Width = 7
     Caption = 'B'
     ParentColor = False
   end

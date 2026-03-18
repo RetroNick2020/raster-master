@@ -27,7 +27,8 @@ type
     ActionList1: TActionList;
     ActualBox: TImage;
     ActualPane: TPanel;
-    ColorBox: TShape;
+    ColorBox1: TShape;
+    ColorBox2: TShape;
     ColorPalette1: TColorPalette;
     TextDrawEdit: TEdit;
     FontDialog1: TFontDialog;
@@ -356,7 +357,10 @@ type
     procedure AqbPsetBitMapClick(Sender: TObject);
     procedure BAMPutDataClick(Sender: TObject);
     procedure BulkExportPNGClick(Sender: TObject);
-    procedure ColorBoxMouseEnter(Sender: TObject);
+    procedure ColorBox1MouseEnter(Sender: TObject);
+    procedure ColorBox2MouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure ColorBox2MouseEnter(Sender: TObject);
     procedure ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
     procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
@@ -455,7 +459,7 @@ type
     procedure PaletteVGA256Click(Sender: TObject);
     procedure PaletteEGAClick(Sender: TObject);
     procedure PencilDrawChange(Sender: TObject);
-    procedure ColorBoxMouseDown(Sender: TObject; Button: TMouseButton;
+    procedure ColorBox1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ToolRectangleMenuClick(Sender: TObject);
     procedure ToolScrollDownMenuClick(Sender: TObject);
@@ -514,7 +518,7 @@ type
 
        procedure UpdateToolFlipScrollMenu;
 
-       procedure UpdateColorBox;
+       procedure UpdateColorBoxes;
        procedure UpdateInfoBarXY(x,y : integer);
        procedure UpdateInfoBarDetail;
        procedure UpdateThumbview;
@@ -647,8 +651,10 @@ RenderBitMap2.SetSize(256,256);
  RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA256);
  LoadDefaultPalette;
 
- ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
- ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor;
+ //set the colors in the Color Boxes and Palette
+ ColorBox1.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor1];
+ ColorBox2.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor2];
+ ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor1;
 
  RMDrawTools.SetDrawTool(DrawShapePencil);
  ClearSelectedToolsMenu;
@@ -659,7 +665,7 @@ RenderBitMap2.SetSize(256,256);
 
  RMDrawTools.SetTextInfoText(TextDrawEdit.Text);
  RMDrawTools.SetTextInfoFont(RenderBitMap.Canvas.Font);
- RMDrawTools.SetTextInfoTColor(ColorBox.Brush.Color);
+ RMDrawTools.SetTextInfoTColor(ColorBox1.Brush.Color);
 
  ZoomX:=0;
  ZoomY:=0;
@@ -897,8 +903,8 @@ begin
   RMCoreBase.Palette.SetPaletteMode(PaletteModeMono);
   LoadDefaultPalette;
 
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -911,8 +917,8 @@ begin
   RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA0);
 
   LoadDefaultPalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -925,8 +931,8 @@ begin
   RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA1);
 
   LoadDefaultPalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -941,8 +947,8 @@ begin
   RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga2);
 
   LoadDefaultPalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -956,8 +962,8 @@ begin
  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga4);
 
  LoadDefaultPalette;
- RMCoreBase.SetCurColor(1);
- UpdateColorBox;
+ RMCoreBase.SetCurColor1(1);
+ UpdateColorBoxes;
  UpdateActualArea;
  UpdateZoomArea;
  UpdateThumbview;
@@ -971,8 +977,8 @@ begin
  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga8);
 
  LoadDefaultPalette;
- RMCoreBase.SetCurColor(1);
- UpdateColorBox;
+ RMCoreBase.SetCurColor1(1);
+ UpdateColorBoxes;
  UpdateActualArea;
  UpdateZoomArea;
  UpdateThumbview;
@@ -986,8 +992,8 @@ begin
   RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga16);
 
   LoadDefaultPalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -1001,8 +1007,8 @@ begin
  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga32);
 
  LoadDefaultPalette;
- RMCoreBase.SetCurColor(1);
- UpdateColorBox;
+ RMCoreBase.SetCurColor1(1);
+ UpdateColorBoxes;
  UpdateActualArea;
  UpdateZoomArea;
  UpdateThumbview;
@@ -1034,8 +1040,8 @@ begin
   RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
 
   LoadDefaultPalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -1047,8 +1053,8 @@ begin
   PaletteVGA256.Checked:=true;
   RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA256);
   LoadDefaultPalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -1061,8 +1067,8 @@ begin
   RMCoreBase.Palette.SetPaletteMode(PaletteModeEGA);
 
   LoadDefaultPalette;
-  RMCoreBase.SetCurColor(1);
-  UpdateColorBox;
+  RMCoreBase.SetCurColor1(1);
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -1073,10 +1079,24 @@ begin
   RMDrawTools.SetDrawTool(DrawShapePencil);
 end;
 
-procedure TRMMainForm.ColorBoxMouseDown(Sender: TObject; Button: TMouseButton;
+procedure TRMMainForm.ColorBox1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  EditColors;
+  //EditColors;
+  RMCoreBase.SetCurColorBox(cbColorBox1);
+  UpdateColorBoxes;
+end;
+
+procedure TRMMainForm.ColorBox2MouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+ RMCoreBase.SetCurColorBox(cbColorBox2);
+ UpdateColorBoxes;
+end;
+
+procedure TRMMainForm.ColorBox2MouseEnter(Sender: TObject);
+begin
+  ColorBox2.Hint:='Color 2'+LineEnding+ColIndexToHoverInfo(RMCoreBase.GetCurColor2,RMCoreBase.Palette.GetPaletteMode);
 end;
 
 procedure TRMMainForm.UpdateActualArea;
@@ -1116,10 +1136,32 @@ begin
   ZoomTrackBar.Position:=ZoomSize;
 end;
 
-procedure TRMMainForm.UpdateColorBox;
+procedure TRMMainForm.UpdateColorBoxes;
 begin
-  ColorBox.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor];
-  ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor;
+  ColorBox1.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor1];
+  ColorBox2.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor2];
+  ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor1;
+
+  //Reset Color Style to Normal - non picked
+  ColorBox1.Pen.Style:=psSolid;
+  ColorBox1.Pen.Color:=clBlack;
+  ColorBox1.Pen.Width:=1;
+
+  ColorBox2.Pen.Style:=psSolid;
+  ColorBox2.Pen.Color:=clBlack;
+  ColorBox2.Pen.Width:=1;
+
+  //make red outline for picked color box
+  if RMCoreBase.GetCurColorBox = cbColorBox1 then
+  begin
+    ColorBox1.Pen.Color:=clRed;
+    ColorBox1.Pen.Width:=3;
+  end
+  else
+  begin
+   ColorBox2.Pen.Color:=clRed;
+   ColorBox2.Pen.Width:=3;
+  end;
 end;
 
 procedure TRMMainForm.LoadDefaultPalette;
@@ -1417,10 +1459,12 @@ begin
   UpdateZoomArea;
 end;
 
-procedure TRMMainForm.ColorBoxMouseEnter(Sender: TObject);
+procedure TRMMainForm.ColorBox1MouseEnter(Sender: TObject);
 begin
-  ColorBox.Hint:=ColIndexToHoverInfo(RMCoreBase.GetCurColor,RMCoreBase.Palette.GetPaletteMode);
+  ColorBox1.Hint:='Color 1'+LineEnding+ColIndexToHoverInfo(RMCoreBase.GetCurColor1,RMCoreBase.Palette.GetPaletteMode);
 end;
+
+
 
 procedure TRMMainForm.ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
   var AText: String);
@@ -1479,9 +1523,32 @@ end;
 procedure TRMMainForm.ColorPalette1ColorPick(Sender: TObject; AColor: TColor;
   Shift: TShiftState);
 begin
-  ColorBox.Brush.Color:= AColor;
-  RMCoreBase.SetCurColor(ColorPalette1.PickedIndex);
-  RMDrawTools.SetTextInfoTColor(AColor);
+  if (ssShift in Shift) or (ssRight in Shift) then
+  begin
+    if RMCoreBase.GetCurColorBox = cbColorBox1 then
+    begin
+      ColorBox2.Brush.Color:= AColor;
+      RMCoreBase.SetCurColor2(ColorPalette1.PickedIndex);
+    end
+    else
+    begin
+     ColorBox1.Brush.Color:= AColor;
+     RMCoreBase.SetCurColor1(ColorPalette1.PickedIndex);
+     RMDrawTools.SetTextInfoTColor(AColor);
+    end;
+  end
+  else if RMCoreBase.GetCurColorBox = cbColorBox1 then
+  begin
+    ColorBox1.Brush.Color:= AColor;
+    RMCoreBase.SetCurColor1(ColorPalette1.PickedIndex);
+    RMDrawTools.SetTextInfoTColor(AColor); //when using the T (text) Tool
+  end
+  else
+  begin
+   ColorBox2.Brush.Color:= AColor;
+   RMCoreBase.SetCurColor2(ColorPalette1.PickedIndex);
+   ///RMDrawTools.SetTextInfoTColor(AColor);
+  end;
 end;
 
 //disable - not happy with zoom in with mouse wheel
@@ -1581,7 +1648,9 @@ end;
 // xy mouse down event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
 procedure TRMMainForm.ZPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
- DrawTool : integer;
+ DrawTool  : integer;
+ ColorIndex : integer;
+ DrawColor  : TColor;
 begin
   ZoomX:=RMDrawTools.GetZoomX(x);
   ZoomY:=RMDrawTools.GetZoomY(y);
@@ -1591,12 +1660,27 @@ begin
   OldZoomY:=ZoomY;
   DrawTool:=RMDRAWTools.GetDrawTool;
 
+  ColorIndex:=RMCoreBase.GetCurColor1;
+  DrawColor:=ColorBox1.Brush.Color;
+
+  if ssLeft in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor1;
+    DrawColor:=ColorBox1.Brush.Color;
+  end
+  else if ssRight in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor2;
+    DrawColor:=ColorBox2.Brush.Color;
+  end;
+  RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+
   if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
   begin
     if (ssLeft in Shift) and (ssShift in Shift) then
-      ReplaceAllFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor)
+      ReplaceAllFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,ColorIndex)
     else
-      ScanFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
+      ScanFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,ColorIndex);
 
       //   Fill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,RMCoreBase.GetCurColor);
    // Fill(ZoomX,ZoomY,RMCoreBase.GetCurColor);
@@ -1609,11 +1693,11 @@ begin
   begin
     UpdateRenderBitMap;
     RMDrawTools.CreateRandomSprayPoints;
-    RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+    RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,0);
     //this
-   // RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+   // RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox1.Brush.Color,DrawShapeModeCopy,DrawTool,0);
     ZoomPaintBox.Invalidate;
-    RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
+    RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopyToBuf,DrawTool,0);
  //   UpdateActualArea;
   end;
 end;
@@ -1635,24 +1719,40 @@ procedure TRMMainForm.ZPaintBoxMouseMoveXYTool(Sender: TObject; Shift: TShiftSta
   X, Y: Integer);
 var
  DrawTool : integer;
+ DrawColor : TColor;
+ ColorIndex : integer;
 begin
   DrawTool:=RMDRAWTools.GetDrawTool;
   ZoomX:=RMDrawTools.GetZoomX(x);
   ZoomY:=RMDrawTools.GetZoomY(y);
 
   UpdateInfoBarXY(x,y);
-  if not ((ssLeft in Shift) or (ssRight in Shift))  then exit;
+//  if not ((ssLeft in Shift) or (ssRight in Shift))  then exit;
+  DrawColor:=ColorBox1.Brush.Color;
+  ColorIndex:=RMCoreBase.GetCurColor1;
+  if ssLeft in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor1;
+    DrawColor:=ColorBox1.Brush.Color;
+  end
+  else if ssRight in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor2;
+    DrawColor:=ColorBox2.Brush.Color;
+  end
+  else exit;
+  RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
 
   if (ZoomX=OldZoomX) and (ZoomY=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
   OldZoomX:=ZoomX;
   OldZoomY:=ZoomY;
   RMDrawTools.CreateRandomSprayPoints;
 
-  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,0);
   //this
-  //RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,0);
+  //RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox1.Brush.Color,DrawShapeModeCopy,DrawTool,0);
   ZoomPaintBox.Invalidate;
-  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,0);
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopyToBuf,DrawTool,0);
 end;
 
 // xy mouse up event - this handles all the tools that just requires x,y coords only - pixel and spraypaint
@@ -1669,6 +1769,8 @@ procedure TRMMainForm.ZPaintBoxMouseDownXYX2Y2Tool(Sender: TObject; Button: TMou
   Shift: TShiftState; X, Y: Integer);
 var
  DrawTool : integer;
+ DrawColor : TColor;
+ ColorIndex : integer;
 begin
   ZoomX:=RMDrawTools.GetZoomX(x);
   ZoomY:=RMDrawTools.GetZoomY(y);
@@ -1687,11 +1789,25 @@ begin
     exit;
   end;
 
+  DrawColor:=ColorBox1.Brush.Color;
+  ColorIndex:=RMCoreBase.GetCurColor1;
+
+  if ssLeft in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor1;
+    DrawColor:=ColorBox1.Brush.Color;
+  end
+  else if ssRight in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor2;
+    DrawColor:=ColorBox2.Brush.Color;
+  end;
+  RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+
   UpdateRenderBitMap;
   RenderBitMap2.Canvas.CopyRect(rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height),RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
-  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,1);
   ZoomPaintBox.Invalidate;
-
 end;
 
 // xyx2y2 mouse move event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
@@ -1699,6 +1815,8 @@ procedure TRMMainForm.ZPaintBoxMouseMoveXYX2Y2Tool(Sender: TObject; Shift: TShif
   X, Y: Integer);
 var
  DrawTool : integer;
+ DrawColor : TColor;
+ ColorIndex : integer;
 begin
   if not ((ssLeft in Shift) or (ssRight in Shift)) then UpdateInfoBarXY(x,y);    // update info when button is up
   if (OldZoomX=-1) or (OldZoomY=-1) then exit;
@@ -1721,9 +1839,24 @@ begin
     ZoomPaintBox.Invalidate;
     exit;
   end;
+
+  DrawColor:=ColorBox1.Brush.Color;
+  ColorIndex:=RMCoreBase.GetCurColor1;
+  if ssLeft in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor1;
+    DrawColor:=ColorBox1.Brush.Color;
+  end
+  else if ssRight in Shift then
+  begin
+    ColorIndex:=RMCoreBase.GetCurColor2;
+    DrawColor:=ColorBox2.Brush.Color;
+  end;
+  RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+
   //UpdateRenderBitMap;
   RenderBitMap.Canvas.CopyRect(rect(0,0,RenderBitMap.Width,RenderBitMap.Height),RenderBitMap2.Canvas,rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height));
-  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopy,DrawTool,1);
   ZoomPaintBox.Invalidate;
 end;
 
@@ -1732,13 +1865,31 @@ procedure TRMMainForm.ZPaintBoxMouseUpXYX2Y2Tool(Sender: TObject; Button: TMouse
   Shift: TShiftState; X, Y: Integer);
 var
  DrawTool : integer;
+ DrawColor : TColor;
+ //ColorIndex : Integer;
 begin
   if (OldZoomX=-1) or (OldZoomY=-1) then exit;       //prevent right clicking from outsize of zoom area while moving into zoom area creates unwanted event - checking the coors allows to jump out with out drawing garbage
   OldZoomX:=-1;
   OldZoomY:=-1;
   DrawTool:=RMDRAWTools.GetDrawTool;
-  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,1);
-  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
+
+  DrawColor:=ColorBox1.Brush.Color;
+ // ColorIndex:=RMCoreBase.GetCurColor1;
+
+  if ssLeft in Shift then
+  begin
+//    ColorIndex:=RMCoreBase.GetCurColor1;
+    DrawColor:=ColorBox1.Brush.Color;
+  end
+  else if ssRight in Shift then
+  begin
+ //   ColorIndex:=RMCoreBase.GetCurColor2;
+    DrawColor:=ColorBox2.Brush.Color;
+  end;
+//  RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopyToBuf,DrawTool,1);
+  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopy,DrawTool,1);
  // UpdateActualArea;
 end;
 
@@ -1790,11 +1941,19 @@ end;
 procedure TRMMainForm.ZoomPaintBoxClick(Sender: TObject);
 var
   DrawTool : integer;
+  DrawColor : TColor;
+  ColorIndex : integer;
 begin
   DrawTool:=RMDRAWTools.GetDrawTool;
   if DrawTool <> DrawShapeText then exit;
-  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,ColorBox.Brush.Color,DrawShapeModeCopy,DrawTool,1);
-  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,ColorBox.Brush.Color,DrawShapeModeCopyToBuf,DrawTool,1);
+
+  DrawColor:=ColorBox1.Brush.Color;
+  ColorIndex:=RMCoreBase.GetCurColor1;
+
+  RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,1);
+  RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopyToBuf,DrawTool,1);
   ZoomPaintBox.Invalidate;
 end;
 
@@ -1804,7 +1963,7 @@ begin
   if RMDrawTools.GetDrawTool = DrawShapeText then
   begin
     RMDrawTools.SetTextInfoActive(true);
-    RMDrawTools.SetTextInfoTColor(ColorBox.Brush.Color);
+    RMDrawTools.SetTextInfoTColor(ColorBox1.Brush.Color);
     ZoomPaintBox.Invalidate;
   end;
 end;
@@ -2106,7 +2265,7 @@ begin
       end;
       if lp = 1 then CoreToPalette;
       UpdateActualArea;
-      UpdateColorBox;
+      UpdateColorBoxes;
       UpDateZoomArea;
       UpdateThumbView;
    end;
@@ -2566,10 +2725,10 @@ begin
     if RMVGAColorDialog.ShowModal = mrOK then
     begin
        PI:=RMVGAColorDialog.GetPickedIndex;
-       RMCoreBase.SetCurColor(PI);
+       RMCoreBase.SetCurColor1(PI);
        ColorPalette1.PickedIndex:=PI;
 
-       ColorBox.Brush.Color:=RMVGAColorDialog.GetPickedColor;
+       ColorBox1.Brush.Color:=RMVGAColorDialog.GetPickedColor;
        RMVGAColorDialog.PaletteToCore;
        CoreToPalette;       //onscreen palette - not copying back to dialog
 
@@ -2586,10 +2745,10 @@ begin
        if RMXGAColorDialog.ShowModal = mrOK then
        begin
           PI:=RMXGAColorDialog.GetPickedIndex;
-          RMCoreBase.SetCurColor(PI);
+          RMCoreBase.SetCurColor1(PI);
           ColorPalette1.PickedIndex:=PI;
 
-          ColorBox.Brush.Color:=RMXGAColorDialog.GetPickedColor;
+          ColorBox1.Brush.Color:=RMXGAColorDialog.GetPickedColor;
           RMXGAColorDialog.PaletteToCore;
           CoreToPalette;       //onscreen palette - not copying back to dialog
 
@@ -2607,9 +2766,9 @@ begin
        PI:=RMEGAColorDialog.GetPickedIndex;
        if (PI > -1) then
        begin
-          ci:=RMCoreBase.GetCurColor;
+          ci:=RMCoreBase.GetCurColor1;
           ColorPalette1.Colors[ci]:=RMEGAColorDialog.GetPickedColor;
-          ColorBox.Brush.Color:=RMEGAColorDialog.GetPickedColor;
+          ColorBox1.Brush.Color:=RMEGAColorDialog.GetPickedColor;
           GetDefaultRGBEGA64(RMEGAColorDialog.GetPickedIndex, cr);
           RMCoreBase.Palette.SetColor(ci,cr);
           UpdateActualArea;
@@ -2630,10 +2789,10 @@ begin
     if RMAmigaColorDialog.ShowModal = mrOK then
     begin
        PI:=RMAmigaColorDialog.GetPickedIndex;
-       RMCoreBase.SetCurColor(PI);
+       RMCoreBase.SetCurColor1(PI);
        ColorPalette1.PickedIndex:=PI;
 
-       ColorBox.Brush.Color:=RMAmigaColorDialog.GetPickedColor;
+       ColorBox1.Brush.Color:=RMAmigaColorDialog.GetPickedColor;
        RMAmigaColorDialog.PaletteToCore;
        CoreToPalette;
        UpdateActualArea;
@@ -3152,8 +3311,8 @@ begin
  RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA256);
 
  LoadDefaultPalette;
- RMCoreBase.SetCurColor(1);
- UpdateColorBox;
+ RMCoreBase.SetCurColor1(1);
+ UpdateColorBoxes;
  UpdateActualArea;
  UpdateZoomArea;
  UpdateThumbview;
@@ -3166,8 +3325,8 @@ begin
  RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA);
 
  LoadDefaultPalette;
- RMCoreBase.SetCurColor(1);
- UpdateColorBox;
+ RMCoreBase.SetCurColor1(1);
+ UpdateColorBoxes;
  UpdateActualArea;
  UpdateZoomArea;
  UpdateThumbview;
@@ -3602,7 +3761,7 @@ begin
         exit;
      end;
      CoreToPalette;
-     UpdateColorBox;
+     UpdateColorBoxes;
      UpDateZoomArea;
      UpdateActualArea;
      UpdateThumbView;
@@ -3870,7 +4029,7 @@ begin
    ZoomSize:=RMDrawTools.GetZoomSize;
 
    CoreToPalette;
-   UpdateColorBox;
+   UpdateColorBoxes;
    UpdateToolSelectionIcons;      //calls updatetoolsmenu
    UpdatePalette;
    UpdatePaletteMenu;
@@ -3895,11 +4054,11 @@ begin
  RMCoreBase.SetWidth(ImgWidth);
  RMCoreBase.SetHeight(ImgHeight);
  RMCoreBase.ClearBuf(0);
- RMCoreBase.SetCurColor(1);
+ RMCoreBase.SetCurColor1(1);
  RMDrawTools.SetDrawTool(DrawShapePencil);
 
  UpdateToolSelectionIcons;
- UpdateColorBox;
+ UpdateColorBoxes;
  UpdateActualArea;
 
  RMDrawTools.SetClipStatus(0);
@@ -4180,7 +4339,7 @@ begin
   RMCoreBase.Palette.PasteFromCBToPalette;
   CoreToPalette;
   UpdatePalette;
-  UpdateColorBox;
+  UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -4247,7 +4406,7 @@ begin
       CopyScrollPositionFromCore;
 
       CoreToPalette;
-      UpdateColorBox;
+      UpdateColorBoxes;
       UpdateToolSelectionIcons;
       UpdatePalette;
       UpdatePaletteMenu;
@@ -4321,7 +4480,7 @@ begin
       RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
       ZoomSize:=RMDrawTools.GetZoomSize;
       CoreToPalette;
-      UpdateColorBox;
+      UpdateColorBoxes;
       UpdatePalette;
       UpdateActualArea;
       UpdateZoomArea;
@@ -4384,12 +4543,15 @@ begin
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
 
  RMCoreBase.ClearBuf(0);
- RMCoreBase.SetCurColor(1);
+ RMCoreBase.SetCurColor1(1);
+ RMCoreBase.SetCurColor2(1);
+ RMCoreBase.SetCurColorBox(cbColorBox1);
+
  RMDrawTools.SetDrawTool(DrawShapePencil);
  RMDrawTools.SetClipStatus(0);
  UpdateToolSelectionIcons;
 
- UpdateColorBox;
+ UpdateColorBoxes;
  UpdateActualArea;
  UpdateZoomArea;
 
@@ -4417,11 +4579,12 @@ procedure TRMMainForm.Clear;
 begin
  //  ClearClipAreaOutline;
  RMCoreBase.ClearBuf(0);
- RMCoreBase.SetCurColor(1);
+ RMCoreBase.SetCurColor1(1);
+ RMCoreBase.SetCurColor2(1);
  RMDrawTools.SetDrawTool(DrawShapePencil);
  UpdateToolSelectionIcons;
 
- UpdateColorBox;
+ UpdateColorBoxes;
  UpdateActualArea;
  RMDrawTools.SetClipStatus(0);
  RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);

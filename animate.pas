@@ -6,8 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, ExtCtrls,
-  ComCtrls, Menus, StdCtrls, Arrow,AnimBase,animationexport,rmthumb,rwpng,
-  fileprops,rwspriteanim,rmcodegen,rmconfig,rmclipboard, Types;
+  ComCtrls, Menus, AnimBase,animationexport,rmthumb,rwpng,
+  fileprops,rwspriteanim,rmcodegen,rmconfig,rmclipboard;
 
 type
 

@@ -7,6 +7,7 @@ object SetCustomTileSizeForm: TSetCustomTileSizeForm
   Caption = 'Set Custom Tile Size'
   ClientHeight = 180
   ClientWidth = 309
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object Button1: TButton
     Left = 216

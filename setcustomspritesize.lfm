@@ -7,6 +7,7 @@ object setcustomspritesizeform: Tsetcustomspritesizeform
   Caption = 'Set Custom Sprite Size'
   ClientHeight = 211
   ClientWidth = 320
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object SpinEditWidth: TSpinEditEx
     Left = 128

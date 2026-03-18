@@ -1661,9 +1661,7 @@ end;
 function WriteRGBXGFCodeToBuffer(var data : BufferRec;x,y,x2,y2,LanType,Mask : word; imagename:string):word;
 var
  omask   : integer;
- imageid : word;
 begin
-  imageId:=GetThumbIndex;
   omask:=GetMaskMode;
   SetMaskMode(Mask);
   case LanType of BAMLan: WriteBAMRGBCodeToBuffer(data,x,y,x2,y2,imagename);

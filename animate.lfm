@@ -9,6 +9,7 @@ object AnimationForm: TAnimationForm
   Menu = MainMenu1
   OnActivate = FormActivate
   OnCreate = FormCreate
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object Panel1: TPanel
     Left = 32
@@ -271,16 +272,16 @@ object AnimationForm: TAnimationForm
     end
   end
   object CurrentAnimationImageList: TImageList
-    Left = 808
-    Top = 592
+    Left = 712
+    Top = 312
   end
   object AnimThumbImageList: TImageList
-    Left = 792
-    Top = 520
+    Left = 640
+    Top = 312
   end
   object PopupMenu1: TPopupMenu
-    Left = 424
-    Top = 664
+    Left = 312
+    Top = 400
     object CopyMenu: TMenuItem
       Caption = 'Copy'
       OnClick = CopyMenuClick
@@ -300,15 +301,15 @@ object AnimationForm: TAnimationForm
   end
   object PopupMenu2: TPopupMenu
     Left = 224
-    Top = 664
+    Top = 400
     object CopyFromThumbView: TMenuItem
       Caption = 'Copy'
       OnClick = CopyFromThumbViewClick
     end
   end
   object PopupMenu3: TPopupMenu
-    Left = 816
-    Top = 664
+    Left = 408
+    Top = 400
     object NewAnimationMenu: TMenuItem
       Caption = 'New Animation'
       OnClick = NewAnimationMenuClick
@@ -416,16 +417,16 @@ object AnimationForm: TAnimationForm
     end
   end
   object SelectDirectoryDialog1: TSelectDirectoryDialog
-    Left = 384
-    Top = 328
+    Left = 408
+    Top = 312
   end
   object SaveDialog1: TSaveDialog
     Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
-    Left = 624
-    Top = 424
+    Left = 576
+    Top = 312
   end
   object OpenDialog1: TOpenDialog
-    Left = 616
-    Top = 344
+    Left = 504
+    Top = 312
   end
 end

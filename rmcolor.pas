@@ -90,7 +90,7 @@ var
   r,g,b : integer;
 begin
   PickedIndex:=-1;
-  SelectedColor:=RMCoreBase.GetCurColor;
+  SelectedColor:=RMCoreBase.GetCurColor1;
   r:=RMCoreBase.Palette.GetRed(SelectedColor);
   g:=RMCoreBase.Palette.GetGreen(SelectedColor);
   b:=RMCoreBase.Palette.GetBlue(SelectedColor);

@@ -7,7 +7,8 @@ object RMVgaColorDialog: TRMVgaColorDialog
   Caption = 'VGA Color'
   ClientHeight = 278
   ClientWidth = 506
-  LCLVersion = '2.0.10.0'
+  Position = poOwnerFormCenter
+  LCLVersion = '3.4.0.0'
   object ColorPalette: TColorPalette
     AnchorSideRight.Side = asrBottom
     Left = 13
@@ -138,9 +139,9 @@ object RMVgaColorDialog: TRMVgaColorDialog
     BorderSpacing.Right = 8
     BorderSpacing.Bottom = 8
     Caption = 'OK'
-    OnClick = OKClick
     ParentFont = False
     TabOrder = 3
+    OnClick = OKClick
   end
   object VGAIndexLabel: TLabel
     Left = 32

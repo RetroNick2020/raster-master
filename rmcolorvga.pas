@@ -124,10 +124,8 @@ begin
 end;
 
 procedure TRMVgaColorDialog.InitColorBox16;
-var
-  cr : TRMColorRec;
  begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   ColorPalette.ColumnCount:=8;
   ColorPalette.ButtonHeight:=60;
@@ -145,11 +143,8 @@ var
 end;
 
 procedure TRMVgaColorDialog.InitColorBox256;
-var
-  cr : TRMColorRec;
-
 begin
-  SelectedColor:=RMCoreBase.GetCurColor;
+  SelectedColor:=RMCoreBase.GetCurColor1;
   PickedIndex:=SelectedColor;
   ColorPalette.ColumnCount:=32;
   ColorPalette.ButtonHeight:=15;

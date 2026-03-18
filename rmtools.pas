@@ -388,7 +388,7 @@ var
 begin
   if mode = 2 then    //just plot the pixel to the internal buffer - no need to draw or zoom or actual area;
   begin
-    RMCoreBase.PutPixel(x,y);
+    RMCoreBase.PutPixelEx(x,y);
     exit;
   end;
 

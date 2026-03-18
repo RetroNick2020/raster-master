@@ -8,15 +8,16 @@ object FileProperties: TFileProperties
   ClientHeight = 314
   ClientWidth = 288
   OnCreate = FormCreate
-  LCLVersion = '2.0.10.0'
+  Position = poOwnerFormCenter
+  LCLVersion = '3.4.0.0'
   object OKButton: TButton
     Left = 184
     Height = 25
     Top = 264
     Width = 75
     Caption = 'OK'
-    OnClick = OKButtonClick
     TabOrder = 0
+    OnClick = OKButtonClick
   end
   object Label1: TLabel
     Left = 40
@@ -37,48 +38,48 @@ object FileProperties: TFileProperties
     Left = 40
     Height = 19
     Top = 48
-    Width = 81
+    Width = 79
     Caption = 'Color Index'
-    OnChange = ValueChange
     TabOrder = 1
+    OnChange = ValueChange
   end
   object ColorIndexValue: TEdit
     Left = 128
     Height = 23
     Top = 48
     Width = 32
-    OnChange = ValueChange
     TabOrder = 2
     Text = '0'
+    OnChange = ValueChange
   end
   object FuschiaCheckBox: TCheckBox
     Left = 40
     Height = 19
     Top = 80
-    Width = 165
+    Width = 163
     Caption = 'Fuschia (R=255 G=0 B=255)'
     Checked = True
-    OnChange = ValueChange
     State = cbChecked
     TabOrder = 3
+    OnChange = ValueChange
   end
   object CustomCheckBox: TCheckBox
     Left = 40
     Height = 19
     Top = 110
-    Width = 62
+    Width = 60
     Caption = 'Custom'
-    OnChange = ValueChange
     TabOrder = 4
+    OnChange = ValueChange
   end
   object RV: TEdit
     Left = 40
     Height = 23
     Top = 160
     Width = 32
-    OnChange = ValueChange
     TabOrder = 5
     Text = '0'
+    OnChange = ValueChange
   end
   object R: TLabel
     Left = 40
@@ -101,9 +102,9 @@ object FileProperties: TFileProperties
     Height = 23
     Top = 160
     Width = 32
-    OnChange = ValueChange
     TabOrder = 6
     Text = '0'
+    OnChange = ValueChange
   end
   object B: TLabel
     Left = 120
@@ -118,9 +119,9 @@ object FileProperties: TFileProperties
     Height = 23
     Top = 160
     Width = 32
-    OnChange = ValueChange
     TabOrder = 7
     Text = '0'
+    OnChange = ValueChange
   end
   object A: TLabel
     Left = 160
@@ -135,17 +136,17 @@ object FileProperties: TFileProperties
     Height = 23
     Top = 160
     Width = 32
-    OnChange = ValueChange
     TabOrder = 8
     Text = '0'
+    OnChange = ValueChange
   end
   object TextToClipboardCheckBox: TCheckBox
     Left = 40
     Height = 19
     Top = 208
-    Width = 174
+    Width = 172
     Caption = 'Export Text Files to Clipboard'
-    OnChange = TextToClipboardCheckBoxChange
     TabOrder = 9
+    OnChange = TextToClipboardCheckBoxChange
   end
 end

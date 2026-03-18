@@ -154,6 +154,7 @@ type
     procedure ClearMapClick(Sender: TObject);
     procedure MapListViewClick(Sender: TObject);
     procedure MapPaintBoxPaint(Sender: TObject);
+    procedure MapScrollBoxClick(Sender: TObject);
     procedure MenuDeleteAllClick(Sender: TObject);
 
     procedure MenuDeleteClick(Sender: TObject);
@@ -715,6 +716,11 @@ begin
   if RenderDrawToolShape  then DrawItem(DrawTool,MapX,MapY,MapX2,MapY2,CTile.ImageIndex,0);
   if MapCoreBase.GetMapGridStatus(MapCoreBase.GetCurrentMap) = 1 then DrawGrid;
   if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then DrawOverLayOnClipArea;
+end;
+
+procedure TMapEdit.MapScrollBoxClick(Sender: TObject);
+begin
+
 end;
 
 procedure TMapEdit.MenuDeleteAllClick(Sender: TObject);

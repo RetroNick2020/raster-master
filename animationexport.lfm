@@ -6,6 +6,7 @@ object AnimationExportForm: TAnimationExportForm
   Caption = 'Animation Export Properties'
   ClientHeight = 222
   ClientWidth = 388
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object EditName: TEdit
     Left = 120

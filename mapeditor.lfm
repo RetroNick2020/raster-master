@@ -14,6 +14,7 @@ object MapEdit: TMapEdit
   OnDestroy = FormDestroy
   OnShow = FormShow
   ParentDoubleBuffered = False
+  Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object LeftPanel: TPanel
     AnchorSideLeft.Control = Owner
@@ -516,6 +517,7 @@ object MapEdit: TMapEdit
       ClientWidth = 860
       ParentFont = False
       TabOrder = 0
+      OnClick = MapScrollBoxClick
       object MapPaintBox: TPaintBox
         AnchorSideLeft.Control = MapScrollBox
         AnchorSideTop.Control = MapScrollBox
