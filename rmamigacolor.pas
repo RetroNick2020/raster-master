@@ -27,10 +27,9 @@ type
     TrackBar3: TTrackBar;
     ColorIndexLabel: TLabel;
 
-    procedure AmigaColorPaletteClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
     procedure ColorPaletteColorPick(Sender: TObject; AColor: TColor;
       Shift: TShiftState);
+
     procedure FormCreate(Sender: TObject);
     procedure OKClick(Sender: TObject);
 
@@ -57,17 +56,13 @@ type
     procedure UpdateTrackValues;
     procedure UpDateColorChange;
     function GetPickedIndex : Integer;
+    procedure SetPickedIndex(index : Integer);
     function GetPickedColor : TColor;
     procedure PaletteToCore;
-    procedure CoreToPalette;
 
     private
-        SelectedColor : integer;
-        PickedIndex : integer;
-        pickedColor : TColor;
-
-  public
-
+      PickedIndex : integer;
+      pickedColor : TColor;
   end;
 
 var
@@ -79,8 +74,6 @@ implementation
 
 { TRMAmigaColorDialog }
 
-
-
 procedure TRMAmigaColorDialog.PaletteToCore;
 var
   i,count : integer;
@@ -88,19 +81,14 @@ var
   cr      : TRMColorRec;
 begin
   count:=AmigaColorPalette.ColorCount;
- // ShowMessage('count='+inttostr(count));
   for i:=0 to count-1 do
   begin
-     tc:=AmigaColorPalette.Colors[i];
-     cr.r:=Red(tc);
-     cr.g:=Green(tc);
-     cr.b:=blue(tc);
-     RMCoreBase.Palette.SetColor(i,cr);
+    tc:=AmigaColorPalette.Colors[i];
+    cr.r:=Red(tc);
+    cr.g:=Green(tc);
+    cr.b:=blue(tc);
+    RMCoreBase.Palette.SetColor(i,cr);
   end;
-end;
-
-procedure TRMAmigaColorDialog.CoreToPalette;
-begin
 end;
 
 procedure TRMAmigaColorDialog.UpdateTrackValues;
@@ -129,7 +117,6 @@ procedure TRMAmigaColorDialog.ColorPaletteColorPick(Sender: TObject; AColor: TCo
   Shift: TShiftState);
 begin
    PickedIndex:=AmigaColorPalette.PickedIndex;
- //  EGAIndexLabel.Caption:='EGA Index: '+IntToStr(PickedIndex);
    PickedColor:=AColor;
    Shape1.Brush.Color:=PickedColor;
    UpdateTrackValues;
@@ -137,25 +124,11 @@ end;
 
 procedure TRMAmigaColorDialog.FormCreate(Sender: TObject);
 begin
-
+ PickedIndex:=1;
 end;
-
-procedure TRMAmigaColorDialog.Button1Click(Sender: TObject);
-begin
-
-end;
-
-procedure TRMAmigaColorDialog.AmigaColorPaletteClick(Sender: TObject);
-begin
-
-end;
-
-
 
 procedure TRMAmigaColorDialog.InitColorBox2;
 begin
-  SelectedColor:=RMCoreBase.GetCurColor1;
-  PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=1;
   AmigaColorPalette.ButtonHeight:=60;
   AmigaColorPalette.ButtonWidth:=480;
@@ -170,8 +143,6 @@ end;
 
 procedure TRMAmigaColorDialog.InitColorBox4;
 begin
-  SelectedColor:=RMCoreBase.GetCurColor1;
-  PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=2;
   AmigaColorPalette.ButtonHeight:=60;
   AmigaColorPalette.ButtonWidth:=240;
@@ -184,11 +155,8 @@ begin
   UpDateColorChange;
 end;
 
-
 procedure TRMAmigaColorDialog.InitColorBox8;
 begin
-  SelectedColor:=RMCoreBase.GetCurColor1;
-  PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=4;
   AmigaColorPalette.ButtonHeight:=60;
   AmigaColorPalette.ButtonWidth:=120;
@@ -203,8 +171,6 @@ end;
 
 procedure TRMAmigaColorDialog.InitColorBox16;
 begin
-  SelectedColor:=RMCoreBase.GetCurColor1;
-  PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=8;
   AmigaColorPalette.ButtonHeight:=60;
   AmigaColorPalette.ButtonWidth:=60;
@@ -219,8 +185,6 @@ end;
 
 procedure TRMAmigaColorDialog.InitColorBox32;
 begin
-  SelectedColor:=RMCoreBase.GetCurColor1;
-  PickedIndex:=SelectedColor;
   AmigaColorPalette.ColumnCount:=16;
   AmigaColorPalette.ButtonHeight:=60;
   AmigaColorPalette.ButtonWidth:=30;
@@ -275,7 +239,6 @@ begin
   end;
 end;
 
-
 procedure TRMAmigaColorDialog.Add4;
 var
   i : integer;
@@ -305,7 +268,6 @@ begin
 end;
 
 
-
 procedure TRMAmigaColorDialog.UpdateColorChange;
   var
   r,g,b : integer;
@@ -326,7 +288,6 @@ begin
   UpdateColorChange;
   UpdateTrackValues;
 end;
-
 
 procedure TRMAmigaColorDialog.TrackBar2Change(Sender: TObject);
 begin
@@ -349,15 +310,14 @@ var
 begin
   for i:=0 to 1 do
   begin
-      tc:=AmigaColorPalette.Colors[i];
-      RedGreenBlue(tc,r,g,b);
-      cr.r:=r;
-      cr.g:=g;
-      cr.b:=b;;
-      RMCoreBase.Palette.SetColor(i,cr);
+    tc:=AmigaColorPalette.Colors[i];
+    RedGreenBlue(tc,r,g,b);
+    cr.r:=r;
+    cr.g:=g;
+    cr.b:=b;;
+    RMCoreBase.Palette.SetColor(i,cr);
   end;
 end;
-
 
 procedure TRMAmigaColorDialog.UpDateCorePalette4;
 var
@@ -368,15 +328,14 @@ var
 begin
   for i:=0 to 3 do
   begin
-      tc:=AmigaColorPalette.Colors[i];
-      RedGreenBlue(tc,r,g,b);
-      cr.r:=r;
-      cr.g:=g;
-      cr.b:=b;;
-      RMCoreBase.Palette.SetColor(i,cr);
+    tc:=AmigaColorPalette.Colors[i];
+    RedGreenBlue(tc,r,g,b);
+    cr.r:=r;
+    cr.g:=g;
+    cr.b:=b;;
+    RMCoreBase.Palette.SetColor(i,cr);
   end;
 end;
-
 
 procedure TRMAmigaColorDialog.UpDateCorePalette8;
 var
@@ -423,12 +382,12 @@ var
 begin
   for i:=0 to 31 do
   begin
-      tc:=AmigaColorPalette.Colors[i];
-      RedGreenBlue(tc,r,g,b);
-      cr.r:=r;
-      cr.g:=g;
-      cr.b:=b;;
-      RMCoreBase.Palette.SetColor(i,cr);
+    tc:=AmigaColorPalette.Colors[i];
+    RedGreenBlue(tc,r,g,b);
+    cr.r:=r;
+    cr.g:=g;
+    cr.b:=b;;
+    RMCoreBase.Palette.SetColor(i,cr);
   end;
 end;
 
@@ -437,12 +396,15 @@ begin
    GetPickedIndex:=PickedIndex;
 end;
 
-function   TRMAmigaColorDialog.GetPickedColor : TColor;
+function TRMAmigaColorDialog.GetPickedColor : TColor;
 begin
   GetPickedColor:=PickedColor;
 end;
 
-
+procedure TRMAmigaColorDialog.SetPickedIndex(index : Integer);
+begin
+  PickedIndex:=index;
+end;
 
 end.
 

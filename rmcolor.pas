@@ -41,6 +41,7 @@ type
 
     function GetPickedIndex : Integer;
     function GetPickedColor : TColor;
+    procedure SetSelectedColor(index : integer);
     procedure TrackBar1Change(Sender: TObject);
     procedure TrackBar2Change(Sender: TObject);
     procedure TrackBar3Change(Sender: TObject);
@@ -64,9 +65,8 @@ implementation
 
 
 procedure TRMEGAColorDialog.FormCreate(Sender: TObject);
-
 begin
-
+  SelectedColor:=1;
 end;
 
 procedure TRMEGAColorDialog.OKClick(Sender: TObject);
@@ -90,7 +90,7 @@ var
   r,g,b : integer;
 begin
   PickedIndex:=-1;
-  SelectedColor:=RMCoreBase.GetCurColor1;
+//  SelectedColor:=RMCoreBase.GetCurColor1;
   r:=RMCoreBase.Palette.GetRed(SelectedColor);
   g:=RMCoreBase.Palette.GetGreen(SelectedColor);
   b:=RMCoreBase.Palette.GetBlue(SelectedColor);
@@ -126,9 +126,14 @@ begin
    GetPickedIndex:=PickedIndex;
 end;
 
-function   TRMEGAColorDialog.GetPickedColor : TColor;
+function TRMEGAColorDialog.GetPickedColor : TColor;
 begin
   GetPickedColor:=PickedColor;
+end;
+
+procedure TRMEGAColorDialog.SetSelectedColor(index : integer);
+begin
+  SelectedColor:=index;
 end;
 
 procedure TRMEGAColorDialog.UpdateColorChange;
@@ -164,8 +169,6 @@ begin
   Label4.Caption:='['+IntToStr(TrackBar1.position)+'] '+IntToStr(TwoToEightBit(TrackBar1.Position));
   Label5.Caption:='['+IntToStr(TrackBar2.position)+'] '+IntToStr(TwoToEightBit(TrackBar2.Position));
   Label6.Caption:='['+IntToStr(TrackBar3.position)+'] '+IntToStr(TwoToEightBit(TrackBar3.Position));
-
-
 end;
 
 procedure TRMEGAColorDialog.TrackBar1Change(Sender: TObject);

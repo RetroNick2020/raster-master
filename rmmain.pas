@@ -27,9 +27,14 @@ type
     ActionList1: TActionList;
     ActualBox: TImage;
     ActualPane: TPanel;
+    ToolVFLIP: TButton;
+    EditColorBox1: TButton;
+    EditColorBox2: TButton;
     ColorBox1: TShape;
     ColorBox2: TShape;
     ColorPalette1: TColorPalette;
+    Panel1: TPanel;
+    StatusBar: TStatusBar;
     TextDrawEdit: TEdit;
     FontDialog1: TFontDialog;
     FreePascal: TMenuItem;
@@ -138,10 +143,9 @@ type
     OpenWatcom: TMenuItem;
     QBMouseShapeFile: TMenuItem;
     SelectDirectoryDialog: TSelectDirectoryDialog;
-    StatusBar1: TStatusBar;
-    StatusBar2: TStatusBar;
     ToolTextIcon: TImage;
     ToolFontIcon: TImage;
+    ToolHFLIP: TButton;
   //  ZoomScrollBox: TScrollBox;
     ZoomPaintBox: TPaintBox;
     ZoomScrollBox: TScrollBox;
@@ -357,6 +361,7 @@ type
     procedure AqbPsetBitMapClick(Sender: TObject);
     procedure BAMPutDataClick(Sender: TObject);
     procedure BulkExportPNGClick(Sender: TObject);
+    procedure EditColorBox1Click(Sender: TObject);
     procedure ColorBox1MouseEnter(Sender: TObject);
     procedure ColorBox2MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -366,6 +371,7 @@ type
     procedure ColorPalette1GetHintText(Sender: TObject; AColor: TColor;
       var AText: String);
     procedure DeleteImageClick(Sender: TObject);
+    procedure EditColorBox2Click(Sender: TObject);
 
     procedure TextDrawEditChange(Sender: TObject);
     procedure EditClearClick(Sender: TObject);
@@ -534,7 +540,7 @@ type
        procedure LoadResourceIcons;
        procedure ShowSelectAreaTools;
        procedure GetOpenSaveRegion(var x,y,x2,y2 : integer);  //if we are in select/clip area use those coords
-       procedure EditColors;
+       procedure EditColors(ColorBox : integer);
        procedure Clear;
        procedure InitThumbView;
        Procedure CopyScrollPositionToCore;
@@ -1082,7 +1088,11 @@ end;
 procedure TRMMainForm.ColorBox1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  //EditColors;
+  if ssRight in Shift then
+  begin
+     EditColors(cbColorBox1);
+     exit;
+  end;
   RMCoreBase.SetCurColorBox(cbColorBox1);
   UpdateColorBoxes;
 end;
@@ -1090,8 +1100,14 @@ end;
 procedure TRMMainForm.ColorBox2MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
- RMCoreBase.SetCurColorBox(cbColorBox2);
- UpdateColorBoxes;
+
+  if ssRight in Shift then
+  begin
+    EditColors(cbColorBox2);
+    exit;
+  end;
+  RMCoreBase.SetCurColorBox(cbColorBox2);
+  UpdateColorBoxes;
 end;
 
 procedure TRMMainForm.ColorBox2MouseEnter(Sender: TObject);
@@ -1140,7 +1156,6 @@ procedure TRMMainForm.UpdateColorBoxes;
 begin
   ColorBox1.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor1];
   ColorBox2.Brush.Color:=ColorPalette1.Colors[RMCoreBase.GetCurColor2];
-  ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor1;
 
   //Reset Color Style to Normal - non picked
   ColorBox1.Pen.Style:=psSolid;
@@ -1156,11 +1171,15 @@ begin
   begin
     ColorBox1.Pen.Color:=clRed;
     ColorBox1.Pen.Width:=3;
+
+    ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor1;
   end
   else
   begin
    ColorBox2.Pen.Color:=clRed;
    ColorBox2.Pen.Width:=3;
+
+   ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor2;
   end;
 end;
 
@@ -1514,6 +1533,11 @@ procedure TRMMainForm.DeleteImageClick(Sender: TObject);
   end;
 end;
 
+procedure TRMMainForm.EditColorBox2Click(Sender: TObject);
+begin
+  EditColors(cbColorBox2);
+end;
+
 
 procedure TRMMainForm.TextDrawEditChange(Sender: TObject);
 begin
@@ -1626,8 +1650,8 @@ begin
                'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+' ';
  end;
 // InfoBarLabel.Caption:=XYStr+ClipStr+ColIndexStr;
- StatusBar1.SimpleText:=XYStr+ColIndexStr;
- StatusBar2.SimpleText:=ClipStr;
+ StatusBar.Panels[0].Text:=XYStr+ColIndexStr;
+ StatusBar.Panels[1].Text:=ClipStr;
 end;
 
 procedure TRMMainForm.UpdateInfoBarDetail;
@@ -1638,8 +1662,8 @@ begin
         'X2 = '+IntToStr(ZoomX2)+' Y2 = '+IntToStr(ZoomY2)+' ';
  WHStr:='Width = '+IntToStr(ABS(ZoomX2-ZoomX+1))+' Height = '+IntToStr(ABS(ZoomY2-ZoomY+1));
 // InfoBarLabel.Caption:=XYStr;
- StatusBar1.SimpleText:=XYStr;
- StatusBar2.SimpleText:=WHStr;
+ StatusBar.Panels[0].Text:=XYStr;
+ StatusBar.Panels[1].Text:=WHStr;
 end;
 
 
@@ -2393,6 +2417,11 @@ begin
  end;
 end;
 
+procedure TRMMainForm.EditColorBox1Click(Sender: TObject);
+begin
+  EditColors(cbColorBox1);
+end;
+
 
 
 procedure TRMMainForm.TMTPascalClick(Sender: TObject);
@@ -2709,7 +2738,7 @@ var
    end;
 end;
 
-Procedure TRMMainForm.EditColors;
+Procedure TRMMainForm.EditColors(ColorBox : integer);
 var
   PI : integer;
   cr : TRMColorRec;
@@ -2719,66 +2748,99 @@ begin
    pm:=RMCoreBase.Palette.GetPaletteMode;
    If (pm = PaletteModeVGA) OR (pm = PaletteModeVGA256) then
    begin
-    if pm = PaletteModeVGA then RMVGAColorDialog.InitColorBox16
-    else RMVGAColorDialog.InitColorBox256;
+      if ColorBox = cbColorBox1 then
+         RMVGAColorDialog.SetPickedIndex(RMCoreBase.GetCurColor1)
+      else RMVGAColorDialog.SetPickedIndex(RMCoreBase.GetCurColor2);
 
-    if RMVGAColorDialog.ShowModal = mrOK then
-    begin
-       PI:=RMVGAColorDialog.GetPickedIndex;
-       RMCoreBase.SetCurColor1(PI);
-       ColorPalette1.PickedIndex:=PI;
+      if pm = PaletteModeVGA then
+         RMVGAColorDialog.InitColorBox16
+      else RMVGAColorDialog.InitColorBox256;
 
-       ColorBox1.Brush.Color:=RMVGAColorDialog.GetPickedColor;
-       RMVGAColorDialog.PaletteToCore;
-       CoreToPalette;       //onscreen palette - not copying back to dialog
+      if RMVGAColorDialog.ShowModal = mrOK then
+      begin
+         PI:=RMVGAColorDialog.GetPickedIndex;
 
-       UpdateActualArea;
-       UpdateZoomArea;
-       UpdateThumbview;
-    end;
+         if ColorBox = cbColorBox1 then
+            RMCoreBase.SetCurColor1(PI)
+         else RMCoreBase.SetCurColor2(PI);
+
+         ColorPalette1.PickedIndex:=PI;
+         RMVGAColorDialog.PaletteToCore;
+         CoreToPalette;
+
+         UpdateColorBoxes;
+         UpdateActualArea;
+         UpdateZoomArea;
+         UpdateThumbview;
+      end;
   end
   else If (pm = PaletteModeXGA) OR (pm = PaletteModeXGA256) then
-      begin
-       if pm = PaletteModeXGA then RMXGAColorDialog.InitColorBox16
+  begin
+       if ColorBox = cbColorBox1 then
+          RMXGAColorDialog.SetPickedIndex(RMCoreBase.GetCurColor1)
+       else RMXGAColorDialog.SetPickedIndex(RMCoreBase.GetCurColor2);
+
+       if pm = PaletteModeXGA then
+          RMXGAColorDialog.InitColorBox16
        else RMXGAColorDialog.InitColorBox256;
 
        if RMXGAColorDialog.ShowModal = mrOK then
        begin
           PI:=RMXGAColorDialog.GetPickedIndex;
-          RMCoreBase.SetCurColor1(PI);
+
+          if ColorBox = cbColorBox1 then
+             RMCoreBase.SetCurColor1(PI)
+          else RMCoreBase.SetCurColor2(PI);
+
           ColorPalette1.PickedIndex:=PI;
-
-          ColorBox1.Brush.Color:=RMXGAColorDialog.GetPickedColor;
           RMXGAColorDialog.PaletteToCore;
-          CoreToPalette;       //onscreen palette - not copying back to dialog
+          CoreToPalette;
 
+          UpdateColorBoxes;
           UpdateActualArea;
           UpdateZoomArea;
           UpdateThumbview;
-
        end;
-     end
+  end
   else if (pm = PaletteModeEGA) then
   begin
+     if ColorBox = cbColorBox1 then
+        RMEGAColorDialog.SetSelectedColor(RMCoreBase.GetCurColor1)
+     else RMEGAColorDialog.SetSelectedColor(RMCoreBase.GetCurColor2);
+
      RMEGAColorDialog.InitColorBox;
      if RMEGAColorDialog.ShowModal = mrOK then
      begin
-       PI:=RMEGAColorDialog.GetPickedIndex;
+       PI:=RMEGAColorDialog.GetPickedIndex;           //this is EGA Picked Index,0 to 63
        if (PI > -1) then
        begin
-          ci:=RMCoreBase.GetCurColor1;
-          ColorPalette1.Colors[ci]:=RMEGAColorDialog.GetPickedColor;
-          ColorBox1.Brush.Color:=RMEGAColorDialog.GetPickedColor;
-          GetDefaultRGBEGA64(RMEGAColorDialog.GetPickedIndex, cr);
-          RMCoreBase.Palette.SetColor(ci,cr);
-          UpdateActualArea;
-          UpdateZoomArea;
-          UpdateThumbview;
+         if ColorBox = cbColorBox1 then
+            ci:=RMCoreBase.GetCurColor1
+         else ci:=RMCoreBase.GetCurColor2;
+
+         ColorPalette1.Colors[ci]:=RMEGAColorDialog.GetPickedColor;
+
+         GetDefaultRGBEGA64(PI, cr);
+         RMCoreBase.Palette.SetColor(ci,cr);
+
+         if ColorBox = cbColorBox1 then
+            RMCoreBase.SetCurColor1(ci)
+         else RMCoreBase.SetCurColor2(ci);
+
+         UpdateColorBoxes;
+         UpdateActualArea;
+         UpdateZoomArea;
+         UpdateThumbview;
        end;
      end;
   end
   else if (pm >= PaletteModeAmiga2) AND (pm <= PaletteModeAmiga32) then
   begin
+
+    if ColorBox = cbColorBox1 then
+       RMAmigaColorDialog.SetPickedIndex(RMCoreBase.GetCurColor1)
+    else RMAmigaColorDialog.SetPickedIndex(RMCoreBase.GetCurColor2);
+
     case pm of PaletteModeAmiga2:RMAmigaColorDialog.InitColorBox2;
                PaletteModeAmiga4:RMAmigaColorDialog.InitColorBox4;
                PaletteModeAmiga8:RMAmigaColorDialog.InitColorBox8;
@@ -2788,13 +2850,30 @@ begin
 
     if RMAmigaColorDialog.ShowModal = mrOK then
     begin
-       PI:=RMAmigaColorDialog.GetPickedIndex;
+ (*      PI:=RMAmigaColorDialog.GetPickedIndex;
        RMCoreBase.SetCurColor1(PI);
        ColorPalette1.PickedIndex:=PI;
 
        ColorBox1.Brush.Color:=RMAmigaColorDialog.GetPickedColor;
        RMAmigaColorDialog.PaletteToCore;
        CoreToPalette;
+
+       UpdateActualArea;
+       UpdateZoomArea;
+       UpdateThumbview;
+             *)
+
+       PI:=RMAmigaColorDialog.GetPickedIndex;
+
+       if ColorBox = cbColorBox1 then
+          RMCoreBase.SetCurColor1(PI)
+       else RMCoreBase.SetCurColor2(PI);
+
+       ColorPalette1.PickedIndex:=PI;
+       RMAmigaColorDialog.PaletteToCore;
+       CoreToPalette;
+
+       UpdateColorBoxes;
        UpdateActualArea;
        UpdateZoomArea;
        UpdateThumbview;
@@ -2804,7 +2883,9 @@ end;
 
 procedure TRMMainForm.PaletteEditColors(Sender: TObject);
 begin
-  EditColors;
+  if RMCoreBase.GetCurColorBox = cbColorBox1 then
+     EditColors(cbColorBox1)
+  else EditColors(cbColorBox2);
 end;
 
 procedure TRMMainForm.PropertiesClick(Sender: TObject);

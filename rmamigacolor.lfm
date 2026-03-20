@@ -22,7 +22,6 @@ object RMAmigaColorDialog: TRMAmigaColorDialog
     SelectionKind = pskThick
     OnColorPick = ColorPaletteColorPick
     ParentColor = False
-    OnClick = AmigaColorPaletteClick
   end
   object Shape1: TShape
     Left = 19
