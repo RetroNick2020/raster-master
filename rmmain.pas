@@ -8,10 +8,10 @@ uses
   Classes, SysUtils, FileUtil, uPSComponent, uPSRuntime, uPSComponent_Forms,
   Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, ComCtrls, Menus,
   ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore, flood,
-  rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, rmabout, rwpal, rwraw, rwpcx, rwbmp,
+  rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, uAbout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler;
+  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd;
 
 const
   NoScript = 0;
@@ -27,6 +27,9 @@ type
     ActionList1: TActionList;
     ActualBox: TImage;
     ActualPane: TPanel;
+    PaletteCopyToClipboard: TMenuItem;
+    PalettePasteFromClipboard: TMenuItem;
+    rmToggle: TMenuItem;
     ToolVFLIP: TButton;
     EditColorBox1: TButton;
     EditColorBox2: TButton;
@@ -42,6 +45,7 @@ type
     FreeBASIC: TMenuItem;
     AmigaBasic: TMenuItem;
     ImageList1: TImageList;
+    TransImageList1: TImageList;
     ListView1: TListView;
     MenuEdit: TMenuItem;
     EditCopy: TMenuItem;
@@ -79,6 +83,7 @@ type
     fpRayLibCustom: TMenuItem;
     gccRayLibCustom: TMenuItem;
     EditProperties: TMenuItem;
+    TransparentToggle: TMenuItem;
     BAMRGBPutData: TMenuItem;
     DeleteImage: TMenuItem;
     MenuItem17: TMenuItem;
@@ -228,6 +233,8 @@ type
     TPDOSPBMFile: TMenuItem;
     PaletteCopy: TMenuItem;
     PalettePaste: TMenuItem;
+    PaletteCopyJASC: TMenuItem;
+    PalettePasteJASC: TMenuItem;
     QPPutImageArray: TMenuItem;
     QPPutImageFile: TMenuItem;
     QuickPascal: TMenuItem;
@@ -372,10 +379,12 @@ type
       var AText: String);
     procedure DeleteImageClick(Sender: TObject);
     procedure EditColorBox2Click(Sender: TObject);
+    procedure rmToggleClick(Sender: TObject);
 
     procedure TextDrawEditChange(Sender: TObject);
     procedure EditClearClick(Sender: TObject);
     procedure EditCloneClick(Sender: TObject);
+    procedure TransparentToggleClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
     procedure FontSheetExportMenuClick(Sender: TObject);
@@ -415,6 +424,8 @@ type
     procedure PalettePasteClick(Sender: TObject);
     procedure OpenProjectFileClick(Sender: TObject);
     procedure PaletteCopyClick(Sender: TObject);
+    procedure PaletteCopyJASCClick(Sender: TObject);
+    procedure PalettePasteJASCClick(Sender: TObject);
     procedure PaletteEditColors(Sender: TObject);
     procedure PropertiesClick(Sender: TObject);
     procedure QuickPascalClick(Sender: TObject);
@@ -505,6 +516,8 @@ type
        DrawFirst : Boolean;
        MaxXOffset : Integer;
        MaxYOffset : Integer;
+       ShowTransparent : Boolean;
+       FCheckerBmp : TBitmap;
 
        RenderBitMap  : TBitMap;
        RenderBitMap2 : TBitMap;
@@ -528,6 +541,8 @@ type
        procedure UpdateInfoBarXY(x,y : integer);
        procedure UpdateInfoBarDetail;
        procedure UpdateThumbview;
+       procedure RebuildTransImageList;
+       procedure UpdateTransImageListItem(index : integer);
 
 
        procedure PaletteToCore;
@@ -623,6 +638,8 @@ begin
 end;
 
 procedure TRMMainForm.FormCreate(Sender: TObject);
+var
+  i, j : integer;
 begin
  //for which type of script to run PascalScript ot QBScript
  ScriptLoaded := NoScript;
@@ -639,6 +656,18 @@ RenderBitMap2.SetSize(256,256);
  ZoomSize:=RMDrawTools.GetZoomMode;
  DrawMode:=False;
  DrawFirst:=False;
+ ShowTransparent:=False;
+
+ // create checkerboard pattern for transparency display - fixed size, never scaled
+ FCheckerBmp:=TBitmap.Create;
+ FCheckerBmp.SetSize(256, 256);
+ FCheckerBmp.Canvas.Brush.Color:=clWhite;
+ FCheckerBmp.Canvas.FillRect(0, 0, 256, 256);
+ FCheckerBmp.Canvas.Brush.Color:=RGBToColor(192, 192, 192);
+ for i:=0 to 15 do
+   for j:=0 to 15 do
+     if ((i + j) mod 2) = 0 then
+       FCheckerBmp.Canvas.FillRect(i*16, j*16, (i+1)*16, (j+1)*16);
 // ActualBox.Width:=256;
 // ActualBox.Height:=256;
  ActualBox.Canvas.Brush.Style := bsSolid;
@@ -689,9 +718,15 @@ begin
 end;
 
 procedure TRMMainForm.RMAboutDialogClick(Sender: TObject);
+var
+  Dlg: TAboutForm;
 begin
- Aboutdialog.InitName;
- AboutDialog.ShowModal;
+  Dlg := TAboutForm.Create(Application);
+  try
+    Dlg.ShowModal;
+  finally
+    Dlg.Free;
+  end;
 end;
 
 procedure TRMMainForm.RMLogoClick(Sender: TObject);
@@ -1124,8 +1159,18 @@ var
 begin
    ACBitMap:=TBitMap.Create;
    ACBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
+
+   // set transparency BEFORE drawing content onto bitmap
+   if ShowTransparent then
+   begin
+     ACBitMap.TransparentColor:=ColorPalette1.Colors[0];
+     ACBitMap.TransparentMode:=tmFixed;
+     ACBitMap.Transparent:=True;
+   end;
+
    zoommode:=RMDrawTools.GetZoomMode;
    RMDrawTools.SetZoomMode(0);
+
    for i:=0 to RMCoreBase.GetWidth -1 do
    begin
      for j:=0 to RMCoreBase.GetHeight-1 do
@@ -1134,8 +1179,18 @@ begin
         RMDrawTools.PutPixel(ACBitMap.Canvas,i,j,tc,0);
      end;
    end;
+
    ActualBox.Picture.Bitmap.SetSize(256, 256);
-   ActualBox.canvas.CopyRect(Rect(0, 0,  256,256), ACBitMap.Canvas, Rect(0, 0,ACBitMap.Width,  ACBitMap.Height));
+
+   if ShowTransparent then
+   begin
+     ActualBox.Canvas.Draw(0, 0, FCheckerBmp);
+     ActualBox.Canvas.StretchDraw(Rect(0, 0, 256, 256), ACBitMap);
+   end
+   else
+   begin
+     ActualBox.canvas.CopyRect(Rect(0, 0, 256, 256), ACBitMap.Canvas, Rect(0, 0, ACBitMap.Width, ACBitMap.Height));
+   end;
 
    RMDrawTools.SetZoomMode(zoommode);
    ACBitMap.Free;
@@ -1536,6 +1591,12 @@ end;
 procedure TRMMainForm.EditColorBox2Click(Sender: TObject);
 begin
   EditColors(cbColorBox2);
+end;
+
+procedure TRMMainForm.rmToggleClick(Sender: TObject);
+begin
+ rmToggle.Checked:=NOT rmToggle.Checked;
+ if  rmToggle.Checked  then RMPanel.Hide else RMPanel.Show;
 end;
 
 
@@ -1960,6 +2021,7 @@ begin
  end;
  UpdateThumbview;
  UpdateActualArea;
+ if ShowTransparent then UpdateZoomArea;
 end;
 
 procedure TRMMainForm.ZoomPaintBoxClick(Sender: TObject);
@@ -1978,7 +2040,10 @@ begin
 
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,1);
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopyToBuf,DrawTool,1);
-  ZoomPaintBox.Invalidate;
+  if ShowTransparent then
+    UpdateZoomArea
+  else
+    ZoomPaintBox.Invalidate;
 end;
 
 procedure TRMMainForm.ZoomPaintBoxMouseEnter(Sender: TObject);
@@ -2003,10 +2068,45 @@ begin
 end;
 
 procedure TRMMainForm.ZoomPaintBoxPaint(Sender: TObject);
+var
+  x, y : integer;
+  TmpBmp : TBitmap;
 begin
-  ZoomPaintBox.Canvas.CopyRect(rect(0,0,ZoomPaintBox.Width,ZoomPaintBox.Height),
-               RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
-  //renter the text here
+  if ShowTransparent then
+  begin
+    // tile fixed checkerboard at destination resolution
+    y:=0;
+    while y < ZoomPaintBox.Height do
+    begin
+      x:=0;
+      while x < ZoomPaintBox.Width do
+      begin
+        ZoomPaintBox.Canvas.Draw(x, y, FCheckerBmp);
+        inc(x, 256);
+      end;
+      inc(y, 256);
+    end;
+
+    // create temp bitmap with transparency set BEFORE content is drawn on it
+    TmpBmp:=TBitmap.Create;
+    try
+      TmpBmp.SetSize(RenderBitMap.Width, RenderBitMap.Height);
+      TmpBmp.TransparentColor:=ColorPalette1.Colors[0];
+      TmpBmp.TransparentMode:=tmFixed;
+      TmpBmp.Transparent:=True;
+      TmpBmp.Canvas.Draw(0, 0, RenderBitMap);
+      ZoomPaintBox.Canvas.StretchDraw(rect(0,0,ZoomPaintBox.Width,ZoomPaintBox.Height), TmpBmp);
+    finally
+      TmpBmp.Free;
+    end;
+  end
+  else
+  begin
+    ZoomPaintBox.Canvas.CopyRect(rect(0,0,ZoomPaintBox.Width,ZoomPaintBox.Height),
+                 RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
+  end;
+
+  //render the text here
   RMDrawTools.DrawOverlayText(ZoomPaintBox.Canvas);
   RMDrawTools.DrawOverlayGrid(ZoomPaintBox.Canvas,clWhite);
   RMDrawTools.DrawOverlayOnClipArea(ZoomPaintBox.Canvas,clYellow,0); //mode 0 is copy
@@ -3831,14 +3931,36 @@ end;
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var
  pm : integer;
+ ext : string;
+ err : word;
 begin
- OpenDialog1.Filter := 'RM Palette|*.pal|All Files|*.*';
+ OpenDialog1.Filter := 'RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga|All Files|*.*';
  if OpenDialog1.Execute then
  begin
      pm:=RMCoreBase.Palette.GetPaletteMode;
-     if ReadPAL(OpenDialog1.FileName,pm) <> 0 then
+     ext:=LowerCase(ExtractFileExt(OpenDialog1.FileName));
+     err:=0;
+
+     case OpenDialog1.FilterIndex of
+       1: err:=ReadPAL(OpenDialog1.FileName, pm);
+       2: err:=ReadJASCPAL(OpenDialog1.FileName, pm);
+       3: err:=ReadVGAPAL(OpenDialog1.FileName, pm);
+       4: begin
+            // auto-detect: try JASC first (has text header), then raw
+            err:=ReadJASCPAL(OpenDialog1.FileName, pm);
+            if err <> 0 then
+            begin
+              if ext = '.vga' then
+                err:=ReadVGAPAL(OpenDialog1.FileName, pm)
+              else
+                err:=ReadPAL(OpenDialog1.FileName, pm);
+            end;
+          end;
+     end;
+
+     if err <> 0 then
      begin
-        ShowMessage('Error Opening PAL file!');
+        ShowMessage('Error Opening Palette file!');
         exit;
      end;
      CoreToPalette;
@@ -3850,16 +3972,24 @@ begin
 end;
 
 procedure TRMMainForm.PaletteSaveClick(Sender: TObject);
+var
+  err : word;
 begin
- SaveDialog1.Filter := 'RM Palette|*.PAL|All Files|*.*';
+ SaveDialog1.Filter := 'RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga';
  if SaveDialog1.Execute then
-   begin
-        if WritePal(SaveDialog1.FileName) <> 0 then
-        begin
-          ShowMessage('Error Saving PAL file!');
-          exit;
-        end;
+ begin
+   err:=0;
+   case SaveDialog1.FilterIndex of
+     1: err:=WritePAL(SaveDialog1.FileName);
+     2: err:=WriteJASCPAL(SaveDialog1.FileName);
+     3: err:=WriteVGAPAL(SaveDialog1.FileName);
    end;
+   if err <> 0 then
+   begin
+     ShowMessage('Error Saving Palette file!');
+     exit;
+   end;
+ end;
 end;
 
 procedure TRMMainForm.PaletteExportAmigaBasicClick(Sender: TObject);
@@ -4158,12 +4288,22 @@ begin
  ImageThumbBase.SetCount(1);
  ImageThumbBase.SetCurrent(0);
  ImageList1.Clear;
+ ImageList1.Width:=128;
+ ImageList1.Height:=128;
 
  ListView1.Items.Clear;
  ListView1.Items.Add;
 
  ImageThumbBase.CopyCoreToIndexImage(0);
  ImageThumbBase.MakeThumbImageFromCore(0,imagelist1,1);   //ads an image to image list with option 1 3rd paremeter
+
+ if ShowTransparent then
+ begin
+   TransImageList1.Clear;
+   TransImageList1.Width:=128;
+   TransImageList1.Height:=128;
+   UpdateTransImageListItem(0);
+ end;
 
  ListView1.Items[0].Caption:='Image '+IntToStr(1);
  ListView1.Items[0].ImageIndex :=0;
@@ -4341,6 +4481,7 @@ end;
 
 procedure TRMMainForm.RMPanelClick(Sender: TObject);
 begin
+  rmToggle.Checked:=true;
   RMPanel.Hide;
 end;
 
@@ -4442,6 +4583,9 @@ begin
    ImageThumbBase.OpenProject(OpenDialog1.Filename,InsertMode);
    ImageThumbBase.UpdateAllThumbImages(imagelist1);
 
+   if ShowTransparent then
+     RebuildTransImageList;
+
    amount:=ImageThumbBase.GetCount-ListView1.Items.Count;
    if amount < 0 then
    begin
@@ -4505,6 +4649,131 @@ begin
   RMCoreBase.Palette.CopyPaletteToCB;
 end;
 
+procedure TRMMainForm.PaletteCopyJASCClick(Sender: TObject);
+var
+  i, NColors : integer;
+  CR : TRMColorRec;
+  S : string;
+begin
+  SetCoreActive;
+  NColors:=GetMaxColor+1;
+  S:='JASC-PAL' + LineEnding + '0100' + LineEnding + IntToStr(NColors) + LineEnding;
+  for i:=0 to NColors-1 do
+  begin
+    GetColor(i, CR);
+    S:=S + IntToStr(CR.r) + ' ' + IntToStr(CR.g) + ' ' + IntToStr(CR.b) + LineEnding;
+  end;
+  Clipboard.AsText:=S;
+end;
+
+  procedure TRMMainForm.PalettePasteJASCClick(Sender: TObject);
+var
+  S  : string;
+  Lines : TStringList;
+  pm, NColors, i : integer;
+  r, g, b : integer;
+  p1, p2 : integer;
+  CR : TRMColorRec;
+  ColorLine : string;
+begin
+  if not Clipboard.HasFormat(CF_TEXT) then
+  begin
+    ShowMessage('No text data on clipboard.');
+    exit;
+  end;
+
+  S:=Clipboard.AsText;
+  Lines:=TStringList.Create;
+  try
+    Lines.Text:=S;
+    if Lines.Count < 4 then
+    begin
+      ShowMessage('Clipboard does not contain valid JASC palette data.');
+      exit;
+    end;
+
+    // verify header
+    if Trim(Lines[0]) <> 'JASC-PAL' then
+    begin
+      ShowMessage('Clipboard does not contain JASC-PAL header.');
+      exit;
+    end;
+
+    // read color count (line 2)
+    NColors:=StrToIntDef(Trim(Lines[2]), 0);
+    if NColors <= 0 then
+    begin
+      ShowMessage('Invalid color count in JASC palette.');
+      exit;
+    end;
+    if NColors > 256 then NColors:=256;
+
+    SetCoreActive;
+    pm:=RMCoreBase.Palette.GetPaletteMode;
+
+    for i:=0 to NColors-1 do
+    begin
+      if (i + 3) >= Lines.Count then break;
+      ColorLine:=Trim(Lines[i + 3]);
+
+      // parse R G B
+      p1:=Pos(' ', ColorLine);
+      if p1 = 0 then continue;
+      r:=StrToIntDef(Copy(ColorLine, 1, p1-1), 0);
+      Delete(ColorLine, 1, p1);
+      ColorLine:=TrimLeft(ColorLine);
+
+      p2:=Pos(' ', ColorLine);
+      if p2 = 0 then continue;
+      g:=StrToIntDef(Copy(ColorLine, 1, p2-1), 0);
+      Delete(ColorLine, 1, p2);
+      ColorLine:=TrimLeft(ColorLine);
+
+      b:=StrToIntDef(ColorLine, 0);
+
+      CR.r:=r;
+      CR.g:=g;
+      CR.b:=b;
+
+      if CanLoadPaletteFile(pm) then
+      begin
+        if pm = PaletteModeEGA then
+        begin
+          if RGBToEGAIndex(CR.r, CR.g, CR.b) > -1 then
+            RMCoreBase.Palette.SetColor(i, CR);
+        end
+        else if isAmigaPaletteMode(pm) then
+        begin
+          CR.r:=FourToEightBit(EightToFourBit(CR.r));
+          CR.g:=FourToEightBit(EightToFourBit(CR.g));
+          CR.b:=FourToEightBit(EightToFourBit(CR.b));
+          RMCoreBase.Palette.SetColor(i, CR);
+        end
+        else if (pm = PaletteModeVGA) or (pm = PaletteModeVGA256) then
+        begin
+          CR.r:=SixToEightBit(EightToSixBit(CR.r));
+          CR.g:=SixToEightBit(EightToSixBit(CR.g));
+          CR.b:=SixToEightBit(EightToSixBit(CR.b));
+          RMCoreBase.Palette.SetColor(i, CR);
+        end
+        else
+        begin
+          RMCoreBase.Palette.SetColor(i, CR);
+        end;
+      end;
+    end;
+  finally
+    Lines.Free;
+  end;
+
+  CoreToPalette;
+  UpdatePalette;
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
+end;
+
 procedure TRMMainForm.InitThumbView;
 var
   LItem: TListItem;
@@ -4513,6 +4782,8 @@ begin
   ImageThumbBase.SetCurrent(0);
 
   ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCount-1,imagelist1,1);
+  if ShowTransparent then
+    UpdateTransImageListItem(ImageThumbBase.GetCount-1);
   LItem:=ListView1.Items.Add;
 
   LItem.ImageIndex :=ImageThumbBase.GetCount-1;
@@ -4522,7 +4793,96 @@ end;
 procedure TRMMainForm.UpdateThumbView;
 begin
   ImageThumbBase.MakeThumbImageFromCore(ImageThumbBase.GetCurrent,imagelist1,4);
+  if ShowTransparent then
+  begin
+    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+    UpdateTransImageListItem(ImageThumbBase.GetCurrent);
+  end;
   Listview1.Refresh;
+end;
+
+procedure TRMMainForm.RebuildTransImageList;
+var
+  i, x, y, aw, ah : integer;
+  CheckBmp, SpriteBmp, TransBmp : TBitmap;
+begin
+  TransImageList1.Clear;
+  TransImageList1.Width:=128;
+  TransImageList1.Height:=128;
+
+  for i:=0 to ImageThumbBase.GetCount-1 do
+  begin
+    aw:=ImageThumbBase.GetWidth(i);
+    ah:=ImageThumbBase.GetHeight(i);
+
+    SpriteBmp:=TBitmap.Create;
+    SpriteBmp.SetSize(aw, ah);
+    for y:=0 to ah-1 do
+      for x:=0 to aw-1 do
+        SpriteBmp.Canvas.Pixels[x, y]:=ImageThumbBase.GetPixelTColor(i, x, y);
+
+    CheckBmp:=TBitmap.Create;
+    CheckBmp.SetSize(128, 128);
+    CheckBmp.Canvas.Draw(0, 0, FCheckerBmp);
+
+    TransBmp:=TBitmap.Create;
+    TransBmp.Width:=128;
+    TransBmp.Height:=128;
+    TransBmp.TransparentColor:=clBlack;
+    TransBmp.TransparentMode:=tmFixed;
+    TransBmp.Transparent:=True;
+    TransBmp.Canvas.CopyRect(Rect(0, 0, 128, 128), SpriteBmp.Canvas, Rect(0, 0, aw, ah));
+
+    CheckBmp.Canvas.Draw(0, 0, TransBmp);
+    TransImageList1.Add(CheckBmp, nil);
+
+    SpriteBmp.Free;
+    TransBmp.Free;
+    CheckBmp.Free;
+  end;
+
+  ListView1.LargeImages:=TransImageList1;
+end;
+
+procedure TRMMainForm.UpdateTransImageListItem(index : integer);
+var
+  x, y, aw, ah : integer;
+  CheckBmp, SpriteBmp, TransBmp : TBitmap;
+begin
+  if (index < 0) or (index >= ImageThumbBase.GetCount) then exit;
+  if index >= TransImageList1.Count then
+  begin
+    RebuildTransImageList;
+    exit;
+  end;
+
+  aw:=ImageThumbBase.GetWidth(index);
+  ah:=ImageThumbBase.GetHeight(index);
+
+  SpriteBmp:=TBitmap.Create;
+  SpriteBmp.SetSize(aw, ah);
+  for y:=0 to ah-1 do
+    for x:=0 to aw-1 do
+      SpriteBmp.Canvas.Pixels[x, y]:=ImageThumbBase.GetPixelTColor(index, x, y);
+
+  CheckBmp:=TBitmap.Create;
+  CheckBmp.SetSize(128, 128);
+  CheckBmp.Canvas.Draw(0, 0, FCheckerBmp);
+
+  TransBmp:=TBitmap.Create;
+  TransBmp.Width:=128;
+  TransBmp.Height:=128;
+  TransBmp.TransparentColor:=clBlack;
+  TransBmp.TransparentMode:=tmFixed;
+  TransBmp.Transparent:=True;
+  TransBmp.Canvas.CopyRect(Rect(0, 0, 128, 128), SpriteBmp.Canvas, Rect(0, 0, aw, ah));
+
+  CheckBmp.Canvas.Draw(0, 0, TransBmp);
+  TransImageList1.Replace(index, CheckBmp, nil, false);
+
+  SpriteBmp.Free;
+  TransBmp.Free;
+  CheckBmp.Free;
 end;
 
 
@@ -4533,6 +4893,8 @@ if index > -1 then
 begin
       listview1.Items.Delete(index);
       imagelist1.Delete(index);
+      if ShowTransparent and (index < TransImageList1.Count) then
+        TransImageList1.Delete(index);
 
       for i:=0 to listview1.Items.Count -1 do
       begin
@@ -4643,6 +5005,9 @@ begin
  ImageThumbBase.AddImage;
  ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
 
+ if ShowTransparent then
+   UpdateTransImageListItem(ImageThumbBase.GetCount-1);
+
  ListView1.AddItem('Image '+IntToStr(ImageThumbBase.GetCount),nil);
  ListView1.Items[ImageThumbBase.GetCount-1].ImageIndex:=ImageThumbBase.GetCount-1;
 
@@ -4695,6 +5060,9 @@ begin
  ImageThumbBase.AddImage;
  ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
 
+ if ShowTransparent then
+   UpdateTransImageListItem(ImageThumbBase.GetCount-1);
+
  with ListView1.Items.Add do
  begin
    ImageIndex :=ImageThumbBase.GetCount-1;
@@ -4705,6 +5073,22 @@ begin
  Listview1.Refresh;
  ShowMessage('Image Cloned!');
 
+end;
+
+procedure TRMMainForm.TransparentToggleClick(Sender: TObject);
+begin
+  ShowTransparent:=not ShowTransparent;
+  TransparentToggle.Checked:=ShowTransparent;
+  if ShowTransparent then
+  begin
+    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+    RebuildTransImageList;
+  end
+  else
+    ListView1.LargeImages:=ImageList1;
+  ListView1.Refresh;
+  UpdateActualArea;
+  UpdateZoomArea;
 end;
 
 function TRMMainForm.getopenfilename(var filename,ext : string; filter : string) : boolean;

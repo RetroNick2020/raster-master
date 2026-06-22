@@ -5,26 +5,39 @@ unit mapeditor;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,Math,
   ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
-  rmconfig, LCLType,setcustommapsize,setcustomtilesize;
+  rmconfig, LCLType,setcustommapsize,setcustomtilesize,rmcore;
 
 const
   AddImage = 1;
   InsertImage = 2;
   UpdateImage = 3;
 
+  tlModeErase = 0;
+  tlModeDraw  = 1;
+
 type
   { TMapEdit }
 
   TMapEdit = class(TForm)
     GroupBox1: TGroupBox;
+    ListView1: TListView;
     MapImageList: TImageList;
     Clear: TMenuItem;
     CloneMap: TMenuItem;
     CopyToClipBoard: TMenuItem;
+    HitBoxPanel: TPanel;
+    HitBoxes: TMenuItem;
+    HitBoxesAdd: TMenuItem;
+    HitBoxesClearAll: TMenuItem;
+    HitBoxesDelete: TMenuItem;
+    HitBoxesToggle: TMenuItem;
+    TransparentToggle: TMenuItem;
     Properties: TMenuItem;
     PasteFromClipBoard: TMenuItem;
+    RightVertSplitter: TSplitter;
+    StatusBar0: TStatusBar;
     Undo: TMenuItem;
     SetTileCustomSize: TMenuItem;
     MenuItem15: TMenuItem;
@@ -39,9 +52,9 @@ type
     RadioErase: TRadioButton;
     ReSizeMap256x256: TMenuItem;
     ReSizeMap128x128: TMenuItem;
-    StatusBar1: TStatusBar;
-    StatusBar2: TStatusBar;
     TileImageList: TImageList;
+    TransTileImageList: TImageList;
+    TransTileThumbImageList: TImageList;
     ToolPencilMenu: TMenuItem;
     ToolLineMenu: TMenuItem;
     ToolRectangleMenu: TMenuItem;
@@ -66,6 +79,10 @@ type
     MenuItem10: TMenuItem;
     ExportCArray: TMenuItem;
     ExportPascalArray: TMenuItem;
+    ExportHitBoxBasic: TMenuItem;
+    ExportHitBoxBasicLN: TMenuItem;
+    ExportHitBoxC: TMenuItem;
+    ExportHitBoxPascal: TMenuItem;
     MenuItem13: TMenuItem;
     BasicLNMapData: TMenuItem;
     MenuMapProps: TMenuItem;
@@ -134,7 +151,6 @@ type
     RightSplitter: TSplitter;
     TileZoom: TTrackBar;
 
-    procedure Button1Click(Sender: TObject);
     procedure CheckBoxDisplayGridChange(Sender: TObject);
     procedure CloneMapClick(Sender: TObject);
 
@@ -146,15 +162,16 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
 
-    procedure MapImageMouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
-    procedure MapImageMouseLeave(Sender: TObject);
-    procedure MapImageMouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
     procedure ClearMapClick(Sender: TObject);
+    procedure HitBoxesAddClick(Sender: TObject);
+    procedure HitBoxesDeleteClick(Sender: TObject);
+    procedure HitBoxesToggleClick(Sender: TObject);
+    procedure HitBoxesClearAllClick(Sender: TObject);
+    procedure TransparentToggleClick(Sender: TObject);
+    procedure ListView1Click(Sender: TObject);
     procedure MapListViewClick(Sender: TObject);
     procedure MapPaintBoxPaint(Sender: TObject);
-    procedure MapScrollBoxClick(Sender: TObject);
+
     procedure MenuDeleteAllClick(Sender: TObject);
 
     procedure MenuDeleteClick(Sender: TObject);
@@ -162,6 +179,10 @@ type
     procedure MenuExportBasicMapData(Sender: TObject);
     procedure MenuExportCArray(Sender: TObject);
     procedure MenuExportPascalArray(Sender: TObject);
+    procedure ExportHitBoxBasicClick(Sender: TObject);
+    procedure ExportHitBoxBasicLNClick(Sender: TObject);
+    procedure ExportHitBoxCClick(Sender: TObject);
+    procedure ExportHitBoxPascalClick(Sender: TObject);
     procedure MenuMapPropsClick(Sender: TObject);
     procedure MenuOpenClick(Sender: TObject);
     procedure MenuNewClick(Sender: TObject);
@@ -220,6 +241,10 @@ type
     TileMode       : integer;
     DrawTool       : integer;
     RenderDrawToolShape : Boolean;
+    ShowHitBoxOverlay   : Boolean;
+    ShowTransparent     : Boolean;
+    SelectedHitBox      : integer;
+    FCheckerBmp         : TBitmap;
 
     FormShowActivate : boolean;
 
@@ -229,21 +254,18 @@ type
     function GetMapX(x : integer) : integer;
     function GetMapY(y : integer) : integer;
 
-    procedure PlotTileAt(x,y : integer; TTile : TileRec);
-    procedure PlotTile(mx,my : integer; TTile : TileRec);
     procedure ImageListPlotTile(mx,my : integer;var TTile : TileRec);
-
-    procedure ClearTile(mx,my : integer);
+    procedure ImageListPlotTileTransparent(mx,my : integer;var TTile : TileRec);
     procedure PlotMissingTile(mx,my : integer);
-    Procedure SetMapTileMode(Tool : integer);
+    procedure DrawCheckerboard;
+    function  GetColor0TColor : TColor;
+    procedure RebuildTransTileThumbImageList;
+
+    procedure SetMapTileMode(tlTileMode : integer);
     procedure SetDrawTool(tool : integer);
-
-    procedure APlotTile(x,y : integer;var TTile : TileRec);   //convert to grid format and store on array
-    procedure AClearTile(x,y : integer);
-    procedure CPlotTile(ColX,ColY : integer;var TTile : TileRec); //draw to canvas - do not store
-    procedure CClearTile(ColX,ColY : integer);
-    Procedure DrawOverLayOnClipArea;
-
+    procedure DrawOverLayOnClipArea;
+    procedure DrawHitBoxOverlay;
+    procedure UpdateHitBoxListView;
     procedure LoadTile(index : integer);
     procedure LoadTilesToTileImageList;
     procedure VerifyTileImageList;
@@ -251,7 +273,7 @@ type
     procedure UpdateTileView;
     procedure UpdateCurrentTile;
     procedure UpdateMapInfo(x,y : integer);
-    procedure UpdateInfoBarX1Y1X2Y2;
+    procedure UpdateInfoBar;
 
     procedure UpdateMapView;
     Procedure UpdateMapListView;
@@ -265,7 +287,10 @@ type
 
     function ExportTextFileToClipboard(Sender: TObject) : boolean;
 
+    procedure ExportHitBoxes(filename : string; lan : integer);
+
     procedure MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
+    procedure MapPreviewPlotTileTransparent(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
     Procedure UpdateMapPreviewImageIcons(MapIndex,ImageAction : integer);
 
     procedure DeleteAll;
@@ -277,6 +302,7 @@ var
 
 implementation
 
+uses rmmain;
 
 {$R *.lfm}
 
@@ -288,7 +314,7 @@ var
 begin
  if mode = 1 then
  begin
-   if MapEdit.TileMode = 0 then
+   if MapEdit.TileMode = tlModeErase then
    begin
      TT.ImageIndex:=TileClear;
      MapCoreBase.SetMapTile(MapCoreBase.GetCurrentMap,x,y,TT);
@@ -300,7 +326,10 @@ begin
  end
  else
  begin
-   MapEdit.ImageListPlotTile(x,y,MapEdit.CTile);
+   if MapEdit.ShowTransparent then
+     MapEdit.ImageListPlotTileTransparent(x,y,MapEdit.CTile)
+   else
+     MapEdit.ImageListPlotTile(x,y,MapEdit.CTile);
  end;
 end;
 
@@ -323,8 +352,10 @@ begin
 end;
 
 procedure TMapEdit.Init;
+var
+  i, j : integer;
 begin
- SetMapTileMode(1);  //draw
+ SetMapTileMode(tlModeDraw);  //draw
  SetDrawTool(DrawShapePencil);
  CurrentMap:=MapCoreBase.GetCurrentMap;
  MapCoreBase.SetZoomSize(CurrentMap,1);
@@ -345,12 +376,26 @@ begin
  OldMapY:=-1;
 
  RenderDrawToolShape:=False;
+ ShowHitBoxOverlay:=True;
+ ShowTransparent:=False;
+ SelectedHitBox:=-1;
+
+ // create large checkerboard bitmap once for fast tiling
+ FCheckerBmp:=TBitmap.Create;
+ FCheckerBmp.SetSize(256, 256);
+ FCheckerBmp.Canvas.Brush.Color:=clWhite;
+ FCheckerBmp.Canvas.FillRect(0, 0, 256, 256);
+ FCheckerBmp.Canvas.Brush.Color:=RGBToColor(192, 192, 192);
+ for i:=0 to 15 do
+   for j:=0 to 15 do
+     if ((i + j) mod 2) = 0 then
+       FCheckerBmp.Canvas.FillRect(i*16, j*16, (i+1)*16, (j+1)*16);
  UpdateToolSelectionIcons;
  UpdateEditMenus;
 
 // MapCoreBase.SetCurrentMap(MapCoreBase.GetMapCount-1);
 //  CurrentMap:=MapCoreBase.GetCurrentMap;
-  TileMode:=1; //draw
+  TileMode:=tlModeDraw; //draw
   MapCoreBase.SetMapTileMode(CurrentMap,TileMode); // we set to draw because the copied data from map 0 may be in erase mode
 
 //  TileZoom.Position:=4;
@@ -364,6 +409,7 @@ begin
 //  UpdateToolSelectionIcons;
   UpdateMenus;
 //  UpdateEditMenus;
+  UpdateHitBoxListView;
   MapPaintBox.Invalidate;
 
 end;
@@ -441,6 +487,8 @@ begin
   end;
   UpdateCurrentTile;
   UpdateTileView;
+  if ShowTransparent then
+    RebuildTransTileThumbImageList;
   UpdateMapListView;  //if new project is open or inserted - we need to update maplist view
   UpdateMenus;
   UpdateEditMenus;
@@ -453,7 +501,6 @@ begin
   DrawTool:=tool;
   MapCoreBase.SetMapDrawTool(MapCoreBase.GetCurrentMap,DrawTool);
 end;
-
 
 function TMapEdit.GetMapX(x : integer) : integer;
 begin
@@ -470,8 +517,6 @@ begin
   MapPaintBox.Invalidate;
 end;
 
-
-
 procedure TMapEdit.CloneMapClick(Sender: TObject);
 begin
   MapCoreBase.CloneMap;
@@ -485,9 +530,6 @@ begin
   ShowMessage('Map Cloned!');
 end;
 
-
-
-
 procedure TMapEdit.CopyToClipBoardClick(Sender: TObject);
 var
  ca : MapClipAreaRec;
@@ -495,8 +537,6 @@ begin
  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
  MapCoreBase.CopyToClipBoard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
 end;
-
-
 
 procedure TMapEdit.PasteFromClipBoardClick(Sender: TObject);
 var
@@ -507,18 +547,6 @@ begin
   MapPaintBox.Invalidate;
 end;
 
-procedure TMapEdit.PlotTile(mx,my : integer; TTile : TileRec);
-var
-  gx,gy : integer;
-begin
- if (mx < 0) or (my<0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
- MapCoreBase.SetMapTile(CurrentMap,mx,my,CTile);
-
- gx:=mx*TileWidth;
- gy:=my*TileHeight;
- MapPaintBox.canvas.CopyRect(Rect(gx, gy, gx+TileWidth, gy+TileHeight), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
-end;
-
 procedure TMapEdit.ImageListPlotTile(mx,my : integer;var TTile : TileRec);
 var
   gx,gy : integer;
@@ -526,15 +554,6 @@ begin
  gx:=mx*TileWidth;
  gy:=my*TileHeight;
  TileImageList.Draw(MapPaintBox.Canvas,gx,gy,TTile.ImageIndex,true);
-end;
-
-procedure TMapEdit.ClearTile(mx,my : integer);
-var
-  T : TileRec;
-begin
- if (mx < 0) or (my<0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
- T.ImageIndex:=TileClear;
- MapCoreBase.SetMapTile(CurrentMap,mx,my,T);
 end;
 
 procedure TMapEdit.PlotMissingTile(mx,my : integer);
@@ -551,100 +570,114 @@ begin
  MapPaintBox.Canvas.Ellipse(gx,gy,gx+TileWidth,gy+TileHeight);
 end;
 
-procedure TMapEdit.PlotTileAt(x,y : integer;TTile : TileRec);
-var
-  mx,my : integer;
+function TMapEdit.GetColor0TColor : TColor;
 begin
-  mx:=x div TileWidth;
-  my:=y div TileHeight;
-  PlotTile(mx,my,TTile);
+  Result:=RGBToColor(RMCoreBase.Palette.GetRed(0),
+                     RMCoreBase.Palette.GetGreen(0),
+                     RMCoreBase.Palette.GetBlue(0));
 end;
 
-
-procedure TMapEdit.APlotTile(x,y : integer;var TTile : TileRec);
+procedure TMapEdit.RebuildTransTileThumbImageList;
 var
-  mx,my : integer;
+  i, x, y, aw, ah : integer;
+  CheckBmp, SpriteBmp, TransBmp : TBitmap;
 begin
-  mx:=(x div TileWidth);
-  if (mx < 0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) then exit;
-  my:=(y div TileHeight);
-  if (my<0) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
-  MapCoreBase.SetMapTile(CurrentMap,mx,my,TTile);
+  TransTileThumbImageList.Clear;
+  TransTileThumbImageList.Width:=128;
+  TransTileThumbImageList.Height:=128;
+
+
+  SpriteBmp:=TBitmap.Create;
+  CheckBmp:=TBitmap.Create;
+  TransBmp:=TBitmap.Create;
+
+  for i:=0 to ImageThumbBase.GetCount-1 do
+  begin
+    aw:=ImageThumbBase.GetWidth(i);
+    ah:=ImageThumbBase.GetHeight(i);
+
+//    SpriteBmp:=TBitmap.Create;
+    SpriteBmp.SetSize(aw, ah);
+    for y:=0 to ah-1 do
+      for x:=0 to aw-1 do
+        SpriteBmp.Canvas.Pixels[x, y]:=ImageThumbBase.GetPixelTColor(i, x, y);
+
+//    CheckBmp:=TBitmap.Create;
+    CheckBmp.SetSize(128, 128);
+    CheckBmp.Canvas.Draw(0, 0, FCheckerBmp);
+
+//    TransBmp:=TBitmap.Create;
+ //   TransBmp.Width:=128;
+ //   TransBmp.Height:=128;
+    TransBmp.SetSize(128, 128);
+    TransBmp.TransparentColor:=clBlack;
+    TransBmp.TransparentMode:=tmFixed;
+    TransBmp.Transparent:=True;
+    TransBmp.Canvas.CopyRect(Rect(0, 0, 128, 128), SpriteBmp.Canvas, Rect(0, 0, aw, ah));
+
+    CheckBmp.Canvas.Draw(0, 0, TransBmp);
+    TransTileThumbImageList.Add(CheckBmp, nil);
+
+//    SpriteBmp.Free;
+//    TransBmp.Free;
+//    CheckBmp.Free;
+  end;
+  SpriteBmp.Free;
+  TransBmp.Free;
+  CheckBmp.Free;
+
+  TileListView.LargeImages:=TransTileThumbImageList;
 end;
 
-procedure TMapEdit.AClearTile(x,y : integer);
+procedure TMapEdit.DrawCheckerboard;
 var
-  mx,my : integer;
-  T : TileRec;
+  pw, ph, x, y : integer;
 begin
- mx:=(x div TileWidth);
- if (mx < 0) or (mx >= MapCoreBase.GetMapWidth(CurrentMap)) then exit;
- my:=(y div TileHeight);
- if (my<0) or (my >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
- T.ImageIndex:=TileClear;
- MapCoreBase.SetMapTile(CurrentMap,mx,my,T);
-end;
+  pw:=MapCoreBase.GetMapWidth(CurrentMap) * TileWidth;
+  ph:=MapCoreBase.GetMapHeight(CurrentMap) * TileHeight;
 
-//called from onpaint
-procedure TMapEdit.CPlotTile(ColX,ColY : integer;var TTile : TileRec); //draw to canvas - do not store
-var
-  gx,gy : integer;
-begin
- if (ColX < 0) or (ColY<0) or (ColX >= MapCoreBase.GetMapWidth(CurrentMap)) or (ColY >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
- //MapCoreBase.SetMapTile(CurrentMap,mx,my,CTile);
-
- gx:=ColX*TileWidth;
- gy:=ColY*TileHeight;
- MapPaintBox.canvas.CopyRect(Rect(gx, gy, gx+TileWidth, gy+TileHeight), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
-end;
-
-//called from onpaint
-procedure TMapEdit.CClearTile(ColX,ColY : integer);
-var
-  gx,gy : integer;
-begin
-  if (ColX < 0) or (ColY<0) or (ColX >= MapCoreBase.GetMapWidth(CurrentMap)) or (ColY >= MapCoreBase.GetMapHeight(CurrentMap)) then exit;
-  gx:=ColX*TileWidth;
-  gy:=ColY*TileHeight;
-
-  MapPaintBox.Canvas.Brush.Color:=clBlack;
-  MapPaintBox.Canvas.FillRect(gx,gy,gx+TileWidth,gy+TileHeight);
-end;
-
-procedure TMapEdit.MapImageMouseDown(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-begin
- (*
- MDownLeft:=False;
- MDownRight:=False;
-
- if Button = mbRight then
- begin
-   MDownRight:=True;
-   AClearTile(x,y);
- end
- else if Button = mbLeft then
- begin
-    MDownLeft:=True;
-    if TileMode = 1 then
+  // tile the 256x256 checkerboard bitmap across the map area
+  y:=0;
+  while y < ph do
+  begin
+    x:=0;
+    while x < pw do
     begin
-      APlotTile(x,y,CTile);
-    end
-    else if TileMode = 0 then
-    begin
-      AClearTile(x,y);
+      MapPaintBox.Canvas.Draw(x, y, FCheckerBmp);
+      inc(x, 256);
     end;
- end;
- MapPaintbox.Invalidate
- *)
+    inc(y, 256);
+  end;
 end;
 
-procedure TMapEdit.MapImageMouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure TMapEdit.ImageListPlotTileTransparent(mx,my : integer;var TTile : TileRec);
+var
+  gx, gy : integer;
 begin
-  (*MDownLeft:=False;
-  MDownRight:=False;
-  MapPaintBox.Invalidate;*)
+  if (TTile.ImageIndex < 0) or (TTile.ImageIndex >= TransTileImageList.Count) then exit;
+  gx:=mx * TileWidth;
+  gy:=my * TileHeight;
+  TransTileImageList.Draw(MapPaintBox.Canvas, gx, gy, TTile.ImageIndex);
+end;
+
+procedure TMapEdit.TransparentToggleClick(Sender: TObject);
+var
+  i : integer;
+begin
+  ShowTransparent:=not ShowTransparent;
+  TransparentToggle.Checked:=ShowTransparent;
+
+  if ShowTransparent then
+    RebuildTransTileThumbImageList
+  else
+    TileListView.LargeImages:=RMMainForm.ImageList1;
+  TileListView.Refresh;
+
+  UpdateCurrentTile;
+  MapPaintBox.Invalidate;
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+    UpdateMapPreviewImageIcons(i, UpdateImage);
+  MapListView.Repaint;
 end;
 
 procedure TMapEdit.ClearMapClick(Sender: TObject);
@@ -656,7 +689,46 @@ begin
   MapListView.Repaint;
 end;
 
+procedure TMapEdit.HitBoxesAddClick(Sender: TObject);
+var
+  ca : MapClipAreaRec;
+begin
+  if MapCoreBase.GetMapClipStatus(CurrentMap) = 0 then
+  begin
+    ShowMessage('Please use the Select Area tool to mark the hit box area first.');
+    exit;
+  end;
 
+  MapCoreBase.GetMapClipAreaCoords(CurrentMap,ca);
+  MapCoreBase.AddHitBox(CurrentMap,ca.x,ca.y,ca.x2,ca.y2);
+  ShowHitBoxOverlay:=True;
+  HitBoxesToggle.Checked:=True;
+  UpdateHitBoxListView;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.HitBoxesDeleteClick(Sender: TObject);
+var
+  item : TListItem;
+  hbindex : integer;
+begin
+  if ListView1.SelCount > 0 then
+  begin
+    item:=ListView1.Selected;
+    if item <> nil then
+    begin
+      hbindex:=item.Index;
+      MapCoreBase.DeleteHitBox(CurrentMap,hbindex);
+      SelectedHitBox:=-1;
+      UpdateHitBoxListView;
+      MapPaintBox.Invalidate;
+    end;
+  end
+  else
+  begin
+    ShowMessage('Please select a hit box from the list to delete.');
+  end;
+end;
 
 Procedure TMapEdit.DrawGrid;
 var
@@ -694,18 +766,146 @@ begin
   MapPaintBox.Canvas.Rectangle(ca.x*TileWidth-3,ca.y*TileHeight-3,(ca.x2+1)*TileWidth+4,(ca.y2+1)*TileHeight+4);
 end;
 
+Procedure TMapEdit.DrawHitBoxOverlay;
+var
+  i : integer;
+  HB : HitBoxRec;
+  px,py,px2,py2 : integer;
+  hbcount : integer;
+  HBColors : array[0..7] of TColor;
+begin
+  HBColors[0]:=clRed;
+  HBColors[1]:=clLime;
+  HBColors[2]:=clAqua;
+  HBColors[3]:=clFuchsia;
+  HBColors[4]:=clYellow;
+  HBColors[5]:=clBlue;
+  HBColors[6]:=clMaroon;
+  HBColors[7]:=clTeal;
+
+  hbcount:=MapCoreBase.GetHitBoxCount(CurrentMap);
+  if hbcount = 0 then exit;
+
+  MapPaintBox.Canvas.Brush.Style:=bsBDiagonal;
+  MapPaintBox.Canvas.Pen.Width:=2;
+
+  for i:=0 to hbcount-1 do
+  begin
+    MapCoreBase.GetHitBox(CurrentMap,i,HB);
+    if not HB.active then continue;
+
+    px:=HB.x*TileWidth;
+    py:=HB.y*TileHeight;
+    px2:=(HB.x2+1)*TileWidth;
+    py2:=(HB.y2+1)*TileHeight;
+
+    MapPaintBox.Canvas.Pen.Color:=HBColors[i mod 8];
+    MapPaintBox.Canvas.Brush.Color:=HBColors[i mod 8];
+
+    // draw hatched fill rectangle
+    MapPaintBox.Canvas.Rectangle(px,py,px2,py2);
+
+    // highlight selected hitbox with thicker border
+    if i = SelectedHitBox then
+    begin
+      MapPaintBox.Canvas.Brush.Style:=bsClear;
+      MapPaintBox.Canvas.Pen.Width:=3;
+      MapPaintBox.Canvas.Rectangle(px-1,py-1,px2+1,py2+1);
+      MapPaintBox.Canvas.Pen.Width:=2;
+      MapPaintBox.Canvas.Brush.Style:=bsBDiagonal;
+    end;
+
+    // draw index label
+    MapPaintBox.Canvas.Brush.Style:=bsSolid;
+    MapPaintBox.Canvas.Font.Color:=clWhite;
+    MapPaintBox.Canvas.Font.Size:=8;
+    MapPaintBox.Canvas.TextOut(px+2,py+2,IntToStr(i));
+    MapPaintBox.Canvas.Brush.Style:=bsBDiagonal;
+  end;
+
+  MapPaintBox.Canvas.Brush.Style:=bsSolid;
+  MapPaintBox.Canvas.Pen.Width:=1;
+end;
+
+procedure TMapEdit.UpdateHitBoxListView;
+var
+  i : integer;
+  hbcount : integer;
+  HB : HitBoxRec;
+  item : TListItem;
+begin
+  ListView1.Items.Clear;
+  hbcount:=MapCoreBase.GetHitBoxCount(CurrentMap);
+  for i:=0 to hbcount-1 do
+  begin
+    MapCoreBase.GetHitBox(CurrentMap,i,HB);
+    item:=ListView1.Items.Add;
+    item.Caption:=IntToStr(i);
+    item.SubItems.Add(IntToStr(HB.x));
+    item.SubItems.Add(IntToStr(HB.y));
+    item.SubItems.Add(IntToStr(HB.x2));
+    item.SubItems.Add(IntToStr(HB.y2));
+    item.SubItems.Add(IntToStr(HB.x2-HB.x+1)+'x'+IntToStr(HB.y2-HB.y+1));
+  end;
+  HitBoxPanel.Caption:='Hit Boxes ('+IntToStr(hbcount)+')';
+end;
+
+procedure TMapEdit.HitBoxesToggleClick(Sender: TObject);
+begin
+  ShowHitBoxOverlay:=not ShowHitBoxOverlay;
+  HitBoxesToggle.Checked:=ShowHitBoxOverlay;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.HitBoxesClearAllClick(Sender: TObject);
+begin
+  if MapCoreBase.GetHitBoxCount(CurrentMap) = 0 then exit;
+  if MessageDlg('Clear all hit boxes for this map?',mtConfirmation,[mbYes,mbNo],0) = mrYes then
+  begin
+    MapCoreBase.ClearAllHitBoxes(CurrentMap);
+    SelectedHitBox:=-1;
+    UpdateHitBoxListView;
+    MapPaintBox.Invalidate;
+  end;
+end;
+
+procedure TMapEdit.ListView1Click(Sender: TObject);
+var
+  item : TListItem;
+begin
+  if ListView1.SelCount > 0 then
+  begin
+    item:=ListView1.Selected;
+    if item <> nil then
+    begin
+      SelectedHitBox:=item.Index;
+      MapPaintBox.Invalidate;
+    end;
+  end;
+end;
+
 procedure TMapEdit.UpdateMapView;
 var
   i,j : integer;
   T   : TileRec;
 begin
+ // draw checkerboard background first when transparency is on
+ if ShowTransparent then DrawCheckerboard;
+
  for j:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
  begin
     for i:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
    begin
       MapCoreBase.GetMapTile(CurrentMap,i,j,T);
-      if T.ImageIndex = TileMissing then PlotMissingTile(i,j)
-      else if T.ImageIndex <> TileClear then ImageListPlotTile(i,j,T);
+      if T.ImageIndex = TileMissing then
+        PlotMissingTile(i,j)
+      else if T.ImageIndex <> TileClear then
+      begin
+        if ShowTransparent then
+          ImageListPlotTileTransparent(i,j,T)
+        else
+          ImageListPlotTile(i,j,T);
+      end;
     end;
   end;
 end;
@@ -716,11 +916,7 @@ begin
   if RenderDrawToolShape  then DrawItem(DrawTool,MapX,MapY,MapX2,MapY2,CTile.ImageIndex,0);
   if MapCoreBase.GetMapGridStatus(MapCoreBase.GetCurrentMap) = 1 then DrawGrid;
   if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then DrawOverLayOnClipArea;
-end;
-
-procedure TMapEdit.MapScrollBoxClick(Sender: TObject);
-begin
-
+  if ShowHitBoxOverlay then DrawHitBoxOverlay;
 end;
 
 procedure TMapEdit.MenuDeleteAllClick(Sender: TObject);
@@ -790,14 +986,16 @@ begin
                                      'BasicLNMapData':ExportMap(FileName,BasicLNLan,True);
                                      'ExportCArray': ExportMap(FileName,CLan,true);
                                      'ExportPascalArray':ExportMap(FileName,PascalLan,true);
-
+                                     'ExportHitBoxBasic':ExportHitBoxes(FileName,BasicLan);
+                                     'ExportHitBoxBasicLN':ExportHitBoxes(FileName,BasicLNLan);
+                                     'ExportHitBoxC':ExportHitBoxes(FileName,CLan);
+                                     'ExportHitBoxPascal':ExportHitBoxes(FileName,PascalLan);
  else
    result:=false;  //did not find a supported format return false
    exit;
  End;
 
  result:=true;  //found supported format - return true
-
  ReadFileAndCopyToClipboard(filename);
  EraseFile(filename);
  ShowMessage('Exported to Clipboard!');
@@ -849,7 +1047,144 @@ begin
   end;
 end;
 
+procedure TMapEdit.ExportHitBoxes(filename : string; lan : integer);
+var
+  F : TextFile;
+  i, hbcount, linenum : integer;
+  HB : HitBoxRec;
+  exportname : string;
+begin
+  hbcount:=MapCoreBase.GetHitBoxCount(CurrentMap);
+  exportname:=MapCoreBase.GetExportName(CurrentMap);
+  if exportname = '' then exportname:='map' + IntToStr(CurrentMap);
 
+  AssignFile(F, filename);
+  Rewrite(F);
+
+  case lan of
+    CLan:
+    begin
+      WriteLn(F, '// HitBox data for ' + exportname);
+      WriteLn(F, 'const int ' + exportname + '_hitbox_count = ' + IntToStr(hbcount) + ';');
+      if hbcount > 0 then
+      begin
+        WriteLn(F, 'const int ' + exportname + '_hitboxes[' + IntToStr(hbcount) + '][4] = {');
+        for i:=0 to hbcount-1 do
+        begin
+          MapCoreBase.GetHitBox(CurrentMap, i, HB);
+          if i < hbcount-1 then
+            WriteLn(F, '  {' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '},')
+          else
+            WriteLn(F, '  {' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '}');
+        end;
+        WriteLn(F, '};');
+      end;
+    end;
+
+    PascalLan:
+    begin
+      WriteLn(F, '{ HitBox data for ' + exportname + ' }');
+      WriteLn(F, 'const');
+      WriteLn(F, '  ' + exportname + '_hitbox_count = ' + IntToStr(hbcount) + ';');
+      if hbcount > 0 then
+      begin
+        WriteLn(F, '  ' + exportname + '_hitboxes: array[0..' + IntToStr(hbcount-1) + ', 0..3] of integer = (');
+        for i:=0 to hbcount-1 do
+        begin
+          MapCoreBase.GetHitBox(CurrentMap, i, HB);
+          if i < hbcount-1 then
+            WriteLn(F, '    (' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '),')
+          else
+            WriteLn(F, '    (' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + ')');
+        end;
+        WriteLn(F, '  );');
+      end;
+    end;
+
+    BasicLan:
+    begin
+      WriteLn(F, 'REM HitBox data for ' + exportname);
+      WriteLn(F, 'REM HitBox Count');
+      WriteLn(F, 'DATA ' + IntToStr(hbcount));
+      if hbcount > 0 then
+      begin
+        WriteLn(F, 'REM X, Y, X2, Y2');
+        for i:=0 to hbcount-1 do
+        begin
+          MapCoreBase.GetHitBox(CurrentMap, i, HB);
+          WriteLn(F, 'DATA ' + IntToStr(HB.x) + ',' + IntToStr(HB.y) + ',' + IntToStr(HB.x2) + ',' + IntToStr(HB.y2));
+        end;
+      end;
+    end;
+
+    BasicLNLan:
+    begin
+      linenum:=1000;
+      WriteLn(F, IntToStr(linenum) + ' REM HitBox data for ' + exportname);
+      inc(linenum, 10);
+      WriteLn(F, IntToStr(linenum) + ' REM HitBox Count');
+      inc(linenum, 10);
+      WriteLn(F, IntToStr(linenum) + ' DATA ' + IntToStr(hbcount));
+      if hbcount > 0 then
+      begin
+        inc(linenum, 10);
+        WriteLn(F, IntToStr(linenum) + ' REM X, Y, X2, Y2');
+        for i:=0 to hbcount-1 do
+        begin
+          inc(linenum, 10);
+          MapCoreBase.GetHitBox(CurrentMap, i, HB);
+          WriteLn(F, IntToStr(linenum) + ' DATA ' + IntToStr(HB.x) + ',' + IntToStr(HB.y) + ',' + IntToStr(HB.x2) + ',' + IntToStr(HB.y2));
+        end;
+      end;
+    end;
+  end;
+
+  CloseFile(F);
+end;
+
+procedure TMapEdit.ExportHitBoxBasicClick(Sender: TObject);
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
+  if SaveDialog1.Execute then
+  begin
+    ExportHitBoxes(SaveDialog1.FileName, BasicLan);
+  end;
+end;
+
+procedure TMapEdit.ExportHitBoxBasicLNClick(Sender: TObject);
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*';
+  if SaveDialog1.Execute then
+  begin
+    ExportHitBoxes(SaveDialog1.FileName, BasicLNLan);
+  end;
+end;
+
+procedure TMapEdit.ExportHitBoxCClick(Sender: TObject);
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  SaveDialog1.Filter := 'c|*.c|All Files|*.*';
+  if SaveDialog1.Execute then
+  begin
+    ExportHitBoxes(SaveDialog1.FileName, CLan);
+  end;
+end;
+
+procedure TMapEdit.ExportHitBoxPascalClick(Sender: TObject);
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*';
+  if SaveDialog1.Execute then
+  begin
+    ExportHitBoxes(SaveDialog1.FileName, PascalLan);
+  end;
+end;
 
 procedure TMapEdit.MenuMapPropsClick(Sender: TObject);
 var
@@ -877,16 +1212,17 @@ begin
   MapCoreBase.AddMap;   //making copy of Map 0 for all new maps - Map 0 is the primary map
   MapCoreBase.SetCurrentMap(MapCoreBase.GetMapCount-1);
   CurrentMap:=MapCoreBase.GetCurrentMap;
-  TileMode:=1; //draw
+  TileMode:=tlModeDraw; //draw
   MapCoreBase.SetMapTileMode(CurrentMap,TileMode); // we set to draw because the copied data from map 0 may be in erase mode
 
-  TileZoom.Position:=4;
+  TileZoom.Position:=1;
   MapCoreBase.SetZoomSize(CurrentMap,TileZoom.Position);
 
   UpdateMapListView;
   UpdatePageSize;
   MapScrollBox.HorzScrollBar.Position:=0;
   MapScrollBox.VertScrollBar.Position:=0;
+
   SetDrawTool(DrawShapePencil);
   UpdateToolSelectionIcons;
   UpdateMenus;
@@ -901,6 +1237,7 @@ begin
   begin
    ReadMap(OpenDialog1.FileName);
    UpdatePageSize;
+   UpdateHitBoxListView;
    //UpdateMapView;
    MapPaintBox.Invalidate;
   end;
@@ -914,8 +1251,6 @@ begin
    WriteMap(SaveDialog1.FileName);
   end;
 end;
-
-
 
 procedure TMapEdit.UpdateEditMenus;
 var
@@ -1021,23 +1356,23 @@ end;
 
 procedure TMapEdit.SetMapCustomSizeClick(Sender: TObject);
 begin
-    if SetCustomMapSizeForm.ShowModal = mrOK then
-    begin
-       ReSizeMapClick(Sender);
-    end;
+  if SetCustomMapSizeForm.ShowModal = mrOK then
+  begin
+     ReSizeMapClick(Sender);
+  end;
 end;
 
 procedure TMapEdit.SetTileCustomSizeClick(Sender: TObject);
 begin
-    if SetCustomTileSizeForm.ShowModal = mrOK then
-      begin
-         ReSizeTiles(Sender);
-      end;
+  if SetCustomTileSizeForm.ShowModal = mrOK then
+  begin
+     ReSizeTiles(Sender);
+  end;
 end;
 
 procedure TMapEdit.TileModeDrawClick(Sender: TObject);
 begin
-  TileMode:=1;
+  TileMode:=tlModeDraw;
   MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
 //  RadioDraw.Checked:=true;
   UpdateMenus;
@@ -1045,7 +1380,7 @@ end;
 
 procedure TMapEdit.TileModeEraseClick(Sender: TObject);
 begin
- TileMode:=0;
+ TileMode:=tlModeErase;
  MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
 // RadioErase.Checked:=true;
  UpdateMenus;
@@ -1053,14 +1388,14 @@ end;
 
 procedure TMapEdit.RadioDrawClick(Sender: TObject);
 begin
-  TileMode:=1;
+  TileMode:=tlModeDraw;
   MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
   UpdateMenus;
 end;
 
 procedure TMapEdit.RadioEraseClick(Sender: TObject);
 begin
- TileMode:=0;
+ TileMode:=tlModeErase;
  MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
  UpdateMenus;
 end;
@@ -1118,30 +1453,24 @@ begin
   MapPaintBox.Invalidate;
 end;
 
-
 //0 erase 1 draw tile
-Procedure TMapEdit.SetMapTileMode(Tool : integer);
+Procedure TMapEdit.SetMapTileMode(tlTileMode : integer);
 begin
-  TileMode:=Tool;
+  TileMode:=tlTileMode;
   MapCoreBase.SetMapTileMode(MapCoreBase.GetCurrentMap,TileMode);
   TileModeErase.Checked:=false;
   TileModeDraw.Checked:=false;
 
-  if Tool = 0 then
+  if TileMode = tlModeErase then
   begin
     RadioErase.Checked:=true;
     TileModeErase.Checked:=true;
   end
-  else if Tool = 1 then
+  else if TileMode = tlModeDraw then
   begin
     RadioDraw.Checked:=true;
     TileModeDraw.Checked:=true;
   end;
-end;
-
-procedure TMapEdit.MapImageMouseLeave(Sender: TObject);
-begin
-(*  MDownRight:=False;*)
 end;
 
 procedure TMapEdit.LoadTile(index : integer);
@@ -1168,26 +1497,36 @@ begin
  end;
 end;
 
-
 procedure TMapEdit.LoadTilesToTileImageList;
 var
   index,i,j,awidth,aheight : integer;
-  SrcBitMap,DstBitMap : TBitMap;
+  SrcBitMap,DstBitMap,TransBitMap : TBitMap;
 begin
  TileImageList.Width:=TileWidth;
  TileImageList.Height:=TileHeight;
  TileImageList.Clear;
 
+ TransTileImageList.Width:=TileWidth;
+ TransTileImageList.Height:=TileHeight;
+ TransTileImageList.Clear;
+
  DstBitMap:=TBitMap.Create;
  DstBitMap.SetSize(TileWidth,TileHeight);
+
+ TransBitMap:=TBitMap.Create;
+ TransBitMap.SetSize(TileWidth,TileHeight);
+
+ SrcBitMap:=TBitMap.Create;
 
  for index:=0 to ImageThumbBase.GetCount-1 do
  begin
    awidth:=ImageThumbBase.GetWidth(index);
    aheight:=ImageThumbBase.GetHeight(index);
 
-   SrcBitMap:=TBitMap.Create;
+//   SrcBitMap:=TBitMap.Create;
    SrcBitMap.SetSize(awidth,aheight);
+
+   // build normal tile
    For j:=0 to aheight-1 do
    begin
      For i:=0 to awidth-1 do
@@ -1198,12 +1537,21 @@ begin
 
    DstBitMap.Canvas.Clear;
    DstBitMap.Canvas.CopyRect( Rect(0, 0, TileWidth, TileHeight), SrcBitMap.Canvas, Rect(0, 0,aWidth, aHeight));
-
    TileImageList.Add(DstBitMap,NIL);
-   SrcBitMap.Free;
 
+   // build transparent tile - same content but with color 0 as transparent
+   TransBitMap.Canvas.Clear;
+   TransBitMap.Canvas.CopyRect( Rect(0, 0, TileWidth, TileHeight), SrcBitMap.Canvas, Rect(0, 0,aWidth, aHeight));
+   TransBitMap.TransparentColor:=GetColor0TColor;
+   TransBitMap.TransparentMode:=tmFixed;
+   TransBitMap.Transparent:=True;
+   TransTileImageList.Add(TransBitMap,NIL);
+
+//   SrcBitMap.Free;
  end;
+ SrcBitMap.Free;
  DstBitMap.Free;
+ TransBitMap.Free;
 end;
 
 Procedure TMapEdit.VerifyTileImageList;
@@ -1300,13 +1648,6 @@ begin
 end;
 
 
-procedure TMapEdit.Button1Click(Sender: TObject);
-begin
-// UpdateMapPreviewImageIcons(MapImageList,MapCoreBase.GetCurrentMap,AddImage);
- //ShowMessage(IntToStr(SelectedTileImage.Picture.Bitmap.Width)+' '+IntToStr(SelectedTileImage.Picture.Bitmap.Height));
-
-// UpdateCurrentTile;
-end;
 
 procedure TMapEdit.MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
 var
@@ -1315,6 +1656,16 @@ begin
  gx:=mx*TileWidth;
  gy:=my*TileHeight;
  TileImageList.Draw(MPCanvas,gx,gy,TTile.ImageIndex,true);
+end;
+
+procedure TMapEdit.MapPreviewPlotTileTransparent(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
+var
+  gx, gy : integer;
+begin
+  if (TTile.ImageIndex < 0) or (TTile.ImageIndex >= TransTileImageList.Count) then exit;
+  gx:=mx * TileWidth;
+  gy:=my * TileHeight;
+  TransTileImageList.Draw(MPCanvas, gx, gy, TTile.ImageIndex);
 end;
 
 Procedure TMapEdit.UpdateMapPreviewImageIcons(MapIndex,ImageAction : integer);
@@ -1335,20 +1686,40 @@ begin
  DstBitMap:=TBitMap.Create;
  DstBitMap.SetSize(256,256);
 
+ if ShowTransparent then
+ begin
+   // set transparency on SrcBitMap BEFORE drawing tiles onto it
+   SrcBitMap.TransparentColor:=GetColor0TColor;
+   SrcBitMap.TransparentMode:=tmFixed;
+   SrcBitMap.Transparent:=True;
+
+   // fill background with the transparent color so untouched pixels show through
+   SrcBitMap.Canvas.Brush.Color:=GetColor0TColor;
+   SrcBitMap.Canvas.FillRect(0, 0, SrcBitMap.Width, SrcBitMap.Height);
+
+   // draw fixed checkerboard on DstBitMap at destination size
+   DstBitMap.Canvas.Draw(0, 0, FCheckerBmp);
+ end;
 
  for j:=0 to mheight-1 do
   begin
     for i:=0 to mwidth-1 do
     begin
       MapCoreBase.GetMapTile(MapIndex,i,j,T);
-       if T.ImageIndex > TileClear then   //we don't care about missing tile here
+       if T.ImageIndex > TileClear then
        begin
-         MapPreviewPlotTile(SrcBitMap.Canvas,i,j,T);
+         if ShowTransparent then
+           MapPreviewPlotTileTransparent(SrcBitMap.Canvas,i,j,T)
+         else
+           MapPreviewPlotTile(SrcBitMap.Canvas,i,j,T);
        end;
     end;
   end;
-  DstBitMap.canvas.CopyRect(Rect(0, 0, DstBitMap.Width, DstBitMap.Height), SrcBitMap.Canvas, Rect(0, 0, SrcBitMap.Width, SrcBitMap.Height));
-//  MapImageList.clear;
+
+  if ShowTransparent then
+    DstBitMap.Canvas.StretchDraw(Rect(0, 0, 256, 256), SrcBitMap)
+  else
+    DstBitMap.canvas.CopyRect(Rect(0, 0, DstBitMap.Width, DstBitMap.Height), SrcBitMap.Canvas, Rect(0, 0, SrcBitMap.Width, SrcBitMap.Height));
 
   if ImageAction = AddImage then
   begin
@@ -1359,7 +1730,6 @@ begin
   begin
      MapImageList.Replace(MapIndex,DstBitMap,nil,false);
   end;
-//  MapListView.Repaint;
   SrcBitMap.Free;
   DstBitMap.Free;
 
@@ -1397,6 +1767,8 @@ begin
      UpdateToolSelectionIcons;
      UpdateMenus;
      UpdateEditMenus;
+     UpdateHitBoxListView;
+     SelectedHitBox:=-1;
      //UpdateMapView;
      MapPaintBox.Invalidate;
    end;
@@ -1419,10 +1791,8 @@ begin
  begin
    MapListView.Items.Add;
    UpdateMapPreviewImageIcons(i,AddImage);
-
    MapListView.Items[i].Caption:='Map '+IntToStr(i+1);
-  // MapListView.Items[i].ImageIndex:=i;
-
+   // MapListView.Items[i].ImageIndex:=i;
  end;
 end;
 
@@ -1438,28 +1808,57 @@ begin
 end;
 
 procedure TMapEdit.UpdateCurrentTile;
+var
+  Bmp : TBitmap;
+  x, y, checkSize : integer;
 begin
-// SelectedTileImage.Picture.Bitmap.SetSize(CTileBitMap.Width, CTileBitMap.Height);
+  if ShowTransparent then
+  begin
+    // draw checkerboard background on selected tile preview
+    checkSize:=16;
+    for y:=0 to (256 div checkSize) - 1 do
+    begin
+      for x:=0 to (256 div checkSize) - 1 do
+      begin
+        if ((x + y) mod 2) = 0 then
+          SelectedTileImage.Canvas.Brush.Color:=RGBToColor(192, 192, 192)
+        else
+          SelectedTileImage.Canvas.Brush.Color:=RGBToColor(255, 255, 255);
+        SelectedTileImage.Canvas.FillRect(
+          x * checkSize, y * checkSize,
+          (x+1) * checkSize, (y+1) * checkSize);
+      end;
+    end;
 
- //SelectedTileImage.Picture.Bitmap.SetSize(256, 256);
-// SelectedTileImage.Picture.Bitmap.Width:=256;
-// SelectedTileImage.Picture.Bitmap.Height:=256;
-
- //  SelectedTileImage.canvas.CopyRect(Rect(0, 0, CTileBitMap.Width, CTileBitMap.Height), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width, CTileBitMap.Height));
-  SelectedTileImage.canvas.CopyRect(Rect(0, 0,  256,256), CTileBitMap.Canvas, Rect(0, 0,CTileBitMap.Width,  CTileBitMap.Height));
-//        ActualBox.canvas.CopyRect(Rect(0, 0,  256,256), ACBitMap.Canvas, Rect(0, 0,ACBitMap.Width,  ACBitMap.Height));
-
+    // draw tile with color 0 transparent on top of checkerboard
+    Bmp:=TBitmap.Create;
+    try
+      Bmp.Width:=CTileBitMap.Width;
+      Bmp.Height:=CTileBitMap.Height;
+      Bmp.TransparentColor:=GetColor0TColor;
+      Bmp.TransparentMode:=tmFixed;
+      Bmp.Transparent:=True;
+      Bmp.Canvas.Draw(0, 0, CTileBitMap);
+      SelectedTileImage.Canvas.StretchDraw(Rect(0, 0, 256, 256), Bmp);
+    finally
+      Bmp.Free;
+    end;
+  end
+  else
+  begin
+    SelectedTileImage.canvas.CopyRect(Rect(0, 0, 256, 256), CTileBitMap.Canvas, Rect(0, 0, CTileBitMap.Width, CTileBitMap.Height));
+  end;
 end;
 
-procedure TMapEdit.UpdateInfoBarX1Y1X2Y2;
+procedure TMapEdit.UpdateInfoBar;
 var
   XYStr,WHStr   : string;
 begin
  XYStr:='X = '+IntToStr(MapX)+' Y = '+IntToStr(MapY)+' '+
         'X2 = '+IntToStr(MapX2)+' Y2 = '+IntToStr(MapY2)+' ';
  WHStr:='Width = '+IntToStr(ABS(MapX2-MapX+1))+' Height = '+IntToStr(ABS(MapY2-MapY+1));
- StatusBar1.SimpleText:=XYStr;
- StatusBar2.SimpleText:=WHStr;
+ StatusBar0.Panels[0].Text:=XYStr;
+ StatusBar0.Panels[1].Text:=WHStr;
 end;
 
 procedure TMapEdit.UpdateMapInfo(x,y : integer);
@@ -1489,8 +1888,8 @@ begin
                  'Width = '+IntToStr(ca.x2-ca.x+1)+' Height = '+IntToStr(ca.y2-ca.y+1)+' ';
    end;
 
-  StatusBar1.SimpleText:=XYStr+ColIndexStr;
-  StatusBar2.SimpleText:=ClipStr;
+  StatusBar0.Panels[0].Text:=XYStr+ColIndexStr;
+  StatusBar0.Panels[1].Text:=ClipStr;
 end;
 
 // xyx2y2 mouse ScrollDownMenu event - this handles all the tools that just requires x,y,x2,y2 coords only - pixel and spraypaint
@@ -1503,7 +1902,7 @@ begin
   MapY:=GetMapY(y);
   MapX2:=MapX;
   MapY2:=MapY;
-  UpdateInfoBarX1Y1X2Y2;
+  UpdateInfoBar;
   OldMapX:=MapX;
   OldMapY:=MapY;
 
@@ -1545,7 +1944,7 @@ begin
   //new spot
   OldMapX:=MapX2;
   OldMapY:=MapY2;
-  UpdateInfoBarX1Y1X2Y2; //we have x1,x2,y1,t2
+  UpdateInfoBar;
 
   //  DrawTool:=RMDRAWTools.GetDrawTool;
   if DrawTool = DrawShapeClip then
@@ -1572,7 +1971,7 @@ begin
   OldMapX:=-1;
   OldMapY:=-1;
 //  DrawTool:=RMDRAWTools.GetDrawTool;
-  if TileMode = 0 then
+  if TileMode = tlModeErase then
      DrawItem(DrawTool,MapX,MapY,MapX2,MapY2,TileClear,1)
   else
      DrawItem(DrawTool,MapX,MapY,MapX2,MapY2,CTile.ImageIndex,1);
@@ -1594,7 +1993,7 @@ begin
 
   if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
   begin
-    if TileMode = 0 then  //erase mode
+    if TileMode = tlModeErase then  //erase mode
     begin
       if (ssLeft in Shift) and (ssShift in Shift) then
         ReplaceFill(MapX,MapY,MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),TileClear,1)
@@ -1613,7 +2012,7 @@ begin
   end
   else
   begin
-    if TileMode = 0 then
+    if TileMode = tlModeErase then
       DrawItem(DrawTool,MapX,MapY,MapX,MapY,TileClear,1)
     else
       DrawItem(DrawTool,MapX,MapY,MapX,MapY,CTile.ImageIndex,1);
@@ -1864,7 +2263,7 @@ end;
 procedure TMapEdit.UpdateMenus;          // and Tile Mode radio buttons
 begin
   ClearCheckedMenus;
-  if TileMode = 1 then
+  if TileMode = tlModeDraw then
   begin
      TileModeDraw.Checked:=true;
      RadioDraw.Checked:=true;

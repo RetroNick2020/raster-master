@@ -868,9 +868,63 @@ begin
      end;
    end;
  end;
+
+ //write hitbox info for maps that have hitboxes
+ For i:=0 to count-1 do
+ begin
+   MapCoreBase.GetMapExportProps(i,MPE);
+   if (MPE.MapFormat > 0) and (MapCoreBase.GetHitBoxCount(i) > 0) then
+   begin
+     Lan:=QBLan;
+     if MPE.Lan = BasicLnLan then Lan:=GWLan
+     else if MPE.Lan = FBBasicLan then Lan:=FBLan
+     else if MPE.Lan = AQBBasicLan then Lan:=AQBLan
+     else if MPE.Lan = BAMBasicLan then Lan:=BAMLan;
+
+     size:=MapCoreBase.GetHitBoxCount(i) * 4;
+     WriteBasicVariable(data,Lan,MPE.Name+'HitBox','Count',MapCoreBase.GetHitBoxCount(i));
+     WriteBasicVariable(data,Lan,MPE.Name+'HitBox','Size',size);
+     WriteBasicVariable(data,Lan,MPE.Name+'HitBox','Id',i);
+     if (Lan = FBLan) or (Lan = AQBLan) then
+       WriteFBBasicDimReadStub(data,Lan,MPE.Name+'HitBox',size)
+     else
+       WriteBasicDimReadStub(data,Lan,MPE.Name+'HitBox',size);
+   end;
+ end;
 end;
 
 
+
+procedure WriteHitBoxDataToBuffer(var data : BufferRec);
+var
+  i, j, hbcount : integer;
+  HB : HitBoxRec;
+  MPE : MapExportFormatRec;
+  Lan : integer;
+begin
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i, MPE);
+    hbcount:=MapCoreBase.GetHitBoxCount(i);
+
+    if (MPE.MapFormat > 0) and (hbcount > 0) then
+    begin
+      Lan:=QBLan;
+      if MPE.Lan = BasicLnLan then Lan:=GWLan
+      else if MPE.Lan = FBBasicLan then Lan:=FBLan
+      else if MPE.Lan = AQBBasicLan then Lan:=AQBLan
+      else if MPE.Lan = BAMBasicLan then Lan:=BAMLan;
+
+      writeln(data.fText,LineCountToStr(Lan),'''HitBox data for ',MPE.Name);
+      WriteBasicLabel(data,Lan,MPE.Name+'HitBox');
+      for j:=0 to hbcount-1 do
+      begin
+        MapCoreBase.GetHitBox(i, j, HB);
+        writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
+      end;
+    end;
+  end;
+end;
 
 //exportonlyindex means export only the index, none of the other images.palette maps
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
@@ -1029,6 +1083,7 @@ begin
  if ExportOnlyIndex = false then     //export the maps  and  sprite animations
  begin
      WriteMapsCodeToBuffer(data.fText);
+     WriteHitBoxDataToBuffer(data);
      WriteAllAnimationCodeToBuffer(data.fText);
  end;
  close(data.fText);

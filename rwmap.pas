@@ -329,14 +329,19 @@ var
  LineBuf      : array[0..255] of TileRec;
  MapProps     : MapPropsRec;
  ExportProps  : MapExportFormatRec;
+ HBProps      : HitBoxRec;
+ HBCount      : integer;
  i,j : integer;
 begin
  Blockread(F,MapProps,sizeof(MapProps));
  Blockread(F,ExportProps,sizeof(ExportProps));
+ Blockread(f,HBCount,sizeof(HBCount));
 
  MapCoreBase.SetMapSize(index,MapProps.width,MapProps.height);
  MapCoreBase.SetMapProps(index,MapProps);
  MapCoreBase.SetMapExportProps(index,ExportProps);
+
+ MapCoreBase.SetHitBoxCount(index,HBCount);
 
  //read Tiles
  for j:=0 to MapProps.height-1 do
@@ -350,6 +355,18 @@ begin
      MapCoreBase.SetMapTile(index,i,j,LineBuf[i]);
    end;
  end;
+
+ //if JHCount < 1 then exit;
+
+ for i:= 0 to HBCount-1 do
+ begin
+   {$I-}
+   blockread(f,HBProps,sizeof(HBProps));
+   {$I+}
+   if IORESULT <>0 then exit;
+   MapCoreBase.SetHitBox(index,i,HBProps);
+ end;
+
 end;
 
 Procedure WriteMapF(var F : File; index : integer);
@@ -359,6 +376,8 @@ var
  LineBuf      : array[0..255] of TileRec;
  MapProps     : MapPropsRec;
  ExportProps  : MapExportFormatRec;
+ HBProps      : HitBoxRec;
+ HBCount      : integer;
  i,j : integer;
 begin
  width:=MapCoreBase.GetMapWidth(index);
@@ -368,6 +387,9 @@ begin
  MapCoreBase.GetMapExportProps(index,ExportProps);
  BlockWrite(F,MapProps,sizeof(MapProps));
  BlockWrite(F,ExportProps,sizeof(ExportProps));
+ //write hitboxes
+ HBCount:=MapCoreBase.GetHitBoxCount(index);
+ blockwrite(f,HBCount,sizeof(HBCount));   //we write the count even if 0 otherwise we don't know when we are reading data back in
 
  //write Tiles
  for j:=0 to height -1 do
@@ -378,6 +400,17 @@ begin
    end;
    {$I-}
    blockwrite(f,LineBuf,width*sizeof(TileRec));
+   {$I+}
+   if IORESULT <>0 then exit;
+ end;
+
+ //if JHCount < 1 then exit;
+
+ for i:= 0 to HBCount-1 do
+ begin
+   MapCoreBase.GetHitBox(index,i,HBProps);
+   {$I-}
+   blockwrite(f,HBProps,sizeof(HBProps));
    {$I+}
    if IORESULT <>0 then exit;
  end;

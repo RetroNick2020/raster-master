@@ -1,16 +1,16 @@
 object AnimationForm: TAnimationForm
-  Left = 166
+  Left = 408
   Height = 747
-  Top = 282
-  Width = 1152
+  Top = 210
+  Width = 1149
   Caption = 'Sprite Animation'
   ClientHeight = 747
-  ClientWidth = 1152
+  ClientWidth = 1149
   Menu = MainMenu1
+  Position = poOwnerFormCenter
+  LCLVersion = '4.8.0.0'
   OnActivate = FormActivate
   OnCreate = FormCreate
-  Position = poOwnerFormCenter
-  LCLVersion = '3.4.0.0'
   object Panel1: TPanel
     Left = 32
     Height = 209
@@ -26,10 +26,10 @@ object AnimationForm: TAnimationForm
       Width = 25
       Max = 60
       Min = 1
-      OnChange = FPSTrackBarChange
       Orientation = trVertical
       Position = 1
       TickMarks = tmTopLeft
+      OnChange = FPSTrackBarChange
       TabOrder = 0
     end
     object Image2: TImage
@@ -37,7 +37,6 @@ object AnimationForm: TAnimationForm
       Height = 32
       Top = 168
       Width = 32
-      OnClick = StopButtonClick
       Picture.Data = {
         07544269746D617076020000424D760200000000000076000000280000002000
         0000200000000100040000000000000200000000000000000000000000000000
@@ -61,13 +60,13 @@ object AnimationForm: TAnimationForm
         FF000FFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000000000
         0000
       }
+      OnClick = StopButtonClick
     end
     object Image1: TImage
       Left = 48
       Height = 32
       Top = 168
       Width = 32
-      OnClick = PlayButtonClick
       Picture.Data = {
         07544269746D617076020000424D760200000000000076000000280000002000
         0000200000000100040000000000000200000000000000000000000000000000
@@ -91,6 +90,7 @@ object AnimationForm: TAnimationForm
         FF000FFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000000000
         0000
       }
+      OnClick = PlayButtonClick
     end
   end
   object TopSplitter: TSplitter
@@ -100,8 +100,8 @@ object AnimationForm: TAnimationForm
     Cursor = crVSplit
     Left = 0
     Height = 9
-    Top = 245
-    Width = 1152
+    Top = 264
+    Width = 1149
     Align = alNone
     Anchors = [akLeft, akRight]
     Color = 11625216
@@ -114,8 +114,8 @@ object AnimationForm: TAnimationForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 175
-    Height = 493
-    Top = 254
+    Height = 474
+    Top = 273
     Width = 9
     Align = alNone
     Anchors = [akTop, akLeft, akBottom]
@@ -128,8 +128,8 @@ object AnimationForm: TAnimationForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 952
-    Height = 493
-    Top = 254
+    Height = 474
+    Top = 273
     Width = 9
     Align = alNone
     Anchors = [akTop, akLeft, akBottom]
@@ -144,12 +144,12 @@ object AnimationForm: TAnimationForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 493
-    Top = 254
+    Height = 474
+    Top = 273
     Width = 175
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'LeftPanel'
-    ClientHeight = 493
+    ClientHeight = 474
     ClientWidth = 175
     Color = 15790320
     ParentBackground = False
@@ -163,7 +163,7 @@ object AnimationForm: TAnimationForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 491
+      Height = 472
       Top = 1
       Width = 173
       Anchors = [akTop, akLeft, akRight, akBottom]
@@ -191,15 +191,15 @@ object AnimationForm: TAnimationForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 184
-    Height = 493
-    Top = 254
+    Height = 474
+    Top = 273
     Width = 768
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'MiddlePanel'
-    ClientHeight = 493
+    ClientHeight = 474
     ClientWidth = 768
     TabOrder = 1
-    object CurrentAnimListView: TListView
+    object FrameScrollBox: TScrollBox
       AnchorSideLeft.Control = MiddlePanel
       AnchorSideTop.Control = MiddlePanel
       AnchorSideRight.Control = MiddlePanel
@@ -207,25 +207,38 @@ object AnimationForm: TAnimationForm
       AnchorSideBottom.Control = MiddlePanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 491
+      Height = 472
       Top = 1
       Width = 766
+      HorzScrollBar.Page = 1
+      HorzScrollBar.Visible = False
+      VertScrollBar.Page = 472
+      VertScrollBar.Tracking = True
       Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderStyle = bsNone
+      ClientHeight = 472
+      ClientWidth = 749
       Color = 15790320
-      Columns = <>
-      ColumnClick = False
-      DragMode = dmAutomatic
-      IconOptions.AutoArrange = True
-      LargeImages = CurrentAnimationImageList
-      LargeImagesWidth = 128
-      ParentShowHint = False
+      ParentBackground = False
+      ParentColor = False
       PopupMenu = PopupMenu1
-      ReadOnly = True
-      ShowColumnHeaders = False
       TabOrder = 0
-      ViewStyle = vsIcon
-      OnDragDrop = CurrentAnimListViewDragDrop
-      OnDragOver = CurrentAnimListViewDragOver
+      OnResize = FrameScrollBoxResize
+      object FramePaintBox: TPaintBox
+        Left = 0
+        Height = 491
+        Top = 0
+        Width = 766
+        Color = 15790320
+        ParentColor = False
+        PopupMenu = PopupMenu1
+        OnDragDrop = FramePaintBoxDragDrop
+        OnDragOver = FramePaintBoxDragOver
+        OnMouseDown = FramePaintBoxMouseDown
+        OnMouseMove = FramePaintBoxMouseMove
+        OnMouseUp = FramePaintBoxMouseUp
+        OnPaint = FramePaintBoxPaint
+      end
     end
   end
   object RightPanel: TPanel
@@ -238,13 +251,13 @@ object AnimationForm: TAnimationForm
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 961
-    Height = 493
-    Top = 254
-    Width = 191
+    Height = 474
+    Top = 273
+    Width = 188
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'RightPanel'
-    ClientHeight = 493
-    ClientWidth = 191
+    ClientHeight = 474
+    ClientWidth = 188
     TabOrder = 2
     object AllAnimListView: TListView
       AnchorSideLeft.Control = RightPanel
@@ -254,9 +267,9 @@ object AnimationForm: TAnimationForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 491
+      Height = 472
       Top = 1
-      Width = 189
+      Width = 186
       Anchors = [akTop, akLeft, akRight, akBottom]
       Color = 15790320
       Columns = <>
@@ -269,6 +282,106 @@ object AnimationForm: TAnimationForm
       TabOrder = 0
       ViewStyle = vsIcon
       OnClick = AllAnimListViewClick
+    end
+  end
+  object SimPanel: TPanel
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = TopSplitter
+    Left = 280
+    Height = 256
+    Top = 8
+    Width = 862
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Right = 7
+    ClientHeight = 256
+    ClientWidth = 862
+    TabOrder = 7
+    object SimPaintBox: TPaintBox
+      AnchorSideLeft.Control = SimPanel
+      AnchorSideTop.Control = SimPanel
+      AnchorSideRight.Control = SimPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = lblSimStyle
+      Left = 1
+      Height = 220
+      Top = 1
+      Width = 860
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Bottom = 11
+      OnPaint = SimPaintBoxPaint
+    end
+    object lblSimStyle: TLabel
+      AnchorSideLeft.Control = SimPanel
+      AnchorSideBottom.Control = SimPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 1
+      Height = 15
+      Top = 232
+      Width = 28
+      Anchors = [akLeft, akBottom]
+      BorderSpacing.Bottom = 8
+      Caption = 'Style:'
+    end
+    object SimStyleCombo: TComboBox
+      AnchorSideLeft.Control = lblSimStyle
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideBottom.Control = SimPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 29
+      Height = 23
+      Top = 230
+      Width = 120
+      Anchors = [akLeft, akBottom]
+      BorderSpacing.Bottom = 2
+      ItemHeight = 15
+      Items.Strings = (
+        'None'
+        'Run'
+        'Jump'
+        'Fly'
+        'Fight'
+        'Swim'
+        'Climb'
+        'Fall'
+        'Bounce'
+        'Patrol'
+      )
+      TabOrder = 0
+      OnChange = SimStyleComboChange
+    end
+    object lblMovementSpeed: TLabel
+      AnchorSideLeft.Control = SimStyleCombo
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideBottom.Control = SimPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 160
+      Height = 15
+      Top = 233
+      Width = 35
+      Anchors = [akLeft, akBottom]
+      BorderSpacing.Left = 11
+      BorderSpacing.Bottom = 7
+      Caption = 'Speed:'
+    end
+    object MovementSpeedTrackBar: TTrackBar
+      AnchorSideLeft.Control = lblMovementSpeed
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideRight.Control = SimPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = SimPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 199
+      Height = 25
+      Top = 230
+      Width = 136
+      Max = 20
+      Min = 1
+      Position = 4
+      OnChange = MovementSpeedTrackBarChange
+      Anchors = [akLeft, akBottom]
+      BorderSpacing.Left = 4
+      TabOrder = 1
     end
   end
   object CurrentAnimationImageList: TImageList
@@ -324,10 +437,18 @@ object AnimationForm: TAnimationForm
     end
   end
   object Timer1: TTimer
+    Enabled = False
     OnTimer = Timer1Timer
     OnStartTimer = Timer1StartTimer
     Left = 224
     Top = 312
+  end
+  object SimTimer: TTimer
+    Enabled = False
+    Interval = 60
+    OnTimer = SimTimerTimer
+    Left = 224
+    Top = 376
   end
   object MainMenu1: TMainMenu
     Left = 312
@@ -415,6 +536,13 @@ object AnimationForm: TAnimationForm
         OnClick = AnimPasteMenuClick
       end
     end
+    object ViewMenu: TMenuItem
+      Caption = 'View'
+      object ViewTransparentToggle: TMenuItem
+        Caption = 'Show Color 0 Transparent'
+        OnClick = ViewTransparentToggleClick
+      end
+    end
   end
   object SelectDirectoryDialog1: TSelectDirectoryDialog
     Left = 408
@@ -428,5 +556,17 @@ object AnimationForm: TAnimationForm
   object OpenDialog1: TOpenDialog
     Left = 504
     Top = 312
+  end
+  object TransSpriteImageList: TImageList
+    Height = 128
+    Width = 128
+    Left = 504
+    Top = 376
+  end
+  object TransAnimThumbImageList: TImageList
+    Height = 128
+    Width = 128
+    Left = 576
+    Top = 376
   end
 end

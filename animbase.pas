@@ -317,12 +317,30 @@ begin
 end;
 
 procedure TAnimateBase.MoveFrame(FromFrameIndex,ToFrameIndex : integer);
+var
+  TempFrame : FrameRec;
+  i : integer;
 begin
-  ClearFrameTags;
-  SetFrameTag(FromFrameIndex,True);
-  InsertFrame(ToFrameIndex,GetImageIndex(FromFrameIndex),GetUID(FromFrameIndex));
-//  Animations[CurrentAnimation].Frames[ToFrameIndex]:=Animations[CurrentAnimation].Frames[ToFrameIndex];
-  DeleteFrame(GetFirstFrameTag);
+  if FromFrameIndex = ToFrameIndex then exit;
+  if (FromFrameIndex < 0) or (FromFrameIndex >= GetFrameCount) then exit;
+  if (ToFrameIndex < 0) or (ToFrameIndex >= GetFrameCount) then exit;
+
+  TempFrame:=Animations.AnimationList[Animations.CurrentAnimation].Frames[FromFrameIndex];
+
+  if FromFrameIndex < ToFrameIndex then
+  begin
+    for i:=FromFrameIndex to ToFrameIndex-1 do
+      Animations.AnimationList[Animations.CurrentAnimation].Frames[i]:=
+        Animations.AnimationList[Animations.CurrentAnimation].Frames[i+1];
+  end
+  else
+  begin
+    for i:=FromFrameIndex downto ToFrameIndex+1 do
+      Animations.AnimationList[Animations.CurrentAnimation].Frames[i]:=
+        Animations.AnimationList[Animations.CurrentAnimation].Frames[i-1];
+  end;
+
+  Animations.AnimationList[Animations.CurrentAnimation].Frames[ToFrameIndex]:=TempFrame;
 end;
 
 procedure TAnimateBase.DeleteFrame(FrameIndex : integer);

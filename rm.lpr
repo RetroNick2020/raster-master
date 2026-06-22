@@ -8,7 +8,7 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, pascalscript, lazcontrols, lazcolorpalette, rmmain, rmcore, rmtools,
-  rmcolor, rmcolorvga, rmabout, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
+  rmcolor, rmcolorvga, rmamigacolor, rwraw, rwpal, rmamigarwxgf, rwgif,
   rmexportprops, rmxgfcore, rwpng, mapcore, mapeditor, rwmap, mapexiportprops,
   gwbasic, spriteimport, wraylib, rmcodegen, rwaqb, rmapi, rmcolorxga,
   fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr,
@@ -26,7 +26,7 @@ begin
   Application.CreateForm(TRMMainForm, RMMainForm);
   Application.CreateForm(TRMEGAColorDialog, RMEGAColorDialog);
   Application.CreateForm(TRMVgaColorDialog, RMVgaColorDialog);
-  Application.CreateForm(TAboutDialog, AboutDialog);
+  //Application.CreateForm(TAboutDialog, AboutDialog);
   Application.CreateForm(TRMAmigaColorDialog, RMAmigaColorDialog);
   Application.CreateForm(TImageExportForm, ImageExportForm);
   Application.CreateForm(TMapEdit, MapEdit);

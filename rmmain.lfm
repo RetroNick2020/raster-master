@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 183
+  Left = 114
   Height = 859
-  Top = 137
+  Top = 16
   Width = 1603
   Align = alClient
   Caption = 'Raster Master'
@@ -9,12 +9,12 @@ object RMMainForm: TRMMainForm
   ClientWidth = 1603
   DefaultMonitor = dmDesktop
   Menu = MainMenu1
+  Position = poDefault
+  LCLVersion = '4.8.0.0'
+  Scaled = False
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  Position = poDefault
-  LCLVersion = '3.4.0.0'
-  Scaled = False
   object RightPanel: TPanel
     AnchorSideLeft.Control = RightHSplitter
     AnchorSideLeft.Side = asrBottom
@@ -38,6 +38,7 @@ object RMMainForm: TRMMainForm
       Cursor = crNo
       Left = 82
       Height = 121
+      Hint = 'Click To Hide Logo'
       Top = 700
       Width = 158
       Anchors = [akRight, akBottom]
@@ -45,6 +46,8 @@ object RMMainForm: TRMMainForm
       BorderSpacing.Bottom = 14
       ClientHeight = 121
       ClientWidth = 158
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 0
       OnClick = RMPanelClick
       object RMLogo: TImage
@@ -57,12 +60,12 @@ object RMMainForm: TRMMainForm
         Width = 128
         AutoSize = True
         BorderSpacing.Top = 16
-        OnClick = RMLogoClick
         ParentShowHint = False
         ShowHint = True
         StretchOutEnabled = False
         StretchInEnabled = False
         Transparent = True
+        OnClick = RMLogoClick
       end
     end
     object ColorPalette1: TColorPalette
@@ -100,9 +103,9 @@ object RMMainForm: TRMMainForm
         ParentShowHint = False
         Pen.Color = clRed
         Pen.Width = 3
+        ShowHint = True
         OnMouseDown = ColorBox1MouseDown
         OnMouseEnter = ColorBox1MouseEnter
-        ShowHint = True
       end
       object ColorBox2: TShape
         Left = 72
@@ -111,25 +114,31 @@ object RMMainForm: TRMMainForm
         Width = 56
         Brush.Color = clSkyBlue
         ParentShowHint = False
+        ShowHint = True
         OnMouseDown = ColorBox2MouseDown
         OnMouseEnter = ColorBox2MouseEnter
-        ShowHint = True
       end
       object EditColorBox1: TButton
         Left = 8
         Height = 25
+        Hint = 'Edit Color 1'
         Top = 80
         Width = 60
         Caption = 'Edit'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 0
         OnClick = EditColorBox1Click
       end
       object EditColorBox2: TButton
         Left = 72
         Height = 25
+        Hint = 'Edit Color 2'
         Top = 80
         Width = 60
         Caption = 'Edit'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 1
         OnClick = EditColorBox2Click
       end
@@ -215,13 +224,16 @@ object RMMainForm: TRMMainForm
       Cursor = crVSplit
       Left = 0
       Height = 13
+      Hint = 'Drag Bar To Resize View'
       Top = 273
       Width = 329
       Align = alNone
       Anchors = [akLeft, akRight]
       Color = 11625216
       ParentColor = False
+      ParentShowHint = False
       ResizeAnchor = akBottom
+      ShowHint = True
     end
     object ListView1: TListView
       AnchorSideLeft.Control = LeftPanel
@@ -279,12 +291,15 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Side = asrBottom
     Left = 319
     Height = 859
+    Hint = 'Drag Bar To Resize View'
     Top = 0
     Width = 11
     Align = alNone
     Anchors = [akTop, akBottom]
     Color = 11625216
     ParentColor = False
+    ParentShowHint = False
+    ShowHint = True
   end
   object RightHSplitter: TSplitter
     AnchorSideLeft.Side = asrBottom
@@ -293,12 +308,15 @@ object RMMainForm: TRMMainForm
     AnchorSideBottom.Side = asrBottom
     Left = 1336
     Height = 859
+    Hint = 'Drag Bar To Resize View'
     Top = 0
     Width = 11
     Align = alNone
     Anchors = [akTop, akBottom]
     Color = 11625216
     ParentColor = False
+    ParentShowHint = False
+    ShowHint = True
   end
   object MiddleTopPanel: TPanel
     AnchorSideLeft.Control = LeftHSplitter
@@ -333,9 +351,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Empty Circle'
         Top = 8
         Width = 32
-        OnClick = ToolCircleMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolCircleMenuClick
       end
       object ToolFCircleIcon: TImage
         Left = 96
@@ -343,9 +361,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Filled Circle'
         Top = 48
         Width = 32
-        OnClick = ToolFCircleMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolFCircleMenuClick
       end
       object ToolPencilIcon: TImage
         Left = 16
@@ -353,9 +371,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Pencil'
         Top = 8
         Width = 32
-        OnClick = ToolPencilMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolPencilMenuClick
       end
       object ToolLineIcon: TImage
         Left = 16
@@ -363,9 +381,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Line'
         Top = 48
         Width = 32
-        OnClick = ToolLineMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolLineMenuClick
       end
       object ToolRectangleIcon: TImage
         Left = 56
@@ -373,9 +391,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Empty Rectangle'
         Top = 8
         Width = 32
-        OnClick = ToolRectangleMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolRectangleMenuClick
       end
       object ToolFRectangleIcon: TImage
         Left = 56
@@ -383,9 +401,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Filled Rectangle'
         Top = 48
         Width = 32
-        OnClick = ToolFRectangleMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolFRectangleMenuClick
       end
       object ToolSprayPaintIcon: TImage
         Left = 176
@@ -393,9 +411,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Spray Paint'
         Top = 8
         Width = 32
-        OnClick = ToolMenuSprayPaintClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolMenuSprayPaintClick
       end
       object ToolPaintIcon: TImage
         Left = 176
@@ -403,9 +421,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Paint'
         Top = 48
         Width = 32
-        OnClick = ToolMenuPaintClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolMenuPaintClick
       end
       object ToolGridIcon: TImage
         Left = 216
@@ -413,9 +431,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Toggle Grid'
         Top = 7
         Width = 32
-        OnClick = ToolGridMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolGridMenuClick
       end
       object ToolSelectAreaIcon: TImage
         Left = 216
@@ -423,9 +441,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Select Area'
         Top = 48
         Width = 32
-        OnClick = ToolMenuSelectAreaMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolMenuSelectAreaMenuClick
       end
       object ToolScrollLeftIcon: TImage
         Left = 301
@@ -433,9 +451,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Scroll Left'
         Top = 48
         Width = 32
-        OnClick = ToolScrollLeftMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolScrollLeftMenuClick
       end
       object ToolScrollRightIcon: TImage
         Left = 341
@@ -443,9 +461,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Scroll Right'
         Top = 48
         Width = 32
-        OnClick = ToolScrollRightMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolScrollRightMenuClick
       end
       object ToolScrollUpIcon: TImage
         Left = 381
@@ -453,9 +471,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Scroll Up'
         Top = 48
         Width = 32
-        OnClick = ToolScrollUpMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolScrollUpMenuClick
       end
       object ToolScrollDownIcon: TImage
         Left = 421
@@ -463,9 +481,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Scroll Down'
         Top = 48
         Width = 32
-        OnClick = ToolScrollDownMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolScrollDownMenuClick
       end
       object ToolUndoIcon: TImage
         Left = 421
@@ -473,9 +491,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Undo'
         Top = 7
         Width = 32
-        OnClick = ToolUndoIconClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolUndoIconClick
       end
       object ToolEllipseIcon: TImage
         Left = 136
@@ -483,9 +501,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Empty Ellipse'
         Top = 9
         Width = 32
-        OnClick = ToolEllipseMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolEllipseMenuClick
       end
       object ToolFEllipseIcon: TImage
         Left = 136
@@ -493,9 +511,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Filled Ellipse'
         Top = 48
         Width = 32
-        OnClick = ToolFEllipseMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolFEllipseMenuClick
       end
       object ToolTextIcon: TImage
         Left = 256
@@ -503,9 +521,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Text'
         Top = 7
         Width = 32
-        OnClick = ToolTextMenuClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolTextMenuClick
       end
       object ToolFontIcon: TImage
         Left = 256
@@ -513,9 +531,9 @@ object RMMainForm: TRMMainForm
         Hint = 'Font Select'
         Top = 48
         Width = 32
-        OnClick = ToolFontIconClick
         ParentShowHint = False
         ShowHint = True
+        OnClick = ToolFontIconClick
       end
       object TextDrawEdit: TEdit
         Left = 301
@@ -532,18 +550,24 @@ object RMMainForm: TRMMainForm
       object ToolVFLIP: TButton
         Left = 464
         Height = 30
+        Hint = 'Vertical Flip'
         Top = 8
         Width = 51
         Caption = 'VFLIP'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 1
         OnClick = ToolFlipVirtMenuClick
       end
       object ToolHFLIP: TButton
         Left = 464
         Height = 30
+        Hint = 'Horizontal Flip'
         Top = 48
         Width = 51
         Caption = 'HFLIP'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 2
         OnClick = ToolFlipHorizMenuClick
       end
@@ -556,10 +580,10 @@ object RMMainForm: TRMMainForm
       Width = 30
       Max = 20
       Min = 1
-      OnChange = ZoomTrackBarChange
       Orientation = trVertical
       Position = 1
       TickMarks = tmTopLeft
+      OnChange = ZoomTrackBarChange
       Align = alRight
       BorderSpacing.Right = 5
       ParentShowHint = False
@@ -1144,6 +1168,14 @@ object RMMainForm: TRMMainForm
     end
     object MenuItem17: TMenuItem
       Caption = 'View'
+      object TransparentToggle: TMenuItem
+        Caption = 'Show Color 0 Transparent'
+        OnClick = TransparentToggleClick
+      end
+      object rmToggle: TMenuItem
+        Caption = 'Hide RM Logo'
+        OnClick = rmToggleClick
+      end
       object MenuItem18: TMenuItem
         Caption = 'Sprite Size'
         object EditResizeTo8: TMenuItem
@@ -1210,6 +1242,14 @@ object RMMainForm: TRMMainForm
       object PalettePaste: TMenuItem
         Caption = 'Paste'
         OnClick = PalettePasteClick
+      end
+      object PaletteCopyToClipboard: TMenuItem
+        Caption = 'Copy To Clipboard'
+        OnClick = PaletteCopyJASCClick
+      end
+      object PalettePasteFromClipboard: TMenuItem
+        Caption = 'Paste From Clipboard'
+        OnClick = PalettePasteJASCClick
       end
       object PaletteOpen: TMenuItem
         Caption = 'Open'
@@ -1579,7 +1619,7 @@ object RMMainForm: TRMMainForm
     object HelpMenu: TMenuItem
       Caption = 'Help'
       object RMAboutDialog: TMenuItem
-        Caption = 'About'
+        Caption = 'About Raster Master'
         OnClick = RMAboutDialogClick
       end
     end
@@ -1625,6 +1665,12 @@ object RMMainForm: TRMMainForm
   object ImageList1: TImageList
     Left = 1176
     Top = 648
+  end
+  object TransImageList1: TImageList
+    Height = 128
+    Width = 128
+    Left = 1176
+    Top = 712
   end
   object ExportPropsMenu: TPopupMenu
     Left = 168

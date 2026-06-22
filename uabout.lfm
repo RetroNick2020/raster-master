@@ -1,0 +1,75 @@
+object AboutForm: TAboutForm
+  Left = 1258
+  Height = 246
+  Top = 322
+  Width = 401
+  BorderStyle = bsDialog
+  Caption = 'About Raster Master'
+  ClientHeight = 246
+  ClientWidth = 401
+  Color = clBtnFace
+  Position = poMainFormCenter
+  LCLVersion = '4.8.0.0'
+  object lblTitle: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideLeft.Side = asrCenter
+    Left = 50
+    Height = 24
+    Top = 20
+    Width = 300
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'Raster Master v6.1 R128'
+    Font.Height = -20
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object lblVersion: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideLeft.Side = asrCenter
+    Left = 50
+    Height = 16
+    Top = 52
+    Width = 300
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'By RetroNick (c) 2026'
+  end
+  object lblDescription: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideLeft.Side = asrCenter
+    Left = 5
+    Height = 40
+    Top = 80
+    Width = 390
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'Get RetroDP Paint Program, Vector and Bitmap Font Editors, '#13#10'Image Converters, and other programming utilities from my itch.io site.'
+  end
+  object btnOK: TButton
+    AnchorSideLeft.Control = Owner
+    AnchorSideLeft.Side = asrCenter
+    Left = 160
+    Height = 25
+    Top = 192
+    Width = 80
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object GoToItchIOButton: TButton
+    AnchorSideLeft.Control = Owner
+    AnchorSideLeft.Side = asrCenter
+    Left = 128
+    Height = 48
+    Top = 128
+    Width = 144
+    Caption = 'Go To Itch.io'
+    Font.Height = -16
+    Font.Style = [fsItalic, fsUnderline]
+    ParentFont = False
+    TabOrder = 1
+    OnClick = GoToItchIOButtonClick
+  end
+end

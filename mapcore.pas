@@ -9,12 +9,13 @@ uses
 
 Const
   MaxListSize = 100;
+  MaxHitBoxes = 100;
   ZSizeDefaults : array of integer = (8,16,32,64,128,256);
   DefMaxMapWidth = 256;
   DefMaxMapHeight = 256;
 
   RMMapSig = 'RMM';
-  RMMapVersion = 2;
+  RMMapVersion = 3;
 
   TileClear = -1;
   TileMissing = -2;
@@ -25,63 +26,77 @@ type
   TileRec = packed Record
               ImageUID : TGUID;
               ImageIndex : integer;
-  end;
+            end;
 
   MapClipBoardRec = Record
-                   width,height : integer;  //width of copy / paste buffer
-                   Status       : integer;  // 1 = data has been copied to buffer - do not paste if status is 0
-                   Tile         : array[0..255,0..255] of TileRec;
-                 end;
+                      width,height : integer;  //width of copy / paste buffer
+                      Status       : integer;  // 1 = data has been copied to buffer - do not paste if status is 0
+                      Tile         : array[0..255,0..255] of TileRec;
+                    end;
 
   MapHeaderRec = packed Record
-                    SIG      : array[1..3] of char;
-                    version  : word;
-                    MapCount : word;
-  end;
+                   SIG      : array[1..3] of char;
+                   version  : word;
+                   MapCount : word;
+                 end;
 
 
    MapClipAreaRec = Record
-                     x,y,x2,y2 : integer;
-                     status    : integer;
-   end;
+                      x,y,x2,y2 : integer;
+                      status    : integer;
+                    end;
 
    MapScrollPosRec = Record
-                     HorizPos : integer;
-                     VirtPos  : integer;
-   end;
+                       HorizPos : integer;
+                       VirtPos  : integer;
+                     end;
 
   MapPropsRec = packed Record
-             width : integer;
-             height : integer;
-             tilewidth : integer;
-             tileheight : integer;
-             ZoomTilewidth : integer;
-             ZoomTileheight : integer;
-             ZoomSize : integer;
+                  width : integer;
+                  height : integer;
+                  tilewidth : integer;
+                  tileheight : integer;
+                  ZoomTilewidth : integer;
+                  ZoomTileheight : integer;
+                  ZoomSize : integer;
 
-             DrawTool : integer;
-             TileMode : integer;
-             GridStatus : integer; //0 = 0ff - 1=on
-             ClipArea   : MapClipAreaRec;
-             ScrollPos  : MapScrollPosRec;
-  end;
+                  DrawTool : integer;
+                  TileMode : integer;
+                  GridStatus : integer; //0 = 0ff - 1=on
+                  ClipArea   : MapClipAreaRec;
+                  ScrollPos  : MapScrollPosRec;
+                end;
 
 
 
 
   MapExportFormatRec = Packed Record
-             Name            : String[20]; // user = RES file used in name/description, in Text output used in array name, for palettes we add pal to name
-             Lan             : integer; // auto -ahould be for what compiler eg PascalLan,BasicLan,CLan
-             MapFormat       : integer; // user - 0 = do not export, Map Format, 1 = Simple format
-             Width           : integer; // map width overwrite - if not 0 use this value as width
-             Height          : integer; // map height overwrite - if not 0 use this value as height
- end;
+                         Name            : String[20]; // user = RES file used in name/description, in Text output used in array name, for palettes we add pal to name
+                         Lan             : integer; // auto -ahould be for what compiler eg PascalLan,BasicLan,CLan
+                         MapFormat       : integer; // user - 0 = do not export, Map Format, 1 = Simple format
+                         Width           : integer; // map width overwrite - if not 0 use this value as width
+                         Height          : integer; // map height overwrite - if not 0 use this value as height
+                       end;
+
+  HitBoxRec = packed Record
+                active    : boolean;
+                id,value  : integer;   //not used currently but in future we can specify what kind of hitbox area it is.
+                x,y,x2,y2 : integer;   //right now meant for collision detection (walls, water, fire). this can already be done by checking tile id but this allows checking an entire region instead of tile Image Index
+              end;
+
+  HitBoxesRec = packed Record
+                  HitBoxCount : integer;
+                  HitBoxes : array[0..MaxHitBoxes-1] of HitBoxRec;
+                end;
 
   MapRec = packed Record
              Props       : MapPropsRec;
              ExportProps : MapExportFormatRec;
-             Tile : array of array of TileRec;
-  end;
+             HitBoxProps : HitBoxesRec;
+             Tile        : array of array of TileRec;
+           end;
+
+
 
   TMapCoreBase = Class
                     Map        : array of MapRec;
@@ -93,6 +108,7 @@ type
 
                     constructor Create;
                     procedure Init;
+                    procedure InitHitBox;
 
 
                     procedure SetListSize(size : integer);
@@ -176,14 +192,21 @@ type
                     procedure AddMap;
                     procedure CloneMap;
 
-
                     procedure SetZoomSize(index,size : integer);
                     function GetZoomSize(index : integer) : integer;
-
                     procedure ClearMap(index,value : integer);
-
                     function IsMapCustomSize(index : integer) : boolean;
 
+                    procedure DeleteHitBox(index,HBIndex : integer);
+                    procedure AddHitBox(index,x,y,x2,y2 : integer);
+                    procedure EditHitBox(index,HBIndex,x,y,x2,y2 : integer);
+                    function  GetHitBoxCount(index : integer) : integer;
+                    procedure SetHitBoxCount(index,count : integer);
+
+                    procedure GetHitBox(index,HBIndex : integer;var HB : HitBoxRec);
+                    procedure SetHitBox(index,HBIndex : integer;var HB : HitBoxRec);
+
+                    procedure ClearAllHitBoxes(index : integer);
               end;
 
 var
@@ -801,6 +824,7 @@ begin
  SetMapProps(MapCount-1,props);
  SetMapSize(MapCount-1,props.width,props.height);
 
+ SetMapClipStatus(MapCount-1,0); //if the copy has clip enabled we need to set it off
 
  //copy Lan and Format settings from Map 0
  GetMapExportProps(0,ExportProps);
@@ -850,6 +874,112 @@ begin
  result:=NOT((width=8) or (width=16) or (width=32) or (width=64) or (width=128) or (width=256)) and
          ((height=8) or (height=16) or (height=32) or (height=64) or (height=128) or (height=256))
 end;
+
+
+
+procedure TMapCoreBase.InitHitBox;
+begin
+   Map[CurrentMap].HitBoxProps.HitBoxCount:=0;
+end;
+
+
+procedure TMapCoreBase.DeleteHitBox(index,HBIndex : integer);
+var
+  i : integer;
+begin
+  if (HBIndex >= 0) and (HBIndex < Map[index].HitBoxProps.HitBoxCount) then
+  begin
+    // shift all entries after HBIndex down by one
+    for i:=HBIndex to Map[index].HitBoxProps.HitBoxCount-2 do
+    begin
+      Map[index].HitBoxProps.HitBoxes[i]:=Map[index].HitBoxProps.HitBoxes[i+1];
+    end;
+    // clear the last entry
+    Map[index].HitBoxProps.HitBoxes[Map[index].HitBoxProps.HitBoxCount-1].active:=false;
+    Map[index].HitBoxProps.HitBoxes[Map[index].HitBoxProps.HitBoxCount-1].x:=0;
+    Map[index].HitBoxProps.HitBoxes[Map[index].HitBoxProps.HitBoxCount-1].y:=0;
+    Map[index].HitBoxProps.HitBoxes[Map[index].HitBoxProps.HitBoxCount-1].x2:=0;
+    Map[index].HitBoxProps.HitBoxes[Map[index].HitBoxProps.HitBoxCount-1].y2:=0;
+    dec(Map[index].HitBoxProps.HitBoxCount);
+  end;
+end;
+
+procedure TMapCoreBase.AddHitBox(index,x,y,x2,y2 : integer);
+var
+  hbcount : integer;
+  temp : integer;
+begin
+ if Map[index].HitBoxProps.HitBoxCount < MaxHitBoxes then
+ begin
+   // normalize coords so x<=x2 and y<=y2
+   if x > x2 then begin temp:=x; x:=x2; x2:=temp; end;
+   if y > y2 then begin temp:=y; y:=y2; y2:=temp; end;
+
+   hbcount:=Map[index].HitBoxProps.HitBoxCount;
+   Map[index].HitBoxProps.HitBoxes[hbcount].active:=true;
+   Map[index].HitBoxProps.HitBoxes[hbcount].x:=x;
+   Map[index].HitBoxProps.HitBoxes[hbcount].y:=y;
+   Map[index].HitBoxProps.HitBoxes[hbcount].x2:=x2;
+   Map[index].HitBoxProps.HitBoxes[hbcount].y2:=y2;
+   inc(Map[index].HitBoxProps.HitBoxCount);
+ end;
+end;
+
+procedure TMapCoreBase.EditHitBox(index,HBIndex,x,y,x2,y2 : integer);
+var
+  temp : integer;
+begin
+  if (HBIndex >= 0) and (HBIndex < Map[index].HitBoxProps.HitBoxCount) then
+  begin
+    if x > x2 then begin temp:=x; x:=x2; x2:=temp; end;
+    if y > y2 then begin temp:=y; y:=y2; y2:=temp; end;
+    Map[index].HitBoxProps.HitBoxes[HBIndex].x:=x;
+    Map[index].HitBoxProps.HitBoxes[HBIndex].y:=y;
+    Map[index].HitBoxProps.HitBoxes[HBIndex].x2:=x2;
+    Map[index].HitBoxProps.HitBoxes[HBIndex].y2:=y2;
+  end;
+end;
+
+
+function TMapCoreBase.GetHitBoxCount(index : integer) : integer;
+begin
+  result:=Map[index].HitBoxProps.HitBoxCount;
+end;
+
+
+procedure TMapCoreBase.SetHitBoxCount(index,count : integer);
+begin
+  Map[index].HitBoxProps.HitBoxCount:=count;
+end;
+
+
+procedure TMapCoreBase.GetHitBox(index,HBIndex : integer;var HB : HitBoxRec);
+begin
+  if (HBIndex >= 0) and (HBIndex < Map[index].HitBoxProps.HitBoxCount) then
+    HB:=Map[index].HitBoxProps.HitBoxes[HBIndex];
+end;
+
+procedure TMapCoreBase.SetHitBox(index,HBIndex : integer;var HB : HitBoxRec);
+begin
+  Map[index].HitBoxProps.HitBoxes[HBIndex]:=HB;
+end;
+
+
+procedure TMapCoreBase.ClearAllHitBoxes(index : integer);
+var
+  i : integer;
+begin
+  Map[index].HitBoxProps.HitBoxCount:=0;
+  for i:=0 to MaxHitBoxes-1 do
+  begin
+    Map[index].HitBoxProps.HitBoxes[i].active:=false;
+    Map[index].HitBoxProps.HitBoxes[i].x:=0;
+    Map[index].HitBoxProps.HitBoxes[i].y:=0;
+    Map[index].HitBoxProps.HitBoxes[i].x2:=0;
+    Map[index].HitBoxProps.HitBoxes[i].y2:=0;
+  end;
+end;
+
 
 begin
   MapCoreBase:=TMapCoreBase.Create;

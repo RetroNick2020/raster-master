@@ -18,6 +18,12 @@ Const
 Function ReadPAL(Filename : String;pm : integer) : Word;
 Function WritePAL(Filename : String) : Word;
 
+Function ReadJASCPAL(Filename : String; pm : integer) : Word;
+Function WriteJASCPAL(Filename : String) : Word;
+
+Function ReadVGAPAL(Filename : String; pm : integer) : Word;
+Function WriteVGAPAL(Filename : String) : Word;
+
 
 function WritePalData(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalConstants(filename : string; Lan,rgbFormat : integer) : word;
@@ -775,6 +781,225 @@ begin
  WritePalToFile:=IORESULT;
 end;
 
+
+{ ===== JASC PAL format (Paint Shop Pro) ===== }
+{ Format:
+  JASC-PAL
+  0100
+  256
+  R G B
+  R G B
+  ...
+}
+
+Function WriteJASCPAL(Filename : String) : Word;
+var
+  F : Text;
+  i : integer;
+  NColors : integer;
+  CR : TRMColorRec;
+begin
+  SetCoreActive;
+{$I-}
+  NColors:=GetMaxColor+1;
+  Assign(F, Filename);
+  Rewrite(F);
+  WriteLn(F, 'JASC-PAL');
+  WriteLn(F, '0100');
+  WriteLn(F, NColors);
+  for i:=0 to NColors-1 do
+  begin
+    GetColor(i, CR);
+    WriteLn(F, CR.r, ' ', CR.g, ' ', CR.b);
+  end;
+  Close(F);
+  WriteJASCPAL:=IORESULT;
+{$I+}
+end;
+
+Function ReadJASCPAL(Filename : String; pm : integer) : Word;
+var
+  F : Text;
+  Line : String;
+  NColors : integer;
+  i : integer;
+  r, g, b : integer;
+  CR : TRMColorRec;
+  p1, p2 : integer;
+begin
+  SetCoreActive;
+  ReadJASCPAL:=0;
+{$I-}
+  Assign(F, Filename);
+  Reset(F);
+
+  // read and verify header
+  ReadLn(F, Line);
+  Line:=Trim(Line);
+  if Line <> 'JASC-PAL' then
+  begin
+    Close(F);
+    ReadJASCPAL:=1000;
+    exit;
+  end;
+
+  // read version (skip)
+  ReadLn(F, Line);
+
+  // read color count
+  ReadLn(F, Line);
+  Line:=Trim(Line);
+  NColors:=StrToIntDef(Line, 0);
+  if NColors <= 0 then
+  begin
+    Close(F);
+    ReadJASCPAL:=1001;
+    exit;
+  end;
+  if NColors > 256 then NColors:=256;
+
+  // read colors: R G B (space-separated)
+  for i:=0 to NColors-1 do
+  begin
+    if EOF(F) then break;
+    ReadLn(F, Line);
+    Line:=Trim(Line);
+
+    // parse R
+    p1:=Pos(' ', Line);
+    if p1 = 0 then continue;
+    r:=StrToIntDef(Copy(Line, 1, p1-1), 0);
+    Delete(Line, 1, p1);
+    Line:=TrimLeft(Line);
+
+    // parse G
+    p2:=Pos(' ', Line);
+    if p2 = 0 then
+    begin
+      // only G B left, no second space - G is rest? no, need B too
+      continue;
+    end;
+    g:=StrToIntDef(Copy(Line, 1, p2-1), 0);
+    Delete(Line, 1, p2);
+    Line:=TrimLeft(Line);
+
+    // parse B
+    b:=StrToIntDef(Line, 0);
+
+    CR.r:=r;
+    CR.g:=g;
+    CR.b:=b;
+
+    if CanLoadPaletteFile(pm) then
+    begin
+      if pm = PaletteModeEGA then
+      begin
+        if RGBToEGAIndex(CR.r, CR.g, CR.b) > -1 then
+          SetColor(i, CR);
+      end
+      else if isAmigaPaletteMode(pm) then
+      begin
+        CR.r:=FourToEightBit(EightToFourBit(CR.r));
+        CR.g:=FourToEightBit(EightToFourBit(CR.g));
+        CR.b:=FourToEightBit(EightToFourBit(CR.b));
+        SetColor(i, CR);
+      end
+      else if (pm = PaletteModeVGA) or (pm = PaletteModeVGA256) then
+      begin
+        CR.r:=SixToEightBit(EightToSixBit(CR.r));
+        CR.g:=SixToEightBit(EightToSixBit(CR.g));
+        CR.b:=SixToEightBit(EightToSixBit(CR.b));
+        SetColor(i, CR);
+      end
+      else
+      begin
+        SetColor(i, CR);
+      end;
+    end;
+  end;
+
+  Close(F);
+  ReadJASCPAL:=IORESULT;
+{$I+}
+end;
+
+
+{ ===== VGA DAC palette format ===== }
+{ Raw 768-byte binary, 256 colors x 3 bytes (R,G,B), values 0-63 }
+
+Function WriteVGAPAL(Filename : String) : Word;
+var
+  F : File;
+  i : integer;
+  NColors : integer;
+  CR : TRMColorRec;
+  vgaPal : Array[0..255, 0..2] of Byte;
+begin
+  SetCoreActive;
+{$I-}
+  NColors:=GetMaxColor+1;
+  for i:=0 to NColors-1 do
+  begin
+    GetColor(i, CR);
+    vgaPal[i, 0]:=EightToSixBit(CR.r);
+    vgaPal[i, 1]:=EightToSixBit(CR.g);
+    vgaPal[i, 2]:=EightToSixBit(CR.b);
+  end;
+  Assign(F, Filename);
+  Rewrite(F, 1);
+  BlockWrite(F, vgaPal, NColors * 3);
+  Close(F);
+  WriteVGAPAL:=IORESULT;
+{$I+}
+end;
+
+Function ReadVGAPAL(Filename : String; pm : integer) : Word;
+var
+  F : File;
+  Fsize : LongInt;
+  NColors : integer;
+  i : integer;
+  CR : TRMColorRec;
+  vgaPal : Array[0..255, 0..2] of Byte;
+begin
+  SetCoreActive;
+  ReadVGAPAL:=0;
+{$I-}
+  Assign(F, Filename);
+  Reset(F, 1);
+  Fsize:=FileSize(F);
+
+  // VGA DAC palette is always 768 bytes (256 * 3) or smaller multiples
+  if (Fsize mod 3) <> 0 then
+  begin
+    Close(F);
+    ReadVGAPAL:=1000;
+    exit;
+  end;
+
+  NColors:=Fsize div 3;
+  if NColors > 256 then NColors:=256;
+
+  BlockRead(F, vgaPal, NColors * 3);
+  Close(F);
+
+  if CanLoadPaletteFile(pm) then
+  begin
+    for i:=0 to NColors-1 do
+    begin
+      // convert 6-bit (0-63) to 8-bit (0-255)
+      CR.r:=SixToEightBit(vgaPal[i, 0]);
+      CR.g:=SixToEightBit(vgaPal[i, 1]);
+      CR.b:=SixToEightBit(vgaPal[i, 2]);
+      SetColor(i, CR);
+    end;
+  end;
+
+  ReadVGAPAL:=IORESULT;
+{$I+}
+end;
+
 begin
 end.
+
 

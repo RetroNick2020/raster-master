@@ -7,11 +7,9 @@ interface
 uses
   Classes, SysUtils, graphics,fgl,StrUtils,rmcore,dialogs,rmthumb;
 
-
-
 type
   PngRGBASettingsRec = Record
-    ColorIndex : integer;
+    ColorIndex    : integer;
     UseColorIndex : boolean;
     UseFuschia    : boolean;
     UseCustom     : boolean;
@@ -40,7 +38,6 @@ type
     Function FindMostColorIndex : integer;
     procedure CreatePaletteUsingBasePalette(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer;
                              var TopPalette : TRMPaletteBuf;topncolors : integer);
-//    function FindPaletteIndexInCurrentSpritePalette(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nColors : integer) : integer;
     procedure CopyImageToCore(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer; x,y,x2,y2 : integer);
     procedure CopyThumbToImage(index : integer;PngRGBA : PngRGBASettingsRec); // 0=none,1=transparent color=0, 2=transparent color=fuschia,
 
@@ -66,17 +63,6 @@ function FindPaletteIndex(r,g,b : integer;var BasePalette : TRMPaletteBuf;pm,nCo
 
 
 implementation
-     (*
-function TColorToStr(Color : TColor) : string;
-begin
-
-
-   TColorToStr := AddChar('0',IntToStr(Red(Color)),3)+
-   AddChar('0',IntToStr(Green(Color)),3)+
-   AddChar('0',IntToStr(Blue(Color)), 3);
-
-end;
-*)
 
 procedure ColorToRGB(color : TColor;var r,g,b : integer);
 begin
@@ -237,27 +223,11 @@ begin
 
  if pm = PaletteModeEGA then
  begin
-  // r:=TwoToEightBit(EightToTwoBit(r));
- //  g:=TwoToEightBit(EightToTwoBit(g));
- //  b:=TwoToEightBit(EightToTwoBit(b));
-
    ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);
    if ColorIndex > 15 then ColorIndex:=ColorIndex Mod 15; //just picks a color base mod 15 - we need something
  end
  else if (pm=PaletteModeVGA) or (pm=paletteModeVGA256) then
  begin
-        (*
-    r:=SixToEightBit(EightToSixBit(r));
-    g:=SixToEightBit(EightToSixBit(g));
-    b:=SixToEightBit(EightToSixBit(b));
-
-          *)
-   (*
-   r:=TwoToEightBit(EightToTwoBit(r));
-   g:=TwoToEightBit(EightToTwoBit(g));
-   b:=TwoToEightBit(EightToTwoBit(b));
-     *)
-
     ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
     if (pm=PaletteModeVGA) and (ColorIndex > 15) then ColorIndex:=ColorIndex Mod 15;
  end
@@ -268,15 +238,6 @@ begin
  end
  else if isAmigaPaletteMode(pm) then
  begin
- (*  r:=FourToEightBit(EightToFourBit(r));
-   g:=FourToEightBit(EightToFourBit(g));
-   b:=FourToEightBit(EightToFourBit(b));
-   *)
-
- //  r:=TwoToEightBit(EightToTwoBit(r));
-  // g:=TwoToEightBit(EightToTwoBit(g));
-  // b:=TwoToEightBit(EightToTwoBit(b));
-
    ColorIndex:=FindNearColorMatch(BasePalette,nColors,r,g,b);  //near performas findexact also
    if  (ColorIndex > (nColors-1)) then ColorIndex:=ColorIndex Mod (nColors-1);
  end
@@ -308,20 +269,18 @@ var
 nColors : integer;
 //pm : integer;
 r,g,b : integer;
-EGAIndex : integer;
 FindInPalette : integer;
 palCounter    : integer;
  i            : integer;
 begin
- //we only need to make palette for certain palette mode. CGA/Mono do not need palettes changes
- //we find nearest color to their palette - hard to get any decent results without dithering, but this is not an imaging program
+// we only need to make palette for certain palette mode. CGA/Mono do not need palettes changes
+// we find nearest color to their palette - hard to get any decent results without dithering, but this is not an imaging program
 // pm:=RMCoreBAse.Palette.GetPaletteMode;
 // RMCoreBase.Palette.GetPalette(palette);  //get the current sprite palette
                                           //we will overwrite the current palette starting at index 1
                                           //we may end up with less colors than the default palette
-                                          //by assigning the default palette first we don't need to com up with the extra colors needed
+                                          //by assigning the default palette first we don't need to come up with the extra colors needed
  palCounter:=1;
-// nColors:=RMCoreBase.Palette.GetColorCount;
  nColors:=ColorCount;
 
  if (PaletteMode = PaletteModeVGA256) or (PaletteMode = PaletteModeVGA) then
@@ -380,7 +339,6 @@ begin
         r:=TopPalette[i].r;
         g:=TopPalette[i].g;
         b:=TopPalette[i].b;
-
 
         FindInPalette:=FindColorInPalette(BasePalette,palCounter,r,g,b);
         if (FindInPalette=-1) then   //not found or found in index higher than 15
@@ -464,7 +422,6 @@ end;
 //copy palette to RMCore
 procedure TEasyPNG.CopyPaletteToCore(NewPalette : TRMPaletteBuf;PaletteMode : integer);
 begin
-// pm:=RMCoreBAse.Palette.GetPaletteMode;
  if (PaletteMode in [PaletteModeXGA256,PaletteModeXGA,PaletteModeVGA256,PaletteModeVGA,PaletteModeEGA]) or (isAmigaPaletteMode(PaletteMode)) then
  begin
    RMCoreBase.Palette.SetPalette(NewPalette);
@@ -488,7 +445,6 @@ end;
 
 Procedure TEasyPNG.LoadFromFile(filename : string);
 begin
-// Picture1.Bitmap.PixelFormat:=pf4bit;
  Picture1.LoadFromFile(filename);
 end;
 
@@ -522,34 +478,6 @@ begin
  EasyPNG.Free;
  ReadPNG:=0;
 end;
-(* no transparent support
-
-procedure TEasyPNG.CopyCoreToImage(x,y,x2,y2 : integer);
-var
- width,height : integer;
- i,j   : integer;
- color : TColor;
- ci    : integer;
- cr    : TRMColorRec;
-begin
- width:=x2-x+1;
- height:=y2-y+1;
-
- picture1.Bitmap.Width:=width;
- Picture1.Bitmap.height:=height;
- picture1.Bitmap.PixelFormat:=pf32bit;
- for j:=0 to height-1 do
- begin
-   for i:=0 to width-1 do
-   begin
-     ci:=RMCoreBase.GetPixel(x+i,y+j);
-     RMCoreBase.Palette.GetColor(ci,cr);
-     Color:=RGBToColor(cr.r,cr.g,cr.b);
-     Picture1.Bitmap.Canvas.Pixels[i,j]:=Color;
-   end;
- end;
-end;
- *)
 
 procedure TEasyPNG.CopyCoreToImage(x,y,x2,y2 : integer;PngRGBA : PngRGBASettingsRec); // 0=none,1=transparent color=0, 2=transparent color=fuschia,
 var
@@ -593,8 +521,6 @@ begin
      begin
        pixeldata[pixelpos+3]:=PngRGBA.A;  // use Custom Alpha level for transperancy
      end;
-
-
      inc(pixelpos,4);
    end;
  end;
