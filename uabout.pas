@@ -1,4 +1,4 @@
-unit uAbout;
+unit uabout;
 
 {$mode objfpc}{$H+}
 

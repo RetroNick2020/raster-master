@@ -832,10 +832,10 @@ begin
    mheight:=MapCoreBase.GetExportHeight(i);
    size:=mwidth*mheight+4;
 
-   if ((MPE.Lan=BasicLan) or (MPE.Lan=BAMBasicLan) or (MPE.Lan=AQBBasicLan) or  (MPE.Lan=FBBasicLan) or (MPE.Lan=QB64BasicLan) or (MPE.Lan=BasicLnLan)) and (MPE.MapFormat=1) then   //hack alert - fix FBBasicLan
+   if (MapLanIsBasic(MPE.Lan) or MapLanIsBasicLN(MPE.Lan)) and (MPE.MapFormat=1) then
    begin
      Lan:=QBLan;
-     if MPE.Lan = BasicLnLan then
+     if (MPE.Lan = BasicLnLan) or (MPE.Lan = GWBasicLan) then
      begin
        Lan:=GWLan;
      end
@@ -873,10 +873,11 @@ begin
  For i:=0 to count-1 do
  begin
    MapCoreBase.GetMapExportProps(i,MPE);
-   if (MPE.MapFormat > 0) and (MapCoreBase.GetHitBoxCount(i) > 0) then
+   if (MPE.MapFormat > 0) and (MapCoreBase.GetHitBoxCount(i) > 0) and
+      (MapLanIsBasic(MPE.Lan) or MapLanIsBasicLN(MPE.Lan)) then
    begin
      Lan:=QBLan;
-     if MPE.Lan = BasicLnLan then Lan:=GWLan
+     if (MPE.Lan = BasicLnLan) or (MPE.Lan = GWBasicLan) then Lan:=GWLan
      else if MPE.Lan = FBBasicLan then Lan:=FBLan
      else if MPE.Lan = AQBBasicLan then Lan:=AQBLan
      else if MPE.Lan = BAMBasicLan then Lan:=BAMLan;
@@ -907,10 +908,11 @@ begin
     MapCoreBase.GetMapExportProps(i, MPE);
     hbcount:=MapCoreBase.GetHitBoxCount(i);
 
-    if (MPE.MapFormat > 0) and (hbcount > 0) then
+    if (MPE.MapFormat > 0) and (hbcount > 0) and
+       (MapLanIsBasic(MPE.Lan) or MapLanIsBasicLN(MPE.Lan)) then
     begin
       Lan:=QBLan;
-      if MPE.Lan = BasicLnLan then Lan:=GWLan
+      if (MPE.Lan = BasicLnLan) or (MPE.Lan = GWBasicLan) then Lan:=GWLan
       else if MPE.Lan = FBBasicLan then Lan:=FBLan
       else if MPE.Lan = AQBBasicLan then Lan:=AQBLan
       else if MPE.Lan = BAMBasicLan then Lan:=BAMLan;

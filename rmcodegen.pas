@@ -18,6 +18,24 @@ const
  BAMBasicLan = 8;
  QBJSBasicLan = 9;
 
+ //extended map compiler targets - match sprite editor compiler list
+ GWBasicLan     = 10;  //GWBASIC - line numbered DATA
+ QBBasicLan     = 11;  //QBasic\QuickBasic
+ TBBasicLan     = 12;  //Turbo\Power Basic
+ ABBasicLan     = 13;  //AmigaBasic
+ FBQBBasicLan   = 14;  //FreeBASIC - QB Mode
+ TPPascalLan    = 15;  //Turbo Pascal
+ QPPascalLan    = 16;  //Quick Pascal
+ FPPascalLan    = 17;  //FreePascal
+ TMTPascalLan   = 18;  //TMT Pascal
+ APPascalLan    = 19;  //Amiga Pascal
+ TCCLan         = 20;  //Turbo C
+ QCCLan         = 21;  //Quick C
+ OWCLan         = 22;  //Open Watcom C
+ GCCCLan        = 23;  //gcc \ Emscripten
+ ACCLan         = 24;  //Amiga C
+ JSLan          = 25;  //JavaScript
+
  ValueFormatDecimal = 0;
  ValueFormatHex = 1;
 
@@ -46,7 +64,45 @@ procedure MWSetValuesPerLine(var mc : CodeGenRec;amount : integer);
 procedure MWSetIndentOnFirstLine(var mc : CodeGenRec;indent : boolean);
 procedure MWSetIndent(var mc : CodeGenRec;isize : integer);
 
+//language family helpers - map a specific compiler Lan to its syntax family
+function MapLanIsBasic(Lan : integer) : boolean;    //DATA statements, no line numbers
+function MapLanIsBasicLN(Lan : integer) : boolean;  //DATA statements with line numbers
+function MapLanIsPascal(Lan : integer) : boolean;   //Pascal const array
+function MapLanIsC(Lan : integer) : boolean;        //C array
+function MapLanIsJS(Lan : integer) : boolean;       //JavaScript array
+
 implementation
+
+function MapLanIsBasic(Lan : integer) : boolean;
+begin
+  MapLanIsBasic:=(Lan=BasicLan) or (Lan=FBBasicLan) or (Lan=QB64BasicLan) or
+                 (Lan=AQBBasicLan) or (Lan=BAMBasicLan) or (Lan=QBJSBasicLan) or
+                 (Lan=QBBasicLan) or (Lan=TBBasicLan) or (Lan=ABBasicLan) or
+                 (Lan=FBQBBasicLan);
+end;
+
+function MapLanIsBasicLN(Lan : integer) : boolean;
+begin
+  MapLanIsBasicLN:=(Lan=BasicLNLan) or (Lan=GWBasicLan);
+end;
+
+function MapLanIsPascal(Lan : integer) : boolean;
+begin
+  MapLanIsPascal:=(Lan=PascalLan) or (Lan=TPPascalLan) or (Lan=QPPascalLan) or
+                  (Lan=FPPascalLan) or (Lan=TMTPascalLan) or (Lan=APPascalLan);
+end;
+
+function MapLanIsC(Lan : integer) : boolean;
+begin
+  MapLanIsC:=(Lan=CLan) or (Lan=TCCLan) or (Lan=QCCLan) or (Lan=OWCLan) or
+             (Lan=GCCCLan) or (Lan=ACCLan);
+end;
+
+function MapLanIsJS(Lan : integer) : boolean;
+begin
+  MapLanIsJS:=(Lan=JSLan);
+end;
+
 procedure MWSetIndent(var mc : CodeGenRec;isize : integer);
 begin
   mc.InDentSize:=isize;
@@ -94,7 +150,7 @@ end;
 
 procedure MWWriteLineNumber(var mc : CodeGenRec);
 begin
- if (mc.LanId<>BasicLNLan) then exit;
+ if not MapLanIsBasicLN(mc.LanId) then exit;
  if mc.VCL = 0 then
  begin
     Write(mc.FTextPtr^,GetGWNextLineNumber,' ');
@@ -114,7 +170,7 @@ end;
 
 procedure MWWriteData(var mc : CodeGenRec);
 begin
-  if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan) or (mc.LanId=QBJSBasicLan) then
+  if MapLanIsBasic(mc.LanId) or MapLanIsBasicLN(mc.LanId) then
   begin
     if mc.VCL = 0 then Write(mc.FTextPtr^,'DATA ');
   end;
@@ -122,7 +178,7 @@ end;
 
 procedure MWWriteIndent(var mc : CodeGenRec);
 begin
- if (mc.LanId=BasicLan) or (mc.LanId=BasicLNLan) or (mc.LanId=QBJSBasicLan) then exit;
+ if MapLanIsBasic(mc.LanId) or MapLanIsBasicLN(mc.LanId) then exit;
  if (mc.VCL = 0) then
  begin
   if (mc.IndentOnFirst = false) and (mc.LineCount=0) then exit;
@@ -146,7 +202,7 @@ begin
    end
    else if (mc.VCL=mc.ValuesPerLine)  then  //end of line but not last value
    begin
-     if (mc.LanId<>BasicLan) and (mc.LanId<>BasicLNLan) and (mc.LanId<>QBJSBasicLan) then Write(mc.FTextPtr^,','); //if not basic write a comma
+     if (not MapLanIsBasic(mc.LanId)) and (not MapLanIsBasicLN(mc.LanId)) then Write(mc.FTextPtr^,','); //if not basic write a comma
    end;
  end;
 end;
@@ -156,10 +212,9 @@ var
  HStr : String;
 begin
  HStr:=hexstr(num,2);
- if LanId=BasicLan then HStr:='&H'+HStr;
- if LanId=PascalLan then HStr:='$'+HStr;
- if LanId=CLan then HStr:='0x'+HStr;
- if LanId=QBJSBasicLan then HStr:='0x'+HStr;
+ if MapLanIsBasic(LanId) or MapLanIsBasicLN(LanId) then HStr:='&H'+HStr
+ else if MapLanIsPascal(LanId) then HStr:='$'+HStr
+ else if MapLanIsC(LanId) or MapLanIsJS(LanId) then HStr:='0x'+HStr;
  ByteToHex:=HStr;
 end;
 
@@ -190,9 +245,9 @@ var
  HStr : String;
 begin
  HStr:=hexstr(num,4);
- if LanId=BasicLan then HStr:='&H'+HStr;
- if LanId=PascalLan then HStr:='$'+HStr;
- if LanId=CLan then HStr:='0x'+HStr;
+ if MapLanIsBasic(LanId) or MapLanIsBasicLN(LanId) then HStr:='&H'+HStr
+ else if MapLanIsPascal(LanId) then HStr:='$'+HStr
+ else if MapLanIsC(LanId) or MapLanIsJS(LanId) then HStr:='0x'+HStr;
  IntegerToHex:=HStr;
 end;
 

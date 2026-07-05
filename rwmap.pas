@@ -194,6 +194,35 @@ begin
 end;
 
 
+procedure ExportJSMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean);
+var
+  MapProps   : MapPropsRec;
+  size : longint;
+  mwidth,mheight : integer;
+  ca : MapClipAreaRec;
+begin
+ MapCoreBase.GetMapProps(index,MapProps);
+ mwidth:=MapCoreBase.GetExportWidth(index);
+ mheight:=MapCoreBase.GetExportHeight(index);
+
+ if UseClipArea and (MapCoreBase.GetMapClipStatus(index)=1) then
+ begin
+   MapCoreBase.GetMapClipAreaCoords(index,ca);
+   mwidth:=ca.x2-ca.x+1;
+   mheight:=ca.y2-ca.y+1;
+ end;
+
+ size:=mwidth*mheight+4;
+ MWSetValuesTotal(mc,size);
+ MWSetLan(mc,JSLan);
+ MWSetValueFormat(mc,ValueFormatDecimal);
+
+ Writeln(mc.FTextPtr^,'// JavaScript Map Code Created By Raster Master');
+ Writeln(mc.FTextPtr^,'// Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
+         MapProps.tilewidth,' Tile Height=',MapProps.tileheight);
+ Writeln(mc.FTextPtr^,'const ',ImageName,'Map = [');
+end;
+
 procedure ExportMap(filename : string;Lan : Integer;UseClipArea : boolean);
 var
   mc : CodeGenRec;
@@ -211,16 +240,18 @@ begin
   if IORESULT<>0 then exit;
 
   index:=MapCoreBase.GetCurrentMap;
-  Case Lan of BasicLan:ExportBasicMapHeader(mc,index,ImageName,UseClipArea);
-            BasicLnLan:ExportBasicLNMapHeader(mc,index,ImageName,UseClipArea);
-                  CLan:ExportCMapHeader(mc,index,ImageName,UseClipArea);
-             PascalLan:ExportPascalMapHeader(mc,index,ImageName,UseClipArea);
-  End;
+  if MapLanIsBasic(Lan) then ExportBasicMapHeader(mc,index,ImageName,UseClipArea)
+  else if MapLanIsBasicLN(Lan) then ExportBasicLNMapHeader(mc,index,ImageName,UseClipArea)
+  else if MapLanIsC(Lan) then ExportCMapHeader(mc,index,ImageName,UseClipArea)
+  else if MapLanIsPascal(Lan) then ExportPascalMapHeader(mc,index,ImageName,UseClipArea)
+  else if MapLanIsJS(Lan) then ExportJSMapHeader(mc,index,ImageName,UseClipArea);
+
   ExportMapMain(mc,index,UseClipArea);
-  Case Lan of BasicLan,BasicLNLan:Writeln(F);
-                             CLan:Writeln(F,'};');
-                        PascalLan:Writeln(F,');');
-  End;
+
+  if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then Writeln(F)
+  else if MapLanIsC(Lan) then Writeln(F,'};')
+  else if MapLanIsPascal(Lan) then Writeln(F,');')
+  else if MapLanIsJS(Lan) then Writeln(F,'];');
   {$I-}
   close(F);
 {$I+}
@@ -246,16 +277,18 @@ begin
       Lan:=ExportProps.Lan;
       Imagename:=ExportProps.Name;
 
-      Case Lan of BasicLan,BAMBasicLan,FBBasicLan,QB64BasicLan,AQBBasicLan:ExportBasicMapHeader(mc,i,ImageName,False);
-                BasicLnLan:ExportBasicLNMapHeader(mc,i,ImageName,false);
-                      CLan:ExportCMapHeader(mc,i,ImageName,false);
-                 PascalLan:ExportPascalMapHeader(mc,i,ImageName,false);
-      End;
+      if MapLanIsBasic(Lan) then ExportBasicMapHeader(mc,i,ImageName,False)
+      else if MapLanIsBasicLN(Lan) then ExportBasicLNMapHeader(mc,i,ImageName,false)
+      else if MapLanIsC(Lan) then ExportCMapHeader(mc,i,ImageName,false)
+      else if MapLanIsPascal(Lan) then ExportPascalMapHeader(mc,i,ImageName,false)
+      else if MapLanIsJS(Lan) then ExportJSMapHeader(mc,i,ImageName,false);
+
       ExportMapMain(mc,i,false);
-      Case Lan of BasicLan,FBBasicLan,QB64BasicLan,AQBBasicLan,BasicLNLan:Writeln(F);
-                      CLan:Writeln(F,'};');
-                 PascalLan:Writeln(F,');');
-      End;
+
+      if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then Writeln(F)
+      else if MapLanIsC(Lan) then Writeln(F,'};')
+      else if MapLanIsPascal(Lan) then Writeln(F,');')
+      else if MapLanIsJS(Lan) then Writeln(F,'];');
     end;
   end;
 end;

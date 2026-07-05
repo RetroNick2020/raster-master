@@ -573,6 +573,7 @@ type
 
        function ExportTextFileToClipboard(Sender: TObject) : boolean;
        function ExportPaletteTextFileToClipboard(Sender: TObject; ColorFormat : integer) : boolean;
+       function DetectPaletteFormat(filename : string) : integer;
 
   public
        procedure UpdateImportedImage;
@@ -3928,39 +3929,120 @@ begin
    end;
 end;
 
+//returns 0=unknown/corrupt, 1=RM raw 8-bit PAL, 2=JASC text PAL, 3=VGA 6-bit PAL
+function TRMMainForm.DetectPaletteFormat(filename : string) : integer;
+var
+  F : file;
+  fsize : longint;
+  sig : array[0..7] of char;
+  buf : array[0..767] of byte;
+  i, count : integer;
+  isSixBit : boolean;
+begin
+  DetectPaletteFormat:=0;
+  if not FileExists(filename) then exit;
+
+  {$I-}
+  AssignFile(F, filename);
+  Reset(F, 1);
+  if IOResult <> 0 then exit;
+
+  fsize:=FileSize(F);
+  if fsize <= 0 then
+  begin
+    CloseFile(F);
+    if IOResult <> 0 then ;
+    exit;
+  end;
+
+  //check for JASC text signature "JASC-PAL"
+  if fsize >= 8 then
+  begin
+    BlockRead(F, sig, 8);
+    if IOResult <> 0 then
+    begin
+      CloseFile(F);
+      if IOResult <> 0 then ;
+      exit;
+    end;
+    if (sig[0]='J') and (sig[1]='A') and (sig[2]='S') and (sig[3]='C') and
+       (sig[4]='-') and (sig[5]='P') and (sig[6]='A') and (sig[7]='L') then
+    begin
+      CloseFile(F);
+      if IOResult <> 0 then ;
+      DetectPaletteFormat:=2;
+      exit;
+    end;
+    Seek(F, 0);
+  end;
+
+  //raw palette - must be one of the valid sizes ReadPAL accepts
+  if (fsize=6) or (fsize=12) or (fsize=24) or (fsize=48) or (fsize=96) or (fsize=768) then
+  begin
+    count:=fsize;
+    BlockRead(F, buf, count);
+    if IOResult <> 0 then
+    begin
+      CloseFile(F);
+      if IOResult <> 0 then ;
+      exit;
+    end;
+    CloseFile(F);
+    if IOResult <> 0 then ;
+
+    //if every byte fits in 6 bits it is most likely a VGA DAC palette
+    isSixBit:=true;
+    for i:=0 to count-1 do
+      if buf[i] > 63 then
+      begin
+        isSixBit:=false;
+        break;
+      end;
+
+    if isSixBit and (fsize=768) then
+      DetectPaletteFormat:=3
+    else
+      DetectPaletteFormat:=1;
+    exit;
+  end;
+
+  CloseFile(F);
+  if IOResult <> 0 then ;
+  {$I+}
+end;
+
 procedure TRMMainForm.PaletteOpenClick(Sender: TObject);
 Var
  pm : integer;
- ext : string;
+ fmt : integer;
  err : word;
 begin
- OpenDialog1.Filter := 'RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga|All Files|*.*';
+ OpenDialog1.Filter := 'All Palette Files|*.pal;*.vga|RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga|All Files|*.*';
  if OpenDialog1.Execute then
  begin
      pm:=RMCoreBase.Palette.GetPaletteMode;
-     ext:=LowerCase(ExtractFileExt(OpenDialog1.FileName));
-     err:=0;
 
-     case OpenDialog1.FilterIndex of
-       1: err:=ReadPAL(OpenDialog1.FileName, pm);
-       2: err:=ReadJASCPAL(OpenDialog1.FileName, pm);
-       3: err:=ReadVGAPAL(OpenDialog1.FileName, pm);
-       4: begin
-            // auto-detect: try JASC first (has text header), then raw
-            err:=ReadJASCPAL(OpenDialog1.FileName, pm);
-            if err <> 0 then
-            begin
-              if ext = '.vga' then
-                err:=ReadVGAPAL(OpenDialog1.FileName, pm)
-              else
-                err:=ReadPAL(OpenDialog1.FileName, pm);
-            end;
-          end;
+     //auto-detect the palette format from file contents
+     //so the selected filter no longer matters
+     fmt:=DetectPaletteFormat(OpenDialog1.FileName);
+
+     err:=0;
+     try
+       case fmt of
+         1: err:=ReadPAL(OpenDialog1.FileName, pm);
+         2: err:=ReadJASCPAL(OpenDialog1.FileName, pm);
+         3: err:=ReadVGAPAL(OpenDialog1.FileName, pm);
+       else
+         err:=1000; //unknown format or corrupt file
+       end;
+     except
+       err:=1000;  //reader raised an exception - treat as corrupt
      end;
 
      if err <> 0 then
      begin
-        ShowMessage('Error Opening Palette file!');
+        ShowMessage('Unable to open palette.' + LineEnding +
+                    'The file is not a recognized palette format or may be corrupt.');
         exit;
      end;
      CoreToPalette;
@@ -4806,6 +4888,11 @@ var
   i, x, y, aw, ah : integer;
   CheckBmp, SpriteBmp, TransBmp : TBitmap;
 begin
+  //NOTE: do NOT sync CopyCoreToIndexImage here - during NewClick the core
+  //buffer holds the blank new canvas while GetCurrent still points at the
+  //old image, so syncing here would erase the old image's stored pixels.
+  //Callers must sync at safe points (see TransparentToggleClick).
+
   TransImageList1.Clear;
   TransImageList1.Width:=128;
   TransImageList1.Height:=128;
@@ -4841,7 +4928,12 @@ begin
     CheckBmp.Free;
   end;
 
+  //rebind and force the listview to re-read every icon from the new list
   ListView1.LargeImages:=TransImageList1;
+  ListView1.LargeImagesWidth:=128;
+  for i:=0 to ListView1.Items.Count-1 do
+    ListView1.Items[i].ImageIndex:=ListView1.Items[i].ImageIndex;
+  ListView1.Invalidate;
 end;
 
 procedure TRMMainForm.UpdateTransImageListItem(index : integer);
@@ -5076,16 +5168,26 @@ begin
 end;
 
 procedure TRMMainForm.TransparentToggleClick(Sender: TObject);
+var
+  i : integer;
 begin
   ShowTransparent:=not ShowTransparent;
   TransparentToggle.Checked:=ShowTransparent;
   if ShowTransparent then
   begin
-    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+    //safe to sync here - the core buffer holds the current image
+    if ImageThumbBase.GetCurrent >= 0 then
+      ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
     RebuildTransImageList;
   end
   else
+  begin
     ListView1.LargeImages:=ImageList1;
+    ListView1.LargeImagesWidth:=128;
+    for i:=0 to ListView1.Items.Count-1 do
+      ListView1.Items[i].ImageIndex:=ListView1.Items[i].ImageIndex;
+    ListView1.Invalidate;
+  end;
   ListView1.Refresh;
   UpdateActualArea;
   UpdateZoomArea;

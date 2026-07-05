@@ -83,6 +83,28 @@ type
     ExportHitBoxBasicLN: TMenuItem;
     ExportHitBoxC: TMenuItem;
     ExportHitBoxPascal: TMenuItem;
+    //extended compiler export menu items
+    MnuMapExpAB, MD_AB, HB_AB : TMenuItem;
+    MnuMapExpAC, MD_AC, HB_AC : TMenuItem;
+    MnuMapExpAP, MD_AP, HB_AP : TMenuItem;
+    MnuMapExpAQB, MD_AQB, HB_AQB : TMenuItem;
+    MnuMapExpBAM, MD_BAM, HB_BAM : TMenuItem;
+    MnuMapExpFBQB, MD_FBQB, HB_FBQB : TMenuItem;
+    MnuMapExpFB, MD_FB, HB_FB : TMenuItem;
+    MnuMapExpFP, MD_FP, HB_FP : TMenuItem;
+    MnuMapExpGCC, MD_GCC, HB_GCC : TMenuItem;
+    MnuMapExpGW, MD_GW, HB_GW : TMenuItem;
+    MnuMapExpJS, MD_JS, HB_JS : TMenuItem;
+    MnuMapExpOW, MD_OW, HB_OW : TMenuItem;
+    MnuMapExpQB, MD_QB, HB_QB : TMenuItem;
+    MnuMapExpQB64, MD_QB64, HB_QB64 : TMenuItem;
+    MnuMapExpQBJS, MD_QBJS, HB_QBJS : TMenuItem;
+    MnuMapExpQC, MD_QC, HB_QC : TMenuItem;
+    MnuMapExpQP, MD_QP, HB_QP : TMenuItem;
+    MnuMapExpTB, MD_TB, HB_TB : TMenuItem;
+    MnuMapExpTP, MD_TP, HB_TP : TMenuItem;
+    MnuMapExpTC, MD_TC, HB_TC : TMenuItem;
+    MnuMapExpTMT, MD_TMT, HB_TMT : TMenuItem;
     MenuItem13: TMenuItem;
     BasicLNMapData: TMenuItem;
     MenuMapProps: TMenuItem;
@@ -179,6 +201,8 @@ type
     procedure MenuExportBasicMapData(Sender: TObject);
     procedure MenuExportCArray(Sender: TObject);
     procedure MenuExportPascalArray(Sender: TObject);
+    procedure MenuExportMapDataLanClick(Sender: TObject);
+    procedure MenuExportHitBoxLanClick(Sender: TObject);
     procedure ExportHitBoxBasicClick(Sender: TObject);
     procedure ExportHitBoxBasicLNClick(Sender: TObject);
     procedure ExportHitBoxCClick(Sender: TObject);
@@ -582,34 +606,33 @@ var
   i, x, y, aw, ah : integer;
   CheckBmp, SpriteBmp, TransBmp : TBitmap;
 begin
+  //NOTE: do NOT sync CopyCoreToIndexImage here - callers must sync at
+  //safe points where the core buffer matches the current image
   TransTileThumbImageList.Clear;
   TransTileThumbImageList.Width:=128;
   TransTileThumbImageList.Height:=128;
 
-
-  SpriteBmp:=TBitmap.Create;
-  CheckBmp:=TBitmap.Create;
-  TransBmp:=TBitmap.Create;
-
+  //NOTE: bitmaps must be created fresh for every image - reusing one TBitmap
+  //with Transparent=True across ImageList.Add calls produces stale icons
+  //after the first entry
   for i:=0 to ImageThumbBase.GetCount-1 do
   begin
     aw:=ImageThumbBase.GetWidth(i);
     ah:=ImageThumbBase.GetHeight(i);
 
-//    SpriteBmp:=TBitmap.Create;
+    SpriteBmp:=TBitmap.Create;
     SpriteBmp.SetSize(aw, ah);
     for y:=0 to ah-1 do
       for x:=0 to aw-1 do
         SpriteBmp.Canvas.Pixels[x, y]:=ImageThumbBase.GetPixelTColor(i, x, y);
 
-//    CheckBmp:=TBitmap.Create;
+    CheckBmp:=TBitmap.Create;
     CheckBmp.SetSize(128, 128);
     CheckBmp.Canvas.Draw(0, 0, FCheckerBmp);
 
-//    TransBmp:=TBitmap.Create;
- //   TransBmp.Width:=128;
- //   TransBmp.Height:=128;
-    TransBmp.SetSize(128, 128);
+    TransBmp:=TBitmap.Create;
+    TransBmp.Width:=128;
+    TransBmp.Height:=128;
     TransBmp.TransparentColor:=clBlack;
     TransBmp.TransparentMode:=tmFixed;
     TransBmp.Transparent:=True;
@@ -618,15 +641,17 @@ begin
     CheckBmp.Canvas.Draw(0, 0, TransBmp);
     TransTileThumbImageList.Add(CheckBmp, nil);
 
-//    SpriteBmp.Free;
-//    TransBmp.Free;
-//    CheckBmp.Free;
+    SpriteBmp.Free;
+    TransBmp.Free;
+    CheckBmp.Free;
   end;
-  SpriteBmp.Free;
-  TransBmp.Free;
-  CheckBmp.Free;
 
+  //rebind and force the listview to re-read every icon
   TileListView.LargeImages:=TransTileThumbImageList;
+  TileListView.LargeImagesWidth:=128;
+  for i:=0 to TileListView.Items.Count-1 do
+    TileListView.Items[i].ImageIndex:=TileListView.Items[i].ImageIndex;
+  TileListView.Invalidate;
 end;
 
 procedure TMapEdit.DrawCheckerboard;
@@ -670,7 +695,13 @@ begin
   if ShowTransparent then
     RebuildTransTileThumbImageList
   else
+  begin
     TileListView.LargeImages:=RMMainForm.ImageList1;
+    TileListView.LargeImagesWidth:=128;
+    for i:=0 to TileListView.Items.Count-1 do
+      TileListView.Items[i].ImageIndex:=TileListView.Items[i].ImageIndex;
+    TileListView.Invalidate;
+  end;
   TileListView.Refresh;
 
   UpdateCurrentTile;
@@ -974,6 +1005,7 @@ end;
 function TMapEdit.ExportTextFileToClipboard(Sender: TObject) : boolean;
 var
  filename : string;
+ mi : TMenuItem;
 begin
  if rmconfigbase.GetExportTextFileToClipStatus = false then
  begin
@@ -982,7 +1014,8 @@ begin
  end;
 
  filename:=GetTemporaryPathWithProvidedFileName(MapCoreBase.GetExportName(MapCoreBase.GetCurrentMap));
- Case (Sender As TMenuItem).Name of  'ExportBasicMapData':ExportMap(FileName,BasicLan,True);
+ mi:=Sender As TMenuItem;
+ Case mi.Name of  'ExportBasicMapData':ExportMap(FileName,BasicLan,True);
                                      'BasicLNMapData':ExportMap(FileName,BasicLNLan,True);
                                      'ExportCArray': ExportMap(FileName,CLan,true);
                                      'ExportPascalArray':ExportMap(FileName,PascalLan,true);
@@ -991,14 +1024,71 @@ begin
                                      'ExportHitBoxC':ExportHitBoxes(FileName,CLan);
                                      'ExportHitBoxPascal':ExportHitBoxes(FileName,PascalLan);
  else
-   result:=false;  //did not find a supported format return false
-   exit;
+   //Tag-based dispatch for extended compiler targets
+   //map data items are named MD_*, hitbox items HB_*, Tag holds the Lan constant
+   if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'MD_') then
+     ExportMap(FileName,mi.Tag,True)
+   else if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'HB_') then
+     ExportHitBoxes(FileName,mi.Tag)
+   else
+   begin
+     result:=false;  //did not find a supported format return false
+     exit;
+   end;
  End;
 
  result:=true;  //found supported format - return true
  ReadFileAndCopyToClipboard(filename);
  EraseFile(filename);
  ShowMessage('Exported to Clipboard!');
+end;
+
+procedure TMapEdit.MenuExportMapDataLanClick(Sender: TObject);
+var
+  Lan : integer;
+begin
+ if ExportTextFileToClipboard(Sender) then exit;
+
+ Lan:=(Sender as TMenuItem).Tag;
+ if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
+   SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*'
+ else if MapLanIsPascal(Lan) then
+   SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*'
+ else if MapLanIsC(Lan) then
+   SaveDialog1.Filter := 'c|*.c;*.h|All Files|*.*'
+ else if MapLanIsJS(Lan) then
+   SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
+ else
+   SaveDialog1.Filter := 'All Files|*.*';
+
+ if SaveDialog1.Execute then
+ begin
+   ExportMap(SaveDialog1.FileName,Lan,True);
+ end;
+end;
+
+procedure TMapEdit.MenuExportHitBoxLanClick(Sender: TObject);
+var
+  Lan : integer;
+begin
+ if ExportTextFileToClipboard(Sender) then exit;
+
+ Lan:=(Sender as TMenuItem).Tag;
+ if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
+   SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*'
+ else if MapLanIsPascal(Lan) then
+   SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*'
+ else if MapLanIsC(Lan) then
+   SaveDialog1.Filter := 'c|*.c;*.h|All Files|*.*'
+ else if MapLanIsJS(Lan) then
+   SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
+ else
+   SaveDialog1.Filter := 'All Files|*.*';
+
+ if SaveDialog1.Execute then
+ begin
+   ExportHitBoxes(SaveDialog1.FileName,Lan);
+ end;
 end;
 
 
@@ -1061,80 +1151,93 @@ begin
   AssignFile(F, filename);
   Rewrite(F);
 
-  case lan of
-    CLan:
+  if MapLanIsC(lan) then
+  begin
+    WriteLn(F, '// HitBox data for ' + exportname);
+    WriteLn(F, 'const int ' + exportname + '_hitbox_count = ' + IntToStr(hbcount) + ';');
+    if hbcount > 0 then
     begin
-      WriteLn(F, '// HitBox data for ' + exportname);
-      WriteLn(F, 'const int ' + exportname + '_hitbox_count = ' + IntToStr(hbcount) + ';');
-      if hbcount > 0 then
+      WriteLn(F, 'const int ' + exportname + '_hitboxes[' + IntToStr(hbcount) + '][4] = {');
+      for i:=0 to hbcount-1 do
       begin
-        WriteLn(F, 'const int ' + exportname + '_hitboxes[' + IntToStr(hbcount) + '][4] = {');
-        for i:=0 to hbcount-1 do
-        begin
-          MapCoreBase.GetHitBox(CurrentMap, i, HB);
-          if i < hbcount-1 then
-            WriteLn(F, '  {' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '},')
-          else
-            WriteLn(F, '  {' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '}');
-        end;
-        WriteLn(F, '};');
+        MapCoreBase.GetHitBox(CurrentMap, i, HB);
+        if i < hbcount-1 then
+          WriteLn(F, '  {' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '},')
+        else
+          WriteLn(F, '  {' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '}');
       end;
+      WriteLn(F, '};');
     end;
-
-    PascalLan:
+  end
+  else if MapLanIsPascal(lan) then
+  begin
+    WriteLn(F, '{ HitBox data for ' + exportname + ' }');
+    WriteLn(F, 'const');
+    WriteLn(F, '  ' + exportname + '_hitbox_count = ' + IntToStr(hbcount) + ';');
+    if hbcount > 0 then
     begin
-      WriteLn(F, '{ HitBox data for ' + exportname + ' }');
-      WriteLn(F, 'const');
-      WriteLn(F, '  ' + exportname + '_hitbox_count = ' + IntToStr(hbcount) + ';');
-      if hbcount > 0 then
+      WriteLn(F, '  ' + exportname + '_hitboxes: array[0..' + IntToStr(hbcount-1) + ', 0..3] of integer = (');
+      for i:=0 to hbcount-1 do
       begin
-        WriteLn(F, '  ' + exportname + '_hitboxes: array[0..' + IntToStr(hbcount-1) + ', 0..3] of integer = (');
-        for i:=0 to hbcount-1 do
-        begin
-          MapCoreBase.GetHitBox(CurrentMap, i, HB);
-          if i < hbcount-1 then
-            WriteLn(F, '    (' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '),')
-          else
-            WriteLn(F, '    (' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + ')');
-        end;
-        WriteLn(F, '  );');
+        MapCoreBase.GetHitBox(CurrentMap, i, HB);
+        if i < hbcount-1 then
+          WriteLn(F, '    (' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '),')
+        else
+          WriteLn(F, '    (' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + ')');
       end;
+      WriteLn(F, '  );');
     end;
-
-    BasicLan:
+  end
+  else if MapLanIsJS(lan) then
+  begin
+    WriteLn(F, '// HitBox data for ' + exportname);
+    WriteLn(F, 'const ' + exportname + '_hitbox_count = ' + IntToStr(hbcount) + ';');
+    if hbcount > 0 then
     begin
-      WriteLn(F, 'REM HitBox data for ' + exportname);
-      WriteLn(F, 'REM HitBox Count');
-      WriteLn(F, 'DATA ' + IntToStr(hbcount));
-      if hbcount > 0 then
+      WriteLn(F, 'const ' + exportname + '_hitboxes = [');
+      for i:=0 to hbcount-1 do
       begin
-        WriteLn(F, 'REM X, Y, X2, Y2');
-        for i:=0 to hbcount-1 do
-        begin
-          MapCoreBase.GetHitBox(CurrentMap, i, HB);
-          WriteLn(F, 'DATA ' + IntToStr(HB.x) + ',' + IntToStr(HB.y) + ',' + IntToStr(HB.x2) + ',' + IntToStr(HB.y2));
-        end;
+        MapCoreBase.GetHitBox(CurrentMap, i, HB);
+        if i < hbcount-1 then
+          WriteLn(F, '  [' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + '],')
+        else
+          WriteLn(F, '  [' + IntToStr(HB.x) + ', ' + IntToStr(HB.y) + ', ' + IntToStr(HB.x2) + ', ' + IntToStr(HB.y2) + ']');
       end;
+      WriteLn(F, '];');
     end;
-
-    BasicLNLan:
+  end
+  else if MapLanIsBasicLN(lan) then
+  begin
+    linenum:=1000;
+    WriteLn(F, IntToStr(linenum) + ' REM HitBox data for ' + exportname);
+    inc(linenum, 10);
+    WriteLn(F, IntToStr(linenum) + ' REM HitBox Count');
+    inc(linenum, 10);
+    WriteLn(F, IntToStr(linenum) + ' DATA ' + IntToStr(hbcount));
+    if hbcount > 0 then
     begin
-      linenum:=1000;
-      WriteLn(F, IntToStr(linenum) + ' REM HitBox data for ' + exportname);
       inc(linenum, 10);
-      WriteLn(F, IntToStr(linenum) + ' REM HitBox Count');
-      inc(linenum, 10);
-      WriteLn(F, IntToStr(linenum) + ' DATA ' + IntToStr(hbcount));
-      if hbcount > 0 then
+      WriteLn(F, IntToStr(linenum) + ' REM X, Y, X2, Y2');
+      for i:=0 to hbcount-1 do
       begin
         inc(linenum, 10);
-        WriteLn(F, IntToStr(linenum) + ' REM X, Y, X2, Y2');
-        for i:=0 to hbcount-1 do
-        begin
-          inc(linenum, 10);
-          MapCoreBase.GetHitBox(CurrentMap, i, HB);
-          WriteLn(F, IntToStr(linenum) + ' DATA ' + IntToStr(HB.x) + ',' + IntToStr(HB.y) + ',' + IntToStr(HB.x2) + ',' + IntToStr(HB.y2));
-        end;
+        MapCoreBase.GetHitBox(CurrentMap, i, HB);
+        WriteLn(F, IntToStr(linenum) + ' DATA ' + IntToStr(HB.x) + ',' + IntToStr(HB.y) + ',' + IntToStr(HB.x2) + ',' + IntToStr(HB.y2));
+      end;
+    end;
+  end
+  else if MapLanIsBasic(lan) then
+  begin
+    WriteLn(F, 'REM HitBox data for ' + exportname);
+    WriteLn(F, 'REM HitBox Count');
+    WriteLn(F, 'DATA ' + IntToStr(hbcount));
+    if hbcount > 0 then
+    begin
+      WriteLn(F, 'REM X, Y, X2, Y2');
+      for i:=0 to hbcount-1 do
+      begin
+        MapCoreBase.GetHitBox(CurrentMap, i, HB);
+        WriteLn(F, 'DATA ' + IntToStr(HB.x) + ',' + IntToStr(HB.y) + ',' + IntToStr(HB.x2) + ',' + IntToStr(HB.y2));
       end;
     end;
   end;
@@ -1513,9 +1616,6 @@ begin
  DstBitMap:=TBitMap.Create;
  DstBitMap.SetSize(TileWidth,TileHeight);
 
- TransBitMap:=TBitMap.Create;
- TransBitMap.SetSize(TileWidth,TileHeight);
-
  SrcBitMap:=TBitMap.Create;
 
  for index:=0 to ImageThumbBase.GetCount-1 do
@@ -1523,7 +1623,6 @@ begin
    awidth:=ImageThumbBase.GetWidth(index);
    aheight:=ImageThumbBase.GetHeight(index);
 
-//   SrcBitMap:=TBitMap.Create;
    SrcBitMap.SetSize(awidth,aheight);
 
    // build normal tile
@@ -1540,18 +1639,21 @@ begin
    TileImageList.Add(DstBitMap,NIL);
 
    // build transparent tile - same content but with color 0 as transparent
-   TransBitMap.Canvas.Clear;
-   TransBitMap.Canvas.CopyRect( Rect(0, 0, TileWidth, TileHeight), SrcBitMap.Canvas, Rect(0, 0,aWidth, aHeight));
+   // NOTE: must be a fresh TBitmap each iteration with transparency set
+   // BEFORE drawing content - reusing one bitmap with Transparent=True
+   // corrupts every tile after the first
+   TransBitMap:=TBitMap.Create;
+   TransBitMap.Width:=TileWidth;
+   TransBitMap.Height:=TileHeight;
    TransBitMap.TransparentColor:=GetColor0TColor;
    TransBitMap.TransparentMode:=tmFixed;
    TransBitMap.Transparent:=True;
+   TransBitMap.Canvas.CopyRect( Rect(0, 0, TileWidth, TileHeight), SrcBitMap.Canvas, Rect(0, 0,aWidth, aHeight));
    TransTileImageList.Add(TransBitMap,NIL);
-
-//   SrcBitMap.Free;
+   TransBitMap.Free;
  end;
  SrcBitMap.Free;
  DstBitMap.Free;
- TransBitMap.Free;
 end;
 
 Procedure TMapEdit.VerifyTileImageList;
@@ -1675,9 +1777,9 @@ var
   SrcBitMap,DstBitMap : TBitMap;
   mwidth,mheight : integer;
 begin
- mwidth:=MapCoreBase.GetMapHeight(MapIndex);
+ mwidth:=MapCoreBase.GetMapWidth(MapIndex);
  if mwidth > 32 then mwidth:=32;
- mheight:=MapCoreBase.GetMapWidth(MapIndex);
+ mheight:=MapCoreBase.GetMapHeight(MapIndex);
  if mheight > 32 then mheight:=32;
 
  SrcBitMap:=TBitMap.Create;

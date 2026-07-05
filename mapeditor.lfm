@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 92
+  Left = 114
   Height = 860
-  Top = 375
+  Top = 165
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -670,6 +670,279 @@ object MapEdit: TMapEdit
           object ExportHitBoxPascal: TMenuItem
             Caption = 'HitBox Array'
             OnClick = ExportHitBoxPascalClick
+          end
+        end
+        object MnuMapExpAB: TMenuItem
+          Caption = 'AmigaBasic'
+          object MD_AB: TMenuItem
+            Tag = 13
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_AB: TMenuItem
+            Tag = 13
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpAC: TMenuItem
+          Caption = 'Amiga C'
+          object MD_AC: TMenuItem
+            Tag = 24
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_AC: TMenuItem
+            Tag = 24
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpAP: TMenuItem
+          Caption = 'Amiga Pascal'
+          object MD_AP: TMenuItem
+            Tag = 19
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_AP: TMenuItem
+            Tag = 19
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpAQB: TMenuItem
+          Caption = 'Amiga QuickBasic AQB'
+          object MD_AQB: TMenuItem
+            Tag = 7
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_AQB: TMenuItem
+            Tag = 7
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpBAM: TMenuItem
+          Caption = 'BAM Basic'
+          object MD_BAM: TMenuItem
+            Tag = 8
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_BAM: TMenuItem
+            Tag = 8
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpFBQB: TMenuItem
+          Caption = 'FreeBASIC - QB Mode'
+          object MD_FBQB: TMenuItem
+            Tag = 14
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_FBQB: TMenuItem
+            Tag = 14
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpFB: TMenuItem
+          Caption = 'FreeBASIC'
+          object MD_FB: TMenuItem
+            Tag = 5
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_FB: TMenuItem
+            Tag = 5
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpFP: TMenuItem
+          Caption = 'FreePascal'
+          object MD_FP: TMenuItem
+            Tag = 17
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_FP: TMenuItem
+            Tag = 17
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpGCC: TMenuItem
+          Caption = 'gcc \ Emscripten'
+          object MD_GCC: TMenuItem
+            Tag = 23
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_GCC: TMenuItem
+            Tag = 23
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpGW: TMenuItem
+          Caption = 'GWBASIC'
+          object MD_GW: TMenuItem
+            Tag = 10
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_GW: TMenuItem
+            Tag = 10
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpJS: TMenuItem
+          Caption = 'JavaScript'
+          object MD_JS: TMenuItem
+            Tag = 25
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_JS: TMenuItem
+            Tag = 25
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpOW: TMenuItem
+          Caption = 'Open Watcom C'
+          object MD_OW: TMenuItem
+            Tag = 22
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_OW: TMenuItem
+            Tag = 22
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpQB: TMenuItem
+          Caption = 'QBasic\QuickBasic'
+          object MD_QB: TMenuItem
+            Tag = 11
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_QB: TMenuItem
+            Tag = 11
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpQB64: TMenuItem
+          Caption = 'QB64'
+          object MD_QB64: TMenuItem
+            Tag = 6
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_QB64: TMenuItem
+            Tag = 6
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpQBJS: TMenuItem
+          Caption = 'QBJS'
+          object MD_QBJS: TMenuItem
+            Tag = 9
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_QBJS: TMenuItem
+            Tag = 9
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpQC: TMenuItem
+          Caption = 'Quick C'
+          object MD_QC: TMenuItem
+            Tag = 21
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_QC: TMenuItem
+            Tag = 21
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpQP: TMenuItem
+          Caption = 'Quick Pascal'
+          object MD_QP: TMenuItem
+            Tag = 16
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_QP: TMenuItem
+            Tag = 16
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpTB: TMenuItem
+          Caption = 'Turbo\Power Basic'
+          object MD_TB: TMenuItem
+            Tag = 12
+            Caption = 'Map Data Statements'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_TB: TMenuItem
+            Tag = 12
+            Caption = 'HitBox Data Statements'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpTP: TMenuItem
+          Caption = 'Turbo Pascal'
+          object MD_TP: TMenuItem
+            Tag = 15
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_TP: TMenuItem
+            Tag = 15
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpTC: TMenuItem
+          Caption = 'Turbo C'
+          object MD_TC: TMenuItem
+            Tag = 20
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_TC: TMenuItem
+            Tag = 20
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpTMT: TMenuItem
+          Caption = 'TMT Pascal'
+          object MD_TMT: TMenuItem
+            Tag = 18
+            Caption = 'Map Array'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_TMT: TMenuItem
+            Tag = 18
+            Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
           end
         end
       end
