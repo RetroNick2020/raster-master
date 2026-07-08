@@ -89,9 +89,7 @@ Type
 
              procedure DClip(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : integer);
              procedure ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode,shape,full : Integer);
-             procedure DrawShape(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,shape,full : integer);
 
-             procedure _ARectangle(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : Integer);
              procedure PutPixel(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
              procedure DText(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
 
@@ -99,7 +97,6 @@ Type
              procedure HLine(Image : TCanvas;x,x2,y : integer;color : TColor; mode : integer);
              procedure VLine(Image : TCanvas;y,y2,x : integer;color : TColor; mode : integer);
              Procedure DLine(Image : TCanvas;x1,y1,x2,y2:Integer;color : TColor; mode : integer);
-             procedure rRectFill(Image : TCanvas;x,y,w,h : integer;color : TColor; mode : integer);
              procedure rLine(Image : TCanvas;x,y,w : integer;color : TColor; mode : integer);
              procedure draw_ellipse(Image : TCanvas;xc,  yc,  a, b : Integer;color : TColor; mode : integer);
              procedure fill_ellipse(Image : TCanvas;xc, yc,  a,  b  : integer;color : TColor; mode : integer);
@@ -150,8 +147,6 @@ Type
              procedure  GetGridArea(var ga : TGridAreaRec);
              procedure  SetGridArea(var ga : TGridAreaRec);
 
-             procedure  SetTextInfo(var tinfo : TTextInfoRec);
-             procedure  GetTextInfo(var tinfo : TTextInfoRec);
              procedure  SetTextInfoXY(x,y : integer);
              procedure  SetTextInfoActive(active : boolean);
              procedure  SetTextInfoText(info : string);
@@ -474,26 +469,6 @@ begin
 end;
 
 
-procedure TRMDrawTools._ARectangle(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode : Integer);
-begin
-  Image.Pen.Color := Color;
-  if mode = 1 then
-  begin
-    if Color = clBlack then  Image.Pen.Color := clWhite;
-    Image.Pen.Mode := pmXor;
-  end
-  else
-  begin
-      Image.Pen.Mode :=pmCopy;
-  end;
-
-  Image.MoveTo(x,y);
-  Image.LineTo(x2,y);
-  Image.LineTo(x2,y2);
-  Image.LineTo(x,y2);
-  Image.LineTo(x,y);
-
-end;
 
 
 
@@ -702,37 +677,6 @@ begin
   end;
 end;
 
-procedure TRMDrawTools.rRectFill(Image : TCanvas;x,y,w,h : integer;color : TColor; mode : integer);
-var
- i,j : integer;
- x2,y2 : integer;
- t     : integer;
-begin
-x2:=x+w;
-y2:=y+h-1;
-if x2 < x then
-begin
-  t:=x2;
-  x2:=x;
-  x:=t;
-end;
-
-if y2 < y then
-begin
-  t:=y2;
-  y2:=y;
-  y:=t;
-end;
-
-for j:=y to y2 do
-begin
-  for i:=x to x2 do
-  begin
-    putpixel(image,i,j,color,mode);
-  end;
-end;
-
-end;
 
 
 
@@ -835,115 +779,22 @@ end;
 
 procedure TRMDrawTools.ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode,shape,full : Integer);
 begin
-   if shape = DrawShapeRectangle then
-   begin
-    SetZoomMode(0);
-    Rect(Image,x,y,x2,y2,color,mode,0);
-    SetZoomMode(1);
-   end
-   else if shape = DrawShapeFRectangle then
-   begin
-      SetZoomMode(0);
-      Rect(Image,x,y,x2,y2,color,mode,full);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapeLine then
-   begin
-      SetZoomMode(0);
-      Dline(Image,x,y,x2,y2,color,mode);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapeCircle then
-   begin
-      SetZoomMode(0);
-      DCircle(Image,x,y,x2,y2,color,mode,0);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapeFCircle then
-   begin
-      SetZoomMode(0);
-      DCircle(Image,x,y,x2,y2,color,mode,full);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapeEllipse then
-   begin
-      SetZoomMode(0);
-      DEllipse(Image,x,y,x2,y2,color,mode,0);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapeFEllipse then
-   begin
-      SetZoomMode(0);
-      DEllipse(Image,x,y,x2,y2,color,mode,full);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapePencil then
-   begin
-      SetZoomMode(0);
-      PutPixel(Image,x,y,color,mode);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapeText then
-   begin
-      SetZoomMode(0);
-      DText(Image,x,y,color,mode);
-      SetZoomMode(1);
-   end
-   else if shape = DrawShapeSpray then
-   begin
-      SetZoomMode(0);
-      SprayPaint(Image,x,y,color,mode);
-      SetZoomMode(1);
+   SetZoomMode(0);
+   case shape of
+     DrawShapeRectangle:  Rect(Image,x,y,x2,y2,color,mode,0);
+     DrawShapeFRectangle: Rect(Image,x,y,x2,y2,color,mode,full);
+     DrawShapeLine:       DLine(Image,x,y,x2,y2,color,mode);
+     DrawShapeCircle:     DCircle(Image,x,y,x2,y2,color,mode,0);
+     DrawShapeFCircle:    DCircle(Image,x,y,x2,y2,color,mode,full);
+     DrawShapeEllipse:    DEllipse(Image,x,y,x2,y2,color,mode,0);
+     DrawShapeFEllipse:   DEllipse(Image,x,y,x2,y2,color,mode,full);
+     DrawShapePencil:     PutPixel(Image,x,y,color,mode);
+     DrawShapeText:       DText(Image,x,y,color,mode);
+     DrawShapeSpray:      SprayPaint(Image,x,y,color,mode);
    end;
+   SetZoomMode(1);
 end;
 
-procedure TRMDrawTools.DrawShape(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,shape,full : integer);
-begin
-   if shape = DrawShapeRectangle then
-   begin
-     Rect(Image,x,y,x2,y2,color,mode,0);
-   end
-   else if shape = DrawShapeFRectangle then
-   begin
-      Rect(Image,x,y,x2,y2,color,mode,full);
-    end
-   else if shape = DrawShapeLine then
-   begin
-      Dline(Image,x,y,x2,y2,color,mode);
-   end
-   else if shape = DrawShapeCircle then
-   begin
-      DCircle(Image,x,y,x2,y2,color,mode,0);
-   end
-   else if shape = DrawShapeFCircle then
-   begin
-      DCircle(Image,x,y,x2,y2,color,mode,full);
-   end
-   else if shape = DrawShapeEllipse then
-   begin
-      DEllipse(Image,x,y,x2,y2,color,mode,0);
-   end
-   else if shape = DrawShapeFEllipse then
-   begin
-      DEllipse(Image,x,y,x2,y2,color,mode,full);
-   end
-   else if shape = DrawShapePencil then
-   begin
-     PutPixel(Image,x,y,color,mode);
-   end
-   else if shape = DrawShapeText then
-   begin
-     DText(Image,x,y,color,mode);
-   end
-   else if shape = DrawShapeSpray then
-   begin
-     SprayPaint(Image,x,y,color,mode);
-   end
-   else if shape = DrawShapeClip then
-   begin
-     DClip(Image,x,y,x2,y2,color,mode);
-   end;
-end;
 
 procedure TRMDrawTools.SetGridThickX(amount : integer);
 begin
@@ -1049,10 +900,6 @@ begin
    Image.FillRect(0, 0, Image.Width, Image.Height);
 end;
 
-procedure  TRMDrawTools.SetTextInfo(var tinfo : TTextInfoRec);
-begin
-    TextInfo:=tinfo;
-end;
 
 procedure  TRMDrawTools.SetTextInfoXY(x,y : integer);
 begin
@@ -1065,10 +912,6 @@ begin
   TextInfo.Font:=Font;
 end;
 
-procedure  TRMDrawTools.GetTextInfo(var tinfo : TTextInfoRec);
-begin
-    tinfo:=TextInfo;
-end;
 
 procedure  TRMDrawTools.SetTextInfoActive(active : boolean);
 begin
@@ -1154,21 +997,6 @@ begin
   if size > 20 then size:=20;
   if size < 1 then size:=1;
   GridArea.ZoomSize:=size;
-
-   (*
-  if RMCoreBase.GetWidth = 8 then
-  begin
-   If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
-  end
-  else if RMCoreBase.GetWidth = 16 then
-  begin
-   If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
-  end
-  else if RMCoreBase.GetWidth = 32 then
-  begin
-   If GridArea.ZoomSize < 2 then GridArea.ZoomSize:=2;
-  end;
-  *)
   SetCellWidth(GridArea.ZoomSize*GetCellWidthMin);
   SetCellHeight(GridArea.ZoomSize*GetCellHeightMin);
 end;
@@ -1215,112 +1043,51 @@ end;
 
 
 
-procedure TRMDrawTools.AddEGAPalette(var CP : TColorPalette);
+//shared fill helper - all the palette setups are the same loop over a
+//TRMColorRec table, only the table and count differ
+procedure AddPaletteFromTable(var CP : TColorPalette; const tbl : array of TRMColorRec; count : integer);
 var
-  TC : TColor;
   i : integer;
 begin
-    CP.ClearColors;
-    for i:=0 to 15 do
-    begin
-      TC:=RGBToColor(VGADefault256[i].r,
-                     VGADefault256[i].g,
-                     VGADefault256[i].b);
-      CP.AddColor(TC);
-    end;
+  CP.ClearColors;
+  if count > Length(tbl) then count:=Length(tbl);
+  for i:=0 to count-1 do
+    CP.AddColor(RGBToColor(tbl[i].r, tbl[i].g, tbl[i].b));
+end;
+
+procedure TRMDrawTools.AddEGAPalette(var CP : TColorPalette);
+begin
+  AddPaletteFromTable(CP, VGADefault256, 16);
 end;
 
 procedure TRMDrawTools.AddMonoPalette(var CP : TColorPalette);
-var
-  TC : TColor;
-  i : integer;
 begin
-    CP.ClearColors;
-    for i:=0 to 1 do
-    begin
-      TC:=RGBToColor(MonoDefault[i].r,
-                     MonoDefault[i].g,
-                     MonoDefault[i].b);
-      CP.AddColor(TC);
-    end;
+  AddPaletteFromTable(CP, MonoDefault, 2);
 end;
 
 procedure TRMDrawTools.AddCGAPalette0(var CP : TColorPalette);
-var
-  TC : TColor;
-  i : integer;
 begin
-    CP.ClearColors;
-    for i:=0 to 3 do
-    begin
-      TC:=RGBToColor(CGADefault0[i].r,
-                     CGADefault0[i].g,
-                     CGADefault0[i].b);
-      CP.AddColor(TC);
-    end;
+  AddPaletteFromTable(CP, CGADefault0, 4);
 end;
 
 procedure TRMDrawTools.AddCGAPalette1(var CP : TColorPalette);
-var
-  TC : TColor;
-  i : integer;
 begin
-    CP.ClearColors;
-    for i:=0 to 3 do
-    begin
-      TC:=RGBToColor(CGADefault1[i].r,
-                     CGADefault1[i].g,
-                     CGADefault1[i].b);
-      CP.AddColor(TC);
-    end;
+  AddPaletteFromTable(CP, CGADefault1, 4);
 end;
 
-
 procedure TRMDrawTools.AddVGAPalette(var CP : TColorPalette);
-var
-  TC : TColor;
-  i : integer;
 begin
-    CP.ClearColors;
-    for i:=0 to 15 do
-    begin
-      TC:=RGBToColor(VGADefault256[i].r,
-                     VGADefault256[i].g,
-                     VGADefault256[i].b);
-      CP.AddColor(TC);
-    end;
+  AddPaletteFromTable(CP, VGADefault256, 16);
 end;
 
 procedure TRMDrawTools.AddVGAPalette256(var CP : TColorPalette);
-var
-  TC : TColor;
-  i : integer;
 begin
-    CP.ClearColors;
-    for i:=0 to 255 do
-    begin
-      TC:=RGBToColor(VGADefault256[i].r,
-                     VGADefault256[i].g,
-                     VGADefault256[i].b);
-      CP.AddColor(TC);
-
-    end;
+  AddPaletteFromTable(CP, VGADefault256, 256);
 end;
 
 procedure TRMDrawTools.AddAmigaPalette(var CP : TColorPalette; ColorNum : integer);
-var
-  TC : TColor;
-  i : integer;
 begin
-    CP.ClearColors;
-    for i:=0 to ColorNum-1 do
-    begin
-      TC:=RGBToColor(AmigaDefault32[i].r,
-                     AmigaDefault32[i].g,
-                     AmigaDefault32[i].b);
-      CP.AddColor(TC);
-
-    end;
+  AddPaletteFromTable(CP, AmigaDefault32, ColorNum);
 end;
 
 Procedure TRMDrawTools.Hflip(x,y,x2,y2: integer);

@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 114
+  Left = 92
   Height = 860
-  Top = 165
+  Top = 375
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -562,6 +562,7 @@ object MapEdit: TMapEdit
       HorzScrollBar.Increment = 10
       HorzScrollBar.Page = 105
       HorzScrollBar.Tracking = True
+      OnMouseWheel = MapScrollBoxMouseWheel
       VertScrollBar.Increment = 10
       VertScrollBar.Page = 105
       VertScrollBar.Tracking = True
@@ -812,6 +813,19 @@ object MapEdit: TMapEdit
           object HB_JS: TMenuItem
             Tag = 25
             Caption = 'HitBox Array'
+            OnClick = MenuExportHitBoxLanClick
+          end
+        end
+        object MnuMapExpJSON: TMenuItem
+          Caption = 'JSON'
+          object MD_JSON: TMenuItem
+            Tag = 26
+            Caption = 'Map Data (JSON)'
+            OnClick = MenuExportMapDataLanClick
+          end
+          object HB_JSON: TMenuItem
+            Tag = 26
+            Caption = 'HitBox Data (JSON)'
             OnClick = MenuExportHitBoxLanClick
           end
         end

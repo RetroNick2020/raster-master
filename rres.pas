@@ -4,7 +4,7 @@ Unit rres;
 
 Interface
    uses rmcore,rmthumb,rmxgfcore,rwxgf,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
-     wraylib,rwaqb,wmouse,rwspriteanim;
+     wraylib,rwaqb,wmouse,rwspriteanim,animbase;
 
 //Function RESInclude(filename:string):word;
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
@@ -39,11 +39,66 @@ Procedure res_open(Var IRFILE : RFILE;filename : string);
 Procedure res_close(var IRFILE : RFILE);
 Function  res_getsize(VAR IRFILE : RFILE; ri : integer) : longint;
 Procedure res_read(VAR IRFILE : RFILE; var rbuf; ri : integer);
+
+{ RES binary v2 resource type encoding.
+
+  The 16-bit rt field packs three values:
+
+     rt = Category*4096 + Lan*64 + Format
+
+  bits 12-14 : Category (1..7)
+  bits  6-11 : Lan      (0..63) - compiler/language id
+  bits  0-5  : Format   (0..63) - image type / map format / palette type
+
+  Decoding (any language):
+     Category := rt div 4096;
+     Lan      := (rt div 64) mod 64;
+     Format   := rt mod 64;
+
+  QBasic:  cat% = rt% \ 4096 : lan% = (rt% \ 64) MOD 64 : fmt% = rt% MOD 64
+  C:       cat = rt >> 12;  lan = (rt >> 6) & 63;  fmt = rt & 63;
+
+  Max value = 7*4096 + 63*64 + 63 = 32767, so every encoded value fits
+  a signed 16-bit integer - readers never see negative values.
+
+  The RES header ver field distinguishes encodings:
+  ver 1 = old ad-hoc scheme (Lan*100+Image / Lan*200+MapFormat)
+  ver 2 = this scheme }
+
+const
+  ResTypePalette   = 1;
+  ResTypeImage     = 2;
+  ResTypeImageMask = 3;
+  ResTypeMap       = 4;
+  ResTypeAnimation = 5;
+
+function EncodeResType(Category, Lan, Format : integer) : integer;
+procedure DecodeResType(rt : integer; var Category, Lan, Format : integer);
 (*
 Procedure res_dis_xgf(Var IRFILE : RFILE; x,y : integer;ri : integer;dmode : integer);
 *)
 
 Implementation
+
+function EncodeResType(Category, Lan, Format : integer) : integer;
+begin
+  //clamp fields to their bit ranges so a bad value can never corrupt
+  //the neighbouring fields
+  if Category < 0 then Category:=0;
+  if Category > 7 then Category:=7;
+  if Lan < 0 then Lan:=0;
+  if Lan > 63 then Lan:=63;
+  if Format < 0 then Format:=0;
+  if Format > 63 then Format:=63;
+  EncodeResType:=Category*4096 + Lan*64 + Format;
+end;
+
+procedure DecodeResType(rt : integer; var Category, Lan, Format : integer);
+begin
+  Category:=rt div 4096;
+  Lan:=(rt div 64) mod 64;
+  Format:=rt mod 64;
+end;
 
 Procedure res_open(Var IRFILE : RFILE;filename : string);
 type
@@ -1094,6 +1149,35 @@ begin
 end;
 
 
+//dumps the frame data for every export-enabled animation into the RES
+//binary. layout per animation: frame count (word) followed by each
+//frame's image index (word) - matches the size written in the header
+procedure ResExportAnimations(var F : File);
+var
+  AnimExport : AnimExportFormatRec;
+  i, j, fcount : integer;
+  w : word;
+begin
+  for i:=0 to AnimateBase.GetAnimationCount-1 do
+  begin
+    AnimateBase.GetAnimExportProps(i,AnimExport);
+    if AnimExport.AnimateFormat > 0 then
+    begin
+      fcount:=AnimateBase.GetFrameCount(i);
+      w:=fcount;
+      {$I-}
+      Blockwrite(F,w,sizeof(w));
+      for j:=0 to fcount-1 do
+      begin
+        w:=AnimateBase.GetImageIndex(i,j);
+        Blockwrite(F,w,sizeof(w));
+      end;
+      {$I+}
+      if IOResult <> 0 then exit;
+    end;
+  end;
+end;
+
 Function RESBinary(filename:string):word;
 var
  data    : BufferRec;
@@ -1119,12 +1203,17 @@ var
  MapName     : string;
  MapSize     : longint;
  MapExport   :  MapExportFormatRec;
+ AnimCount   : integer;
+ AnimName    : string;
+ AnimSize    : longint;
+ AnimExport  : AnimExportFormatRec;
  ImageExportFormat : integer;
 begin
  ExportCount:=ImageThumbBase.GetExportImageCount;
  inc(ExportCount,ImageThumbBase.GetExportMaskCount);
  inc(ExportCount,ImageThumbBase.GetExportPaletteCount);
  inc(ExportCount,MapCoreBase.GetExportMapCount);
+ inc(ExportCount,AnimateBase.GetExportAnimCount);
 
  if ExportCount = 0 then exit;
 
@@ -1145,7 +1234,7 @@ begin
 
  //write the signature and record count
  RH.sig:='RES';
- RH.ver:=1;
+ RH.ver:=2;   //v2 = structured resource type encoding (see EncodeResType)
  RH.resitemcount:=Exportcount;
  {$I-}
  Blockwrite(data.f,RH,sizeof(RH));
@@ -1182,7 +1271,7 @@ begin
 
      RR.size:=PalSize;
      RR.offset:=OffsetCount;
-     RR.rt:=EO.Palette; // id's less than 100 are palettes
+     RR.rt:=EncodeResType(ResTypePalette,EO.Lan,EO.Palette);
 
      inc(OffsetCount,PalSize);
      {$I-}
@@ -1208,7 +1297,7 @@ begin
      RR.size:=Size;
      RR.offset:=OffsetCount;
 
-     RR.rt:=EO.Lan*100+EO.Image; //language id * 100 + Image Type to generate resource type
+     RR.rt:=EncodeResType(ResTypeImage,EO.Lan,EO.Image);
 
      inc(OffsetCount,Size);
      {$I-}
@@ -1222,6 +1311,7 @@ begin
        if slen > 20 then slen:=20;
        Move(MaskName[1],RR.rid,slen);
 
+       RR.rt:=EncodeResType(ResTypeImageMask,EO.Lan,EO.Image);  //masks get their own category so readers can tell them apart
        RR.offset:=OffsetCount;
        inc(OffsetCount,Size);
        Blockwrite(data.f,RR,sizeof(RR));
@@ -1256,9 +1346,42 @@ begin
 
         RR.size:=MapSize;
         RR.offset:=OffsetCount;
-        RR.rt:=MapExport.Lan*200+MapExport.MapFormat; //language id * 200 + Map format to generate resource type
+        RR.rt:=EncodeResType(ResTypeMap,MapExport.Lan,MapExport.MapFormat);
 
         inc(OffsetCount,MapSize);
+        {$I-}
+        Blockwrite(data.f,RR,sizeof(RR));
+        {$I+}
+        Error:=IORESULT;
+        if Error<>0 then
+        begin
+          RESBinary:=Error;
+          exit;
+        end;
+      end;
+  end;
+
+  // dump res header fields for Animations
+  // data = frame count (word) followed by each frame's image index (word)
+  AnimCount:=AnimateBase.GetAnimationCount;
+  for i:=0 to AnimCount-1 do
+  begin
+      AnimateBase.GetAnimExportProps(i,AnimExport);
+      if AnimExport.AnimateFormat > 0 then
+      begin
+        AnimSize:=(1+AnimateBase.GetFrameCount(i))*2;
+
+        fillchar(RR.rid,sizeof(RR.rid),32);
+        AnimName:=AnimExport.Name;
+        slen:=Length(AnimName);
+        if slen > 20 then slen:=20;
+        if slen > 0 then Move(AnimName[1],RR.rid,slen);
+
+        RR.size:=AnimSize;
+        RR.offset:=OffsetCount;
+        RR.rt:=EncodeResType(ResTypeAnimation,AnimExport.Lan,AnimExport.AnimateFormat);
+
+        inc(OffsetCount,AnimSize);
         {$I-}
         Blockwrite(data.f,RR,sizeof(RR));
         {$I+}
@@ -1285,7 +1408,7 @@ begin
 
    if EO.Palette > 0 then WritePalToBuffer(data,EO.Palette);
 
-   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan:
+   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan,BAMLan,QBJSLan:   //BAM and QBJS use the standard QB-family XGF binary format
                                     begin
                                       if (ImageExportFormat = PutImageExportFormat) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                       if (ImageExportFormat = PutImageExportFormat) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
@@ -1299,7 +1422,7 @@ begin
                                                                           RGBExportFormat:ResExportRayLibToBuffer(data.f,0,0,width-1,height-1,3);
                                         end;
                                       end;
-                        TPLan,TCLan: begin
+                        TPLan,TCLan,TMTLan: begin   //TMT uses the standard TP-family XGF binary format
                                        if (ImageExportFormat = PutImageExportFormat) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                        if (ImageExportFormat = PutImageExportFormat) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
                                        if (ImageExportFormat = XLibLBMExportFormat) then WriteLBMToBuffer(0,0,width-1,height-1,data);   //xlib lbm
@@ -1360,6 +1483,7 @@ begin
  end;
 
  ResExportMaps(data.f); //export the maps
+ ResExportAnimations(data.f); //export the animations
 
  {$I-}
  close(data.f);

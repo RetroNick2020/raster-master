@@ -95,6 +95,7 @@ type
     MnuMapExpGCC, MD_GCC, HB_GCC : TMenuItem;
     MnuMapExpGW, MD_GW, HB_GW : TMenuItem;
     MnuMapExpJS, MD_JS, HB_JS : TMenuItem;
+    MnuMapExpJSON, MD_JSON, HB_JSON : TMenuItem;
     MnuMapExpOW, MD_OW, HB_OW : TMenuItem;
     MnuMapExpQB, MD_QB, HB_QB : TMenuItem;
     MnuMapExpQB64, MD_QB64, HB_QB64 : TMenuItem;
@@ -225,6 +226,8 @@ type
 
     procedure TileListViewClick(Sender: TObject);
     procedure TileZoomChange(Sender: TObject);
+    procedure MapScrollBoxMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
 
     procedure MPaintBoxMouseDownXYX2Y2Tool(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure MPaintBoxMouseMoveXYX2Y2Tool(Sender: TObject; Shift: TShiftState;
@@ -284,6 +287,7 @@ type
     procedure DrawCheckerboard;
     function  GetColor0TColor : TColor;
     procedure RebuildTransTileThumbImageList;
+    procedure ApplyMapZoom(newsize : integer; useAnchor : boolean; anchorX : integer = 0; anchorY : integer = 0);
 
     procedure SetMapTileMode(tlTileMode : integer);
     procedure SetDrawTool(tool : integer);
@@ -1058,6 +1062,8 @@ begin
    SaveDialog1.Filter := 'c|*.c;*.h|All Files|*.*'
  else if MapLanIsJS(Lan) then
    SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
+ else if MapLanIsJSON(Lan) then
+   SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
  else
    SaveDialog1.Filter := 'All Files|*.*';
 
@@ -1082,6 +1088,8 @@ begin
    SaveDialog1.Filter := 'c|*.c;*.h|All Files|*.*'
  else if MapLanIsJS(Lan) then
    SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
+ else if MapLanIsJSON(Lan) then
+   SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
  else
    SaveDialog1.Filter := 'All Files|*.*';
 
@@ -1187,6 +1195,27 @@ begin
       end;
       WriteLn(F, '  );');
     end;
+  end
+  else if MapLanIsJSON(lan) then
+  begin
+    WriteLn(F, '{');
+    WriteLn(F, '  "name": "' + exportname + '",');
+    WriteLn(F, '  "hitBoxCount": ' + IntToStr(hbcount) + ',');
+    WriteLn(F, '  "hitBoxes": [');
+    for i:=0 to hbcount-1 do
+    begin
+      MapCoreBase.GetHitBox(CurrentMap, i, HB);
+      if i < hbcount-1 then
+        WriteLn(F, '    {"id": ' + IntToStr(HB.id) + ', "value": ' + IntToStr(HB.value) +
+                   ', "x": ' + IntToStr(HB.x) + ', "y": ' + IntToStr(HB.y) +
+                   ', "x2": ' + IntToStr(HB.x2) + ', "y2": ' + IntToStr(HB.y2) + '},')
+      else
+        WriteLn(F, '    {"id": ' + IntToStr(HB.id) + ', "value": ' + IntToStr(HB.value) +
+                   ', "x": ' + IntToStr(HB.x) + ', "y": ' + IntToStr(HB.y) +
+                   ', "x2": ' + IntToStr(HB.x2) + ', "y2": ' + IntToStr(HB.y2) + '}');
+    end;
+    WriteLn(F, '  ]');
+    WriteLn(F, '}');
   end
   else if MapLanIsJS(lan) then
   begin
@@ -1711,23 +1740,80 @@ begin
  end;
 end;
 
-procedure TMapEdit.TileZoomChange(Sender: TObject);
+procedure TMapEdit.ApplyMapZoom(newsize : integer; useAnchor : boolean; anchorX : integer; anchorY : integer);
 var
   tw,th : integer;
+  oldTileW, oldTileH : integer;
+  tileX, tileY : double;
+  newScrollX, newScrollY : integer;
 begin
+  if newsize < TileZoom.Min then newsize:=TileZoom.Min;
+  if newsize > TileZoom.Max then newsize:=TileZoom.Max;
+  //NOTE: no early exit when newsize = current zoom - initial layout
+  //relies on this proc running even when the value is unchanged
+
+  //remember which map tile position sits under the anchor point so it
+  //stays under the cursor after zooming
+  oldTileW:=TileWidth;
+  oldTileH:=TileHeight;
+  tileX:=0; tileY:=0;
+  if useAnchor and (oldTileW > 0) and (oldTileH > 0) then
+  begin
+    tileX:=(MapScrollBox.HorzScrollBar.Position + anchorX) / oldTileW;
+    tileY:=(MapScrollBox.VertScrollBar.Position + anchorY) / oldTileH;
+  end;
+
   tw:=MapCoreBase.GetMapTileWidth(CurrentMap);
   th:=MapCoreBase.GetMapTileHeight(CurrentMap);
 
-  MapCoreBase.SetZoomSize(CurrentMap,TileZoom.Position);
+  MapCoreBase.SetZoomSize(CurrentMap,newsize);
   MapCoreBase.SetMapTileSize(CurrentMap,tw,th);
 
   TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
   TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
   UpdatePageSize;
-  //UpdateMapView;
   LoadTilesToTileImageList;
+
+  //keep the anchored tile position under the cursor
+  if useAnchor then
+  begin
+    newScrollX:=Round(tileX * TileWidth) - anchorX;
+    newScrollY:=Round(tileY * TileHeight) - anchorY;
+    if newScrollX < 0 then newScrollX:=0;
+    if newScrollY < 0 then newScrollY:=0;
+    MapScrollBox.HorzScrollBar.Position:=newScrollX;
+    MapScrollBox.VertScrollBar.Position:=newScrollY;
+  end;
+
+  //keep the trackbar in sync without retriggering
+  if TileZoom.Position <> newsize then
+  begin
+    TileZoom.OnChange:=nil;
+    TileZoom.Position:=newsize;
+    TileZoom.OnChange:=@TileZoomChange;
+  end;
+
   UpdateEditMenus;
   MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.TileZoomChange(Sender: TObject);
+begin
+  ApplyMapZoom(TileZoom.Position, False);
+end;
+
+procedure TMapEdit.MapScrollBoxMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+var
+  pt : TPoint;
+begin
+  //zoom with the wheel, anchored on the map tile under the mouse cursor
+  pt:=MapScrollBox.ScreenToClient(MousePos);
+  if WheelDelta > 0 then
+    ApplyMapZoom(MapCoreBase.GetZoomSize(CurrentMap) + 1, True, pt.X, pt.Y)
+  else
+    ApplyMapZoom(MapCoreBase.GetZoomSize(CurrentMap) - 1, True, pt.X, pt.Y);
+  Handled:=True;
 end;
 
 procedure TMapEdit.UpdateTileView;

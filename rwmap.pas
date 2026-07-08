@@ -223,6 +223,73 @@ begin
  Writeln(mc.FTextPtr^,'const ',ImageName,'Map = [');
 end;
 
+//writes the map as a pure JSON data descriptor - dims, tile size, tile
+//index rows, and hitboxes. shared by the export menu and the map
+//properties / buffer export paths.
+procedure WriteMapJSONToText(var F : Text; index : integer; ImageName : string; UseClipArea : boolean);
+var
+  MapProps : MapPropsRec;
+  Tile : TileRec;
+  HB : HitBoxRec;
+  ca : MapClipAreaRec;
+  i, j, sx, sy, mwidth, mheight, hbcount : integer;
+  line : string;
+begin
+  MapCoreBase.GetMapProps(index, MapProps);
+  mwidth:=MapCoreBase.GetMapWidth(index);
+  mheight:=MapCoreBase.GetMapHeight(index);
+  sx:=0;
+  sy:=0;
+
+  if UseClipArea and (MapCoreBase.GetMapClipStatus(index)=1) then
+  begin
+    MapCoreBase.GetMapClipAreaCoords(index, ca);
+    sx:=ca.x;
+    sy:=ca.y;
+    mwidth:=ca.x2-ca.x+1;
+    mheight:=ca.y2-ca.y+1;
+  end;
+
+  Writeln(F,'{');
+  Writeln(F,'  "name": "',ImageName,'",');
+  Writeln(F,'  "width": ',mwidth,',');
+  Writeln(F,'  "height": ',mheight,',');
+  Writeln(F,'  "tileWidth": ',MapProps.tilewidth,',');
+  Writeln(F,'  "tileHeight": ',MapProps.tileheight,',');
+
+  //tiles as rows of image indexes
+  Writeln(F,'  "tiles": [');
+  for j:=0 to mheight-1 do
+  begin
+    line:='    [';
+    for i:=0 to mwidth-1 do
+    begin
+      MapCoreBase.GetMapTile(index, sx+i, sy+j, Tile);
+      line:=line+IntToStr(Tile.ImageIndex);
+      if i < mwidth-1 then line:=line+',';
+    end;
+    line:=line+']';
+    if j < mheight-1 then line:=line+',';
+    Writeln(F,line);
+  end;
+  Writeln(F,'  ],');
+
+  //hitboxes
+  hbcount:=MapCoreBase.GetHitBoxCount(index);
+  Writeln(F,'  "hitBoxes": [');
+  for i:=0 to hbcount-1 do
+  begin
+    MapCoreBase.GetHitBox(index, i, HB);
+    line:='    {"id": '+IntToStr(HB.id)+', "value": '+IntToStr(HB.value)+
+          ', "x": '+IntToStr(HB.x)+', "y": '+IntToStr(HB.y)+
+          ', "x2": '+IntToStr(HB.x2)+', "y2": '+IntToStr(HB.y2)+'}';
+    if i < hbcount-1 then line:=line+',';
+    Writeln(F,line);
+  end;
+  Writeln(F,'  ]');
+  Writeln(F,'}');
+end;
+
 procedure ExportMap(filename : string;Lan : Integer;UseClipArea : boolean);
 var
   mc : CodeGenRec;
@@ -240,6 +307,17 @@ begin
   if IORESULT<>0 then exit;
 
   index:=MapCoreBase.GetCurrentMap;
+
+  if MapLanIsJSON(Lan) then
+  begin
+    //pure JSON data descriptor - bypasses the code generator entirely
+    WriteMapJSONToText(F,index,ImageName,UseClipArea);
+    {$I-}
+    close(F);
+    {$I+}
+    exit;
+  end;
+
   if MapLanIsBasic(Lan) then ExportBasicMapHeader(mc,index,ImageName,UseClipArea)
   else if MapLanIsBasicLN(Lan) then ExportBasicLNMapHeader(mc,index,ImageName,UseClipArea)
   else if MapLanIsC(Lan) then ExportCMapHeader(mc,index,ImageName,UseClipArea)
@@ -276,6 +354,12 @@ begin
       MWInit(mc,F);
       Lan:=ExportProps.Lan;
       Imagename:=ExportProps.Name;
+
+      if MapLanIsJSON(Lan) then
+      begin
+        WriteMapJSONToText(F,i,ImageName,False);
+        continue;
+      end;
 
       if MapLanIsBasic(Lan) then ExportBasicMapHeader(mc,i,ImageName,False)
       else if MapLanIsBasicLN(Lan) then ExportBasicLNMapHeader(mc,i,ImageName,false)

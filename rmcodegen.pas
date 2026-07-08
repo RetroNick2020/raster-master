@@ -35,6 +35,7 @@ const
  GCCCLan        = 23;  //gcc \ Emscripten
  ACCLan         = 24;  //Amiga C
  JSLan          = 25;  //JavaScript
+ JSONLan        = 26;  //JSON data descriptor
 
  ValueFormatDecimal = 0;
  ValueFormatHex = 1;
@@ -70,6 +71,7 @@ function MapLanIsBasicLN(Lan : integer) : boolean;  //DATA statements with line 
 function MapLanIsPascal(Lan : integer) : boolean;   //Pascal const array
 function MapLanIsC(Lan : integer) : boolean;        //C array
 function MapLanIsJS(Lan : integer) : boolean;       //JavaScript array
+function MapLanIsJSON(Lan : integer) : boolean;     //JSON data descriptor
 
 implementation
 
@@ -101,6 +103,11 @@ end;
 function MapLanIsJS(Lan : integer) : boolean;
 begin
   MapLanIsJS:=(Lan=JSLan);
+end;
+
+function MapLanIsJSON(Lan : integer) : boolean;
+begin
+  MapLanIsJSON:=(Lan=JSONLan);
 end;
 
 procedure MWSetIndent(var mc : CodeGenRec;isize : integer);

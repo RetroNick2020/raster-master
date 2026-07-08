@@ -171,6 +171,7 @@ object RMMainForm: TRMMainForm
       HorzScrollBar.Increment = 93
       HorzScrollBar.Page = 862
       HorzScrollBar.Tracking = True
+      OnMouseWheel = ZoomScrollBoxMouseWheel
       VertScrollBar.Increment = 69
       VertScrollBar.Page = 1
       VertScrollBar.Tracking = True
@@ -626,6 +627,14 @@ object RMMainForm: TRMMainForm
         Caption = 'Insert Project'
         OnClick = OpenProjectFileClick
       end
+      object OpenProjectJSONFile: TMenuItem
+        Caption = 'Open Project (JSON)'
+        OnClick = OpenProjectJSONClick
+      end
+      object InsertProjectJSONFile: TMenuItem
+        Caption = 'Insert Project (JSON)'
+        OnClick = OpenProjectJSONClick
+      end
       object SaveFile: TMenuItem
         Caption = 'Save'
         OnClick = SaveFileClick
@@ -633,6 +642,10 @@ object RMMainForm: TRMMainForm
       object SaveProjectFile: TMenuItem
         Caption = 'Save Project'
         OnClick = SaveProjectFileClick
+      end
+      object SaveProjectJSONFile: TMenuItem
+        Caption = 'Save Project (JSON)'
+        OnClick = SaveProjectJSONClick
       end
       object FileDelete: TMenuItem
         Caption = 'Delete'
@@ -661,6 +674,14 @@ object RMMainForm: TRMMainForm
         object ExportRESBinary: TMenuItem
           Caption = 'RES Binary File'
           OnClick = RESExportClick
+        end
+        object ExportJSONSprite: TMenuItem
+          Caption = 'JSON'
+          OnClick = ExportJSONSpriteClick
+        end
+        object ExportJSONRES: TMenuItem
+          Caption = 'JSON RES'
+          OnClick = ExportJSONRESClick
         end
         object AmigaBasic: TMenuItem
           Caption = 'AmigaBasic'
@@ -1261,6 +1282,10 @@ object RMMainForm: TRMMainForm
       end
       object PaletteExport: TMenuItem
         Caption = 'Export'
+        object PaletteExportJSON: TMenuItem
+          Caption = 'JSON'
+          OnClick = PaletteSaveJSONClick
+        end
         object PaletteExportAmigaBasic: TMenuItem
           Caption = 'AmigaBasic'
           object ABPaletteData: TMenuItem

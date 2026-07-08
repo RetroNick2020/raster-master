@@ -48,6 +48,29 @@ type
     MenuItem15: TMenuItem;
     ExportEmscriptenAnimArray: TMenuItem;
     ExportPascalAnimArray: TMenuItem;
+    //extended compiler export menu items
+    MnuAnimExpAB, AD_AB : TMenuItem;
+    MnuAnimExpAC, AD_AC : TMenuItem;
+    MnuAnimExpAP, AD_AP : TMenuItem;
+    MnuAnimExpAQB, AD_AQB : TMenuItem;
+    MnuAnimExpBAM, AD_BAM : TMenuItem;
+    MnuAnimExpFBQB, AD_FBQB : TMenuItem;
+    MnuAnimExpFB, AD_FB : TMenuItem;
+    MnuAnimExpFP, AD_FP : TMenuItem;
+    MnuAnimExpGCC, AD_GCC : TMenuItem;
+    MnuAnimExpGW, AD_GW : TMenuItem;
+    MnuAnimExpJS, AD_JS : TMenuItem;
+    MnuAnimExpJSON, AD_JSON : TMenuItem;
+    MnuAnimExpOW, AD_OW : TMenuItem;
+    MnuAnimExpQB, AD_QB : TMenuItem;
+    MnuAnimExpQB64, AD_QB64 : TMenuItem;
+    MnuAnimExpQBJS, AD_QBJS : TMenuItem;
+    MnuAnimExpQC, AD_QC : TMenuItem;
+    MnuAnimExpQP, AD_QP : TMenuItem;
+    MnuAnimExpTB, AD_TB : TMenuItem;
+    MnuAnimExpTP, AD_TP : TMenuItem;
+    MnuAnimExpTC, AD_TC : TMenuItem;
+    MnuAnimExpTMT, AD_TMT : TMenuItem;
     FileExportBasicData: TMenuItem;
     ExportBasicAnimData: TMenuItem;
     pascal: TMenuItem;
@@ -83,7 +106,6 @@ type
     MiddlePanel: TPanel;
     RightPanel: TPanel;
     Timer1: TTimer;
-    SimTimer: TTimer;
     TopSplitter: TSplitter;
     LeftSplitter: TSplitter;
     RightSplitter: TSplitter;
@@ -128,6 +150,7 @@ type
     procedure MenuItem11Click(Sender: TObject);
     procedure ExportEmscriptenAnimArrayClick(Sender: TObject);
     procedure FileExportPascalArrayClick(Sender: TObject);
+    procedure MenuExportAnimLanClick(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
     procedure MenuItem9Click(Sender: TObject);
@@ -143,10 +166,10 @@ type
 
     procedure Timer1StartTimer(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
-    procedure SimTimerTimer(Sender: TObject);
     procedure FPSTrackBarChange(Sender: TObject);
   private
-
+    procedure ExportAnimationJSON(filename : string);
+    procedure ExportAnimationJS(filename : string);
   public
     AnimFrameCounter : integer;
     FPSDelay         : integer;
@@ -160,6 +183,7 @@ type
 
     { Simulation }
     FSimTick       : integer;
+    FSimMovePos    : integer;
     ShowTransparent : boolean;
     FCheckerBmp    : TBitmap;
     FMovementSpeed : integer;
@@ -214,6 +238,7 @@ begin
   FDragIndex:=-1;
   FDropIndex:=-1;
   FSimTick:=0;
+  FSimMovePos:=0;
   ShowTransparent:=False;
   FMovementSpeed:=4;
   SimStyleCombo.ItemIndex:=0;
@@ -394,14 +419,106 @@ if ExportTextFileToClipboard(Sender) then exit;
 SaveDialog1.Filter := 'Basic Source Files|*.bas|Basic Include Files|*.bi|All Files|*.*';
 if SaveDialog1.Execute then
 begin
-  ExportAnimation(SaveDialog1.FileName,PascalLan);
+  ExportAnimation(SaveDialog1.FileName,BasicLan);
 end;
 
+end;
+
+//exports the current animation as a pure JSON data descriptor
+procedure TAnimationForm.ExportAnimationJSON(filename : string);
+var
+  F : TextFile;
+  i, fcount, cur : integer;
+  exportname, line : string;
+begin
+  cur:=AnimateBase.GetCurrentAnimation;
+  fcount:=AnimateBase.GetFrameCount;
+  exportname:=AnimateBase.GetExportName(cur);
+  if exportname = '' then exportname:='anim' + IntToStr(cur);
+
+  AssignFile(F, filename);
+  Rewrite(F);
+  WriteLn(F,'{');
+  WriteLn(F,'  "name": "',exportname,'",');
+  WriteLn(F,'  "frameCount": ',fcount,',');
+  line:='  "frames": [';
+  for i:=0 to fcount-1 do
+  begin
+    line:=line+IntToStr(AnimateBase.GetImageIndex(i));
+    if i < fcount-1 then line:=line+',';
+  end;
+  line:=line+']';
+  WriteLn(F,line);
+  WriteLn(F,'}');
+  CloseFile(F);
+end;
+
+//exports the current animation as a JavaScript const array
+procedure TAnimationForm.ExportAnimationJS(filename : string);
+var
+  F : TextFile;
+  i, fcount, cur : integer;
+  exportname, line : string;
+begin
+  cur:=AnimateBase.GetCurrentAnimation;
+  fcount:=AnimateBase.GetFrameCount;
+  exportname:=AnimateBase.GetExportName(cur);
+  if exportname = '' then exportname:='anim' + IntToStr(cur);
+
+  AssignFile(F, filename);
+  Rewrite(F);
+  WriteLn(F,'// JavaScript Animation Data Created By Raster Master');
+  WriteLn(F,'// Frame Count = ',fcount);
+  line:='const '+exportname+'Anim = [';
+  for i:=0 to fcount-1 do
+  begin
+    line:=line+IntToStr(AnimateBase.GetImageIndex(i));
+    if i < fcount-1 then line:=line+',';
+  end;
+  line:=line+'];';
+  WriteLn(F,line);
+  CloseFile(F);
+end;
+
+//shared handler for all extended compiler targets - the menu item Tag
+//holds the map Lan constant, which we map to the syntax family that
+//ExportAnimation understands
+procedure TAnimationForm.MenuExportAnimLanClick(Sender: TObject);
+var
+  Lan : integer;
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  Lan:=(Sender as TMenuItem).Tag;
+
+  if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
+    SaveDialog1.Filter := 'Basic Source Files|*.bas|Basic Include Files|*.bi|All Files|*.*'
+  else if MapLanIsPascal(Lan) then
+    SaveDialog1.Filter := 'Pascal Source Files|*.pas|Pascal Include Files|*.inc|All Files|*.*'
+  else if MapLanIsC(Lan) then
+    SaveDialog1.Filter := 'C Source Files|*.c|C Header Files|*.h|All Files|*.*'
+  else if MapLanIsJS(Lan) then
+    SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
+  else if MapLanIsJSON(Lan) then
+    SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
+  else
+    SaveDialog1.Filter := 'All Files|*.*';
+
+  if not SaveDialog1.Execute then exit;
+
+  if MapLanIsBasic(Lan) then ExportAnimation(SaveDialog1.FileName,BasicLan)
+  else if MapLanIsBasicLN(Lan) then ExportAnimation(SaveDialog1.FileName,BasicLNLan)
+  else if MapLanIsPascal(Lan) then ExportAnimation(SaveDialog1.FileName,PascalLan)
+  else if MapLanIsC(Lan) then ExportAnimation(SaveDialog1.FileName,CLan)
+  else if MapLanIsJS(Lan) then ExportAnimationJS(SaveDialog1.FileName)
+  else if MapLanIsJSON(Lan) then ExportAnimationJSON(SaveDialog1.FileName);
 end;
 
 function TAnimationForm.ExportTextFileToClipboard(Sender: TObject) : boolean;
 var
  filename : string;
+ mi : TMenuItem;
+ Lan : integer;
 begin
  if rmconfigbase.GetExportTextFileToClipStatus = false then
  begin
@@ -410,14 +527,34 @@ begin
  end;
 
  filename:=GetTemporaryPathAndFileName;
- Case (Sender As TMenuItem).Name of  'ExportBasicAnimData':ExportAnimation(FileName,BasicLan);
+ mi:=Sender As TMenuItem;
+ Case mi.Name of  'ExportBasicAnimData':ExportAnimation(FileName,BasicLan);
                                      'ExportBasicLNAnimData':ExportAnimation(FileName,BasicLNLan);
                                      'ExportCAnimArray','ExportEmscriptenAnimArray','ExportgccAnimArray': ExportAnimation(FileName,CLan);
                                      'ExportPascalAnimArray':ExportAnimation(FileName,PascalLan);
 
  else
-   result:=false;  //did not find a supported format return false
-   exit;
+   //Tag-based dispatch for extended compiler targets (items named AD_*)
+   if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'AD_') then
+   begin
+     Lan:=mi.Tag;
+     if MapLanIsBasic(Lan) then ExportAnimation(FileName,BasicLan)
+     else if MapLanIsBasicLN(Lan) then ExportAnimation(FileName,BasicLNLan)
+     else if MapLanIsPascal(Lan) then ExportAnimation(FileName,PascalLan)
+     else if MapLanIsC(Lan) then ExportAnimation(FileName,CLan)
+     else if MapLanIsJS(Lan) then ExportAnimationJS(FileName)
+     else if MapLanIsJSON(Lan) then ExportAnimationJSON(FileName)
+     else
+     begin
+       result:=false;
+       exit;
+     end;
+   end
+   else
+   begin
+     result:=false;  //did not find a supported format return false
+     exit;
+   end;
  End;
 
  result:=true;  //found supported format - return true
@@ -499,7 +636,6 @@ end;
 procedure TAnimationForm.PlayButtonClick(Sender: TObject);
 begin
   Timer1.Enabled:=true;
-  SimTimer.Enabled:=true;
 end;
 
 procedure TAnimationForm.SpriteListViewDblClick(Sender: TObject);
@@ -607,7 +743,6 @@ end;
 procedure TAnimationForm.StopButtonClick(Sender: TObject);
 begin
   Timer1.Enabled:=false;
-  SimTimer.Enabled:=false;
   SimPaintBox.Invalidate;
 end;
 
@@ -617,33 +752,33 @@ procedure TAnimationForm.Timer1StartTimer(Sender: TObject);
 begin
   AnimFrameCounter:=0;
   FSimTick:=0;
+  FSimMovePos:=0;
 end;
 
 procedure TAnimationForm.Timer1Timer(Sender: TObject);
 var
    ImageIndex : integer;
 begin
-  if AnimateBase.GetFrameCount = 0 then exit;
-
   inc(AnimFrameCounter);
   if AnimFrameCounter > AnimateBase.GetFrameCount then
   begin
       AnimFrameCounter:=1;
   end;
 
-  ImageIndex:=AnimateBase.GetImageIndex(AnimFrameCounter-1);
+  if  AnimateBase.GetFrameCount > 0 then
+  begin
+    ImageIndex:=AnimateBase.GetImageIndex(AnimFrameCounter-1);
 
-  // Panel1 preview
-  Panel1.Canvas.Brush.Color:=Panel1.Color;
-  Panel1.Canvas.FillRect(Rect(10,10,138,138));
-  DrawSimSprite(Panel1.Canvas, 10, 10, ImageIndex);
-end;
+    // Panel1 preview - original working draw call
+    Panel1.Canvas.Brush.Color:=Panel1.Color;
+    Panel1.Canvas.FillRect(Rect(10,10,138,138));
+    DrawSimSprite(Panel1.Canvas, 10, 10, ImageIndex);
 
-procedure TAnimationForm.SimTimerTimer(Sender: TObject);
-begin
-  if AnimateBase.GetFrameCount = 0 then exit;
-  inc(FSimTick);
-  UpdateSimulation;
+    // movement simulation
+    inc(FSimTick);
+    inc(FSimMovePos, FMovementSpeed);
+    UpdateSimulation;
+  end;
 end;
 
 procedure TAnimationForm.FPSTrackBarChange(Sender: TObject);
@@ -1118,6 +1253,7 @@ end;
 procedure TAnimationForm.SimStyleComboChange(Sender: TObject);
 begin
   FSimTick:=0;
+  FSimMovePos:=0;
   SimPaintBox.Invalidate;
 end;
 
@@ -1144,7 +1280,6 @@ end;
 procedure TAnimationForm.MovementSpeedTrackBarChange(Sender: TObject);
 begin
   FMovementSpeed:=MovementSpeedTrackBar.Position;
-  SimTimer.Interval:=Max(10, 200 div FMovementSpeed);
 end;
 
 procedure TAnimationForm.RebuildTransSpriteImageList;
@@ -1295,7 +1430,6 @@ var
   HasGround : boolean;
 begin
   if AnimateBase.GetFrameCount = 0 then exit;
-  if (AnimFrameCounter < 1) or (AnimFrameCounter > AnimateBase.GetFrameCount) then exit;
 
   SimStyle:=SimStyleCombo.ItemIndex;
   W:=SimPaintBox.Width;
@@ -1306,15 +1440,15 @@ begin
 
   case SimStyle of
     0: begin HasGround:=False; SpriteX:=(W-128) div 2; SpriteY:=(H-128) div 2; end;
-    1: begin SpriteX:=FSimTick mod (W+128)-128; SpriteY:=FloorY; end;
-    2: begin SpriteX:=FSimTick mod (W+128)-128; JumpPhase:=(FSimTick mod 50)/50.0; SpriteY:=FloorY-Round(80*Sin(JumpPhase*Pi)); end;
-    3: begin HasGround:=False; SpriteX:=FSimTick mod (W+128)-128; SpriteY:=(H div 2)-64+Round(35*Sin(FSimTick*0.08)); end;
+    1: begin SpriteX:=FSimMovePos mod (W+128)-128; SpriteY:=FloorY; end;
+    2: begin SpriteX:=FSimMovePos mod (W+128)-128; JumpPhase:=(FSimTick mod 50)/50.0; SpriteY:=FloorY-Round(80*Sin(JumpPhase*Pi)); end;
+    3: begin HasGround:=False; SpriteX:=FSimMovePos mod (W+128)-128; SpriteY:=(H div 2)-64+Round(35*Sin(FSimTick*0.08)); end;
     4: begin SpriteX:=(W div 2)-64+(Random(7)-3); SpriteY:=FloorY+(Random(5)-2); end;
-    5: begin HasGround:=False; SpriteX:=FSimTick mod (W+128)-128; SpriteY:=(H div 2)-64+Round(20*Sin(FSimTick*0.12)); end;
-    6: begin SpriteX:=(W div 2)-64+Round(8*Sin(FSimTick*0.1)); SpriteY:=H-(FSimTick mod (H+128)); end;
+    5: begin HasGround:=False; SpriteX:=FSimMovePos mod (W+128)-128; SpriteY:=(H div 2)-64+Round(20*Sin(FSimTick*0.12)); end;
+    6: begin SpriteX:=(W div 2)-64+Round(8*Sin(FSimTick*0.1)); SpriteY:=H-(FSimMovePos mod (H+128)); end;
     7: begin FallProgress:=FSimTick mod 60; SpriteX:=(W div 2)-64; SpriteY:=-128+Round(FallProgress*FallProgress*0.12); if SpriteY>H then FSimTick:=0; end;
     8: begin BouncePhase:=(FSimTick mod 30)/30.0; SpriteX:=(W div 2)-64; SpriteY:=FloorY-Round(60*Abs(Sin(BouncePhase*Pi))); end;
-    9: begin PatrolRange:=W-128-20; if PatrolRange<10 then PatrolRange:=10; PatrolPos:=FSimTick mod (PatrolRange*2); if PatrolPos>PatrolRange then PatrolPos:=PatrolRange*2-PatrolPos; SpriteX:=10+PatrolPos; SpriteY:=FloorY; end;
+    9: begin PatrolRange:=W-128-20; if PatrolRange<10 then PatrolRange:=10; PatrolPos:=FSimMovePos mod (PatrolRange*2); if PatrolPos>PatrolRange then PatrolPos:=PatrolRange*2-PatrolPos; SpriteX:=10+PatrolPos; SpriteY:=FloorY; end;
   else begin SpriteX:=(W-128) div 2; SpriteY:=(H-128) div 2; HasGround:=False; end;
   end;
 
@@ -1350,7 +1484,7 @@ begin
   SimPaintBox.Canvas.Brush.Color:=RGBToColor(50, 70, 130);
   SimPaintBox.Canvas.FillRect(SimPaintBox.ClientRect);
 
-  if (not Timer1.Enabled) and (not SimTimer.Enabled) and (AnimateBase.GetFrameCount > 0) then
+  if (not Timer1.Enabled) and (AnimateBase.GetFrameCount > 0) then
   begin
     if (AnimFrameCounter >= 1) and (AnimFrameCounter <= AnimateBase.GetFrameCount) then
       ImgIdx:=AnimateBase.GetImageIndex(AnimFrameCounter-1)

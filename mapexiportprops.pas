@@ -104,6 +104,7 @@ begin
    ComboCompiler.Items.Add('gcc \ Emscripten');     //23 GCCCLan
    ComboCompiler.Items.Add('Amiga C');              //24 ACCLan
    ComboCompiler.Items.Add('JavaScript');           //25 JSLan
+   ComboCompiler.Items.Add('JSON');                 //26 JSONLan
    ComboCompiler.ItemIndex:=0;
 
    ComboMap.Items.Clear;

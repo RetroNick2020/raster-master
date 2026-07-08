@@ -11,7 +11,7 @@ uses
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, uAbout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd;
+  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd, rwjson;
 
 const
   NoScript = 0;
@@ -242,6 +242,12 @@ type
     DeleteAll: TMenuItem;
     OpenProjectFile: TMenuItem;
     SaveProjectFile: TMenuItem;
+    OpenProjectJSONFile: TMenuItem;
+    InsertProjectJSONFile: TMenuItem;
+    SaveProjectJSONFile: TMenuItem;
+    ExportJSONSprite: TMenuItem;
+    ExportJSONRES: TMenuItem;
+    PaletteExportJSON: TMenuItem;
     InsertProjectFile: TMenuItem;
     QCPaletteArray: TMenuItem;
     QCPaletteCommands: TMenuItem;
@@ -423,6 +429,11 @@ type
     procedure ThumbPopUpMenusaveClick(Sender: TObject);
     procedure PalettePasteClick(Sender: TObject);
     procedure OpenProjectFileClick(Sender: TObject);
+    procedure OpenProjectJSONClick(Sender: TObject);
+    procedure SaveProjectJSONClick(Sender: TObject);
+    procedure ExportJSONSpriteClick(Sender: TObject);
+    procedure ExportJSONRESClick(Sender: TObject);
+    procedure PaletteSaveJSONClick(Sender: TObject);
     procedure PaletteCopyClick(Sender: TObject);
     procedure PaletteCopyJASCClick(Sender: TObject);
     procedure PalettePasteJASCClick(Sender: TObject);
@@ -498,6 +509,8 @@ type
     procedure ZoomPaintBoxMouseEnter(Sender: TObject);
     procedure ZoomPaintBoxMouseLeave(Sender: TObject);
     procedure ZoomTrackBarChange(Sender: TObject);
+    procedure ZoomScrollBoxMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure ZoomPaintBoxPaint(Sender: TObject);
     procedure ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -574,6 +587,8 @@ type
        function ExportTextFileToClipboard(Sender: TObject) : boolean;
        function ExportPaletteTextFileToClipboard(Sender: TObject; ColorFormat : integer) : boolean;
        function DetectPaletteFormat(filename : string) : integer;
+       procedure RefreshAfterProjectOpen(insertmode : boolean);
+       procedure ApplyZoom(newsize : integer; useAnchor : boolean; anchorX : integer = 0; anchorY : integer = 0);
 
   public
        procedure UpdateImportedImage;
@@ -1658,19 +1673,79 @@ begin
   close;            // I created extra work - i added prompt in close
 end;
 
-procedure TRMMainForm.ZoomTrackBarChange(Sender: TObject);
+procedure TRMMainForm.ApplyZoom(newsize : integer; useAnchor : boolean; anchorX : integer; anchorY : integer);
+var
+  oldCellW, oldCellH, newCellW, newCellH : integer;
+  pixX, pixY : double;
+  newScrollX, newScrollY : integer;
 begin
-  RMDrawTools.SetZoomSize(ZoomTrackBar.Position);
+  if newsize < 1 then newsize:=1;
+  if newsize > 20 then newsize:=20;
+  //NOTE: no early exit when newsize = current zoom - the initial call at
+  //startup relies on this proc to size and paint the ZoomPaintBox even
+  //when the zoom value is unchanged
+
+  //remember which image pixel sits under the anchor point (in scrollbox
+  //client coordinates) so we can keep it there after zooming
+  oldCellW:=RMDrawTools.GetCellWidth;
+  oldCellH:=RMDrawTools.GetCellHeight;
+  pixX:=0; pixY:=0;
+  if useAnchor and (oldCellW > 0) and (oldCellH > 0) then
+  begin
+    pixX:=(ZoomScrollBox.HorzScrollBar.Position + anchorX) / oldCellW;
+    pixY:=(ZoomScrollBox.VertScrollBar.Position + anchorY) / oldCellH;
+  end;
+
+  RMDrawTools.SetZoomSize(newsize);
   ZoomPaintBox.Width:=1;
   ZoomPaintBox.Height:=1;
   ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
   ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
- // ZoomPaintBox.Canvas.Clear;
- // RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
   RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
   RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
   ZoomSize:=RMDrawTools.GetZoomSize;
+
+  //keep the anchored pixel under the cursor
+  if useAnchor then
+  begin
+    newCellW:=RMDrawTools.GetCellWidth;
+    newCellH:=RMDrawTools.GetCellHeight;
+    newScrollX:=Round(pixX * newCellW) - anchorX;
+    newScrollY:=Round(pixY * newCellH) - anchorY;
+    if newScrollX < 0 then newScrollX:=0;
+    if newScrollY < 0 then newScrollY:=0;
+    ZoomScrollBox.HorzScrollBar.Position:=newScrollX;
+    ZoomScrollBox.VertScrollBar.Position:=newScrollY;
+  end;
+
+  //keep the trackbar in sync without retriggering
+  if ZoomTrackBar.Position <> ZoomSize then
+  begin
+    ZoomTrackBar.OnChange:=nil;
+    ZoomTrackBar.Position:=ZoomSize;
+    ZoomTrackBar.OnChange:=@ZoomTrackBarChange;
+  end;
+
   UpdateZoomArea;
+end;
+
+procedure TRMMainForm.ZoomTrackBarChange(Sender: TObject);
+begin
+  ApplyZoom(ZoomTrackBar.Position, False);
+end;
+
+procedure TRMMainForm.ZoomScrollBoxMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+var
+  pt : TPoint;
+begin
+  //zoom with the wheel, anchored on the pixel under the mouse cursor
+  pt:=ZoomScrollBox.ScreenToClient(MousePos);
+  if WheelDelta > 0 then
+    ApplyZoom(RMDrawTools.GetZoomSize + 1, True, pt.X, pt.Y)
+  else
+    ApplyZoom(RMDrawTools.GetZoomSize - 1, True, pt.X, pt.Y);
+  Handled:=True;
 end;
 
 //updates RenderBitMap from core buf pixels
@@ -1983,10 +2058,35 @@ procedure TRMMainForm.ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
  DrawTool : integer;
+ DrawColor : TColor;
+ ColorIndex : integer;
 begin
  RMDrawTools.SetClipStatus(0);  //turn it off - we turn on again when new area is selected
  DrawTool:=RMDRAWTools.GetDrawTool;
  if DrawTool<>DrawShapeClip then RMCoreBase.CopyToUndoBuf;
+
+ //the Text tool stamps on OnClick which the LCL only fires for the left
+ //button - handle the right button here so it draws with Color 2
+ if (DrawTool = DrawShapeText) and (Button = mbRight) then
+ begin
+   DrawColor:=ColorBox2.Brush.Color;
+   ColorIndex:=RMCoreBase.GetCurColor2;
+   RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+
+   RMDrawTools.SetTextInfoTColor(DrawColor);
+   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,1);
+   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopyToBuf,DrawTool,1);
+   RMDrawTools.SetTextInfoTColor(ColorBox1.Brush.Color);  //restore Color 1 for the hover preview
+
+   if ShowTransparent then
+     UpdateZoomArea
+   else
+     ZoomPaintBox.Invalidate;
+   UpdateThumbview;
+   UpdateActualArea;
+   exit;
+ end;
+
  Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:ZPaintBoxMouseDownXYTool(Sender,Button,Shift,X,Y);
                                   DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
                DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:ZPaintBoxMouseDownXYX2Y2Tool(Sender,Button,Shift,X,Y);
@@ -4649,20 +4749,11 @@ begin
   UpdateThumbview;
 end;
 
-procedure TRMMainForm.OpenProjectFileClick(Sender: TObject);
+procedure TRMMainForm.RefreshAfterProjectOpen(insertmode : boolean);
 var
-  InsertMode : boolean;
   amount : integer;
   i : integer;
 begin
-   InsertMode:=FALSE;
-   if (Sender As TMenuItem).Name = 'InsertProjectFile' then insertMode:=TRUE;
-   OpenDialog1.Filter := 'Raster Master Project|*.rmp';
-   if NOT OpenDialog1.Execute then exit;
-
-   CopyScrollPositionToCore;
-   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
-   ImageThumbBase.OpenProject(OpenDialog1.Filename,InsertMode);
    ImageThumbBase.UpdateAllThumbImages(imagelist1);
 
    if ShowTransparent then
@@ -4696,12 +4787,7 @@ begin
       ImageThumbBase.SetCurrent(0);
       ImageThumbBase.CopyIndexImageToCore(0);  //update view with this image
 
-  //    ActualBox.Width:=RMCoreBase.GetWidth;
-  //    ActualBox.Height:=RMCoreBase.GetHeight;
-
       RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
-   //   RMDrawTools.SetZoomMaxX(ZoomPaintBox.Width);
-   //   RMDrawTools.SetZoomMaxY(ZoomPaintBox.Height);
       RMDrawTools.SetZoomSize(1);
 
       ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
@@ -4722,8 +4808,162 @@ begin
       UpdateZoomArea;
       UpdateZoomScroller;
       UpdateThumbView;
-      //UpdateToolFlipScrollMenu;
     end;
+end;
+
+procedure TRMMainForm.OpenProjectFileClick(Sender: TObject);
+var
+  InsertMode : boolean;
+begin
+   InsertMode:=FALSE;
+   if (Sender As TMenuItem).Name = 'InsertProjectFile' then insertMode:=TRUE;
+   OpenDialog1.Filter := 'Raster Master Project|*.rmp';
+   if NOT OpenDialog1.Execute then exit;
+
+   CopyScrollPositionToCore;
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+   ImageThumbBase.OpenProject(OpenDialog1.Filename,InsertMode);
+   RefreshAfterProjectOpen(InsertMode);
+end;
+
+procedure TRMMainForm.OpenProjectJSONClick(Sender: TObject);
+var
+  InsertMode : boolean;
+begin
+   InsertMode:=FALSE;
+   if (Sender As TMenuItem).Name = 'InsertProjectJSONFile' then insertMode:=TRUE;
+   OpenDialog1.Filter := 'Raster Master JSON Project|*.rmj;*.json|All Files|*.*';
+   if NOT OpenDialog1.Execute then exit;
+
+   CopyScrollPositionToCore;
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+   if NOT OpenProjectJSON(OpenDialog1.Filename,InsertMode) then
+   begin
+     ShowMessage('Unable to open JSON project.' + LineEnding +
+                 'The file is not a valid Raster Master JSON project or may be corrupt.');
+     exit;
+   end;
+
+   RefreshAfterProjectOpen(InsertMode);
+end;
+
+procedure TRMMainForm.SaveProjectJSONClick(Sender: TObject);
+begin
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+   SaveDialog1.Filter := 'Raster Master JSON Project|*.rmj';
+   SaveDialog1.DefaultExt := 'rmj';
+   if SaveDialog1.Execute then
+   begin
+      if NOT SaveProjectJSON(SaveDialog1.Filename) then
+        ShowMessage('Error saving JSON project!');
+   end;
+end;
+
+//exports the current sprite to a JSON file using the image type from its
+//export properties (indexed / RGB / RGBA); RGBA alpha follows the PNG
+//Transparent RGBA settings from File->Properties
+//honors the Export Files To Clipboard flag from File->Properties
+procedure TRMMainForm.ExportJSONSpriteClick(Sender: TObject);
+var
+  filename : string;
+  PngRGBA : PngRGBASettingsRec;
+  EO : ImageExportFormatRec;
+  imgtype : integer;
+begin
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+   FilePropertiesDialog.GetProps(PngRGBA);
+   ImageThumbBase.GetExportOptions(ImageThumbBase.GetCurrent, EO);
+   imgtype:=EO.Image;
+   if (EO.Lan <> JSONSpriteLan) or (imgtype = 0) then imgtype:=JSONImageIndexed;
+
+   if rmconfigbase.GetExportTextFileToClipStatus then
+   begin
+     filename:=GetTemporaryPathWithProvidedFileName(ImageThumbBase.GetExportName(ImageThumbBase.GetCurrent));
+     if ExportSpriteJSON(ImageThumbBase.GetCurrent, filename, imgtype, PngRGBA) then
+     begin
+       ReadFileAndCopyToClipboard(filename);
+       EraseFile(filename);
+       ShowMessage('Exported to Clipboard!');
+     end
+     else
+       ShowMessage('Error exporting sprite to JSON!');
+     exit;
+   end;
+
+   SaveDialog1.Filter := 'JSON|*.json';
+   SaveDialog1.DefaultExt := 'json';
+   if SaveDialog1.Execute then
+   begin
+     if NOT ExportSpriteJSON(ImageThumbBase.GetCurrent, SaveDialog1.Filename, imgtype, PngRGBA) then
+       ShowMessage('Error exporting sprite to JSON!');
+   end;
+end;
+
+//exports every sprite/map/animation whose export compiler is set to JSON
+//into one combined JSON resource file
+//honors the Export Files To Clipboard flag from File->Properties
+procedure TRMMainForm.ExportJSONRESClick(Sender: TObject);
+var
+  filename : string;
+  PngRGBA : PngRGBASettingsRec;
+begin
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+   FilePropertiesDialog.GetProps(PngRGBA);
+
+   if rmconfigbase.GetExportTextFileToClipStatus then
+   begin
+     filename:=GetTemporaryPathAndFileName;
+     if ExportResJSON(filename, PngRGBA) then
+     begin
+       ReadFileAndCopyToClipboard(filename);
+       EraseFile(filename);
+       ShowMessage('Exported to Clipboard!');
+     end
+     else
+       ShowMessage('Error exporting JSON RES file!');
+     exit;
+   end;
+
+   SaveDialog1.Filter := 'JSON|*.json';
+   SaveDialog1.DefaultExt := 'json';
+   if SaveDialog1.Execute then
+   begin
+     if NOT ExportResJSON(SaveDialog1.Filename, PngRGBA) then
+       ShowMessage('Error exporting JSON RES file!');
+   end;
+end;
+
+//exports the current sprite's palette to JSON (Palette->Export->JSON)
+//honors the Export Files To Clipboard flag from File->Properties
+procedure TRMMainForm.PaletteSaveJSONClick(Sender: TObject);
+var
+  filename : string;
+begin
+   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+   if rmconfigbase.GetExportTextFileToClipStatus then
+   begin
+     filename:=GetTemporaryPathWithProvidedFileName(ImageThumbBase.GetExportName(ImageThumbBase.GetCurrent)+'Pal');
+     if ExportPaletteJSONFile(ImageThumbBase.GetCurrent, filename) then
+     begin
+       ReadFileAndCopyToClipboard(filename);
+       EraseFile(filename);
+       ShowMessage('Exported to Clipboard!');
+     end
+     else
+       ShowMessage('Error exporting palette to JSON!');
+     exit;
+   end;
+
+   SaveDialog1.Filter := 'JSON|*.json';
+   SaveDialog1.DefaultExt := 'json';
+   if SaveDialog1.Execute then
+   begin
+     if NOT ExportPaletteJSONFile(ImageThumbBase.GetCurrent, SaveDialog1.Filename) then
+       ShowMessage('Error exporting palette to JSON!');
+   end;
 end;
 
 procedure TRMMainForm.PaletteCopyClick(Sender: TObject);
