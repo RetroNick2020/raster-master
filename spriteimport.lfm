@@ -1,14 +1,15 @@
 object SpriteImportForm: TSpriteImportForm
-  Left = 391
-  Height = 620
-  Top = 393
+  Left = 294
+  Height = 724
+  Top = 190
   Width = 1165
   Caption = 'Sprite Sheet Import'
-  ClientHeight = 620
+  ClientHeight = 724
   ClientWidth = 1165
-  OnCreate = FormCreate
+  Menu = MainMenu1
   Position = poOwnerFormCenter
-  LCLVersion = '3.4.0.0'
+  LCLVersion = '4.8.0.0'
+  OnCreate = FormCreate
   object TopPanel: TPanel
     AnchorSideBottom.Control = SpriteSheetScrollBox
     Left = 0
@@ -25,6 +26,14 @@ object SpriteImportForm: TSpriteImportForm
       Height = 128
       Top = 8
       Width = 128
+    end
+    object PalettePaintBox: TPaintBox
+      Left = 160
+      Height = 24
+      Top = 115
+      Width = 850
+      Anchors = [akLeft, akRight, akBottom]
+      OnPaint = PalettePaintBoxPaint
     end
     object OpenSpriteSheet: TButton
       Left = 160
@@ -143,20 +152,7 @@ object SpriteImportForm: TSpriteImportForm
       Checked = True
       State = cbChecked
       TabOrder = 6
-    end
-    object StatusBar1: TStatusBar
-      AnchorSideLeft.Control = SpriteImage
-      AnchorSideLeft.Side = asrBottom
-      AnchorSideRight.Control = TopPanel
-      AnchorSideRight.Side = asrBottom
-      Left = 146
-      Height = 23
-      Top = 112
-      Width = 943
-      Align = alNone
-      Anchors = [akTop, akLeft, akRight]
-      BorderSpacing.Around = 10
-      Panels = <>
+      OnChange = CheckBoxSnapToGridChange
     end
     object SpinEditWidth: TSpinEditEx
       Left = 464
@@ -165,6 +161,7 @@ object SpriteImportForm: TSpriteImportForm
       Width = 100
       MaxLength = 0
       NumbersOnly = True
+      SpinButtonWidth = 17
       TabOrder = 8
       OnChange = SpinEditWidthHeightChange
       MaxValue = 256
@@ -179,7 +176,8 @@ object SpriteImportForm: TSpriteImportForm
       Width = 99
       MaxLength = 0
       NumbersOnly = True
-      TabOrder = 9
+      SpinButtonWidth = 17
+      TabOrder = 7
       OnChange = SpinEditWidthHeightChange
       MaxValue = 256
       MinValue = 8
@@ -205,10 +203,9 @@ object SpriteImportForm: TSpriteImportForm
     AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 0
-    Height = 473
+    Height = 554
     Top = 147
     Width = 1165
     HorzScrollBar.Page = 105
@@ -217,10 +214,11 @@ object SpriteImportForm: TSpriteImportForm
     VertScrollBar.Tracking = True
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderStyle = bsNone
-    ClientHeight = 473
+    ClientHeight = 554
     ClientWidth = 1165
     ParentFont = False
     TabOrder = 1
+    OnMouseWheel = SpriteSheetScrollBoxMouseWheel
     object SpriteSheetPaintBox: TPaintBox
       Cursor = crCross
       Left = 0
@@ -232,16 +230,43 @@ object SpriteImportForm: TSpriteImportForm
       OnPaint = SpriteSheetPaintBoxPaint
     end
   end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 701
+    Width = 1165
+    Panels = <    
+      item
+        Text = 'X=0 Y=0'
+        Width = 220
+      end    
+      item
+        Text = 'Sprite: 32x32'
+        Width = 130
+      end    
+      item
+        Text = 'Zoom: 5x'
+        Width = 100
+      end    
+      item
+        Text = 'Sheet: -'
+        Width = 160
+      end    
+      item
+        Width = 300
+      end>
+    SimplePanel = False
+  end
   object ZoomTrackBar: TTrackBar
     Left = 1115
     Height = 100
     Top = 19
     Width = 25
     Min = 1
-    OnChange = ZoomTrackBarChange
     Orientation = trVertical
     Position = 5
     TickMarks = tmTopLeft
+    OnChange = ZoomTrackBarChange
     Anchors = [akTop, akRight]
     ParentFont = False
     TabOrder = 2
@@ -249,5 +274,58 @@ object SpriteImportForm: TSpriteImportForm
   object OpenDialog1: TOpenDialog
     Left = 1094
     Top = 186
+  end
+  object MainMenu1: TMainMenu
+    Left = 1024
+    Top = 186
+    object MenuFile: TMenuItem
+      Caption = 'File'
+      object MnuOpenSheet: TMenuItem
+        Caption = 'Open Sprite Sheet...'
+        OnClick = OpenSpriteSheetClick
+      end
+      object MnuImportClip: TMenuItem
+        Caption = 'Import From Clipboard'
+        OnClick = ImportFromClipboardClick
+      end
+      object MnuSep1: TMenuItem
+        Caption = '-'
+      end
+      object MnuClose: TMenuItem
+        Caption = 'Close'
+        OnClick = MnuCloseClick
+      end
+    end
+    object MenuView: TMenuItem
+      Caption = 'View'
+      object MnuDisplayGrid: TMenuItem
+        Caption = 'Display Grid'
+        Checked = True
+        OnClick = MnuDisplayGridClick
+      end
+      object MnuSnapGrid: TMenuItem
+        Caption = 'Snap to Grid'
+        Checked = True
+        OnClick = MnuSnapGridClick
+      end
+      object MnuSep2: TMenuItem
+        Caption = '-'
+      end
+      object MnuZoomIn: TMenuItem
+        Caption = 'Zoom In'
+        OnClick = MnuZoomInClick
+      end
+      object MnuZoomOut: TMenuItem
+        Caption = 'Zoom Out'
+        OnClick = MnuZoomOutClick
+      end
+    end
+    object MenuImport: TMenuItem
+      Caption = 'Import'
+      object MnuImportSprite: TMenuItem
+        Caption = 'Import Sprite At Selection'
+        OnClick = SpriteSheetPaintBoxClick
+      end
+    end
   end
 end

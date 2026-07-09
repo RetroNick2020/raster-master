@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  StdCtrls, ExtDlgs,Clipbrd,LCLIntf,LCLType, SpinEx,rwpng,rmcore,rmthumb;
+  StdCtrls, ExtDlgs, Menus, Clipbrd, LCLIntf, LCLType, SpinEx, rwpng, rmcore, rmthumb;
 
 type
 
@@ -28,13 +28,36 @@ type
     SpriteSizeLabel: TLabel;
     OpenSpriteSheet: TButton;
     SpriteImage: TImage;
+    PalettePaintBox: TPaintBox;
     StatusBar1: TStatusBar;
     TopPanel: TPanel;
     SpriteSheetScrollBox: TScrollBox;
     ZoomTrackBar: TTrackBar;
+
+    MainMenu1: TMainMenu;
+    MenuFile: TMenuItem;
+    MnuOpenSheet: TMenuItem;
+    MnuImportClip: TMenuItem;
+    MnuSep1: TMenuItem;
+    MnuClose: TMenuItem;
+    MenuView: TMenuItem;
+    MnuDisplayGrid: TMenuItem;
+    MnuSnapGrid: TMenuItem;
+    MnuSep2: TMenuItem;
+    MnuZoomIn: TMenuItem;
+    MnuZoomOut: TMenuItem;
+    MenuImport: TMenuItem;
+    MnuImportSprite: TMenuItem;
+
     procedure CheckBoxDisplayGridChange(Sender: TObject);
+    procedure CheckBoxSnapToGridChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ImportFromClipboardClick(Sender: TObject);
+    procedure MnuCloseClick(Sender: TObject);
+    procedure MnuDisplayGridClick(Sender: TObject);
+    procedure MnuSnapGridClick(Sender: TObject);
+    procedure MnuZoomInClick(Sender: TObject);
+    procedure MnuZoomOutClick(Sender: TObject);
     procedure NewPaletteComboBoxChange(Sender: TObject);
     procedure OpenSpriteSheetClick(Sender: TObject);
     procedure SpinEditWidthHeightChange(Sender: TObject);
@@ -42,9 +65,12 @@ type
       Y: Integer);
     procedure SpriteSheetPaintBoxPaint(Sender: TObject);
     procedure PaletteComboBoxChange(Sender: TObject);
+    procedure PalettePaintBoxPaint(Sender: TObject);
     procedure SpriteSheetPaintBoxClick(Sender: TObject);
     procedure SpriteSizeComboBoxChange(Sender: TObject);
     procedure ZoomTrackBarChange(Sender: TObject);
+    procedure SpriteSheetScrollBoxMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
   private
 
   public
@@ -68,14 +94,17 @@ type
 
        EasyPNG : TEasyPNG;
 
+       DisplayPalette : TRMPaletteBuf;
+       DisplayPaletteCount : integer;
        procedure DrawSpriteSelectBox;
        procedure DrawGrid;
        procedure UpdateSpriteValues;
        procedure UpdateInfo;
+       procedure UpdateStatusBar;
+       procedure BuildDisplayPalette;
        function ZoomXToReal(zx : integer) : integer;
        function ZoomYToReal(zy : integer) : integer;
-
-  end;
+   end;
 
 var
   SpriteImportForm: TSpriteImportForm;
@@ -110,6 +139,8 @@ begin
       SpriteSheetPaintBox.Invalidate;
       EasyPNG.BuildHashes(0,0,SourceImageWidth-1,SourceImageHeight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
       TopColorCount:=EasyPNG.BuildTopColors(TopColors);
+      BuildDisplayPalette;
+      UpdateStatusBar;
   end;
 end;
 
@@ -121,7 +152,6 @@ end;
 procedure TSpriteImportForm.SpriteSheetPaintBoxMouseMove(Sender: TObject;
   Shift: TShiftState; X, Y: Integer);
 begin
-
   if CheckBoxSnapToGrid.Checked then
   begin
     BoxX:=(X div (spritewidth*zoomsize)) * (spritewidth*zoomsize);
@@ -131,18 +161,24 @@ begin
   end
   else
   begin
-(*    BoxX:=(X Div ZoomSize) * ZoomSize-ClipWidth div 2;
-    BoxY:=(Y Div ZoomSize) * ZoomSize-ClipHeight div 2;
-    BoxX2:=(X Div ZoomSize) * ZoomSize+ClipWidth div 2-1;
-    BoxY2:=(Y Div ZoomSize) * ZoomSize+ClipHeight div 2-1;*)
-    BoxX:=(X div zoomsize)*zoomsize;
-    BoxY:=(Y div zoomsize)*zoomsize;
+    //free mode - center the selection box on the mouse pointer,
+    //snapped to whole image pixels
+    BoxX:=((X - (spritewidth*zoomsize) div 2) div zoomsize) * zoomsize;
+    BoxY:=((Y - (spriteheight*zoomsize) div 2) div zoomsize) * zoomsize;
+    if BoxX < 0 then BoxX:=0;
+    if BoxY < 0 then BoxY:=0;
+    //keep the box inside the sheet on the right/bottom edges
+    if BoxX + spritewidth*zoomsize > SpriteSheetPaintBox.Width then
+      BoxX:=((SpriteSheetPaintBox.Width - spritewidth*zoomsize) div zoomsize) * zoomsize;
+    if BoxY + spriteheight*zoomsize > SpriteSheetPaintBox.Height then
+      BoxY:=((SpriteSheetPaintBox.Height - spriteheight*zoomsize) div zoomsize) * zoomsize;
+    if BoxX < 0 then BoxX:=0;
+    if BoxY < 0 then BoxY:=0;
     BoxX2:=BoxX+spritewidth*zoomsize;
     BoxY2:=BoxY+spriteheight*zoomsize;
-
   end;
- UpdateInfo;
- SpriteSheetPaintBox.Invalidate;
+  UpdateInfo;
+  SpriteSheetPaintBox.Invalidate;
 end;
 
 procedure TSpriteImportForm.SpriteSheetPaintBoxPaint(Sender: TObject);
@@ -174,6 +210,8 @@ begin
 //   SourceImage.AutoSize:=false;
    EasyPNG.BuildHashes(0,0,pwidth-1,pheight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
    TopColorCount:=EasyPNG.BuildTopColors(TopColors);
+   BuildDisplayPalette;
+   UpdateStatusBar;
   end;
 end;
 
@@ -189,7 +227,9 @@ begin
 
      EasyPNG.BuildHashes(0,0,pWidth-1,pheight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
      TopColorCount:=EasyPNG.BuildTopColors(TopColors);
+     BuildDisplayPalette;
   end;
+  UpdateStatusBar;
 end;
 
 procedure TSpriteImportForm.NewPaletteComboBoxChange(Sender: TObject);
@@ -204,7 +244,9 @@ begin
 
      EasyPNG.BuildHashes(0,0,pwidth-1,pheight-1);        //we only need the palette colors from the area we are loading - image can have more colors somewhere else
      TopColorCount:=EasyPNG.BuildTopColors(TopColors);
+     BuildDisplayPalette;
   end;
+  UpdateStatusBar;
 end;
 
 
@@ -225,7 +267,6 @@ begin
   TempSprite.SetSize(SpriteWidth,SpriteHeight);
   ClipX:=ZoomXToReal(BoxX);
   ClipY:=ZoomYToReal(BoxY);
-
   ColorCount:=16;
 
   if NewPaletteMode = 0 then
@@ -292,10 +333,8 @@ begin
   end;
 
   LoadPaletteBuf(OurPalette,PaletteMode);
-
   ImageThumbBase.AddImportImage(SpriteWidth,SpriteHeight);
   ImageCount:=ImageThumbBase.GetCount;
-
 
   if NewPaletteFrom = 0 then  //clip area
   begin
@@ -338,6 +377,84 @@ begin
  MapEdit.UpdateTileView;
 end;
 
+procedure TSpriteImportForm.PalettePaintBoxPaint(Sender: TObject);
+var
+  i, x, cellW, count : integer;
+begin
+  PalettePaintBox.Canvas.Brush.Color:=clBtnFace;
+  PalettePaintBox.Canvas.FillRect(0, 0, PalettePaintBox.Width, PalettePaintBox.Height);
+
+  count:=DisplayPaletteCount;
+  if count <= 0 then exit;
+  if count > 256 then count:=256;
+
+  cellW:=PalettePaintBox.Width div count;
+  if cellW < 2 then cellW:=2;
+
+  for i:=0 to count-1 do
+  begin
+    x:=i * cellW;
+    if x >= PalettePaintBox.Width then break;
+    PalettePaintBox.Canvas.Brush.Color:=RGBToColor(
+      DisplayPalette[i].r, DisplayPalette[i].g, DisplayPalette[i].b);
+    PalettePaintBox.Canvas.FillRect(x, 0, x + cellW, PalettePaintBox.Height);
+  end;
+end;
+
+//builds the palette preview that matches what the import will actually use
+//mirrors the palette construction logic in SpriteSheetPaintBoxClick
+procedure TSpriteImportForm.BuildDisplayPalette;
+var
+  PaletteMode, ColorCount : integer;
+begin
+  ColorCount:=16;
+  case NewPaletteMode of
+    0: begin PaletteMode:=PaletteModeMono;     ColorCount:=2;   end;
+    1: begin PaletteMode:=PaletteModeCGA0;     ColorCount:=4;   end;
+    2: begin PaletteMode:=PaletteModeCGA1;     ColorCount:=4;   end;
+    3: begin PaletteMode:=PaletteModeEGA;      ColorCount:=16;  end;
+    4: begin PaletteMode:=PaletteModeVGA;      ColorCount:=16;  end;
+    5: begin PaletteMode:=PaletteModeVGA256;   ColorCount:=256; end;
+    6: begin PaletteMode:=PaletteModeXGA;      ColorCount:=16;  end;
+    7: begin PaletteMode:=PaletteModeXGA256;   ColorCount:=256; end;
+    8: begin PaletteMode:=PaletteModeAmiga32;  ColorCount:=32;  end;
+    9: begin PaletteMode:=PaletteModeAmiga16;  ColorCount:=16;  end;
+   10: begin PaletteMode:=PaletteModeAmiga8;   ColorCount:=8;   end;
+   11: begin PaletteMode:=PaletteModeAmiga4;   ColorCount:=4;   end;
+   12: begin PaletteMode:=PaletteModeAmiga2;   ColorCount:=2;   end;
+  else
+    PaletteMode:=PaletteModeVGA;
+    ColorCount:=16;
+  end;
+
+  //start with the base palette for the selected mode
+  LoadPaletteBuf(DisplayPalette, PaletteMode);
+  DisplayPaletteCount:=ColorCount;
+
+  case NewPaletteFrom of
+    0: //from clip area - can only show the result after a clip area is known
+       //for preview, use the full image top colors if available
+       begin
+         if TopColorCount > 0 then
+           EasyPNG.CreatePaletteUsingBasePalette(
+             DisplayPalette, PaletteMode, ColorCount, TopColors, TopColorCount);
+       end;
+    1: //from entire image
+       begin
+         if TopColorCount > 0 then
+           EasyPNG.CreatePaletteUsingBasePalette(
+             DisplayPalette, PaletteMode, ColorCount, TopColors, TopColorCount);
+       end;
+    2: //use current sprite palette
+       begin
+         RMCoreBase.Palette.GetPalette(DisplayPalette);
+         DisplayPaletteCount:=RMCoreBase.Palette.GetColorCount;
+       end;
+  end;
+
+  PalettePaintBox.Invalidate;
+end;
+
 procedure TSpriteImportForm.DrawSpriteSelectBox;
 begin
   SpriteSheetPaintBox.Canvas.Brush.Style:=bsClear;
@@ -370,7 +487,6 @@ begin
     SpriteSheetPaintBox.Canvas.Line(0,y,SpriteSheetPaintBox.Width-1,y);
     inc(y,ClipHeight);
   end;
-
 end;
 
 procedure TSpriteImportForm.UpdateSpriteValues;
@@ -413,6 +529,7 @@ procedure TSpriteImportForm.SpriteSizeComboBoxChange(Sender: TObject);
 begin
   SpriteSize:=SpriteSizeComboBox.ItemIndex;
   UpdateSpriteValues;
+  UpdateStatusBar;
   SpriteSheetPaintBox.Invalidate;
 end;
 
@@ -427,18 +544,35 @@ begin
   lasty:=-1;
   pWidth:=EasyPNG.Picture1.Width;
   pheight:=EasyPNG.Picture1.Height;
-//  SourceImage.AutoSize:=true;
-//  SourceImage.Picture.Bitmap.SetSize(1,1);
-//  SourceImage.Picture.Bitmap.SetSize(pwidth*ZoomSize,pheight*ZoomSize);
-//  SourceImage.Canvas.CopyRect(Rect(0,0,pwidth*ZoomSize,pheight*ZoomSize),EasyPNG.Picture1.Bitmap.Canvas,Rect(0,0,pwidth,pheight));
-//  SourceImage.AutoSize:=false;
-//SpriteSheetPaintBox.Width:=0;
-//SpriteSheetPaintBox.Height:=0;
-//SpriteSheetPaintBox.Invalidate;
-SpriteSheetPaintBox.Width:=pWidth*ZoomSize;
-SpriteSheetPaintBox.Height:=pHeight*ZoomSize;
+  //  SourceImage.AutoSize:=true;
+  //  SourceImage.Picture.Bitmap.SetSize(1,1);
+  //  SourceImage.Picture.Bitmap.SetSize(pwidth*ZoomSize,pheight*ZoomSize);
+  //  SourceImage.Canvas.CopyRect(Rect(0,0,pwidth*ZoomSize,pheight*ZoomSize),EasyPNG.Picture1.Bitmap.Canvas,Rect(0,0,pwidth,pheight));
+  //  SourceImage.AutoSize:=false;
+  //SpriteSheetPaintBox.Width:=0;
+  //SpriteSheetPaintBox.Height:=0;
+  //SpriteSheetPaintBox.Invalidate;
+  SpriteSheetPaintBox.Width:=pWidth*ZoomSize;
+  SpriteSheetPaintBox.Height:=pHeight*ZoomSize;
 
-SpriteSheetPaintBox.Invalidate;
+  UpdateStatusBar;
+  SpriteSheetPaintBox.Invalidate;
+end;
+
+procedure TSpriteImportForm.SpriteSheetScrollBoxMouseWheel(Sender: TObject;
+  Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+  if WheelDelta > 0 then
+  begin
+    if ZoomTrackBar.Position < ZoomTrackBar.Max then
+      ZoomTrackBar.Position:=ZoomTrackBar.Position + 1;
+  end
+  else
+  begin
+    if ZoomTrackBar.Position > ZoomTrackBar.Min then
+      ZoomTrackBar.Position:=ZoomTrackBar.Position - 1;
+  end;
+  Handled:=True;
 end;
 
 procedure TSpriteImportForm.FormCreate(Sender: TObject);
@@ -460,42 +594,58 @@ begin
   NewPaletteMode:=7;   //xga 256
   PaletteComboBox.ItemIndex:=NewPaletteMode;
   NewPaletteComboBox.ItemIndex:=NewPaletteFrom;
+  DisplayPaletteCount:=0;
+  BuildDisplayPalette;
+  UpdateStatusBar;
 end;
 
 procedure TSpriteImportForm.CheckBoxDisplayGridChange(Sender: TObject);
 begin
+  MnuDisplayGrid.Checked:=CheckBoxDisplayGrid.Checked;
   SpriteSheetPaintBox.Invalidate;
 end;
 
+procedure TSpriteImportForm.CheckBoxSnapToGridChange(Sender: TObject);
+begin
+  MnuSnapGrid.Checked:=CheckBoxSnapToGrid.Checked;
+end;
+
+procedure TSpriteImportForm.MnuCloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TSpriteImportForm.MnuDisplayGridClick(Sender: TObject);
+begin
+  //toggling the checkbox fires its OnChange which syncs the menu check
+  CheckBoxDisplayGrid.Checked:=not CheckBoxDisplayGrid.Checked;
+end;
+
+procedure TSpriteImportForm.MnuSnapGridClick(Sender: TObject);
+begin
+  CheckBoxSnapToGrid.Checked:=not CheckBoxSnapToGrid.Checked;
+end;
+
+procedure TSpriteImportForm.MnuZoomInClick(Sender: TObject);
+begin
+  if ZoomTrackBar.Position < ZoomTrackBar.Max then
+    ZoomTrackBar.Position:=ZoomTrackBar.Position + 1;  //OnChange handles the rest
+end;
+
+procedure TSpriteImportForm.MnuZoomOutClick(Sender: TObject);
+begin
+  if ZoomTrackBar.Position > ZoomTrackBar.Min then
+    ZoomTrackBar.Position:=ZoomTrackBar.Position - 1;
+end;
 
 function TSpriteImportForm.ZoomXToReal(zx : integer) : integer;
 begin
-      result:=zx Div ZoomSize;
-(*
-  if CheckBoxSnapToGrid.Checked then
-  begin
-    result:=zx Div ZoomSize;
- end
-  else
-  begin
-    result:=(zx Div ZoomSize) - (SpriteWidth div 2);
-  end;
-  *)
+  result:=zx Div ZoomSize;
 end;
 
 function TSpriteImportForm.ZoomYToReal(zy : integer) : integer;
 begin
- result:=zy Div ZoomSize;
-(*
- if CheckBoxSnapToGrid.Checked then
-  begin
-    result:=zy Div ZoomSize;
- end
-  else
-  begin
-    result:=(zy Div ZoomSize) - (SpriteHeight div 2);
-  end;
-  *)
+  result:=zy Div ZoomSize;
 end;
 
 procedure TSpriteImportForm.UpdateInfo;
@@ -509,7 +659,25 @@ begin
   TempX2:=TempX+SpriteWidth-1;
   TempY2:=TempY+SpriteHeight-1;
 
-  StatusBar1.SimpleText:='X = '+IntToStr(TempX)+' Y = '+IntToStr(TempY)+' X2 = '+IntToStr(TempX2)+' Y2 = '+IntToStr(TempY2);
+  if StatusBar1.Panels.Count >= 1 then
+    StatusBar1.Panels[0].Text:='X='+IntToStr(TempX)+' Y='+IntToStr(TempY)+
+                               '  X2='+IntToStr(TempX2)+' Y2='+IntToStr(TempY2);
+  UpdateStatusBar;
+end;
+
+procedure TSpriteImportForm.UpdateStatusBar;
+begin
+  if StatusBar1.Panels.Count < 5 then exit;
+
+  StatusBar1.Panels[1].Text:='Sprite: '+IntToStr(SpriteWidth)+'x'+IntToStr(SpriteHeight);
+  StatusBar1.Panels[2].Text:='Zoom: '+IntToStr(ZoomSize)+'x';
+
+  if (EasyPNG.Picture1.Width > 0) and (EasyPNG.Picture1.Height > 0) then
+    StatusBar1.Panels[3].Text:='Sheet: '+IntToStr(EasyPNG.Picture1.Width)+'x'+IntToStr(EasyPNG.Picture1.Height)
+  else
+    StatusBar1.Panels[3].Text:='Sheet: -';
+
+  StatusBar1.Panels[4].Text:='Palette: '+PaletteComboBox.Text+' ('+NewPaletteComboBox.Text+')';
 end;
 
 end.

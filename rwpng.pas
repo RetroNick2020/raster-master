@@ -5,7 +5,7 @@ unit rwpng;
 interface
 
 uses
-  Classes, SysUtils, graphics,fgl,StrUtils,rmcore,dialogs,rmthumb;
+  Classes, SysUtils, graphics,fgl,StrUtils,rmcore,dialogs,rmthumb,GraphType;
 
 type
   PngRGBASettingsRec = Record
@@ -18,6 +18,13 @@ type
 
   TTColorLongMap = specialize TFPGMap<TColor, longint>;
 
+  //15-bit color histogram: O(1) per pixel, replaces TFPGMap for speed
+  TColorHistEntry = record
+    Count : longint;   //how many pixels mapped to this bucket
+    R, G, B : byte;    //first exact color seen (preserves full 8-bit precision)
+    Used : boolean;    //true if this bucket has any pixels
+  end;
+
   { TForm1 }
 
   TEasyPNG = class
@@ -28,14 +35,21 @@ type
     GlobalPalette : TRMPaletteBuf; //palette created after scanning entire image
     LocalPalette  : TRMPaletteBuf; //palette created after scanning location area of sprite image
 
-    ColorHashMap :  TTColorLongMap;
+    ColorHashMap :  TTColorLongMap;  //kept for any external code that reads it
+    ColorHist : array[0..32767] of TColorHistEntry;
+    HistReady : boolean;
+
+    //pf32bit cache of Picture1 for fast RawImage pointer access
+    FBmp32 : TBitmap;
+    FBmp32Valid : boolean;
 
     constructor Create;
     destructor destroy; override;
+    procedure EnsureBmp32;
     procedure BuildHashes(x,y,x2,y2 : integer);
     function BuildTopColors(var  TopPalette : TRMPaletteBuf) : integer;
 
-    Function FindMostColorIndex : integer;
+    Function FindMostColorIndex : integer;  //legacy - uses ColorHashMap
     procedure CreatePaletteUsingBasePalette(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer;
                              var TopPalette : TRMPaletteBuf;topncolors : integer);
     procedure CopyImageToCore(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer; x,y,x2,y2 : integer);
@@ -134,6 +148,9 @@ constructor TEasyPNG.Create;
 begin
   Picture1:=TPicture.Create;
   ColorHashMap := TTColorLongMap.Create;
+  HistReady:=false;
+  FBmp32:=nil;
+  FBmp32Valid:=false;
 end;
 
 Function TEasyPNG.FindMostColorIndex : integer;
@@ -158,33 +175,50 @@ end;
 Procedure TEasyPNG.BuildHashes(x,y,x2,y2 : integer);
 var
  i,j : integer;
- color : TColor;
- v  : longint;
- cc  : integer;
-width,height : integer;
+ width,height : integer;
+ key : integer;
+ cr,cg,cb : byte;
+ P : PByte;
+ RowStride, BytesPerPixel : integer;
 begin
  width:=x2-x+1;
  height:=y2-y+1;
  if width > Picture1.width then width:=Picture1.width;
  if height > Picture1.height then height:=Picture1.height;
 
- cc:=0;
- ColorHashMap.Clear;
+ //clear the 15-bit histogram
+ FillChar(ColorHist, SizeOf(ColorHist), 0);
+ HistReady:=true;
+
+ //build a pf32bit copy for fast raw pointer access (cached across calls)
+ EnsureBmp32;
+ if (FBmp32 = nil) or (not FBmp32Valid) then exit;
+
+ BytesPerPixel:=FBmp32.RawImage.Description.BitsPerPixel div 8;
+ RowStride:=FBmp32.RawImage.Description.BytesPerLine;
+
  for j:=0 to height-1 do
  begin
+   if (y+j) >= FBmp32.Height then break;
+   P:=FBmp32.RawImage.Data + (y+j) * RowStride + x * BytesPerPixel;
    for i:=0 to width-1 do
    begin
-     color:=Picture1.Bitmap.Canvas.Pixels[x+i,y+j];
+     //pf32bit = BGRA byte order
+     cb:=P^; Inc(P);
+     cg:=P^; Inc(P);
+     cr:=P^; Inc(P);
+     if BytesPerPixel = 4 then Inc(P);
 
-     if ColorHashMap.TryGetData(color,v) then
+     //15-bit key: 5 bits per channel
+     key:=((cr shr 3) shl 10) or ((cg shr 3) shl 5) or (cb shr 3);
+
+     inc(ColorHist[key].Count);
+     if not ColorHist[key].Used then
      begin
-       inc(v);
-       ColorHashMap.AddOrSetData(color,v);
-     end
-     else
-     begin
-       ColorHashMap.Add(color,1);
-       inc(cc);
+       ColorHist[key].R:=cr;
+       ColorHist[key].G:=cg;
+       ColorHist[key].B:=cb;
+       ColorHist[key].Used:=true;
      end;
    end;
  end;
@@ -193,25 +227,34 @@ end;
 function TEasyPNG.BuildTopColors(var  TopPalette : TRMPaletteBuf) : integer;
 var
  ColorCount : integer;
- MostColors : integer;
- Color   : TColor;
+ i, bestIdx : integer;
+ bestCount : longint;
 begin
+  //extract up to 256 most popular colors from the 15-bit histogram
+  //each pass finds the highest count, records it, zeros it out
   ColorCount:=0;
-  while (ColorHashMap.Count > 0) and (ColorCount < 256)  do
+  while ColorCount < 256 do
   begin
-   MostColors:=FindMostColorIndex;
-   if MostColors<>-1 then
-   begin
-     Color:=ColorHashMap.keys[MostColors];
-     ColorHashMap.Delete(MostColors);
-     ColorToRGB(Color,TopPalette[ColorCount].r,
-                            TopPalette[ColorCount].g,
-                            TopPalette[ColorCount].b);
-     inc(ColorCount);
-   end;
+    bestIdx:=-1;
+    bestCount:=0;
+    for i:=0 to 32767 do
+    begin
+      if ColorHist[i].Count > bestCount then
+      begin
+        bestCount:=ColorHist[i].Count;
+        bestIdx:=i;
+      end;
+    end;
+    if bestIdx < 0 then break;  //no more colors
+
+    TopPalette[ColorCount].r:=ColorHist[bestIdx].R;
+    TopPalette[ColorCount].g:=ColorHist[bestIdx].G;
+    TopPalette[ColorCount].b:=ColorHist[bestIdx].B;
+    ColorHist[bestIdx].Count:=0;  //mark consumed so next pass skips it
+    inc(ColorCount);
   end;
 
- BuildTopColors:=ColorCount;
+  BuildTopColors:=ColorCount;
 end;
 
 // based on rgb and palette mode find best color index
@@ -446,12 +489,34 @@ end;
 Procedure TEasyPNG.LoadFromFile(filename : string);
 begin
  Picture1.LoadFromFile(filename);
+ FBmp32Valid:=false;
 end;
 
 destructor TEasyPNG.destroy;
 begin
+  FreeAndNil(FBmp32);
   Picture1.Free;
   ColorHashMap.Free;
+end;
+
+//renders Picture1 into a pf32bit TBitmap for direct RawImage.Data access
+//only rebuilds when FBmp32Valid is false (after load/clipboard import)
+procedure TEasyPNG.EnsureBmp32;
+var
+  W, H : integer;
+begin
+  if FBmp32Valid and (FBmp32 <> nil) then exit;
+  W:=Picture1.Width;
+  H:=Picture1.Height;
+  if (W <= 0) or (H <= 0) then exit;
+  if FBmp32 = nil then
+    FBmp32:=TBitmap.Create;
+  FBmp32.PixelFormat:=pf32bit;
+  FBmp32.SetSize(W, H);
+  FBmp32.Canvas.Brush.Color:=clBlack;
+  FBmp32.Canvas.FillRect(0, 0, W, H);
+  FBmp32.Canvas.Draw(0, 0, Picture1.Graphic);
+  FBmp32Valid:=true;
 end;
 
 function ReadPNG(x,y,x2,y2 : integer;filename : string; LoadPalette : Boolean) : integer;

@@ -111,7 +111,7 @@ object AnimationForm: TAnimationForm
   object LeftSplitter: TSplitter
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
-    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Control = StatusBar1
     AnchorSideBottom.Side = asrBottom
     Left = 175
     Height = 474
@@ -125,7 +125,7 @@ object AnimationForm: TAnimationForm
   object RightSplitter: TSplitter
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
-    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Control = StatusBar1
     AnchorSideBottom.Side = asrBottom
     Left = 952
     Height = 474
@@ -141,7 +141,7 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = LeftSplitter
-    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Control = StatusBar1
     AnchorSideBottom.Side = asrBottom
     Left = 0
     Height = 474
@@ -188,7 +188,7 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = RightSplitter
-    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Control = StatusBar1
     AnchorSideBottom.Side = asrBottom
     Left = 184
     Height = 474
@@ -248,7 +248,7 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Control = StatusBar1
     AnchorSideBottom.Side = asrBottom
     Left = 961
     Height = 474
@@ -380,6 +380,35 @@ object AnimationForm: TAnimationForm
       Anchors = [akLeft, akRight, akBottom]
       TabOrder = 1
     end
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 724
+    Width = 1149
+    Align = alBottom
+    Panels = <
+      item
+        Text = 'Animation: 0/0'
+        Width = 160
+      end
+      item
+        Text = 'Frames: 0'
+        Width = 120
+      end
+      item
+        Text = 'Frame: 0/0'
+        Width = 120
+      end
+      item
+        Text = 'Speed: 4'
+        Width = 100
+      end
+      item
+        Text = ''
+        Width = 300
+      end>
+    SimplePanel = False
   end
   object CurrentAnimationImageList: TImageList
     Left = 712

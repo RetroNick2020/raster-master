@@ -4681,9 +4681,21 @@ procedure TRMMainForm.UpdateImportedImage;
 var
   count : integer;
 begin
- ImageThumbBase.UpdateAllThumbImages(imagelist1);
+ count:=ImageThumbBase.GetCount;
+
+ if ShowTransparent then
+ begin
+   //transparent mode needs both lists rebuilt together - the trans list
+   //must have all entries before the ListView item is added, otherwise
+   //the new item's ImageIndex points past TransImageList1.Count and
+   //the ListView caches a blank icon before RebuildTransImageList runs
+   ImageThumbBase.UpdateAllThumbImages(imagelist1);
+   RebuildTransImageList;
+ end
+ else
+   ImageThumbBase.MakeThumbImage(count-1, ImageList1, 1);
+
  ListView1.Items.Add;
- Count:=ListView1.Items.Count;
  Listview1.Items[count-1].Caption:='Image '+IntToStr(count);
  Listview1.Items[count-1].ImageIndex:=count-1;
 end;
