@@ -102,6 +102,7 @@ type
        procedure UpdateInfo;
        procedure UpdateStatusBar;
        procedure BuildDisplayPalette;
+       procedure ApplyZoom(newZoom : integer; useAnchor : boolean; anchorX : integer = 0; anchorY : integer = 0);
        function ZoomXToReal(zx : integer) : integer;
        function ZoomYToReal(zy : integer) : integer;
    end;
@@ -534,26 +535,54 @@ begin
 end;
 
 procedure TSpriteImportForm.ZoomTrackBarChange(Sender: TObject);
-var
-  pwidth,pheight : integer;
 begin
-  ZoomSize:=ZoomtrackBar.Position;
-  UpdateSpriteValues;
+  ApplyZoom(ZoomTrackBar.Position, False);
+end;
 
+procedure TSpriteImportForm.ApplyZoom(newZoom : integer; useAnchor : boolean; anchorX : integer; anchorY : integer);
+var
+  oldZoom : integer;
+  pixX, pixY : double;
+  newScrollX, newScrollY : integer;
+  pWidth, pHeight : integer;
+begin
+  if newZoom < ZoomTrackBar.Min then newZoom:=ZoomTrackBar.Min;
+  if newZoom > ZoomTrackBar.Max then newZoom:=ZoomTrackBar.Max;
+
+  oldZoom:=ZoomSize;
+
+  //remember which image pixel sits under the anchor point
+  pixX:=0; pixY:=0;
+  if useAnchor and (oldZoom > 0) then
+  begin
+    pixX:=(SpriteSheetScrollBox.HorzScrollBar.Position + anchorX) / oldZoom;
+    pixY:=(SpriteSheetScrollBox.VertScrollBar.Position + anchorY) / oldZoom;
+  end;
+
+  //apply the new zoom through the trackbar (fires ZoomTrackBarChange)
+  ZoomTrackBar.OnChange:=nil;
+  ZoomTrackBar.Position:=newZoom;
+  ZoomTrackBar.OnChange:=@ZoomTrackBarChange;
+
+  ZoomSize:=newZoom;
+  UpdateSpriteValues;
   lastx:=-1;
   lasty:=-1;
   pWidth:=EasyPNG.Picture1.Width;
-  pheight:=EasyPNG.Picture1.Height;
-  //  SourceImage.AutoSize:=true;
-  //  SourceImage.Picture.Bitmap.SetSize(1,1);
-  //  SourceImage.Picture.Bitmap.SetSize(pwidth*ZoomSize,pheight*ZoomSize);
-  //  SourceImage.Canvas.CopyRect(Rect(0,0,pwidth*ZoomSize,pheight*ZoomSize),EasyPNG.Picture1.Bitmap.Canvas,Rect(0,0,pwidth,pheight));
-  //  SourceImage.AutoSize:=false;
-  //SpriteSheetPaintBox.Width:=0;
-  //SpriteSheetPaintBox.Height:=0;
-  //SpriteSheetPaintBox.Invalidate;
+  pHeight:=EasyPNG.Picture1.Height;
   SpriteSheetPaintBox.Width:=pWidth*ZoomSize;
   SpriteSheetPaintBox.Height:=pHeight*ZoomSize;
+
+  //keep the anchored pixel under the cursor
+  if useAnchor then
+  begin
+    newScrollX:=Round(pixX * ZoomSize) - anchorX;
+    newScrollY:=Round(pixY * ZoomSize) - anchorY;
+    if newScrollX < 0 then newScrollX:=0;
+    if newScrollY < 0 then newScrollY:=0;
+    SpriteSheetScrollBox.HorzScrollBar.Position:=newScrollX;
+    SpriteSheetScrollBox.VertScrollBar.Position:=newScrollY;
+  end;
 
   UpdateStatusBar;
   SpriteSheetPaintBox.Invalidate;
@@ -561,17 +590,14 @@ end;
 
 procedure TSpriteImportForm.SpriteSheetScrollBoxMouseWheel(Sender: TObject;
   Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+var
+  pt : TPoint;
 begin
+  pt:=SpriteSheetScrollBox.ScreenToClient(MousePos);
   if WheelDelta > 0 then
-  begin
-    if ZoomTrackBar.Position < ZoomTrackBar.Max then
-      ZoomTrackBar.Position:=ZoomTrackBar.Position + 1;
-  end
+    ApplyZoom(ZoomSize + 1, True, pt.X, pt.Y)
   else
-  begin
-    if ZoomTrackBar.Position > ZoomTrackBar.Min then
-      ZoomTrackBar.Position:=ZoomTrackBar.Position - 1;
-  end;
+    ApplyZoom(ZoomSize - 1, True, pt.X, pt.Y);
   Handled:=True;
 end;
 
@@ -628,14 +654,12 @@ end;
 
 procedure TSpriteImportForm.MnuZoomInClick(Sender: TObject);
 begin
-  if ZoomTrackBar.Position < ZoomTrackBar.Max then
-    ZoomTrackBar.Position:=ZoomTrackBar.Position + 1;  //OnChange handles the rest
+  ApplyZoom(ZoomSize + 1, False);
 end;
 
 procedure TSpriteImportForm.MnuZoomOutClick(Sender: TObject);
 begin
-  if ZoomTrackBar.Position > ZoomTrackBar.Min then
-    ZoomTrackBar.Position:=ZoomTrackBar.Position - 1;
+  ApplyZoom(ZoomSize - 1, False);
 end;
 
 function TSpriteImportForm.ZoomXToReal(zx : integer) : integer;

@@ -1,16 +1,17 @@
 object FontSheetExportForm: TFontSheetExportForm
-  Left = 308
+  Left = 132
   Height = 703
-  Top = 353
-  Width = 1233
+  Top = 358
+  Width = 1429
   Caption = 'Font Sheet Export'
   ClientHeight = 703
-  ClientWidth = 1233
+  ClientWidth = 1429
+  Menu = MainMenu1
+  Position = poOwnerFormCenter
+  LCLVersion = '4.8.0.0'
   OnActivate = FormActivate
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  Position = poOwnerFormCenter
-  LCLVersion = '3.4.0.0'
   object Splitter1: TSplitter
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -19,8 +20,8 @@ object FontSheetExportForm: TFontSheetExportForm
     Cursor = crVSplit
     Left = 0
     Height = 16
-    Top = 162
-    Width = 1233
+    Top = 168
+    Width = 1429
     Align = alNone
     Anchors = [akLeft, akRight]
     AutoSnap = False
@@ -34,21 +35,21 @@ object FontSheetExportForm: TFontSheetExportForm
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 0
-    Height = 525
-    Top = 178
-    Width = 1233
+    Height = 496
+    Top = 184
+    Width = 1429
     HorzScrollBar.Page = 105
     HorzScrollBar.Tracking = True
     VertScrollBar.Page = 105
     VertScrollBar.Tracking = True
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderStyle = bsNone
-    ClientHeight = 525
-    ClientWidth = 1233
+    ClientHeight = 496
+    ClientWidth = 1429
     TabOrder = 1
+    OnMouseWheel = ScrollBox1MouseWheel
     object FontSheetPaintBox: TPaintBox
       Left = 0
       Height = 105
@@ -63,12 +64,12 @@ object FontSheetExportForm: TFontSheetExportForm
     AnchorSideRight.Control = ZoomTrackBar
     AnchorSideBottom.Control = Splitter1
     Left = 0
-    Height = 162
+    Height = 168
     Top = 0
-    Width = 1176
+    Width = 1372
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 162
-    ClientWidth = 1176
+    ClientHeight = 168
+    ClientWidth = 1372
     TabOrder = 2
     object StaticText1: TStaticText
       Left = 16
@@ -172,9 +173,9 @@ object FontSheetExportForm: TFontSheetExportForm
       Value = 5
     end
     object Apply: TButton
-      Left = 1056
+      Left = 1256
       Height = 46
-      Top = 49
+      Top = 52
       Width = 80
       Caption = 'Apply'
       TabOrder = 8
@@ -199,12 +200,11 @@ object FontSheetExportForm: TFontSheetExportForm
       OnClick = ExportToFileClick
     end
     object DescExportToClipboard: TButton
-      Left = 688
+      Left = 598
       Height = 25
-      Top = 75
+      Top = 104
       Width = 131
       Caption = 'Export To Clipboard'
-      Enabled = False
       TabOrder = 11
     end
     object StaticText5: TStaticText
@@ -219,16 +219,35 @@ object FontSheetExportForm: TFontSheetExportForm
       Left = 584
       Height = 23
       Top = 75
-      Width = 100
-      Enabled = False
+      Width = 145
       ItemHeight = 15
       ItemIndex = 0
       Items.Strings = (
+        'QB64'
+        'QBasic'
+        'FreePascal'
+        'Turbo Pascal'
+        'TMT Pascal'
+        'Amiga Pascal'
+        'Quick Pascal'
+        'gcc \ Emscripten'
+        'Open Watcom C'
+        'Turbo C'
+        'Quick C'
+        'Amiga C'
+        'JSON'
         'BM Font'
+        'GWBASIC'
+        'Turbo\Power Basic'
+        'AmigaBasic'
+        'FreeBASIC'
+        'FreeBASIC - QB Mode'
+        'Amiga QuickBasic AQB'
+        'JavaScript'
       )
       Style = csDropDownList
       TabOrder = 13
-      Text = 'BM Font'
+      Text = 'QB64'
       OnChange = FontSheetChange
     end
     object StaticText6: TStaticText
@@ -273,9 +292,9 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 64
       MaxValue = 4000
       MinValue = 256
-      OnChange = FontSheetChange
       TabOrder = 18
       Value = 2000
+      OnChange = FontSheetChange
     end
     object CSHeight: TSpinEdit
       Left = 80
@@ -284,14 +303,14 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 64
       MaxValue = 4000
       MinValue = 256
-      OnChange = FontSheetChange
       TabOrder = 19
       Value = 2000
+      OnChange = FontSheetChange
     end
     object DescExportToFile: TButton
-      Left = 688
+      Left = 598
       Height = 25
-      Top = 104
+      Top = 136
       Width = 131
       Caption = 'Export to File'
       TabOrder = 20
@@ -318,6 +337,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 67
       MaxLength = 0
       NumbersOnly = True
+      SpinButtonWidth = 17
       TabOrder = 21
       OnChange = FontSheetChange
       MaxValue = 256
@@ -332,6 +352,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 67
       MaxLength = 0
       NumbersOnly = True
+      SpinButtonWidth = 17
       TabOrder = 22
       OnChange = FontSheetChange
       MaxValue = 256
@@ -349,7 +370,7 @@ object FontSheetExportForm: TFontSheetExportForm
     object Button1: TButton
       Left = 840
       Height = 25
-      Top = 40
+      Top = 8
       Width = 131
       Caption = 'Select Font'
       TabOrder = 23
@@ -362,6 +383,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 67
       MaxLength = 0
       NumbersOnly = True
+      SpinButtonWidth = 17
       TabOrder = 24
       MaxValue = 255
       NullValue = 0
@@ -374,6 +396,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 67
       MaxLength = 0
       NumbersOnly = True
+      SpinButtonWidth = 17
       TabOrder = 25
       MaxValue = 255
       NullValue = 0
@@ -394,7 +417,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Caption = 'End Char'
     end
     object SavebackgroundAsTransparent: TCheckBox
-      Left = 688
+      Left = 1000
       Height = 19
       Top = 136
       Width = 245
@@ -403,19 +426,109 @@ object FontSheetExportForm: TFontSheetExportForm
       State = cbChecked
       TabOrder = 26
     end
+    object lblPadding: TLabel
+      Left = 1248
+      Height = 15
+      Top = 10
+      Width = 44
+      Caption = 'Padding'
+    end
+    object SpinPadding: TSpinEdit
+      Left = 1304
+      Height = 23
+      Top = 8
+      Width = 48
+      MaxValue = 9
+      TabOrder = 27
+    end
+    object chkShadow: TCheckBox
+      Left = 984
+      Height = 19
+      Top = 10
+      Width = 98
+      Caption = 'Enable Shadow'
+      TabOrder = 28
+    end
+    object lblShadowX: TLabel
+      Left = 1104
+      Height = 15
+      Top = 14
+      Width = 52
+      Caption = 'Shadow X'
+    end
+    object SpinShadowX: TSpinEdit
+      Left = 1164
+      Height = 23
+      Top = 10
+      Width = 48
+      MaxValue = 16
+      MinValue = -16
+      TabOrder = 29
+      Value = 1
+    end
+    object lblShadowY: TLabel
+      Left = 1104
+      Height = 15
+      Top = 44
+      Width = 52
+      Caption = 'Shadow Y'
+    end
+    object SpinShadowY: TSpinEdit
+      Left = 1165
+      Height = 23
+      Top = 40
+      Width = 48
+      MaxValue = 16
+      MinValue = -16
+      TabOrder = 30
+      Value = 1
+    end
+    object lblShadowColor: TLabel
+      Left = 1024
+      Height = 15
+      Top = 74
+      Width = 74
+      Caption = 'Shadow Color'
+    end
+    object ShadowColorBox: TColorBox
+      Left = 1112
+      Height = 22
+      Top = 72
+      Width = 100
+      Selected = clGray
+      Style = [cbStandardColors, cbExtendedColors, cbCustomColor, cbPrettyNames]
+      ItemHeight = 16
+      TabOrder = 31
+    end
+    object lblBGColor: TLabel
+      Left = 1000
+      Height = 15
+      Top = 104
+      Width = 96
+      Caption = 'Background Color'
+    end
+    object BGColorBox: TColorBox
+      Left = 1112
+      Height = 22
+      Top = 104
+      Width = 100
+      Style = [cbStandardColors, cbExtendedColors, cbCustomColor, cbPrettyNames]
+      ItemHeight = 16
+      TabOrder = 32
+    end
   end
   object ZoomTrackBar: TTrackBar
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    Left = 1176
+    Left = 1372
     Height = 100
     Top = 20
     Width = 41
     Min = 1
-    OnChange = ZoomTrackBarChange
     Orientation = trVertical
     Position = 3
     TickMarks = tmTopLeft
+    OnChange = ZoomTrackBarChange
     Anchors = [akRight]
     BorderSpacing.Right = 16
     TabOrder = 3
@@ -426,6 +539,98 @@ object FontSheetExportForm: TFontSheetExportForm
     Top = 56
     Width = 119
     Caption = 'Custom Character Size'
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 680
+    Width = 1429
+    Panels = <    
+      item
+        Text = 'Chars: 0'
+        Width = 100
+      end    
+      item
+        Text = 'Sheet: 320x200'
+        Width = 160
+      end    
+      item
+        Text = 'Cell: 32x32'
+        Width = 120
+      end    
+      item
+        Text = 'Zoom: 1x'
+        Width = 100
+      end    
+      item
+        Width = 300
+      end>
+    SimplePanel = False
+  end
+  object MainMenu1: TMainMenu
+    Left = 1050
+    Top = 186
+    object MenuFile: TMenuItem
+      Caption = 'File'
+      object MnuApply: TMenuItem
+        Caption = 'Apply'
+        OnClick = ApplyClick
+      end
+      object MnuSep1: TMenuItem
+        Caption = '-'
+      end
+      object MnuExportImage: TMenuItem
+        Caption = 'Export Sheet to File...'
+        OnClick = ExportToFileClick
+      end
+      object MnuExportClipboard: TMenuItem
+        Caption = 'Export Sheet to Clipboard'
+        OnClick = ExportToClipboardClick
+      end
+      object MnuSep2: TMenuItem
+        Caption = '-'
+      end
+      object MnuExportDescFile: TMenuItem
+        Caption = 'Export Description to File...'
+        OnClick = DescExportToFileClick
+      end
+      object MnuExportDescClip: TMenuItem
+        Caption = 'Export Description to Clipboard'
+        OnClick = DescExportToFileClick
+      end
+      object MnuSep3: TMenuItem
+        Caption = '-'
+      end
+      object MnuExportBMFont: TMenuItem
+        Caption = 'Export BMFont...'
+        OnClick = ExportToBMFontFiles
+      end
+      object MnuSep4: TMenuItem
+        Caption = '-'
+      end
+      object MnuSelectFont: TMenuItem
+        Caption = 'Select Font...'
+        OnClick = Button1Click
+      end
+      object MnuSep5: TMenuItem
+        Caption = '-'
+      end
+      object MnuClose: TMenuItem
+        Caption = 'Close'
+        OnClick = MnuCloseClick
+      end
+    end
+    object MenuView: TMenuItem
+      Caption = 'View'
+      object MnuZoomIn: TMenuItem
+        Caption = 'Zoom In'
+        OnClick = MnuZoomInClick
+      end
+      object MnuZoomOut: TMenuItem
+        Caption = 'Zoom Out'
+        OnClick = MnuZoomOutClick
+      end
+    end
   end
   object SaveDialog1: TSaveDialog
     Title = 'Export'

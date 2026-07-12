@@ -18,6 +18,8 @@ const
   tlModeDraw  = 1;
 
 type
+  TMazePos = record x, y : integer; end;
+
   { TMapEdit }
 
   TMapEdit = class(TForm)
@@ -106,6 +108,13 @@ type
     MnuMapExpTP, MD_TP, HB_TP : TMenuItem;
     MnuMapExpTC, MD_TC, HB_TC : TMenuItem;
     MnuMapExpTMT, MD_TMT, HB_TMT : TMenuItem;
+
+    MazeMenu: TMenuItem;
+    MnuMazeEasy, MnuMazeMedium, MnuMazeHard : TMenuItem;
+    MnuMazeSep1, MnuMazeSep2, MnuMazeSep3 : TMenuItem;
+    MnuMazeSetWallTile, MnuMazeSetPathTile, MnuMazeSetSolutionTile : TMenuItem;
+    MnuMazeSetStart, MnuMazeSetEnd : TMenuItem;
+    MnuMazeSolve : TMenuItem;
     MenuItem13: TMenuItem;
     BasicLNMapData: TMenuItem;
     MenuMapProps: TMenuItem;
@@ -204,6 +213,13 @@ type
     procedure MenuExportPascalArray(Sender: TObject);
     procedure MenuExportMapDataLanClick(Sender: TObject);
     procedure MenuExportHitBoxLanClick(Sender: TObject);
+    procedure MazeGenerateClick(Sender: TObject);
+    procedure MazeSetWallTileClick(Sender: TObject);
+    procedure MazeSetPathTileClick(Sender: TObject);
+    procedure MazeSetSolutionTileClick(Sender: TObject);
+    procedure MazeSetStartClick(Sender: TObject);
+    procedure MazeSetEndClick(Sender: TObject);
+    procedure MazeSolveClick(Sender: TObject);
     procedure ExportHitBoxBasicClick(Sender: TObject);
     procedure ExportHitBoxBasicLNClick(Sender: TObject);
     procedure ExportHitBoxCClick(Sender: TObject);
@@ -270,6 +286,17 @@ type
     RenderDrawToolShape : Boolean;
     ShowHitBoxOverlay   : Boolean;
     ShowTransparent     : Boolean;
+
+    //maze generator state
+    MazeWallTile    : TileRec;
+    MazePathTile    : TileRec;
+    MazeSolutionTile: TileRec;
+    MazeWallSet     : Boolean;
+    MazePathSet     : Boolean;
+    MazeSolutionSet : Boolean;
+    MazeStartX, MazeStartY : integer;
+    MazeEndX, MazeEndY     : integer;
+    MazeStartSet, MazeEndSet : Boolean;
     SelectedHitBox      : integer;
     FCheckerBmp         : TBitmap;
 
@@ -406,6 +433,17 @@ begin
  RenderDrawToolShape:=False;
  ShowHitBoxOverlay:=True;
  ShowTransparent:=False;
+
+ //maze defaults
+ MazeWallTile.ImageIndex:=0;
+ FillChar(MazeWallTile.ImageUID, sizeof(TGUID), 0);
+ MazePathTile.ImageIndex:=-1;
+ MazeSolutionTile.ImageIndex:=-1;
+ MazeWallSet:=true;   //tile 0 is always available
+ MazePathSet:=false;
+ MazeSolutionSet:=false;
+ MazeStartSet:=false;
+ MazeEndSet:=false;
  SelectedHitBox:=-1;
 
  // create large checkerboard bitmap once for fast tiling
@@ -2495,6 +2533,465 @@ begin
   end;
 end;
 
+
+{ ===== Maze Generator ===== }
+
+function TileExists(var T : TileRec) : boolean;
+begin
+  if T.ImageIndex < 0 then begin TileExists:=false; exit; end;
+  if T.ImageIndex >= ImageThumbBase.GetCount then begin TileExists:=false; exit; end;
+  if ImageThumbBase.FindUID(T.ImageUID) = -1 then begin TileExists:=false; exit; end;
+  TileExists:=true;
+end;
+
+procedure TMapEdit.MazeSetWallTileClick(Sender: TObject);
+begin
+  if CTile.ImageIndex < 0 then begin ShowMessage('No tile selected.'); exit; end;
+  MazeWallTile:=CTile;
+  MazeWallSet:=true;
+  ShowMessage('Wall tile set to tile ' + IntToStr(CTile.ImageIndex) + '.');
+end;
+
+procedure TMapEdit.MazeSetPathTileClick(Sender: TObject);
+begin
+  if CTile.ImageIndex < 0 then begin ShowMessage('No tile selected.'); exit; end;
+  MazePathTile:=CTile;
+  MazePathSet:=true;
+  ShowMessage('Path tile set to tile ' + IntToStr(CTile.ImageIndex) + '.');
+end;
+
+procedure TMapEdit.MazeSetSolutionTileClick(Sender: TObject);
+begin
+  if CTile.ImageIndex < 0 then begin ShowMessage('No tile selected.'); exit; end;
+  MazeSolutionTile:=CTile;
+  MazeSolutionSet:=true;
+  ShowMessage('Solution tile set to tile ' + IntToStr(CTile.ImageIndex) + '.');
+end;
+
+procedure TMapEdit.MazeSetStartClick(Sender: TObject);
+var
+  ca : MapClipAreaRec;
+begin
+  if MapCoreBase.GetMapClipStatus(CurrentMap) = 0 then
+  begin
+    ShowMessage('Please use the Select tool to mark the start area first.');
+    exit;
+  end;
+  MapCoreBase.GetMapClipAreaCoords(CurrentMap, ca);
+  MazeStartX:=ca.x;
+  MazeStartY:=ca.y;
+  MazeStartSet:=true;
+  ShowMessage('Start area set at tile (' + IntToStr(ca.x) + ',' + IntToStr(ca.y) + ').');
+end;
+
+procedure TMapEdit.MazeSetEndClick(Sender: TObject);
+var
+  ca : MapClipAreaRec;
+begin
+  if MapCoreBase.GetMapClipStatus(CurrentMap) = 0 then
+  begin
+    ShowMessage('Please use the Select tool to mark the end area first.');
+    exit;
+  end;
+  MapCoreBase.GetMapClipAreaCoords(CurrentMap, ca);
+  MazeEndX:=ca.x;
+  MazeEndY:=ca.y;
+  MazeEndSet:=true;
+  ShowMessage('End area set at tile (' + IntToStr(ca.x) + ',' + IntToStr(ca.y) + ').');
+end;
+
+procedure TMapEdit.MazeGenerateClick(Sender: TObject);
+var
+  ca : MapClipAreaRec;
+  mx, my, mw, mh : integer;
+  difficulty : integer;
+  useClip : boolean;
+  //grid values: 0=wall, 1=path, 2=solution path (protected)
+  grid : array of array of byte;
+  i, j : integer;
+  cx, cy : integer;
+  runlen, d : integer;
+  openChance : integer;
+begin
+  difficulty:=(Sender as TMenuItem).Tag;  //0=easy, 1=medium, 2=hard
+
+  //verify tiles exist
+  if not TileExists(MazeWallTile) then
+  begin
+    //reset to tile 0
+    MazeWallTile.ImageIndex:=0;
+    if ImageThumbBase.GetCount > 0 then
+      MazeWallTile.ImageUID:=ImageThumbBase.GetUID(0)
+    else
+    begin
+      ShowMessage('No tiles available. Please create at least 2 tiles first.');
+      exit;
+    end;
+  end;
+
+  if not MazePathSet then
+  begin
+    ShowMessage('Please set a path tile first using Maze > Set Current Tile as Path Tile.');
+    exit;
+  end;
+
+  if not TileExists(MazePathTile) then
+  begin
+    ShowMessage('The path tile has been deleted. Please set a new path tile.');
+    MazePathSet:=false;
+    exit;
+  end;
+
+  //determine area
+  useClip:=(MapCoreBase.GetMapClipStatus(CurrentMap) = 1);
+  if useClip then
+  begin
+    MapCoreBase.GetMapClipAreaCoords(CurrentMap, ca);
+    mx:=ca.x;
+    my:=ca.y;
+    mw:=ca.x2 - ca.x + 1;
+    mh:=ca.y2 - ca.y + 1;
+  end
+  else
+  begin
+    mx:=0;
+    my:=0;
+    mw:=MapCoreBase.GetMapWidth(CurrentMap);
+    mh:=MapCoreBase.GetMapHeight(CurrentMap);
+  end;
+
+  if (mw < 5) or (mh < 5) then
+  begin
+    ShowMessage('The area is too small to generate a maze. Minimum size is 5x5 tiles.' + LineEnding +
+                'Current area: ' + IntToStr(mw) + 'x' + IntToStr(mh) + '.' + LineEnding +
+                'Use the Select tool for a larger area, or resize the map.');
+    exit;
+  end;
+
+  Randomize;
+
+  //=== step 1: fill interior with walls, then explicitly draw the
+  //four exterior walls around the map area ===
+  SetLength(grid, mw, mh);
+  for i:=0 to mw-1 do
+    for j:=0 to mh-1 do
+      grid[i][j]:=0;
+
+  //top wall: top-left to top-right
+  for i:=0 to mw-1 do grid[i][0]:=0;
+  //left wall: top-left to bottom-left
+  for j:=0 to mh-1 do grid[0][j]:=0;
+  //bottom wall: bottom-left to bottom-right
+  for i:=0 to mw-1 do grid[i][mh-1]:=0;
+  //right wall: bottom-right to top-right
+  for j:=0 to mh-1 do grid[mw-1][j]:=0;
+
+  //=== step 2: carve a winding solution path from top-left to
+  //bottom-right of the interior. movement is right/down in random-length
+  //runs with occasional sidesteps, so it zigzags but always terminates ===
+  cx:=1;
+  cy:=1;
+  grid[cx][cy]:=2;
+
+  while (cx < mw-2) or (cy < mh-2) do
+  begin
+    //pick a direction: prefer whichever axis has more distance left,
+    //with randomness so the path wanders
+    if cx >= mw-2 then
+      d:=1                          //must go down
+    else if cy >= mh-2 then
+      d:=0                          //must go right
+    else if Random(2) = 0 then
+      d:=0
+    else
+      d:=1;
+
+    //random run length 1..3 keeps the path from being a straight staircase
+    runlen:=Random(3) + 1;
+
+    while runlen > 0 do
+    begin
+      if (d = 0) and (cx < mw-2) then inc(cx)
+      else if (d = 1) and (cy < mh-2) then inc(cy)
+      else break;
+      grid[cx][cy]:=2;
+      dec(runlen);
+    end;
+
+    //occasional sidestep (detour) perpendicular to the run - makes the
+    //path more interesting without risk of trapping itself
+    if Random(4) = 0 then
+    begin
+      if (d = 0) and (cy < mh-2) then
+      begin
+        inc(cy);
+        grid[cx][cy]:=2;
+      end
+      else if (d = 1) and (cx < mw-2) then
+      begin
+        inc(cx);
+        grid[cx][cy]:=2;
+      end;
+    end;
+  end;
+
+  //=== step 3: fill the remaining interior with random paths/walls
+  //without ever touching the solution cells or the border ===
+  case difficulty of
+    0: openChance:=45;   //easy   - more open space, easier to navigate
+    1: openChance:=35;   //medium
+  else
+    openChance:=25;      //hard   - tight corridors, more dead ends
+  end;
+
+  for i:=1 to mw-2 do
+  begin
+    for j:=1 to mh-2 do
+    begin
+      if grid[i][j] = 0 then
+      begin
+        if Random(100) < openChance then
+          grid[i][j]:=1;
+      end;
+    end;
+  end;
+
+  //auto-place start/end only if the user has not set them via
+  //Maze > Set Start Area / Set End Area - user choices are remembered
+  //across generations until changed
+  if not MazeStartSet then
+  begin
+    MazeStartX:=mx + 1;
+    MazeStartY:=my + 1;
+    MazeStartSet:=true;
+  end;
+  if not MazeEndSet then
+  begin
+    MazeEndX:=mx + mw - 2;
+    MazeEndY:=my + mh - 2;
+    MazeEndSet:=true;
+  end;
+
+  //clamp start/end into the interior of the current area and make sure
+  //both cells are open, connected to the solution corridor via the fill
+  i:=MazeStartX - mx;
+  j:=MazeStartY - my;
+  if i < 1 then i:=1;
+  if i > mw-2 then i:=mw-2;
+  if j < 1 then j:=1;
+  if j > mh-2 then j:=mh-2;
+  MazeStartX:=mx + i;
+  MazeStartY:=my + j;
+  grid[i][j]:=2;
+  //carve an L-shaped connector to the corridor start at (1,1) so a
+  //user-chosen start is always connected to the solution path
+  cx:=i;
+  while cx > 1 do begin dec(cx); grid[cx][j]:=2; end;
+  cy:=j;
+  while cy > 1 do begin dec(cy); grid[1][cy]:=2; end;
+  //punch an entrance in the nearest exterior wall (left or top)
+  if i <= j then grid[0][j]:=1 else grid[i][0]:=1;
+
+  i:=MazeEndX - mx;
+  j:=MazeEndY - my;
+  if i < 1 then i:=1;
+  if i > mw-2 then i:=mw-2;
+  if j < 1 then j:=1;
+  if j > mh-2 then j:=mh-2;
+  MazeEndX:=mx + i;
+  MazeEndY:=my + j;
+  grid[i][j]:=2;
+  //carve an L-shaped connector to the corridor end at (mw-2,mh-2)
+  cx:=i;
+  while cx < mw-2 do begin inc(cx); grid[cx][j]:=2; end;
+  cy:=j;
+  while cy < mh-2 do begin inc(cy); grid[mw-2][cy]:=2; end;
+  //punch an exit in the nearest exterior wall (right or bottom)
+  if (mw-2-i) <= (mh-2-j) then grid[mw-1][j]:=1 else grid[i][mh-1]:=1;
+
+  //copy to undo buffer before modifying map
+  MapCoreBase.CopyToUndo(CurrentMap);
+
+  //write grid to map: 0=wall, 1 or 2=path
+  for i:=0 to mw-1 do
+  begin
+    for j:=0 to mh-1 do
+    begin
+      if grid[i][j] = 0 then
+        MapCoreBase.SetMapTile(CurrentMap, mx+i, my+j, MazeWallTile)
+      else
+        MapCoreBase.SetMapTile(CurrentMap, mx+i, my+j, MazePathTile);
+    end;
+  end;
+
+  SetLength(grid, 0);
+
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap, 4);
+  UpdateMapListView;
+end;
+
+procedure TMapEdit.MazeSolveClick(Sender: TObject);
+var
+  ca : MapClipAreaRec;
+  mx, my, mw, mh : integer;
+  useClip : boolean;
+  sx, sy, ex, ey : integer;
+  //BFS
+  queue : array of TMazePos;
+    qHead, qTail : integer;
+    prev : array of array of TMazePos;
+    vis  : array of array of boolean;
+    T : TileRec;
+    i, j, nx, ny, d : integer;
+    found : boolean;
+    dx : array[0..3] of integer;
+    dy : array[0..3] of integer;
+begin
+  if not MazeSolutionSet then
+  begin
+    ShowMessage('Please set a solution tile first using Maze > Set Current Tile as Solution Tile.');
+    exit;
+  end;
+  if not TileExists(MazeSolutionTile) then
+  begin
+    ShowMessage('The solution tile has been deleted. Please set a new solution tile.');
+    MazeSolutionSet:=false;
+    exit;
+  end;
+  if not MazeStartSet then
+  begin
+    ShowMessage('Please set the start area first using Maze > Set Start Area.');
+    exit;
+  end;
+  if not MazeEndSet then
+  begin
+    ShowMessage('Please set the end area first using Maze > Set End Area.');
+    exit;
+  end;
+
+  //determine area
+  useClip:=(MapCoreBase.GetMapClipStatus(CurrentMap) = 1);
+  if useClip then
+  begin
+    MapCoreBase.GetMapClipAreaCoords(CurrentMap, ca);
+    mx:=ca.x;
+    my:=ca.y;
+    mw:=ca.x2 - ca.x + 1;
+    mh:=ca.y2 - ca.y + 1;
+  end
+  else
+  begin
+    mx:=0;
+    my:=0;
+    mw:=MapCoreBase.GetMapWidth(CurrentMap);
+    mh:=MapCoreBase.GetMapHeight(CurrentMap);
+  end;
+
+  sx:=MazeStartX - mx;
+  sy:=MazeStartY - my;
+  ex:=MazeEndX - mx;
+  ey:=MazeEndY - my;
+
+  if (sx < 0) or (sx >= mw) or (sy < 0) or (sy >= mh) or
+     (ex < 0) or (ex >= mw) or (ey < 0) or (ey >= mh) then
+  begin
+    ShowMessage('Start or end position is outside the current map/selection area.');
+    exit;
+  end;
+
+  //BFS from start to end - path = any tile that is NOT the wall tile
+  dx[0]:=0;  dy[0]:=-1;
+  dx[1]:=1;  dy[1]:=0;
+  dx[2]:=0;  dy[2]:=1;
+  dx[3]:=-1; dy[3]:=0;
+
+  SetLength(vis, mw, mh);
+  SetLength(prev, mw, mh);
+  for i:=0 to mw-1 do
+    for j:=0 to mh-1 do
+    begin
+      vis[i][j]:=false;
+      prev[i][j].x:=-1;
+      prev[i][j].y:=-1;
+    end;
+
+  SetLength(queue, mw * mh);
+  qHead:=0;
+  qTail:=0;
+
+  vis[sx][sy]:=true;
+  queue[qTail].x:=sx;
+  queue[qTail].y:=sy;
+  inc(qTail);
+  found:=false;
+
+  while qHead < qTail do
+  begin
+    i:=queue[qHead].x;
+    j:=queue[qHead].y;
+    inc(qHead);
+
+    if (i = ex) and (j = ey) then
+    begin
+      found:=true;
+      break;
+    end;
+
+    for d:=0 to 3 do
+    begin
+      nx:=i + dx[d];
+      ny:=j + dy[d];
+      if (nx >= 0) and (nx < mw) and (ny >= 0) and (ny < mh) then
+      begin
+        if not vis[nx][ny] then
+        begin
+          MapCoreBase.GetMapTile(CurrentMap, mx+nx, my+ny, T);
+          //passable = any tile that is not the wall tile
+          if T.ImageIndex <> MazeWallTile.ImageIndex then
+          begin
+            vis[nx][ny]:=true;
+            prev[nx][ny].x:=i;
+            prev[nx][ny].y:=j;
+            queue[qTail].x:=nx;
+            queue[qTail].y:=ny;
+            inc(qTail);
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  if not found then
+  begin
+    ShowMessage('This maze is not solvable. There is no path from start to end.');
+    SetLength(vis, 0);
+    SetLength(prev, 0);
+    SetLength(queue, 0);
+    exit;
+  end;
+
+  //trace back from end to start and draw solution tiles
+  i:=ex;
+  j:=ey;
+  while not ((i = sx) and (j = sy)) do
+  begin
+    MapCoreBase.SetMapTile(CurrentMap, mx+i, my+j, MazeSolutionTile);
+    nx:=prev[i][j].x;
+    ny:=prev[i][j].y;
+    i:=nx;
+    j:=ny;
+  end;
+  MapCoreBase.SetMapTile(CurrentMap, mx+sx, my+sy, MazeSolutionTile);
+
+  SetLength(vis, 0);
+  SetLength(prev, 0);
+  SetLength(queue, 0);
+
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap, 4);
+  UpdateMapListView;
+end;
 
 end.
 

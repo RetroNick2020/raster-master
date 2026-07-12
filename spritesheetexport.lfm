@@ -7,6 +7,7 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
   ClientHeight = 703
   ClientWidth = 1233
   OnActivate = FormActivate
+  Menu = MainMenu1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poOwnerFormCenter
@@ -34,10 +35,9 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 0
-    Height = 525
+    Height = 502
     Top = 178
     Width = 1233
     HorzScrollBar.Page = 105
@@ -46,7 +46,8 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     VertScrollBar.Tracking = True
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderStyle = bsNone
-    ClientHeight = 525
+    OnMouseWheel = ScrollBox1MouseWheel
+    ClientHeight = 502
     ClientWidth = 1233
     TabOrder = 1
     object SpriteSheetPaintBox: TPaintBox
@@ -170,6 +171,23 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
       TabOrder = 7
       Value = 5
     end
+    object lblPadding: TLabel
+      Left = 656
+      Height = 15
+      Top = 55
+      Width = 41
+      Caption = 'Padding'
+    end
+    object SpinPadding: TSpinEdit
+      Left = 728
+      Height = 23
+      Top = 52
+      Width = 48
+      MaxValue = 9
+      MinValue = 0
+      TabOrder = 9
+      Value = 0
+    end
     object Apply: TButton
       Left = 880
       Height = 58
@@ -229,13 +247,20 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
         'TMT Pascal'
         'Amiga Pascal'
         'Quick Pascal'
-        'gcc'
+        'gcc \ Emscripten'
         'Open Watcom C'
         'Turbo C'
         'Quick C'
         'Amiga C'
         'JSON'
         'BM Font'
+        'GWBASIC'
+        'Turbo\Power Basic'
+        'AmigaBasic'
+        'FreeBASIC'
+        'FreeBASIC - QB Mode'
+        'Amiga QuickBasic AQB'
+        'JavaScript'
       )
       Style = csDropDownList
       TabOrder = 13
@@ -381,6 +406,86 @@ object SpriteSheetExportForm: TSpriteSheetExportForm
     Anchors = [akRight]
     BorderSpacing.Right = 16
     TabOrder = 3
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 680
+    Width = 1233
+    Align = alBottom
+    Panels = <
+      item
+        Text = 'Sprites: 0'
+        Width = 120
+      end
+      item
+        Text = 'Sheet: 320x200'
+        Width = 160
+      end
+      item
+        Text = 'Cell: 32x32'
+        Width = 120
+      end
+      item
+        Text = 'Zoom: 1x'
+        Width = 100
+      end
+      item
+        Text = ''
+        Width = 300
+      end>
+    SimplePanel = False
+  end
+  object MainMenu1: TMainMenu
+    Left = 1050
+    Top = 186
+    object MenuFile: TMenuItem
+      Caption = 'File'
+      object MnuApply: TMenuItem
+        Caption = 'Apply'
+        OnClick = ApplyClick
+      end
+      object MnuSep1: TMenuItem
+        Caption = '-'
+      end
+      object MnuExportImage: TMenuItem
+        Caption = 'Export Sheet to File...'
+        OnClick = ExportToFileClick
+      end
+      object MnuExportClipboard: TMenuItem
+        Caption = 'Export Sheet to Clipboard'
+        OnClick = ExportToClipBoardClick
+      end
+      object MnuSep2: TMenuItem
+        Caption = '-'
+      end
+      object MnuExportDescFile: TMenuItem
+        Caption = 'Export Description to File...'
+        OnClick = DescExportToFileClick
+      end
+      object MnuExportDescClip: TMenuItem
+        Caption = 'Export Description to Clipboard'
+        OnClick = DescExportToFileClick
+      end
+      object MnuSep3: TMenuItem
+        Caption = '-'
+      end
+      object MnuClose: TMenuItem
+        Caption = 'Close'
+        OnClick = MnuCloseClick
+      end
+    end
+    object MenuView: TMenuItem
+      Caption = 'View'
+      object MnuZoomIn: TMenuItem
+        Caption = 'Zoom In'
+        OnClick = MnuZoomInClick
+      end
+      object MnuZoomOut: TMenuItem
+        Caption = 'Zoom Out'
+        OnClick = MnuZoomOutClick
+      end
+    end
   end
   object SaveDialog1: TSaveDialog
     Title = 'Export'

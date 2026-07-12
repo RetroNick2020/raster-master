@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 92
+  Left = 42
   Height = 860
-  Top = 375
+  Top = 120
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -562,7 +562,6 @@ object MapEdit: TMapEdit
       HorzScrollBar.Increment = 10
       HorzScrollBar.Page = 105
       HorzScrollBar.Tracking = True
-      OnMouseWheel = MapScrollBoxMouseWheel
       VertScrollBar.Increment = 10
       VertScrollBar.Page = 105
       VertScrollBar.Tracking = True
@@ -572,6 +571,7 @@ object MapEdit: TMapEdit
       ClientWidth = 860
       ParentFont = False
       TabOrder = 0
+      OnMouseWheel = MapScrollBoxMouseWheel
       object MapPaintBox: TPaintBox
         AnchorSideLeft.Control = MapScrollBox
         AnchorSideTop.Control = MapScrollBox
@@ -1174,6 +1174,56 @@ object MapEdit: TMapEdit
         Caption = 'Show Hit Boxes'
         Checked = True
         OnClick = HitBoxesToggleClick
+      end
+    end
+    object MazeMenu: TMenuItem
+      Caption = 'Maze'
+      object MnuMazeEasy: TMenuItem
+        Caption = 'Generate Easy Maze'
+        OnClick = MazeGenerateClick
+      end
+      object MnuMazeMedium: TMenuItem
+        Tag = 1
+        Caption = 'Generate Medium Maze'
+        OnClick = MazeGenerateClick
+      end
+      object MnuMazeHard: TMenuItem
+        Tag = 2
+        Caption = 'Generate Hard Maze'
+        OnClick = MazeGenerateClick
+      end
+      object MnuMazeSep1: TMenuItem
+        Caption = '-'
+      end
+      object MnuMazeSetWallTile: TMenuItem
+        Caption = 'Set Current Tile as Wall Tile'
+        OnClick = MazeSetWallTileClick
+      end
+      object MnuMazeSetPathTile: TMenuItem
+        Caption = 'Set Current Tile as Path Tile'
+        OnClick = MazeSetPathTileClick
+      end
+      object MnuMazeSetSolutionTile: TMenuItem
+        Caption = 'Set Current Tile as Solution Tile'
+        OnClick = MazeSetSolutionTileClick
+      end
+      object MnuMazeSep2: TMenuItem
+        Caption = '-'
+      end
+      object MnuMazeSetStart: TMenuItem
+        Caption = 'Set Start Area (Use Select Tool)'
+        OnClick = MazeSetStartClick
+      end
+      object MnuMazeSetEnd: TMenuItem
+        Caption = 'Set End Area (Use Select Tool)'
+        OnClick = MazeSetEndClick
+      end
+      object MnuMazeSep3: TMenuItem
+        Caption = '-'
+      end
+      object MnuMazeSolve: TMenuItem
+        Caption = 'Draw Solution Path'
+        OnClick = MazeSolveClick
       end
     end
   end

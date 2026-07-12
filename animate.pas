@@ -174,6 +174,7 @@ type
     procedure UpdateStatusBar;
   public
     AnimFrameCounter : integer;
+    FAnimAccumMs : integer;   //ms accumulator - decouples frame advance (speed) from display rate (fps)
     FPSDelay         : integer;
 
     { Frame grid state - palette editor style }
@@ -786,15 +787,37 @@ end;
 procedure TAnimationForm.Timer1Timer(Sender: TObject);
 var
    ImageIndex : integer;
+   FramePeriod : integer;
 begin
-  inc(AnimFrameCounter);
-  if AnimFrameCounter > AnimateBase.GetFrameCount then
+  //the timer ticks at the FPS rate (display refresh only).
+  //the animation frame advances on a time accumulator driven by the
+  //Speed gauge, so FPS controls smoothness and Speed controls speed.
+  inc(FAnimAccumMs, Timer1.Interval);
+  FramePeriod:=1000 div FMovementSpeed;   //speed 1 = 1 frame/sec ... speed 10 = 10 frames/sec
+
+  //advance as many frames as the elapsed time calls for - a while loop
+  //so a low FPS (long tick) still plays the animation at the same speed
+  //by stepping several frames in one tick
+  while FAnimAccumMs >= FramePeriod do
   begin
+    dec(FAnimAccumMs, FramePeriod);
+
+    inc(AnimFrameCounter);
+    if AnimFrameCounter > AnimateBase.GetFrameCount then
       AnimFrameCounter:=1;
+
+    //movement advances with the animation, not with the display rate
+    inc(FSimTick);
+    inc(FSimMovePos, FMovementSpeed);
   end;
 
   if  AnimateBase.GetFrameCount > 0 then
   begin
+    //clamp - frames may have been deleted while the timer was running
+    //and the reset above only runs when a frame advance happens
+    if (AnimFrameCounter < 1) or (AnimFrameCounter > AnimateBase.GetFrameCount) then
+      AnimFrameCounter:=1;
+
     ImageIndex:=AnimateBase.GetImageIndex(AnimFrameCounter-1);
 
     // Panel1 preview - original working draw call
@@ -802,9 +825,6 @@ begin
     Panel1.Canvas.FillRect(Rect(10,10,138,138));
     DrawSimSprite(Panel1.Canvas, 10, 10, ImageIndex);
 
-    // movement simulation
-    inc(FSimTick);
-    inc(FSimMovePos, FMovementSpeed);
     UpdateSimulation;
   end;
   //update frame counter display during playback

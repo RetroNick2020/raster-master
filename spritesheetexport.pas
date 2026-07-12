@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, ComCtrls, Clipbrd, rmcodegen, rwxgf, rmclipboard, rmthumb, rmconfig,
+  Spin, ComCtrls, Menus, Clipbrd, rmcodegen, rwxgf, rmclipboard, rmthumb, rmconfig,
   rwpng, LazFileUtils, SpinEx, bmfontgen;
 
 type
@@ -36,6 +36,8 @@ type
     Panel1: TPanel;
     ScrollBox1: TScrollBox;
     ItemsPerRow: TSpinEdit;
+    lblPadding: TLabel;
+    SpinPadding: TSpinEdit;
     Splitter1: TSplitter;
     DescriptionFile: TComboBox;
     StaticText1: TStaticText;
@@ -48,6 +50,21 @@ type
     StaticText8: TStaticText;
     StaticText9: TStaticText;
     ZoomTrackBar: TTrackBar;
+    StatusBar1: TStatusBar;
+    MainMenu1: TMainMenu;
+    MenuFile: TMenuItem;
+    MnuApply: TMenuItem;
+    MnuSep1: TMenuItem;
+    MnuExportImage: TMenuItem;
+    MnuExportClipboard: TMenuItem;
+    MnuSep2: TMenuItem;
+    MnuExportDescFile: TMenuItem;
+    MnuExportDescClip: TMenuItem;
+    MnuSep3: TMenuItem;
+    MnuClose: TMenuItem;
+    MenuView: TMenuItem;
+    MnuZoomIn: TMenuItem;
+    MnuZoomOut: TMenuItem;
     procedure ApplyClick(Sender: TObject);
     procedure DescExportToFileClick(Sender: TObject);
     procedure DirectionChange(Sender: TObject);
@@ -59,6 +76,11 @@ type
     procedure SpriteSheetChange(Sender: TObject);
     procedure SpriteSheetPaintBoxPaint(Sender: TObject);
     procedure ZoomTrackBarChange(Sender: TObject);
+    procedure ScrollBox1MouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+    procedure MnuCloseClick(Sender: TObject);
+    procedure MnuZoomInClick(Sender: TObject);
+    procedure MnuZoomOutClick(Sender: TObject);
   private
 
   public
@@ -75,6 +97,8 @@ type
      procedure UpdateSpriteSheet;
      procedure UpdatePaintBoxSize;
      procedure UpdateSpriteSheetSize;
+     procedure ApplyZoom(newZoom : integer; useAnchor : boolean; anchorX : integer = 0; anchorY : integer = 0);
+     procedure UpdateStatusBar;
 
      procedure ImportSprites;
      procedure ExportToBMFontFiles(SaveToClipBoard : boolean);
@@ -92,6 +116,8 @@ var
 
 implementation
 
+procedure CalcHorizPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer); forward;
+procedure CalcVertPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer); forward;
 
 {$R *.lfm}
 
@@ -143,6 +169,7 @@ begin
 
    SpriteSheetPaintBox.Width:=SpriteSheetWidth*ZoomSize;
    SpriteSheetPaintBox.Height:=SpriteSheetHeight*ZoomSize;
+   UpdateStatusBar;
    SpriteSheetPaintBox.Invalidate;
 end;
 
@@ -163,6 +190,7 @@ begin
   begin
     ItemsPerRow.Value:=SpriteSheetHeight div SpriteHeight;
   end;
+  UpdateStatusBar;
 end;
 
 procedure TSpriteSheetExportForm.ApplyClick(Sender: TObject);
@@ -174,6 +202,7 @@ begin
    SpriteSheetBitMap.Canvas.FillRect(0,0,SpriteSheetWidth,SpriteSheetHeight);
    UpdatePaintBoxSize;
    ImportSprites;
+   UpdateStatusBar;
    SpriteSheetPaintBox.Invalidate;
 end;
 
@@ -193,17 +222,27 @@ begin
                 10:menutoLan:=QCLan;
                 11:menutoLan:=ACLan;
                 12:menutoLan:=JSonLan;
-
-
+                //13 = BM Font (handled separately)
+                14:menutoLan:=GWLan;
+                15:menutoLan:=PBLan;
+                16:menutoLan:=ABLan;
+                17:menutoLan:=FBLan;
+                18:menutoLan:=FBinQBModeLan;
+                19:menutoLan:=AQBLan;
+                20:menutoLan:=JSLan;
   end;
 end;
 
 function LanToFileFilter(Lan : integer) : string;
 begin
-  case Lan of QB64Lan,QBLan:LanToFileFilter:='BAS|*.bas|All Files|*.*';
-              FPLan,TPLan,TMTLan,APLan:LanToFileFilter:='PAS|*.pas|All Files|*.*';
-              QCLan,gccLan,OWLan,TCLan,ACLan:LanToFileFilter:='C|*.c|All Files|*.*';
+  case Lan of QB64Lan,QBLan,GWLan,PBLan,ABLan,FBLan,FBinQBModeLan,AQBLan:
+                LanToFileFilter:='BAS|*.bas|All Files|*.*';
+              FPLan,TPLan,TMTLan,APLan,QPLan:
+                LanToFileFilter:='PAS|*.pas|All Files|*.*';
+              QCLan,gccLan,OWLan,TCLan,ACLan:
+                LanToFileFilter:='C|*.c|All Files|*.*';
               JSonLan:LanToFileFilter:='JSON|*.json|All Files|*.*';
+              JSLan:LanToFileFilter:='JS|*.js|All Files|*.*';
   end;
 end;
 
@@ -212,18 +251,29 @@ var
    headstr : string;
 begin
   headstr:='Sprite Sheet Description Created By Raster Master';
-  case Lan of QB64Lan,QBLan:Writeln(F,#39,' ',headstr);
-              FPLan,TPLan,TMTLan,APLan:Writeln(F,'(* ',headstr,' *)');
-              QCLan,gccLan,OWLan,TCLan,ACLan:Writeln(F,'/* ',headstr,' */');
+  case Lan of QB64Lan,QBLan,PBLan,ABLan,FBLan,FBinQBModeLan,AQBLan:
+                Writeln(F,#39,' ',headstr);
+              GWLan:
+                Writeln(F,'1000 REM ',headstr);
+              FPLan,TPLan,TMTLan,APLan,QPLan:
+                Writeln(F,'(* ',headstr,' *)');
+              QCLan,gccLan,OWLan,TCLan,ACLan:
+                Writeln(F,'/* ',headstr,' */');
+              JSLan:
+                Writeln(F,'// ',headstr);
   end;
 end;
 
 procedure WriteDesc(var F : Text;lan : integer;DescName : string; swidth,sheight,x,y,x2,y2 : integer;csprite,snum : integer);
 begin
-  case Lan of QBLan,QB64Lan:begin
+  case Lan of QBLan,QB64Lan,PBLan,ABLan,FBLan,FBinQBModeLan,AQBLan:begin
                         Writeln(F,DescName,'Desc:');
                         Writeln(F,#39,' Width=',SWidth,' Height=',SHeight);
                         Writeln(F,'DATA ',x,',',y,',',x2,',',y2);
+                      end;
+              GWLan:begin
+                        Writeln(F,IntToStr(1010 + (csprite-1)*30),' REM ',DescName,' Width=',SWidth,' Height=',SHeight);
+                        Writeln(F,IntToStr(1020 + (csprite-1)*30),' DATA ',x,',',y,',',x2,',',y2);
                       end;
           APLan,QPLan,TMTLan,FPLan,TPLan:begin
                          Writeln(F,'(* ',DescName,' Width=',SWidth,' Height=',SHeight,' *)');
@@ -233,17 +283,21 @@ begin
                          Writeln(F,'/* ',DescName,' Width=',SWidth,' Height=',SHeight,' */');
                          Writeln(F,'int ',DescName,'[] = {',x,',',y,',',x2,',',y2,'};');
                                  end;
+              JSLan:begin
+                         Writeln(F,'// ',DescName,' Width=',SWidth,' Height=',SHeight);
+                         Writeln(F,'const ',DescName,'Desc = [',x,',',y,',',x2,',',y2,'];');
+                      end;
                JsonLan:begin
                          if csprite = 1 then Writeln(F,'[');
                          Writeln(F,' {');
-                         Writeln(F,'  DescName: "',DescName,'",');
-                         Writeln(F,'  Width:',SWidth,',');
-                         Writeln(F,'  Height:',SHeight,',');
-                         Writeln(F,'  x:',x,',');
-                         Writeln(F,'  y:',y,',');
-                         Writeln(F,'  x2:',x2,',');
-                         Writeln(F,'  y2:',y2);
-                         if csprite < snum then Writeln(F,'  },') else Writeln(F,'  }');
+                         Writeln(F,'  "name": "',DescName,'",');
+                         Writeln(F,'  "width":',SWidth,',');
+                         Writeln(F,'  "height":',SHeight,',');
+                         Writeln(F,'  "x":',x,',');
+                         Writeln(F,'  "y":',y,',');
+                         Writeln(F,'  "x2":',x2,',');
+                         Writeln(F,'  "y2":',y2);
+                         if csprite < snum then Writeln(F,' },') else Writeln(F,' }');
                          if csprite = snum then Writeln(F,']');
                        end;
 
@@ -522,8 +576,9 @@ procedure TSpriteSheetExportForm.DescExportToFileClick(Sender: TObject);
       SWidth:=ImageThumbBase.GetWidth(c);
       SHeight:=ImageThumbBase.GetHeight(c);
       if Direction.ItemIndex = 0 then
-        CalcHoriz(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2)
-      else CalcVirt(c+1,SWidth,SHeight,ItemsPerRow.Value,x,y,x2,y2);
+        CalcHorizPad(c+1,SWidth,SHeight,ItemsPerRow.Value,SpinPadding.Value,x,y,x2,y2)
+      else
+        CalcVertPad(c+1,SWidth,SHeight,ItemsPerRow.Value,SpinPadding.Value,x,y,x2,y2);
 
       WriteDesc(F,Lan,DescName,swidth,sheight,x,y,x2,y2,c+1,snum);
     end;
@@ -552,6 +607,7 @@ begin
   begin
     ItemsPerRow.Value:=SpriteSheetHeight div SpriteHeight;
   end;
+  UpdateStatusBar;
 end;
 
 procedure TSpriteSheetExportForm.ExportToClipBoardClick(Sender: TObject);
@@ -617,6 +673,7 @@ end;
 procedure TSpriteSheetExportForm.FormActivate(Sender: TObject);
 begin
   UpdateSpriteSheet;
+  UpdateStatusBar;
 end;
 
 procedure TSpriteSheetExportForm.SpriteSheetPaintBoxPaint(Sender: TObject);
@@ -642,10 +699,84 @@ end;
 
 procedure TSpriteSheetExportForm.ZoomTrackBarChange(Sender: TObject);
 begin
-  ZoomSize:=ZoomTrackBar.Position;
+  ApplyZoom(ZoomTrackBar.Position, False);
+end;
+
+procedure TSpriteSheetExportForm.ApplyZoom(newZoom : integer; useAnchor : boolean; anchorX : integer; anchorY : integer);
+var
+  oldZoom : integer;
+  pixX, pixY : double;
+  newScrollX, newScrollY : integer;
+begin
+  if newZoom < ZoomTrackBar.Min then newZoom:=ZoomTrackBar.Min;
+  if newZoom > ZoomTrackBar.Max then newZoom:=ZoomTrackBar.Max;
+
+  oldZoom:=ZoomSize;
+  pixX:=0; pixY:=0;
+  if useAnchor and (oldZoom > 0) then
+  begin
+    pixX:=(ScrollBox1.HorzScrollBar.Position + anchorX) / oldZoom;
+    pixY:=(ScrollBox1.VertScrollBar.Position + anchorY) / oldZoom;
+  end;
+
+  ZoomTrackBar.OnChange:=nil;
+  ZoomTrackBar.Position:=newZoom;
+  ZoomTrackBar.OnChange:=@ZoomTrackBarChange;
+
+  ZoomSize:=newZoom;
   SpriteSheetPaintBox.Width:=SpriteSheetWidth*ZoomSize;
   SpriteSheetPaintBox.Height:=SpriteSheetHeight*ZoomSize;
+
+  if useAnchor then
+  begin
+    newScrollX:=Round(pixX * ZoomSize) - anchorX;
+    newScrollY:=Round(pixY * ZoomSize) - anchorY;
+    if newScrollX < 0 then newScrollX:=0;
+    if newScrollY < 0 then newScrollY:=0;
+    ScrollBox1.HorzScrollBar.Position:=newScrollX;
+    ScrollBox1.VertScrollBar.Position:=newScrollY;
+  end;
+
+  UpdateStatusBar;
   SpriteSheetPaintBox.Invalidate;
+end;
+
+procedure TSpriteSheetExportForm.ScrollBox1MouseWheel(Sender: TObject;
+  Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+var
+  pt : TPoint;
+begin
+  pt:=ScrollBox1.ScreenToClient(MousePos);
+  if WheelDelta > 0 then
+    ApplyZoom(ZoomSize + 1, True, pt.X, pt.Y)
+  else
+    ApplyZoom(ZoomSize - 1, True, pt.X, pt.Y);
+  Handled:=True;
+end;
+
+procedure TSpriteSheetExportForm.MnuCloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TSpriteSheetExportForm.MnuZoomInClick(Sender: TObject);
+begin
+  ApplyZoom(ZoomSize + 1, False);
+end;
+
+procedure TSpriteSheetExportForm.MnuZoomOutClick(Sender: TObject);
+begin
+  ApplyZoom(ZoomSize - 1, False);
+end;
+
+procedure TSpriteSheetExportForm.UpdateStatusBar;
+begin
+  if StatusBar1.Panels.Count < 5 then exit;
+  StatusBar1.Panels[0].Text:='Sprites: '+IntToStr(ImageThumbBase.GetCount);
+  StatusBar1.Panels[1].Text:='Sheet: '+IntToStr(SpriteSheetWidth)+'x'+IntToStr(SpriteSheetHeight);
+  StatusBar1.Panels[2].Text:='Cell: '+IntToStr(SpriteWidth)+'x'+IntToStr(SpriteHeight);
+  StatusBar1.Panels[3].Text:='Zoom: '+IntToStr(ZoomSize)+'x';
+  StatusBar1.Panels[4].Text:='Direction: '+Direction.Text+'  Items/Row: '+IntToStr(ItemsPerRow.Value)+'  Padding: '+IntToStr(SpinPadding.Value)+'px';
 end;
 
 procedure TSpriteSheetExportForm.UpdateSpriteValues;
@@ -717,16 +848,47 @@ begin
 
 end;
 
+//calculates sprite position for horizontal-first layout with padding
+//spriteNum is 1-based, ipr = items per row, pad = pixels between sprites
+procedure CalcHorizPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer);
+var
+  idx, col, row : integer;
+begin
+  idx:=spriteNum - 1;
+  col:=idx mod ipr;
+  row:=idx div ipr;
+  x:=col * (sWidth + pad);
+  y:=row * (sHeight + pad);
+  x2:=x + sWidth - 1;
+  y2:=y + sHeight - 1;
+end;
+
+//calculates sprite position for vertical-first layout with padding
+procedure CalcVertPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer);
+var
+  idx, col, row : integer;
+begin
+  idx:=spriteNum - 1;
+  row:=idx mod ipr;
+  col:=idx div ipr;
+  x:=col * (sWidth + pad);
+  y:=row * (sHeight + pad);
+  x2:=x + sWidth - 1;
+  y2:=y + sHeight - 1;
+end;
+
 procedure TSpriteSheetExportForm.ImportSprites;
 var
-c,i,j : integer;
-cc: TColor;
-ipr : integer;
-xstart,ystart : integer;
+  c,i,j : integer;
+  cc: TColor;
+  ipr : integer;
+  xstart,ystart : integer;
+  pad : integer;
 begin
   ipr:=0;
   xstart:=0;
   ystart:=0;
+  pad:=SpinPadding.Value;
   ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
   for c:=0 to ImageThumbBase.GetCount-1 do
   begin
@@ -745,17 +907,20 @@ begin
       if Direction.ItemIndex = 0 then
       begin
         xstart:=0;
-        inc(ystart,SpriteHeight);
+        inc(ystart,SpriteHeight+pad);
       end
       else
       begin
         ystart:=0;
-        inc(xstart,SpriteWidth);
+        inc(xstart,SpriteWidth+pad);
       end;
     end
     else
     begin
-      if Direction.ItemIndex = 0 then inc(xstart,Spritewidth) else inc(ystart,SpriteHeight);
+      if Direction.ItemIndex = 0 then
+        inc(xstart,SpriteWidth+pad)
+      else
+        inc(ystart,SpriteHeight+pad);
     end;
   end;
 end;

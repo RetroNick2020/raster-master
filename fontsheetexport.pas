@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, ComCtrls, Clipbrd, rwxgf, rmclipboard, rmthumb, rmconfig,
+  Spin, ComCtrls, Clipbrd, Menus, ColorBox, rwxgf, rmcodegen, rmclipboard, rmthumb, rmconfig,
   rwpng, LazFileUtils, SpinEx, bmfontgen;
 
 type
@@ -57,6 +57,36 @@ type
     StaticText8: TStaticText;
     StaticText9: TStaticText;
     ZoomTrackBar: TTrackBar;
+    StatusBar1: TStatusBar;
+    MainMenu1: TMainMenu;
+    MenuFile: TMenuItem;
+    MnuApply: TMenuItem;
+    MnuSep1: TMenuItem;
+    MnuExportImage: TMenuItem;
+    MnuExportClipboard: TMenuItem;
+    MnuSep2: TMenuItem;
+    MnuExportDescFile: TMenuItem;
+    MnuExportDescClip: TMenuItem;
+    MnuSep3: TMenuItem;
+    MnuExportBMFont: TMenuItem;
+    MnuSep4: TMenuItem;
+    MnuSelectFont: TMenuItem;
+    MnuSep5: TMenuItem;
+    MnuClose: TMenuItem;
+    MenuView: TMenuItem;
+    MnuZoomIn: TMenuItem;
+    MnuZoomOut: TMenuItem;
+    lblPadding: TLabel;
+    SpinPadding: TSpinEdit;
+    chkShadow: TCheckBox;
+    lblShadowX: TLabel;
+    SpinShadowX: TSpinEdit;
+    lblShadowY: TLabel;
+    SpinShadowY: TSpinEdit;
+    lblShadowColor: TLabel;
+    ShadowColorBox: TColorBox;
+    lblBGColor: TLabel;
+    BGColorBox: TColorBox;
     procedure ApplyClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure DescExportToFileClick(Sender: TObject);
@@ -71,6 +101,11 @@ type
     procedure FontSheetChange(Sender: TObject);
     procedure FontSheetPaintBoxPaint(Sender: TObject);
     procedure ZoomTrackBarChange(Sender: TObject);
+    procedure ScrollBox1MouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+    procedure MnuCloseClick(Sender: TObject);
+    procedure MnuZoomInClick(Sender: TObject);
+    procedure MnuZoomOutClick(Sender: TObject);
   private
 
   public
@@ -92,6 +127,8 @@ type
      procedure ImportFontCharacters;
      procedure CharToBitMap(c : integer);
      procedure ApplySettings;
+     procedure ApplyZoom(newZoom : integer; useAnchor : boolean; anchorX : integer = 0; anchorY : integer = 0);
+     procedure UpdateStatusBar;
 
      function FindBigFontWidth : integer;
      function FindBigFontHeight : integer;
@@ -109,6 +146,13 @@ var
 implementation
 
 
+procedure CalcHorizPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer); forward;
+procedure CalcVertPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer); forward;
+function menuToLan(menuid : integer) : integer; forward;
+function LanToFileFilter(Lan : integer) : string; forward;
+procedure WriteHeader(var F : Text; lan : integer); forward;
+procedure WriteDesc(var F : Text; lan : integer; DescName : string; swidth, sheight, x, y, x2, y2 : integer; csprite, snum : integer); forward;
+
 {$R *.lfm}
 
 { TSpriteSheetExportForm }
@@ -125,6 +169,7 @@ begin
    FontSheetBitMap:=TBitMap.Create;
 
    FontSheetBitMap.SetSize(FontSheetWidth,FontSheetHeight);
+   FontSheetBitMap.Canvas.Brush.Color:=clBlack;
    FontSheetBitMap.Canvas.FillRect(0,0,FontSheetWidth,FontSheetHeight);
 
    CharBitMap:=TBitMap.Create;
@@ -172,6 +217,7 @@ begin
   UpdatePaintBoxSize;
   UpdateItemsPerRow;
   ImportFontCharacters;
+  UpdateStatusBar;
   FontSheetPaintBox.Invalidate;
 end;
 
@@ -191,8 +237,77 @@ begin
 end;
 
 procedure TFontSheetExportForm.DescExportToFileClick(Sender: TObject);
+var
+  DescName : String;
+  F : Text;
+  c : integer;
+  Lan, snum, csprite : integer;
+  SWidth, SHeight, x, y, x2, y2 : integer;
+  FileName : string;
+  pad : integer;
+  ToClipboard : boolean;
 begin
+  if DescriptionFile.ItemIndex = 13 then  //BMFont
+  begin
+    ExportToBMFontFiles(Sender);
+    exit;
+  end;
 
+  Lan:=menuToLan(DescriptionFile.ItemIndex);
+  pad:=SpinPadding.Value;
+
+  //determine if this is a clipboard or file export
+  ToClipboard:=true;
+  if Sender is TButton then
+    ToClipboard:=((Sender as TButton).Name = 'DescExportToClipboard')
+  else if Sender is TMenuItem then
+    ToClipboard:=((Sender as TMenuItem).Name = 'MnuExportDescClip');
+
+  if ToClipboard then
+  begin
+    FileName:=GetTemporaryPathAndFileName;
+  end
+  else
+  begin
+    SaveDialog2.Filter := LanToFileFilter(Lan);
+    if NOT SaveDialog2.Execute then exit;
+    FileName:=SaveDialog2.FileName;
+  end;
+
+  {$I-}
+  System.Assign(F, FileName);
+  Rewrite(F);
+  {$I+}
+  if IORESULT <> 0 then exit;
+
+  WriteHeader(F, Lan);
+  snum:=SpinEndChar.Value - SpinStartChar.Value + 1;
+  SWidth:=CharWidth;
+  SHeight:=CharHeight;
+  csprite:=0;
+
+  for c:=SpinStartChar.Value to SpinEndChar.Value do
+  begin
+    inc(csprite);
+    DescName:='chr' + IntToStr(c);
+    if Direction.ItemIndex = 0 then
+      CalcHorizPad(csprite, SWidth, SHeight, ItemsPerRow.Value, pad, x, y, x2, y2)
+    else
+      CalcVertPad(csprite, SWidth, SHeight, ItemsPerRow.Value, pad, x, y, x2, y2);
+
+    WriteDesc(F, Lan, DescName, SWidth, SHeight, x, y, x2, y2, csprite, snum);
+  end;
+
+  {$I-}
+  System.close(F);
+  {$I+}
+
+  if ToClipboard then
+  begin
+    ReadFileAndCopyToClipboard(FileName);
+    EraseFile(FileName);
+    ShowMessage('Exported to Clipboard!');
+  end;
 end;
 
 
@@ -211,15 +326,27 @@ begin
                 10:menutoLan:=QCLan;
                 11:menutoLan:=ACLan;
                 12:menutoLan:=JSonLan;
+                //13 = BM Font (handled separately)
+                14:menutoLan:=GWLan;
+                15:menutoLan:=PBLan;
+                16:menutoLan:=ABLan;
+                17:menutoLan:=FBLan;
+                18:menutoLan:=FBinQBModeLan;
+                19:menutoLan:=AQBLan;
+                20:menutoLan:=JSLan;
   end;
 end;
 
 function LanToFileFilter(Lan : integer) : string;
 begin
-  case Lan of QB64Lan,QBLan:LanToFileFilter:='BAS|*.bas|All Files|*.*';
-              FPLan,TPLan,TMTLan,APLan:LanToFileFilter:='PAS|*.pas|All Files|*.*';
-              QCLan,gccLan,OWLan,TCLan,ACLan:LanToFileFilter:='C|*.c|All Files|*.*';
+  case Lan of QB64Lan,QBLan,GWLan,PBLan,ABLan,FBLan,FBinQBModeLan,AQBLan:
+                LanToFileFilter:='BAS|*.bas|All Files|*.*';
+              FPLan,TPLan,TMTLan,APLan,QPLan:
+                LanToFileFilter:='PAS|*.pas|All Files|*.*';
+              QCLan,gccLan,OWLan,TCLan,ACLan:
+                LanToFileFilter:='C|*.c|All Files|*.*';
               JSonLan:LanToFileFilter:='JSON|*.json|All Files|*.*';
+              JSLan:LanToFileFilter:='JS|*.js|All Files|*.*';
   end;
 end;
 
@@ -228,18 +355,29 @@ var
    headstr : string;
 begin
   headstr:='Sprite Sheet Description Created By Raster Master';
-  case Lan of QB64Lan,QBLan:Writeln(F,#39,' ',headstr);
-              FPLan,TPLan,TMTLan,APLan:Writeln(F,'(* ',headstr,' *)');
-              QCLan,gccLan,OWLan,TCLan,ACLan:Writeln(F,'/* ',headstr,' */');
+  case Lan of QB64Lan,QBLan,PBLan,ABLan,FBLan,FBinQBModeLan,AQBLan:
+                Writeln(F,#39,' ',headstr);
+              GWLan:
+                Writeln(F,'1000 REM ',headstr);
+              FPLan,TPLan,TMTLan,APLan,QPLan:
+                Writeln(F,'(* ',headstr,' *)');
+              QCLan,gccLan,OWLan,TCLan,ACLan:
+                Writeln(F,'/* ',headstr,' */');
+              JSLan:
+                Writeln(F,'// ',headstr);
   end;
 end;
 
 procedure WriteDesc(var F : Text;lan : integer;DescName : string; swidth,sheight,x,y,x2,y2 : integer;csprite,snum : integer);
 begin
-  case Lan of QBLan,QB64Lan:begin
+  case Lan of QBLan,QB64Lan,PBLan,ABLan,FBLan,FBinQBModeLan,AQBLan:begin
                         Writeln(F,DescName,'Desc:');
                         Writeln(F,#39,' Width=',SWidth,' Height=',SHeight);
                         Writeln(F,'DATA ',x,',',y,',',x2,',',y2);
+                      end;
+              GWLan:begin
+                        Writeln(F,IntToStr(1010 + (csprite-1)*30),' REM ',DescName,' Width=',SWidth,' Height=',SHeight);
+                        Writeln(F,IntToStr(1020 + (csprite-1)*30),' DATA ',x,',',y,',',x2,',',y2);
                       end;
           APLan,QPLan,TMTLan,FPLan,TPLan:begin
                          Writeln(F,'(* ',DescName,' Width=',SWidth,' Height=',SHeight,' *)');
@@ -249,17 +387,21 @@ begin
                          Writeln(F,'/* ',DescName,' Width=',SWidth,' Height=',SHeight,' */');
                          Writeln(F,'int ',DescName,'[] = {',x,',',y,',',x2,',',y2,'};');
                                  end;
+              JSLan:begin
+                         Writeln(F,'// ',DescName,' Width=',SWidth,' Height=',SHeight);
+                         Writeln(F,'const ',DescName,'Desc = [',x,',',y,',',x2,',',y2,'];');
+                      end;
                JsonLan:begin
                          if csprite = 1 then Writeln(F,'[');
                          Writeln(F,' {');
-                         Writeln(F,'  DescName: "',DescName,'",');
-                         Writeln(F,'  Width:',SWidth,',');
-                         Writeln(F,'  Height:',SHeight,',');
-                         Writeln(F,'  x:',x,',');
-                         Writeln(F,'  y:',y,',');
-                         Writeln(F,'  x2:',x2,',');
-                         Writeln(F,'  y2:',y2);
-                         if csprite < snum then Writeln(F,'  },') else Writeln(F,'  }');
+                         Writeln(F,'  "name": "',DescName,'",');
+                         Writeln(F,'  "width":',SWidth,',');
+                         Writeln(F,'  "height":',SHeight,',');
+                         Writeln(F,'  "x":',x,',');
+                         Writeln(F,'  "y":',y,',');
+                         Writeln(F,'  "x2":',x2,',');
+                         Writeln(F,'  "y2":',y2);
+                         if csprite < snum then Writeln(F,' },') else Writeln(F,' }');
                          if csprite = snum then Writeln(F,']');
                        end;
   end;
@@ -377,10 +519,75 @@ end;
 
 procedure TFontSheetExportForm.ZoomTrackBarChange(Sender: TObject);
 begin
-  ZoomSize:=ZoomTrackBar.Position;
+  ApplyZoom(ZoomTrackBar.Position, False);
+end;
+
+procedure TFontSheetExportForm.ApplyZoom(newZoom : integer; useAnchor : boolean; anchorX : integer; anchorY : integer);
+var
+  oldZoom : integer;
+  pixX, pixY : double;
+  newScrollX, newScrollY : integer;
+begin
+  if newZoom < ZoomTrackBar.Min then newZoom:=ZoomTrackBar.Min;
+  if newZoom > ZoomTrackBar.Max then newZoom:=ZoomTrackBar.Max;
+
+  oldZoom:=ZoomSize;
+  pixX:=0; pixY:=0;
+  if useAnchor and (oldZoom > 0) then
+  begin
+    pixX:=(ScrollBox1.HorzScrollBar.Position + anchorX) / oldZoom;
+    pixY:=(ScrollBox1.VertScrollBar.Position + anchorY) / oldZoom;
+  end;
+
+  ZoomTrackBar.OnChange:=nil;
+  ZoomTrackBar.Position:=newZoom;
+  ZoomTrackBar.OnChange:=@ZoomTrackBarChange;
+
+  ZoomSize:=newZoom;
   FontSheetPaintBox.Width:=FontSheetWidth*ZoomSize;
   FontSheetPaintBox.Height:=FontSheetHeight*ZoomSize;
+
+  if useAnchor then
+  begin
+    newScrollX:=Round(pixX * ZoomSize) - anchorX;
+    newScrollY:=Round(pixY * ZoomSize) - anchorY;
+    if newScrollX < 0 then newScrollX:=0;
+    if newScrollY < 0 then newScrollY:=0;
+    ScrollBox1.HorzScrollBar.Position:=newScrollX;
+    ScrollBox1.VertScrollBar.Position:=newScrollY;
+  end;
+
+  UpdateStatusBar;
   FontSheetPaintBox.Invalidate;
+end;
+
+procedure TFontSheetExportForm.ScrollBox1MouseWheel(Sender: TObject;
+  Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+var
+  pt : TPoint;
+begin
+  pt:=ScrollBox1.ScreenToClient(MousePos);
+  if WheelDelta > 0 then
+    ApplyZoom(ZoomSize + 1, True, pt.X, pt.Y)
+  else
+    ApplyZoom(ZoomSize - 1, True, pt.X, pt.Y);
+  Handled:=True;
+end;
+
+procedure TFontSheetExportForm.UpdateStatusBar;
+var
+  charCount : integer;
+begin
+  if StatusBar1.Panels.Count < 5 then exit;
+  charCount:=SpinEndChar.Value - SpinStartChar.Value + 1;
+  StatusBar1.Panels[0].Text:='Chars: '+IntToStr(charCount);
+  StatusBar1.Panels[1].Text:='Sheet: '+IntToStr(FontSheetWidth)+'x'+IntToStr(FontSheetHeight);
+  StatusBar1.Panels[2].Text:='Cell: '+IntToStr(CharWidth)+'x'+IntToStr(CharHeight);
+  StatusBar1.Panels[3].Text:='Zoom: '+IntToStr(ZoomSize)+'x';
+  if chkShadow.Checked then
+    StatusBar1.Panels[4].Text:='Shadow: '+IntToStr(SpinShadowX.Value)+','+IntToStr(SpinShadowY.Value)+'  Padding: '+IntToStr(SpinPadding.Value)+'px'
+  else
+    StatusBar1.Panels[4].Text:='Padding: '+IntToStr(SpinPadding.Value)+'px';
 end;
 
 procedure TFontSheetExportForm.UpdateBmInfo(var info : TBmInfo);
@@ -570,17 +777,17 @@ begin
       if Direction.ItemIndex = 0 then
       begin
         xpos:=0;
-        inc(ypos,CharHeight);
+        inc(ypos,CharHeight+SpinPadding.Value);
       end
       else
       begin
         ypos:=0;
-        inc(xpos,CharWidth);
+        inc(xpos,CharWidth+SpinPadding.Value);
       end;
     end
     else
     begin
-      if Direction.ItemIndex = 0 then inc(xpos,CharWidth) else inc(ypos,CharHeight);
+      if Direction.ItemIndex = 0 then inc(xpos,CharWidth+SpinPadding.Value) else inc(ypos,CharHeight+SpinPadding.Value);
     end;
   end;
 
@@ -602,23 +809,89 @@ end;
 
 
 procedure TFontSheetExportForm.CharToBitMap(c : integer);
+var
+  bgColor, fgColor, shadowColor : TColor;
+  sx, sy : integer;
 begin
-  CharBitMap.Canvas.Clear;
-  CharBitMap.Canvas.Brush.Color:=clBlack;
-  CharBitMap.Canvas.Pen.Color:=clWhite;
-  CharBitMap.Canvas.TextOut(0,0,chr(c));
+  bgColor:=BGColorBox.Selected;
+  fgColor:=FontDialog1.Font.Color;
+  shadowColor:=ShadowColorBox.Selected;
+
+  CharBitMap.Canvas.Brush.Color:=bgColor;
+  CharBitMap.Canvas.FillRect(0, 0, CharWidth, CharHeight);
+  CharBitMap.Canvas.Brush.Style:=bsClear;
+
+  //draw shadow character first (behind the main character)
+  if chkShadow.Checked then
+  begin
+    sx:=SpinShadowX.Value;
+    sy:=SpinShadowY.Value;
+    CharBitMap.Canvas.Font.Color:=shadowColor;
+    CharBitMap.Canvas.TextOut(sx, sy, chr(c));
+  end;
+
+  //draw main character on top
+  CharBitMap.Canvas.Font.Color:=fgColor;
+  CharBitMap.Canvas.TextOut(0, 0, chr(c));
+  CharBitMap.Canvas.Brush.Style:=bsSolid;
+end;
+
+procedure CalcHorizPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer);
+var
+  idx, col, row : integer;
+begin
+  idx:=spriteNum - 1;
+  col:=idx mod ipr;
+  row:=idx div ipr;
+  x:=col * (sWidth + pad);
+  y:=row * (sHeight + pad);
+  x2:=x + sWidth - 1;
+  y2:=y + sHeight - 1;
+end;
+
+procedure CalcVertPad(spriteNum, sWidth, sHeight, ipr, pad : integer; var x, y, x2, y2 : integer);
+var
+  idx, col, row : integer;
+begin
+  idx:=spriteNum - 1;
+  row:=idx mod ipr;
+  col:=idx div ipr;
+  x:=col * (sWidth + pad);
+  y:=row * (sHeight + pad);
+  x2:=x + sWidth - 1;
+  y2:=y + sHeight - 1;
+end;
+
+procedure TFontSheetExportForm.MnuCloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TFontSheetExportForm.MnuZoomInClick(Sender: TObject);
+begin
+  ApplyZoom(ZoomSize + 1, False);
+end;
+
+procedure TFontSheetExportForm.MnuZoomOutClick(Sender: TObject);
+begin
+  ApplyZoom(ZoomSize - 1, False);
 end;
 
 procedure TFontSheetExportForm.ImportFontCharacters;
 var
-c   : integer;
-ipr : integer;
-xstart,ystart : integer;
+  c   : integer;
+  ipr : integer;
+  xstart,ystart : integer;
+  pad : integer;
 begin
   ipr:=0;
   xstart:=0;
   ystart:=0;
-  FontSheetBitMap.canvas.Clear;
+  pad:=SpinPadding.Value;
+
+  FontSheetBitMap.Canvas.Brush.Color:=BGColorBox.Selected;
+  FontSheetBitMap.Canvas.FillRect(0, 0, FontSheetWidth, FontSheetHeight);
+
   for c:=SpinStartChar.Value to SpinEndChar.Value do
   begin
     CharToBitMap(c);
@@ -630,17 +903,17 @@ begin
       if Direction.ItemIndex = 0 then
       begin
         xstart:=0;
-        inc(ystart,CharHeight);
+        inc(ystart,CharHeight+pad);
       end
       else
       begin
         ystart:=0;
-        inc(xstart,CharWidth);
+        inc(xstart,CharWidth+pad);
       end;
     end
     else
     begin
-      if Direction.ItemIndex = 0 then inc(xstart,CharWidth) else inc(ystart,CharHeight);
+      if Direction.ItemIndex = 0 then inc(xstart,CharWidth+pad) else inc(ystart,CharHeight+pad);
     end;
   end;
 end;

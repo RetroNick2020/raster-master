@@ -19,7 +19,7 @@ object AboutForm: TAboutForm
     Width = 300
     Alignment = taCenter
     AutoSize = False
-    Caption = 'Raster Master v6.4 R131'
+    Caption = 'Raster Master v6.5 R132'
     Font.Height = -20
     Font.Style = [fsBold]
     ParentFont = False
