@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 114
+  Left = 127
   Height = 859
-  Top = 16
+  Top = 157
   Width = 1603
   Align = alClient
   Caption = 'Raster Master'
@@ -171,7 +171,6 @@ object RMMainForm: TRMMainForm
       HorzScrollBar.Increment = 93
       HorzScrollBar.Page = 862
       HorzScrollBar.Tracking = True
-      OnMouseWheel = ZoomScrollBoxMouseWheel
       VertScrollBar.Increment = 69
       VertScrollBar.Page = 1
       VertScrollBar.Tracking = True
@@ -181,6 +180,7 @@ object RMMainForm: TRMMainForm
       ClientHeight = 724
       ClientWidth = 1006
       TabOrder = 0
+      OnMouseWheel = ZoomScrollBoxMouseWheel
       object ZoomPaintBox: TPaintBox
         AnchorSideLeft.Control = ZoomScrollBox
         AnchorSideTop.Control = ZoomScrollBox
@@ -336,15 +336,15 @@ object RMMainForm: TRMMainForm
       AnchorSideTop.Control = MiddleTopPanel
       AnchorSideRight.Control = MiddleTopPanel
       AnchorSideRight.Side = asrBottom
-      Left = 432
+      Left = 384
       Height = 88
       Top = 8
-      Width = 523
+      Width = 571
       Anchors = [akTop, akRight]
       BorderSpacing.Top = 7
       BorderSpacing.Right = 50
       ClientHeight = 88
-      ClientWidth = 523
+      ClientWidth = 571
       TabOrder = 0
       object ToolCircleIcon: TImage
         Left = 96
@@ -447,7 +447,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolMenuSelectAreaMenuClick
       end
       object ToolScrollLeftIcon: TImage
-        Left = 301
+        Left = 341
         Height = 32
         Hint = 'Scroll Left'
         Top = 48
@@ -457,7 +457,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolScrollLeftMenuClick
       end
       object ToolScrollRightIcon: TImage
-        Left = 341
+        Left = 381
         Height = 32
         Hint = 'Scroll Right'
         Top = 48
@@ -467,7 +467,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolScrollRightMenuClick
       end
       object ToolScrollUpIcon: TImage
-        Left = 381
+        Left = 421
         Height = 32
         Hint = 'Scroll Up'
         Top = 48
@@ -477,7 +477,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolScrollUpMenuClick
       end
       object ToolScrollDownIcon: TImage
-        Left = 421
+        Left = 461
         Height = 32
         Hint = 'Scroll Down'
         Top = 48
@@ -487,7 +487,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolScrollDownMenuClick
       end
       object ToolUndoIcon: TImage
-        Left = 421
+        Left = 461
         Height = 32
         Hint = 'Undo'
         Top = 7
@@ -517,7 +517,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolFEllipseMenuClick
       end
       object ToolTextIcon: TImage
-        Left = 256
+        Left = 296
         Height = 32
         Hint = 'Text'
         Top = 7
@@ -527,7 +527,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolTextMenuClick
       end
       object ToolFontIcon: TImage
-        Left = 256
+        Left = 296
         Height = 32
         Hint = 'Font Select'
         Top = 48
@@ -537,7 +537,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolFontIconClick
       end
       object TextDrawEdit: TEdit
-        Left = 301
+        Left = 341
         Height = 30
         Top = 9
         Width = 112
@@ -549,7 +549,7 @@ object RMMainForm: TRMMainForm
         OnChange = TextDrawEditChange
       end
       object ToolVFLIP: TButton
-        Left = 464
+        Left = 504
         Height = 30
         Hint = 'Vertical Flip'
         Top = 8
@@ -561,7 +561,7 @@ object RMMainForm: TRMMainForm
         OnClick = ToolFlipVirtMenuClick
       end
       object ToolHFLIP: TButton
-        Left = 464
+        Left = 504
         Height = 30
         Hint = 'Horizontal Flip'
         Top = 48
@@ -571,6 +571,26 @@ object RMMainForm: TRMMainForm
         ShowHint = True
         TabOrder = 2
         OnClick = ToolFlipHorizMenuClick
+      end
+      object ToolBrushIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Brush Stamp'
+        Top = 7
+        Width = 32
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = BrushStampToolClick
+      end
+      object ToolBrushFXIcon: TImage
+        Left = 256
+        Height = 32
+        Hint = 'Brush Effects'
+        Top = 48
+        Width = 32
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = BrushEffectsClick
       end
     end
     object ZoomTrackBar: TTrackBar
@@ -1601,6 +1621,107 @@ object RMMainForm: TRMMainForm
           Caption = 'Down'
           OnClick = ToolScrollDownMenuClick
         end
+      end
+      object ToolSepDither: TMenuItem
+        Caption = '-'
+      end
+      object ToolDitherMenu: TMenuItem
+        Caption = 'Dither (Color 1 + Color 2)'
+        object ToolDitherChecker: TMenuItem
+          Caption = 'Checkerboard'
+          OnClick = ToolDitherPatternClick
+        end
+        object ToolDitherHLines: TMenuItem
+          Tag = 1
+          Caption = 'Horizontal Lines'
+          OnClick = ToolDitherPatternClick
+        end
+        object ToolDitherVLines: TMenuItem
+          Tag = 2
+          Caption = 'Vertical Lines'
+          OnClick = ToolDitherPatternClick
+        end
+        object ToolDitherDiagonal: TMenuItem
+          Tag = 3
+          Caption = 'Diagonal'
+          OnClick = ToolDitherPatternClick
+        end
+        object ToolDitherHeavy: TMenuItem
+          Tag = 4
+          Caption = 'Heavy (75%)'
+          OnClick = ToolDitherPatternClick
+        end
+        object ToolDitherSparse: TMenuItem
+          Tag = 5
+          Caption = 'Sparse Dots'
+          OnClick = ToolDitherPatternClick
+        end
+        object ToolDitherSep: TMenuItem
+          Caption = '-'
+        end
+        object ToolDitherOff: TMenuItem
+          Caption = 'Off'
+          OnClick = ToolDitherOffClick
+        end
+      end
+      object ToolGradientMenu: TMenuItem
+        Caption = 'Gradient'
+        object ToolGradHoriz: TMenuItem
+          Caption = 'Horizontal (Color 1 to Color 2)'
+          OnClick = ToolGradHorizClick
+        end
+        object ToolGradVert: TMenuItem
+          Caption = 'Vertical (Color 1 to Color 2)'
+          OnClick = ToolGradVertClick
+        end
+        object ToolGradCircular: TMenuItem
+          Caption = 'Circular (Color 1 to Color 2)'
+          OnClick = ToolGradCircularClick
+        end
+        object ToolGradOff: TMenuItem
+          Caption = 'Off'
+          OnClick = ToolGradOffClick
+        end
+      end
+    end
+    object BrushMenu: TMenuItem
+      Caption = 'Brush'
+      object MnuBrushGrabSelection: TMenuItem
+        Caption = 'Grab from Selection'
+        OnClick = BrushGrabSelectionClick
+      end
+      object MnuBrushGrabSprite: TMenuItem
+        Caption = 'Grab Entire Sprite'
+        OnClick = BrushGrabSpriteClick
+      end
+      object MnuBrushGrabClipboard: TMenuItem
+        Caption = 'Grab from Clipboard'
+        OnClick = BrushGrabClipboardClick
+      end
+      object MnuBrushSep1: TMenuItem
+        Caption = '-'
+      end
+      object MnuBrushEffects: TMenuItem
+        Caption = 'Brush Effects...'
+        OnClick = BrushEffectsClick
+      end
+      object MnuBrushSep2: TMenuItem
+        Caption = '-'
+      end
+      object MnuBrushStampTool: TMenuItem
+        Caption = 'Stamp Tool'
+        OnClick = BrushStampToolClick
+      end
+      object MnuBrushSep3: TMenuItem
+        Caption = '-'
+      end
+      object MnuBrushSetTransColor: TMenuItem
+        Caption = 'Set Transparent Color (Current Color 1)'
+        OnClick = BrushSetTransColorClick
+      end
+      object MnuBrushClear: TMenuItem
+        Caption = 'Clear Brush'
+        OnClick = BrushClearClick
       end
     end
     object Utilities: TMenuItem

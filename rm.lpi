@@ -16,7 +16,7 @@
         <TextName Value="Raster Master"/>
         <TextDesc Value="Sprite/Icon Editor"/>
       </XPManifest>
-      <Resources Count="35">
+      <Resources Count="39">
         <Resource_0 FileName="Images\CIRC1.BMP" Type="BITMAP" ResourceName="CIRC1"/>
         <Resource_1 FileName="Images\CIRC2.BMP" Type="BITMAP" ResourceName="CIRC2"/>
         <Resource_2 FileName="Images\DOWN1.BMP" Type="BITMAP" ResourceName="DOWN1"/>
@@ -52,6 +52,10 @@
         <Resource_32 FileName="Images\TEXT2.bmp" Type="BITMAP" ResourceName="TEXT2"/>
         <Resource_33 FileName="Images\FONT1.bmp" Type="BITMAP" ResourceName="FONT1"/>
         <Resource_34 FileName="Images\FONT2.bmp" Type="BITMAP" ResourceName="FONT2"/>
+        <Resource_35 FileName="Images\BRUSH1.bmp" Type="BITMAP" ResourceName="BRUSH1"/>
+        <Resource_36 FileName="Images\BRUSH2.bmp" Type="BITMAP" ResourceName="BRUSH2"/>
+        <Resource_37 FileName="Images\BRUSHFX.bmp" Type="BITMAP" ResourceName="BRUSHFX1"/>
+        <Resource_38 FileName="Images\BRUSHFX2.bmp" Type="BITMAP" ResourceName="BRUSHFX2"/>
       </Resources>
     </General>
     <BuildModes Count="3">

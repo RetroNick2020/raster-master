@@ -11,7 +11,8 @@ uses
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, uAbout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd, rwjson;
+  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd, LCLType,
+  rwjson, uRetrobrush, brusheffects;
 
 const
   NoScript = 0;
@@ -27,9 +28,13 @@ type
     ActionList1: TActionList;
     ActualBox: TImage;
     ActualPane: TPanel;
+    MenuItem19: TMenuItem;
     PaletteCopyToClipboard: TMenuItem;
     PalettePasteFromClipboard: TMenuItem;
     rmToggle: TMenuItem;
+    ToolDitherToggle: TMenuItem;
+    ToolBrushIcon: TImage;
+    ToolBrushFXIcon: TImage;
     ToolVFLIP: TButton;
     EditColorBox1: TButton;
     EditColorBox2: TButton;
@@ -246,6 +251,33 @@ type
     InsertProjectJSONFile: TMenuItem;
     SaveProjectJSONFile: TMenuItem;
     ExportJSONSprite: TMenuItem;
+
+    ToolSepDither: TMenuItem;
+    ToolDitherMenu: TMenuItem;
+    ToolDitherChecker: TMenuItem;
+    ToolDitherHLines: TMenuItem;
+    ToolDitherVLines: TMenuItem;
+    ToolDitherDiagonal: TMenuItem;
+    ToolDitherHeavy: TMenuItem;
+    ToolDitherSparse: TMenuItem;
+    ToolDitherSep: TMenuItem;
+    ToolDitherOff: TMenuItem;
+    ToolGradientMenu: TMenuItem;
+    ToolGradHoriz: TMenuItem;
+    ToolGradVert: TMenuItem;
+    ToolGradCircular: TMenuItem;
+    ToolGradOff: TMenuItem;
+    BrushMenu: TMenuItem;
+    MnuBrushGrabSelection: TMenuItem;
+    MnuBrushGrabSprite: TMenuItem;
+    MnuBrushGrabClipboard: TMenuItem;
+    MnuBrushSep1: TMenuItem;
+    MnuBrushEffects: TMenuItem;
+    MnuBrushSep2: TMenuItem;
+    MnuBrushStampTool: TMenuItem;
+    MnuBrushSep3: TMenuItem;
+    MnuBrushSetTransColor: TMenuItem;
+    MnuBrushClear: TMenuItem;
     ExportJSONRES: TMenuItem;
     PaletteExportJSON: TMenuItem;
     InsertProjectFile: TMenuItem;
@@ -432,6 +464,19 @@ type
     procedure OpenProjectJSONClick(Sender: TObject);
     procedure SaveProjectJSONClick(Sender: TObject);
     procedure ExportJSONSpriteClick(Sender: TObject);
+    procedure ToolDitherPatternClick(Sender: TObject);
+    procedure ToolDitherOffClick(Sender: TObject);
+    procedure ToolGradHorizClick(Sender: TObject);
+    procedure ToolGradVertClick(Sender: TObject);
+    procedure ToolGradCircularClick(Sender: TObject);
+    procedure ToolGradOffClick(Sender: TObject);
+    procedure BrushEffectsClick(Sender: TObject);
+    procedure BrushGrabSelectionClick(Sender: TObject);
+    procedure BrushGrabSpriteClick(Sender: TObject);
+    procedure BrushGrabClipboardClick(Sender: TObject);
+    procedure BrushStampToolClick(Sender: TObject);
+    procedure BrushSetTransColorClick(Sender: TObject);
+    procedure BrushClearClick(Sender: TObject);
     procedure ExportJSONRESClick(Sender: TObject);
     procedure PaletteSaveJSONClick(Sender: TObject);
     procedure PaletteCopyClick(Sender: TObject);
@@ -530,6 +575,7 @@ type
        MaxXOffset : Integer;
        MaxYOffset : Integer;
        ShowTransparent : Boolean;
+       BrushOverlayActive : Boolean;
        FCheckerBmp : TBitmap;
 
        RenderBitMap  : TBitMap;
@@ -577,6 +623,10 @@ type
        function getsavefilename(var filename,ext : string; filter : string) : boolean;
 
        procedure UpdateRenderBitMap;
+       procedure ZPaintBoxMouseMoveDrawBrushTool(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+       procedure UpdateDitherGradientColors;
+       procedure StampBrushToCore;
+       procedure DrawBrushOverlay(ACanvas : TCanvas);
        procedure ZPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
        procedure ZPaintBoxMouseMoveXYTool(Sender: TObject; Shift: TShiftState;  X, Y: Integer);
        procedure ZPaintBoxMouseUpXYTool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
@@ -616,6 +666,9 @@ var
   RMMainForm: TRMMainForm;
 
 implementation
+
+
+
 
 {$R *.lfm}
 
@@ -673,6 +726,7 @@ RenderBitMap2.SetSize(256,256);
  DrawMode:=False;
  DrawFirst:=False;
  ShowTransparent:=False;
+ BrushOverlayActive:=False;
 
  // create checkerboard pattern for transparency display - fixed size, never scaled
  FCheckerBmp:=TBitmap.Create;
@@ -1172,7 +1226,17 @@ var
   zoommode : integer;
   tc : TColor;
   ACBitMap : TBitMap;
+  saveDither, saveGradient : boolean;
+  saveDitherPattern : integer;
 begin
+   //temporarily disable dither/gradient - we're rendering existing buffer
+   //content, not drawing new shapes
+   saveDither:=RMDrawTools.GetDitherEnabled;
+   saveGradient:=RMDrawTools.GetGradientEnabled;
+   saveDitherPattern:=RMDrawTools.GetDitherPattern;
+   RMDrawTools.SetDitherEnabled(false);
+   RMDrawTools.SetGradientEnabled(false);
+
    ACBitMap:=TBitMap.Create;
    ACBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
 
@@ -1210,6 +1274,11 @@ begin
 
    RMDrawTools.SetZoomMode(zoommode);
    ACBitMap.Free;
+
+   //restore dither/gradient state
+   RMDrawTools.SetDitherPattern(saveDitherPattern);
+   if saveDither then RMDrawTools.SetDitherEnabled(true);
+   if saveGradient then RMDrawTools.SetGradientEnabled(true);
 end;
 
 procedure TRMMainForm.updateZoomArea;
@@ -1835,6 +1904,7 @@ begin
     DrawColor:=ColorBox2.Brush.Color;
   end;
   RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+  UpdateDitherGradientColors;
 
   if DrawTool = DrawShapePaint then  // special kludge here - fix in future updates
   begin
@@ -1903,6 +1973,7 @@ begin
   end
   else exit;
   RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+  UpdateDitherGradientColors;
 
   if (ZoomX=OldZoomX) and (ZoomY=OldZoomY) then exit; // we are just just drawing in the same zoom x,y
   OldZoomX:=ZoomX;
@@ -1964,6 +2035,7 @@ begin
     DrawColor:=ColorBox2.Brush.Color;
   end;
   RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+  UpdateDitherGradientColors;
 
   UpdateRenderBitMap;
   RenderBitMap2.Canvas.CopyRect(rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height),RenderBitMap.Canvas,rect(0,0,RenderBitMap.Width,RenderBitMap.Height));
@@ -2014,6 +2086,7 @@ begin
     DrawColor:=ColorBox2.Brush.Color;
   end;
   RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+  UpdateDitherGradientColors;
 
   //UpdateRenderBitMap;
   RenderBitMap.Canvas.CopyRect(rect(0,0,RenderBitMap.Width,RenderBitMap.Height),RenderBitMap2.Canvas,rect(0,0,RenderBitMap2.Width,RenderBitMap2.Height));
@@ -2048,10 +2121,10 @@ begin
     DrawColor:=ColorBox2.Brush.Color;
   end;
 //  RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+  UpdateDitherGradientColors;
 
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopyToBuf,DrawTool,1);
-  RMDrawTools.ADrawShape(ActualBox.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopy,DrawTool,1);
- // UpdateActualArea;
+  UpdateActualArea;
 end;
 
 procedure TRMMainForm.ZPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
@@ -2065,6 +2138,18 @@ begin
  DrawTool:=RMDRAWTools.GetDrawTool;
  if DrawTool<>DrawShapeClip then RMCoreBase.CopyToUndoBuf;
 
+ //brush stamp tool - stamp on left or right click
+ if (DrawTool = DrawShapeBrush) and (Button = mbLeft) then
+ begin
+   if not RetroBrush.HasBrush then exit;
+   RMCoreBase.CopyToUndoBuf;
+   StampBrushToCore;
+   UpdateZoomArea;
+   UpdateThumbview;
+   UpdateActualArea;
+   exit;
+ end;
+
  //the Text tool stamps on OnClick which the LCL only fires for the left
  //button - handle the right button here so it draws with Color 2
  if (DrawTool = DrawShapeText) and (Button = mbRight) then
@@ -2072,6 +2157,7 @@ begin
    DrawColor:=ColorBox2.Brush.Color;
    ColorIndex:=RMCoreBase.GetCurColor2;
    RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+  UpdateDitherGradientColors;
 
    RMDrawTools.SetTextInfoTColor(DrawColor);
    RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,1);
@@ -2101,6 +2187,7 @@ begin
  //UpdateInfoBarXY;
  DrawTool:=RMDRAWTools.GetDrawTool;
  Case DrawTool of DrawShapeText:ZPaintBoxMouseMoveDrawTextTool(Sender,Shift,X,Y);
+                  DrawShapeBrush:ZPaintBoxMouseMoveDrawBrushTool(Sender,Shift,X,Y);
                   DrawShapePencil,DrawShapeSpray,DrawShapePaint:ZPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
                   DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
                   DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:ZPaintBoxMouseMoveXYX2Y2Tool(Sender,Shift,X,Y);
@@ -2132,12 +2219,23 @@ var
   ColorIndex : integer;
 begin
   DrawTool:=RMDRAWTools.GetDrawTool;
+  if DrawTool = DrawShapeBrush then
+  begin
+    if not RetroBrush.HasBrush then exit;
+    RMCoreBase.CopyToUndoBuf;
+    StampBrushToCore;
+    UpdateZoomArea;
+    UpdateThumbview;
+    UpdateActualArea;
+    exit;
+  end;
   if DrawTool <> DrawShapeText then exit;
 
   DrawColor:=ColorBox1.Brush.Color;
   ColorIndex:=RMCoreBase.GetCurColor1;
 
   RMCoreBase.SetColorEx(ColorIndex);  //kludge - fix this in future
+  UpdateDitherGradientColors;
 
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX,ZoomY,DrawColor,DrawShapeModeCopy,DrawTool,1);
   RMDrawTools.ADrawShape(RenderBitMap.Canvas,ZoomX,ZoomY,ZoomX2,ZoomY2,DrawColor,DrawShapeModeCopyToBuf,DrawTool,1);
@@ -2156,6 +2254,11 @@ begin
     RMDrawTools.SetTextInfoTColor(ColorBox1.Brush.Color);
     ZoomPaintBox.Invalidate;
   end;
+  if RMDrawTools.GetDrawTool = DrawShapeBrush then
+  begin
+    BrushOverlayActive:=true;
+    ZoomPaintBox.Invalidate;
+  end;
 end;
 
 procedure TRMMainForm.ZoomPaintBoxMouseLeave(Sender: TObject);
@@ -2164,6 +2267,11 @@ begin
   if RMDrawTools.GetDrawTool = DrawShapeText then
   begin
     RMDrawTools.SetTextInfoActive(false);
+    ZoomPaintBox.Invalidate;
+  end;
+  if RMDrawTools.GetDrawTool = DrawShapeBrush then
+  begin
+    BrushOverlayActive:=false;
     ZoomPaintBox.Invalidate;
   end;
 end;
@@ -2209,6 +2317,11 @@ begin
 
   //render the text here
   RMDrawTools.DrawOverlayText(ZoomPaintBox.Canvas);
+
+  //render brush preview overlay
+  if (RMDrawTools.GetDrawTool = DrawShapeBrush) and RetroBrush.HasBrush and BrushOverlayActive then
+    DrawBrushOverlay(ZoomPaintBox.Canvas);
+
   RMDrawTools.DrawOverlayGrid(ZoomPaintBox.Canvas,clWhite);
   RMDrawTools.DrawOverlayOnClipArea(ZoomPaintBox.Canvas,clYellow,0); //mode 0 is copy
 end;
@@ -2275,6 +2388,9 @@ begin
   ToolScrollLeftIcon.Picture.LoadFromResourceName(HInstance,'LEFT1');
   ToolScrollRightIcon.Picture.LoadFromResourceName(HInstance,'RIGHT1');
 
+  ToolBrushIcon.Picture.LoadFromResourceName(HInstance,'BRUSH1');
+  ToolBrushFXIcon.Picture.LoadFromResourceName(HInstance,'BRUSHFX1');
+
   ToolTextIcon.Picture.LoadFromResourceName(HInstance,'TEXT1');
   ToolFontIcon.Picture.LoadFromResourceName(HInstance,'FONT1');
 
@@ -2300,6 +2416,7 @@ begin
   ToolFRectangleIcon.Picture.LoadFromResourceName(HInstance,'FRECT1');
   ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY1');
   ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT1');
+  ToolBrushIcon.Picture.LoadFromResourceName(HInstance,'BRUSH1');
   TooltextIcon.Picture.LoadFromResourceName(HInstance,'TEXT1');
   ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT1');
 
@@ -2315,8 +2432,8 @@ begin
              DrawShapeSpray:ToolSprayPaintIcon.Picture.LoadFromResourceName(HInstance,'SPRAY2');
              DrawShapeText:TooltextIcon.Picture.LoadFromResourceName(HInstance,'TEXT2');
              DrawShapePaint:ToolPaintIcon.Picture.LoadFromResourceName(HInstance,'PAINT2');
-
-              DrawShapeClip:ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT2');
+             DrawShapeBrush:ToolBrushIcon.Picture.LoadFromResourceName(HInstance,'BRUSH2');
+             DrawShapeClip:ToolSelectAreaIcon.Picture.LoadFromResourceName(HInstance,'SELECT2');
 
   end;
   ClearSelectedToolsMenu;
@@ -4356,9 +4473,39 @@ end;
 procedure TRMMainForm.EditCopyClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
+ TextBmp : TBitmap;
+ w, h : integer;
+ TextStr : string;
 begin
- GetOpenSaveRegion(x,y,x2,y2);
- RMDrawTools.Copy(x,y,x2,y2);
+  //when text tool is active, copy the text bitmap to clipboard
+  if RMDrawTools.GetDrawTool = DrawShapeText then
+  begin
+    TextStr:=TextDrawEdit.Text;
+    if TextStr = '' then exit;
+
+    TextBmp:=TBitmap.Create;
+    try
+      TextBmp.Canvas.Font:=FontDialog1.Font;
+      TextBmp.Canvas.Font.Quality:=fqNonAntialiased;
+      w:=TextBmp.Canvas.TextWidth(TextStr);
+      h:=TextBmp.Canvas.TextHeight(TextStr);
+      if w < 1 then w:=1;
+      if h < 1 then h:=1;
+      TextBmp.SetSize(w, h);
+      TextBmp.Canvas.Brush.Color:=clBlack;
+      TextBmp.Canvas.FillRect(0, 0, w, h);
+      TextBmp.Canvas.Font.Color:=ColorBox1.Brush.Color;
+      TextBmp.Canvas.TextOut(0, 0, TextStr);
+      Clipboard.Assign(TextBmp);
+    finally
+      TextBmp.Free;
+    end;
+    exit;
+  end;
+
+  //normal copy behavior
+  GetOpenSaveRegion(x,y,x2,y2);
+  RMDrawTools.Copy(x,y,x2,y2);
 end;
 
 procedure TRMMainForm.EditPasteClick(Sender: TObject);
@@ -5696,8 +5843,367 @@ begin
  QBInterpreter.RegisterFunction('GETCOLORB', 3, 3,@API_GETCOLORB);
 end;
 
+{ ===== Brush Tool ===== }
+
+procedure TRMMainForm.DrawBrushOverlay(ACanvas : TCanvas);
+var
+  bx, by, px, py : integer;
+  ci : byte;
+  CW, CH : integer;
+  pal : TRMPaletteBuf;
+  offX, offY : integer;
+begin
+  if not RetroBrush.HasBrush then exit;
+
+  CW:=RMDrawTools.GetCellWidth;
+  CH:=RMDrawTools.GetCellHeight;
+
+  //center the brush on the cursor
+  offX:=ZoomX - RetroBrush.WorkWidth div 2;
+  offY:=ZoomY - RetroBrush.WorkHeight div 2;
+
+  RMCoreBase.Palette.GetPalette(pal);
+  RetroBrush.InvalidateRemap;
+  RetroBrush.BuildRemapTable(pal,
+    RMCoreBase.Palette.GetPaletteMode,
+    RMCoreBase.Palette.GetColorCount);
+
+  for bx:=0 to RetroBrush.WorkWidth-1 do
+  begin
+    for by:=0 to RetroBrush.WorkHeight-1 do
+    begin
+      ci:=RetroBrush.WorkPixels[bx][by];
+      if ci = RetroBrush.TransColor then continue;
+      px:=(offX + bx) * CW;
+      py:=(offY + by) * CH;
+      //clip to sprite pixel bounds, not canvas size
+      if (offX + bx >= 0) and (offX + bx < RMCoreBase.GetWidth) and
+         (offY + by >= 0) and (offY + by < RMCoreBase.GetHeight) then
+      begin
+        ACanvas.Brush.Color:=
+          RGBToColor(pal[RetroBrush.RemapIndex(ci)].r,
+                     pal[RetroBrush.RemapIndex(ci)].g,
+                     pal[RetroBrush.RemapIndex(ci)].b);
+        ACanvas.FillRect(px, py, px + CW, py + CH);
+      end;
+    end;
+  end;
+end;
+
+procedure TRMMainForm.BrushGrabClipboardClick(Sender: TObject);
+var
+  ClipBmp : TBitmap;
+  w, h, i, j, k : integer;
+  SrcBuf : TPixelBuf;
+  SrcPal : TRMPaletteBuf;
+  ci : integer;
+  cr, cg, cb : byte;
+  BestIdx, BestDist, Dist, DR, DG, DB : integer;
+  ColorCount, PaletteMode : integer;
+begin
+  if not Clipboard.HasFormat(PredefinedClipboardFormat(pcfBitmap)) then
+  begin
+    ShowMessage('No image found on the clipboard.');
+    exit;
+  end;
+
+  ClipBmp:=TBitmap.Create;
+  try
+    ClipBmp.LoadFromClipboardFormat(PredefinedClipboardFormat(pcfBitmap));
+    w:=ClipBmp.Width;
+    h:=ClipBmp.Height;
+    if (w <= 0) or (h <= 0) then
+    begin
+      ShowMessage('Clipboard image is empty.');
+      exit;
+    end;
+
+    //get the current sprite palette for color matching
+    RMCoreBase.Palette.GetPalette(SrcPal);
+    PaletteMode:=RMCoreBase.Palette.GetPaletteMode;
+    ColorCount:=RMCoreBase.Palette.GetColorCount;
+
+    //convert clipboard image to indexed pixels using nearest color match
+    SetLength(SrcBuf, w, h);
+    for i:=0 to w-1 do
+    begin
+      for j:=0 to h-1 do
+      begin
+        cr:=Red(ClipBmp.Canvas.Pixels[i, j]);
+        cg:=Green(ClipBmp.Canvas.Pixels[i, j]);
+        cb:=Blue(ClipBmp.Canvas.Pixels[i, j]);
+
+        BestIdx:=0;
+        BestDist:=MaxInt;
+        for k:=0 to ColorCount-1 do
+        begin
+          DR:=cr - SrcPal[k].r;
+          DG:=cg - SrcPal[k].g;
+          DB:=cb - SrcPal[k].b;
+          Dist:=DR*DR*2 + DG*DG*4 + DB*DB*3;
+          if Dist < BestDist then
+          begin
+            BestDist:=Dist;
+            BestIdx:=k;
+            if Dist = 0 then break;
+          end;
+        end;
+        SrcBuf[i][j]:=BestIdx;
+      end;
+    end;
+
+    RetroBrush.GrabFromPixels(SrcBuf, w, h, SrcPal, PaletteMode, ColorCount);
+    SetLength(SrcBuf, 0);
+    ShowMessage('Brush grabbed from clipboard (' + IntToStr(w) + 'x' + IntToStr(h) + ').');
+  finally
+    ClipBmp.Free;
+  end;
+end;
+
+procedure TRMMainForm.ToolDitherPatternClick(Sender: TObject);
+begin
+  RMDrawTools.SetDitherEnabled(true);
+  RMDrawTools.SetDitherPattern((Sender as TMenuItem).Tag);
+
+  //update checkmarks
+  ToolDitherChecker.Checked:=((Sender as TMenuItem).Tag = 0);
+  ToolDitherHLines.Checked:=((Sender as TMenuItem).Tag = 1);
+  ToolDitherVLines.Checked:=((Sender as TMenuItem).Tag = 2);
+  ToolDitherDiagonal.Checked:=((Sender as TMenuItem).Tag = 3);
+  ToolDitherHeavy.Checked:=((Sender as TMenuItem).Tag = 4);
+  ToolDitherSparse.Checked:=((Sender as TMenuItem).Tag = 5);
+
+  //turn off gradient
+  ToolGradHoriz.Checked:=false;
+  ToolGradVert.Checked:=false;
+  ToolGradCircular.Checked:=false;
+end;
+
+procedure TRMMainForm.ToolDitherOffClick(Sender: TObject);
+begin
+  RMDrawTools.SetDitherEnabled(false);
+  ToolDitherChecker.Checked:=false;
+  ToolDitherHLines.Checked:=false;
+  ToolDitherVLines.Checked:=false;
+  ToolDitherDiagonal.Checked:=false;
+  ToolDitherHeavy.Checked:=false;
+  ToolDitherSparse.Checked:=false;
+end;
+
+procedure TRMMainForm.ToolGradHorizClick(Sender: TObject);
+begin
+  RMDrawTools.SetGradientEnabled(true);
+  RMDrawTools.SetGradientMode(0);
+  ToolGradHoriz.Checked:=true;
+  ToolGradVert.Checked:=false;
+  ToolGradCircular.Checked:=false;
+  ToolDitherChecker.Checked:=false;
+  ToolDitherHLines.Checked:=false;
+  ToolDitherVLines.Checked:=false;
+  ToolDitherDiagonal.Checked:=false;
+  ToolDitherHeavy.Checked:=false;
+  ToolDitherSparse.Checked:=false;
+end;
+
+procedure TRMMainForm.ToolGradVertClick(Sender: TObject);
+begin
+  RMDrawTools.SetGradientEnabled(true);
+  RMDrawTools.SetGradientMode(1);
+  ToolGradHoriz.Checked:=false;
+  ToolGradVert.Checked:=true;
+  ToolGradCircular.Checked:=false;
+  ToolDitherChecker.Checked:=false;
+  ToolDitherHLines.Checked:=false;
+  ToolDitherVLines.Checked:=false;
+  ToolDitherDiagonal.Checked:=false;
+  ToolDitherHeavy.Checked:=false;
+  ToolDitherSparse.Checked:=false;
+end;
+
+procedure TRMMainForm.ToolGradCircularClick(Sender: TObject);
+begin
+  RMDrawTools.SetGradientEnabled(true);
+  RMDrawTools.SetGradientMode(2);
+  ToolGradHoriz.Checked:=false;
+  ToolGradVert.Checked:=false;
+  ToolGradCircular.Checked:=true;
+  ToolDitherChecker.Checked:=false;
+  ToolDitherHLines.Checked:=false;
+  ToolDitherVLines.Checked:=false;
+  ToolDitherDiagonal.Checked:=false;
+  ToolDitherHeavy.Checked:=false;
+  ToolDitherSparse.Checked:=false;
+end;
+
+procedure TRMMainForm.ToolGradOffClick(Sender: TObject);
+begin
+  RMDrawTools.SetGradientEnabled(false);
+  ToolGradHoriz.Checked:=false;
+  ToolGradVert.Checked:=false;
+  ToolGradCircular.Checked:=false;
+end;
+
+procedure TRMMainForm.BrushEffectsClick(Sender: TObject);
+var
+  Dlg : TBrushEffectsForm;
+begin
+  if not RetroBrush.HasBrush then
+  begin
+    ShowMessage('No brush captured. Use Brush > Grab from Selection or Grab Entire Sprite first.');
+    exit;
+  end;
+  Dlg:=TBrushEffectsForm.Create(Self);
+  try
+    Dlg.ShowModal;
+  finally
+    Dlg.Free;
+  end;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.UpdateDitherGradientColors;
+begin
+  RMDrawTools.SetDitherColor2(ColorBox2.Brush.Color, RMCoreBase.GetCurColor2);
+  RMDrawTools.SetGradientColors(
+    RMCoreBase.GetCurColor1, RMCoreBase.GetCurColor2,
+    ColorBox1.Brush.Color, ColorBox2.Brush.Color);
+end;
+
+procedure TRMMainForm.StampBrushToCore;
+var
+  bx, by, tx, ty, ci : integer;
+  TargetPal : TRMPaletteBuf;
+  offX, offY : integer;
+begin
+  if not RetroBrush.HasBrush then exit;
+
+  //center the brush on the cursor - same offset as the preview
+  offX:=ZoomX - RetroBrush.WorkWidth div 2;
+  offY:=ZoomY - RetroBrush.WorkHeight div 2;
+
+  RMCoreBase.Palette.GetPalette(TargetPal);
+  RetroBrush.InvalidateRemap;
+  RetroBrush.BuildRemapTable(TargetPal,
+    RMCoreBase.Palette.GetPaletteMode,
+    RMCoreBase.Palette.GetColorCount);
+
+  for bx:=0 to RetroBrush.WorkWidth-1 do
+    for by:=0 to RetroBrush.WorkHeight-1 do
+    begin
+      ci:=RetroBrush.WorkPixels[bx][by];
+      if ci = RetroBrush.TransColor then continue;
+      tx:=offX + bx;
+      ty:=offY + by;
+      if (tx >= 0) and (tx < RMCoreBase.GetWidth) and
+         (ty >= 0) and (ty < RMCoreBase.GetHeight) then
+        RMCoreBase.PutPixel(tx, ty, RetroBrush.RemapIndex(ci));
+    end;
+end;
+
+procedure TRMMainForm.ZPaintBoxMouseMoveDrawBrushTool(Sender: TObject;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  ZoomX:=RMDrawTools.GetZoomX(x);
+  ZoomY:=RMDrawTools.GetZoomY(y);
+  UpdateInfoBarXY(x, y);
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.BrushGrabSelectionClick(Sender: TObject);
+var
+  w, h, i, j : integer;
+  SrcBuf : TPixelBuf;
+  SrcPal : TRMPaletteBuf;
+  ca : TClipAreaRec;
+begin
+  w:=RMCoreBase.GetWidth;
+  h:=RMCoreBase.GetHeight;
+
+  //get clip area from draw tools
+  RMDrawTools.GetClipAreaCoords(ca);
+  if ca.status = 0 then
+  begin
+    ShowMessage('Please use the Select tool to define an area first.');
+    exit;
+  end;
+
+  //clamp
+  if ca.x < 0 then ca.x:=0;
+  if ca.y < 0 then ca.y:=0;
+  if ca.x2 >= w then ca.x2:=w-1;
+  if ca.y2 >= h then ca.y2:=h-1;
+  if (ca.x2 < ca.x) or (ca.y2 < ca.y) then
+  begin
+    ShowMessage('Invalid selection area.');
+    exit;
+  end;
+
+  //build pixel buffer from core
+  SetLength(SrcBuf, w, h);
+  for i:=0 to w-1 do
+    for j:=0 to h-1 do
+      SrcBuf[i][j]:=RMCoreBase.GetPixel(i, j);
+
+  RMCoreBase.Palette.GetPalette(SrcPal);
+  RetroBrush.GrabRegion(SrcBuf, w, h, ca.x, ca.y, ca.x2, ca.y2,
+    SrcPal, RMCoreBase.Palette.GetPaletteMode,
+    RMCoreBase.Palette.GetColorCount);
+
+  SetLength(SrcBuf, 0);
+  ShowMessage('Brush grabbed from selection (' +
+    IntToStr(RetroBrush.OrigWidth) + 'x' + IntToStr(RetroBrush.OrigHeight) + ').');
+end;
+
+procedure TRMMainForm.BrushGrabSpriteClick(Sender: TObject);
+var
+  w, h, i, j : integer;
+  SrcBuf : TPixelBuf;
+  SrcPal : TRMPaletteBuf;
+begin
+  w:=RMCoreBase.GetWidth;
+  h:=RMCoreBase.GetHeight;
+
+  SetLength(SrcBuf, w, h);
+  for i:=0 to w-1 do
+    for j:=0 to h-1 do
+      SrcBuf[i][j]:=RMCoreBase.GetPixel(i, j);
+
+  RMCoreBase.Palette.GetPalette(SrcPal);
+  RetroBrush.GrabFromPixels(SrcBuf, w, h,
+    SrcPal, RMCoreBase.Palette.GetPaletteMode,
+    RMCoreBase.Palette.GetColorCount);
+
+  SetLength(SrcBuf, 0);
+  ShowMessage('Brush grabbed from sprite (' +
+    IntToStr(RetroBrush.OrigWidth) + 'x' + IntToStr(RetroBrush.OrigHeight) + ').');
+end;
+
+procedure TRMMainForm.BrushStampToolClick(Sender: TObject);
+begin
+  if not RetroBrush.HasBrush then
+  begin
+    ShowMessage('No brush captured. Use Brush > Grab from Selection or Grab Entire Sprite first.');
+    exit;
+  end;
+  ClearClipAreaOutline;
+  ClearSelectedToolsMenu;
+  RMDrawTools.SetDrawTool(DrawShapeBrush);
+  UpdateToolSelectionIcons;
+end;
+
+procedure TRMMainForm.BrushSetTransColorClick(Sender: TObject);
+begin
+  RetroBrush.TransColor:=RMCoreBase.GetCurColor1;
+  ShowMessage('Brush transparent color set to index ' + IntToStr(RetroBrush.TransColor) + '.');
+end;
+
+procedure TRMMainForm.BrushClearClick(Sender: TObject);
+begin
+  RetroBrush.ClearBrush;
+  ShowMessage('Brush cleared.');
+end;
+
+
 
 begin
-
 end.
-

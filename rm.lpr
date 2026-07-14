@@ -14,7 +14,7 @@ uses
   fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr,
   SpriteSheetExport, animate, AnimBase, setcustommapsize, animationexport,
   rwspriteanim, setcustomspritesize, setcustomtilesize, setcustomcellsize,
-  FontSheetExport, bmfontgen
+  FontSheetExport, bmfontgen,brusheffects
      { you can add units after this };
 
 {$R *.res}
@@ -26,7 +26,7 @@ begin
   Application.CreateForm(TRMMainForm, RMMainForm);
   Application.CreateForm(TRMEGAColorDialog, RMEGAColorDialog);
   Application.CreateForm(TRMVgaColorDialog, RMVgaColorDialog);
-  //Application.CreateForm(TAboutDialog, AboutDialog);
+  Application.CreateForm(TBrushEffectsForm,BrushEffectsForm);
   Application.CreateForm(TRMAmigaColorDialog, RMAmigaColorDialog);
   Application.CreateForm(TImageExportForm, ImageExportForm);
   Application.CreateForm(TMapEdit, MapEdit);

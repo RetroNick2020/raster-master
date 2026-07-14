@@ -24,6 +24,7 @@ const
   DrawShapeClip       = 11;
   DrawShapeFontSelect = 12;
   DrawShapeText       = 13;
+  DrawShapeBrush      = 14;
 
   MaxSprayPoints = 3;
 
@@ -82,6 +83,25 @@ Type
 
                 TextInfo  : TTextInfoRec;
                 SprayPoints : array[1..MaxSprayPoints] of TSprayPointsRec;
+
+                //dither and gradient state
+                FDitherEnabled  : boolean;
+                FDitherPattern  : integer;  //0=checker, 1=horiz lines, 2=vert lines, 3=diagonal, 4=heavy, 5=sparse
+                FDitherColor2   : TColor;
+                FDitherColor2Ex : integer;  //palette index for Color 2
+
+                FGradientEnabled : boolean;
+                FGradientMode    : integer;  //0=horiz, 1=vert, 2=circular
+                FGradStartIdx    : integer;  //palette index start (Color 1)
+                FGradEndIdx      : integer;  //palette index end (Color 2)
+                FGradStartColor  : TColor;
+                FGradEndColor    : TColor;
+                FGradBoundsX     : integer;
+                FGradBoundsY     : integer;
+                FGradBoundsX2    : integer;
+                FGradBoundsY2    : integer;
+
+                function DitherIsColor2(x, y : integer) : boolean;
              public
 
              Constructor create;
@@ -89,7 +109,9 @@ Type
 
              procedure DClip(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : integer);
              procedure ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode,shape,full : Integer);
+             procedure DrawShape(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,shape,full : integer);
 
+             procedure _ARectangle(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : Integer);
              procedure PutPixel(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
              procedure DText(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
 
@@ -97,6 +119,7 @@ Type
              procedure HLine(Image : TCanvas;x,x2,y : integer;color : TColor; mode : integer);
              procedure VLine(Image : TCanvas;y,y2,x : integer;color : TColor; mode : integer);
              Procedure DLine(Image : TCanvas;x1,y1,x2,y2:Integer;color : TColor; mode : integer);
+             procedure rRectFill(Image : TCanvas;x,y,w,h : integer;color : TColor; mode : integer);
              procedure rLine(Image : TCanvas;x,y,w : integer;color : TColor; mode : integer);
              procedure draw_ellipse(Image : TCanvas;xc,  yc,  a, b : Integer;color : TColor; mode : integer);
              procedure fill_ellipse(Image : TCanvas;xc, yc,  a,  b  : integer;color : TColor; mode : integer);
@@ -147,6 +170,8 @@ Type
              procedure  GetGridArea(var ga : TGridAreaRec);
              procedure  SetGridArea(var ga : TGridAreaRec);
 
+             procedure  SetTextInfo(var tinfo : TTextInfoRec);
+             procedure  GetTextInfo(var tinfo : TTextInfoRec);
              procedure  SetTextInfoXY(x,y : integer);
              procedure  SetTextInfoActive(active : boolean);
              procedure  SetTextInfoText(info : string);
@@ -162,6 +187,22 @@ Type
              procedure DrawGrid(Image : TCanvas;x,y,gWidth,gHeight,mode : integer);
              procedure DrawOverlayGrid(Image : TCanvas;gcolor : TColor);
              procedure DrawOverlayText(Image : TCanvas);
+
+             //dither support
+             procedure SetDitherEnabled(enabled : boolean);
+             function  GetDitherEnabled : boolean;
+             procedure SetDitherColor2(color : TColor; colorIdx : integer);
+             procedure SetDitherPattern(pattern : integer);
+             function  GetDitherPattern : integer;
+
+             //gradient support
+             procedure SetGradientEnabled(enabled : boolean);
+             function  GetGradientEnabled : boolean;
+             procedure SetGradientMode(mode : integer);
+             function  GetGradientMode : integer;
+             procedure SetGradientColors(startIdx, endIdx : integer;
+                                         startColor, endColor : TColor);
+             procedure SetGradientBounds(x, y, x2, y2 : integer);
 
              procedure SetZoomMode(mode : integer);   //0 = off 1 = on
              function  GetZoomMode : integer;
@@ -212,6 +253,22 @@ begin
  SetDrawTool(DrawShapePencil);
  SetClipStatus(0); //off
  SetClipSizedStatus(0);
+
+ //dither/gradient defaults
+ FDitherEnabled:=false;
+ FDitherPattern:=0;
+ FDitherColor2:=clBlack;
+ FDitherColor2Ex:=0;
+ FGradientEnabled:=false;
+ FGradientMode:=0;
+ FGradStartIdx:=0;
+ FGradEndIdx:=0;
+ FGradStartColor:=clBlack;
+ FGradEndColor:=clWhite;
+ FGradBoundsX:=0;
+ FGradBoundsY:=0;
+ FGradBoundsX2:=0;
+ FGradBoundsY2:=0;
 end;
 
 procedure TRMDrawTools.SetClipStatus(mode : integer);
@@ -380,14 +437,95 @@ end;
 procedure TRMDrawTools.PutPixel(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
 var
  px,py,px2,py2 : integer;
+ actualColor : TColor;
+ t : double;
+ ci : integer;
+ dx, dy : integer;
+ dist, maxDist : double;
 begin
-  if mode = 2 then    //just plot the pixel to the internal buffer - no need to draw or zoom or actual area;
+  //apply dither or gradient to determine the actual color
+  actualColor:=color;
+
+  if mode = 2 then    //just plot the pixel to the internal buffer
   begin
+    if FDitherEnabled then
+    begin
+      if DitherIsColor2(x, y) then
+        RMCoreBase.SetColorEx(FDitherColor2Ex)
+      else
+        RMCoreBase.SetColorEx(RMCoreBase.GetCurColor1);  //Color 1 index
+    end
+    else if FGradientEnabled then
+    begin
+      ci:=FGradStartIdx;
+      case FGradientMode of
+        0: begin //horizontal
+             if FGradBoundsX2 <> FGradBoundsX then
+               ci:=FGradStartIdx + ((FGradEndIdx - FGradStartIdx) * (x - FGradBoundsX)) div (FGradBoundsX2 - FGradBoundsX);
+           end;
+        1: begin //vertical
+             if FGradBoundsY2 <> FGradBoundsY then
+               ci:=FGradStartIdx + ((FGradEndIdx - FGradStartIdx) * (y - FGradBoundsY)) div (FGradBoundsY2 - FGradBoundsY);
+           end;
+        2: begin //circular - Color 1 at center, Color 2 at edges
+             dx:=x - ((FGradBoundsX + FGradBoundsX2) div 2);
+             dy:=y - ((FGradBoundsY + FGradBoundsY2) div 2);
+             dist:=Sqrt(dx*dx + dy*dy);
+             maxDist:=Sqrt(Sqr((FGradBoundsX2 - FGradBoundsX + 1) / 2.0) +
+                           Sqr((FGradBoundsY2 - FGradBoundsY + 1) / 2.0));
+             if maxDist < 1 then maxDist:=1;
+             if dist > maxDist then dist:=maxDist;
+             ci:=FGradStartIdx + Round((FGradEndIdx - FGradStartIdx) * (dist / maxDist));
+           end;
+      end;
+      if ci < 0 then ci:=0;
+      if ci > 255 then ci:=255;
+      RMCoreBase.SetColorEx(ci);
+    end;
+    //if neither dither nor gradient, ColorEx was set by the caller (SetColorEx)
     RMCoreBase.PutPixelEx(x,y);
     exit;
   end;
 
   if (x<0) or (x > (RMCoreBase.GetWidth-1)) or (y<0) or (y > (RMCoreBase.GetHeight-1))  then exit;
+
+  //dither: alternate between Color1 and Color2 based on pixel position
+  if FDitherEnabled and (mode <> 1) then
+  begin
+    if DitherIsColor2(x, y) then
+      actualColor:=FDitherColor2;
+  end
+  //gradient: interpolate palette index based on position, convert to TColor
+  else if FGradientEnabled and (mode <> 1) then
+  begin
+    ci:=FGradStartIdx;
+    case FGradientMode of
+      0: begin //horizontal
+           if FGradBoundsX2 <> FGradBoundsX then
+             ci:=FGradStartIdx + ((FGradEndIdx - FGradStartIdx) * (x - FGradBoundsX)) div (FGradBoundsX2 - FGradBoundsX);
+         end;
+      1: begin //vertical
+           if FGradBoundsY2 <> FGradBoundsY then
+             ci:=FGradStartIdx + ((FGradEndIdx - FGradStartIdx) * (y - FGradBoundsY)) div (FGradBoundsY2 - FGradBoundsY);
+         end;
+      2: begin //circular - Color 1 at center, Color 2 at edges
+           dx:=x - ((FGradBoundsX + FGradBoundsX2) div 2);
+           dy:=y - ((FGradBoundsY + FGradBoundsY2) div 2);
+           dist:=Sqrt(dx*dx + dy*dy);
+           maxDist:=Sqrt(Sqr((FGradBoundsX2 - FGradBoundsX + 1) / 2.0) +
+                         Sqr((FGradBoundsY2 - FGradBoundsY + 1) / 2.0));
+           if maxDist < 1 then maxDist:=1;
+           if dist > maxDist then dist:=maxDist;
+           ci:=FGradStartIdx + Round((FGradEndIdx - FGradStartIdx) * (dist / maxDist));
+         end;
+    end;
+    if ci < 0 then ci:=0;
+    if ci > 255 then ci:=255;
+    actualColor:=RGBToColor(
+      RMCoreBase.Palette.GetRed(ci),
+      RMCoreBase.Palette.GetGreen(ci),
+      RMCoreBase.Palette.GetBlue(ci));
+  end;
 
   if GridArea.GridMode = 1 then
   begin
@@ -405,11 +543,11 @@ begin
   end;
 
   Image.Brush.Style := bsSolid;
-  Image.Brush.Color := Color;
-  Image.Pen.Color := Color;
+  Image.Brush.Color := actualColor;
+  Image.Pen.Color := actualColor;
   if mode = 1 then
   begin
-      if Color = clBlack then
+      if actualColor = clBlack then
       begin
         Image.Brush.Color := clWhite;
         Image.Pen.Color := clWhite;
@@ -422,8 +560,8 @@ begin
   begin
    Image.Pen.Mode := pmCopy;
    //Image.Brush.mode :=pmXor;
-   Image.Brush.Color:=Color;
-   Image.Pen.Color := Color;
+   Image.Brush.Color:=actualColor;
+   Image.Pen.Color := actualColor;
   end;
 
   If GetZoomMode = 1 then
@@ -433,15 +571,14 @@ begin
   end
   else
   begin
-    if (mode = 1) AND (Color = clBlack) then
+    if (mode = 1) AND (actualColor = clBlack) then
     begin
       Image.Pixels[x,y]:=clWhite;
     end
     else
     begin
-      Image.Pixels[x,y]:=color;
+      Image.Pixels[x,y]:=actualColor;
     end;
-    //RMCoreBase.PutPixel(x,y);
   end;
 end;
 
@@ -469,6 +606,26 @@ begin
 end;
 
 
+procedure TRMDrawTools._ARectangle(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode : Integer);
+begin
+  Image.Pen.Color := Color;
+  if mode = 1 then
+  begin
+    if Color = clBlack then  Image.Pen.Color := clWhite;
+    Image.Pen.Mode := pmXor;
+  end
+  else
+  begin
+      Image.Pen.Mode :=pmCopy;
+  end;
+
+  Image.MoveTo(x,y);
+  Image.LineTo(x2,y);
+  Image.LineTo(x2,y2);
+  Image.LineTo(x,y2);
+  Image.LineTo(x,y);
+
+end;
 
 
 
@@ -677,6 +834,37 @@ begin
   end;
 end;
 
+procedure TRMDrawTools.rRectFill(Image : TCanvas;x,y,w,h : integer;color : TColor; mode : integer);
+var
+ i,j : integer;
+ x2,y2 : integer;
+ t     : integer;
+begin
+x2:=x+w;
+y2:=y+h-1;
+if x2 < x then
+begin
+  t:=x2;
+  x2:=x;
+  x:=t;
+end;
+
+if y2 < y then
+begin
+  t:=y2;
+  y2:=y;
+  y:=t;
+end;
+
+for j:=y to y2 do
+begin
+  for i:=x to x2 do
+  begin
+    putpixel(image,i,j,color,mode);
+  end;
+end;
+
+end;
 
 
 
@@ -778,23 +966,150 @@ end;
 
 
 procedure TRMDrawTools.ADrawShape(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode,shape,full : Integer);
+var
+  radius : integer;
+  TmpBmp : TBitmap;
+  tw, th : integer;
 begin
-   SetZoomMode(0);
-   case shape of
-     DrawShapeRectangle:  Rect(Image,x,y,x2,y2,color,mode,0);
-     DrawShapeFRectangle: Rect(Image,x,y,x2,y2,color,mode,full);
-     DrawShapeLine:       DLine(Image,x,y,x2,y2,color,mode);
-     DrawShapeCircle:     DCircle(Image,x,y,x2,y2,color,mode,0);
-     DrawShapeFCircle:    DCircle(Image,x,y,x2,y2,color,mode,full);
-     DrawShapeEllipse:    DEllipse(Image,x,y,x2,y2,color,mode,0);
-     DrawShapeFEllipse:   DEllipse(Image,x,y,x2,y2,color,mode,full);
-     DrawShapePencil:     PutPixel(Image,x,y,color,mode);
-     DrawShapeText:       DText(Image,x,y,color,mode);
-     DrawShapeSpray:      SprayPaint(Image,x,y,color,mode);
+   //store bounding box for gradient calculations in PutPixel
+   if FGradientEnabled then
+   begin
+     if (shape = DrawShapeCircle) or (shape = DrawShapeFCircle) then
+     begin
+       //for circles, x,y is the center and x2,y2 defines the radius
+       radius:=abs(x2-x);
+       if abs(y2-y) > radius then radius:=abs(y2-y);
+       if radius < 1 then radius:=1;
+       SetGradientBounds(x - radius, y - radius, x + radius, y + radius);
+     end
+     else if (shape = DrawShapeEllipse) or (shape = DrawShapeFEllipse) then
+     begin
+       //for ellipses, x,y is the center, x2,y2 defines radii
+       SetGradientBounds(x - abs(x2-x), y - abs(y2-y), x + abs(x2-x), y + abs(y2-y));
+     end
+     else if shape = DrawShapeText then
+     begin
+       //for text, x,y is the center; compute extent from font metrics
+       TmpBmp:=TBitmap.Create;
+       TmpBmp.Canvas.Font:=TextInfo.Font;
+       tw:=TmpBmp.Canvas.TextWidth(TextInfo.Info);
+       th:=TmpBmp.Canvas.TextHeight(TextInfo.Info);
+       TmpBmp.Free;
+       SetGradientBounds(x - (tw div 2), y - (th div 2), x + (tw div 2), y + (th div 2));
+     end
+     else
+       SetGradientBounds(x, y, x2, y2);
    end;
-   SetZoomMode(1);
+
+   if shape = DrawShapeRectangle then
+   begin
+    SetZoomMode(0);
+    Rect(Image,x,y,x2,y2,color,mode,0);
+    SetZoomMode(1);
+   end
+   else if shape = DrawShapeFRectangle then
+   begin
+      SetZoomMode(0);
+      Rect(Image,x,y,x2,y2,color,mode,full);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeLine then
+   begin
+      SetZoomMode(0);
+      Dline(Image,x,y,x2,y2,color,mode);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeCircle then
+   begin
+      SetZoomMode(0);
+      DCircle(Image,x,y,x2,y2,color,mode,0);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeFCircle then
+   begin
+      SetZoomMode(0);
+      DCircle(Image,x,y,x2,y2,color,mode,full);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeEllipse then
+   begin
+      SetZoomMode(0);
+      DEllipse(Image,x,y,x2,y2,color,mode,0);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeFEllipse then
+   begin
+      SetZoomMode(0);
+      DEllipse(Image,x,y,x2,y2,color,mode,full);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapePencil then
+   begin
+      SetZoomMode(0);
+      PutPixel(Image,x,y,color,mode);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeText then
+   begin
+      SetZoomMode(0);
+      DText(Image,x,y,color,mode);
+      SetZoomMode(1);
+   end
+   else if shape = DrawShapeSpray then
+   begin
+      SetZoomMode(0);
+      SprayPaint(Image,x,y,color,mode);
+      SetZoomMode(1);
+   end;
 end;
 
+procedure TRMDrawTools.DrawShape(Image : TCanvas;x,y,x2,y2 : integer;color : TColor; mode,shape,full : integer);
+begin
+   if shape = DrawShapeRectangle then
+   begin
+     Rect(Image,x,y,x2,y2,color,mode,0);
+   end
+   else if shape = DrawShapeFRectangle then
+   begin
+      Rect(Image,x,y,x2,y2,color,mode,full);
+    end
+   else if shape = DrawShapeLine then
+   begin
+      Dline(Image,x,y,x2,y2,color,mode);
+   end
+   else if shape = DrawShapeCircle then
+   begin
+      DCircle(Image,x,y,x2,y2,color,mode,0);
+   end
+   else if shape = DrawShapeFCircle then
+   begin
+      DCircle(Image,x,y,x2,y2,color,mode,full);
+   end
+   else if shape = DrawShapeEllipse then
+   begin
+      DEllipse(Image,x,y,x2,y2,color,mode,0);
+   end
+   else if shape = DrawShapeFEllipse then
+   begin
+      DEllipse(Image,x,y,x2,y2,color,mode,full);
+   end
+   else if shape = DrawShapePencil then
+   begin
+     PutPixel(Image,x,y,color,mode);
+   end
+   else if shape = DrawShapeText then
+   begin
+     DText(Image,x,y,color,mode);
+   end
+   else if shape = DrawShapeSpray then
+   begin
+     SprayPaint(Image,x,y,color,mode);
+   end
+   else if shape = DrawShapeClip then
+   begin
+     DClip(Image,x,y,x2,y2,color,mode);
+   end;
+end;
 
 procedure TRMDrawTools.SetGridThickX(amount : integer);
 begin
@@ -900,6 +1215,10 @@ begin
    Image.FillRect(0, 0, Image.Width, Image.Height);
 end;
 
+procedure  TRMDrawTools.SetTextInfo(var tinfo : TTextInfoRec);
+begin
+    TextInfo:=tinfo;
+end;
 
 procedure  TRMDrawTools.SetTextInfoXY(x,y : integer);
 begin
@@ -912,6 +1231,10 @@ begin
   TextInfo.Font:=Font;
 end;
 
+procedure  TRMDrawTools.GetTextInfo(var tinfo : TTextInfoRec);
+begin
+    tinfo:=TextInfo;
+end;
 
 procedure  TRMDrawTools.SetTextInfoActive(active : boolean);
 begin
@@ -955,8 +1278,38 @@ end;
 
 
 procedure TRMDrawTools.DrawOverlayText(Image : TCanvas);
+var
+  TmpBmp : TBitmap;
+  tw, th : integer;
 begin
-  if (DrawTool = DrawShapeText) and (TextInfo.active = TRUE) then DText(Image,TextInfo.x,TextInfo.y,TextInfo.Color,0);
+  if (DrawTool = DrawShapeText) and (TextInfo.active = TRUE) then
+  begin
+    //refresh dither/gradient colors from current palette selection
+    //so preview matches what the stamp will produce
+    if FDitherEnabled or FGradientEnabled then
+    begin
+      FDitherColor2Ex:=RMCoreBase.GetCurColor2;
+      FDitherColor2:=RGBToColor(
+        RMCoreBase.Palette.GetRed(FDitherColor2Ex),
+        RMCoreBase.Palette.GetGreen(FDitherColor2Ex),
+        RMCoreBase.Palette.GetBlue(FDitherColor2Ex));
+      FGradStartIdx:=RMCoreBase.GetCurColor1;
+      FGradEndIdx:=RMCoreBase.GetCurColor2;
+    end;
+
+    //set gradient bounds for text preview to match final stamp
+    if FGradientEnabled then
+    begin
+      TmpBmp:=TBitmap.Create;
+      TmpBmp.Canvas.Font:=TextInfo.Font;
+      tw:=TmpBmp.Canvas.TextWidth(TextInfo.Info);
+      th:=TmpBmp.Canvas.TextHeight(TextInfo.Info);
+      TmpBmp.Free;
+      SetGradientBounds(TextInfo.x - (tw div 2), TextInfo.y - (th div 2),
+                         TextInfo.x + (tw div 2), TextInfo.y + (th div 2));
+    end;
+    DText(Image,TextInfo.x,TextInfo.y,TextInfo.Color,0);
+  end;
 end;
 
 procedure TRMDrawTools.DrawOverlayGrid(Image : TCanvas;gcolor : TColor);
@@ -997,6 +1350,21 @@ begin
   if size > 20 then size:=20;
   if size < 1 then size:=1;
   GridArea.ZoomSize:=size;
+
+   (*
+  if RMCoreBase.GetWidth = 8 then
+  begin
+   If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
+  end
+  else if RMCoreBase.GetWidth = 16 then
+  begin
+   If GridArea.ZoomSize < 4 then GridArea.ZoomSize:=4;
+  end
+  else if RMCoreBase.GetWidth = 32 then
+  begin
+   If GridArea.ZoomSize < 2 then GridArea.ZoomSize:=2;
+  end;
+  *)
   SetCellWidth(GridArea.ZoomSize*GetCellWidthMin);
   SetCellHeight(GridArea.ZoomSize*GetCellHeightMin);
 end;
@@ -1043,51 +1411,112 @@ end;
 
 
 
-//shared fill helper - all the palette setups are the same loop over a
-//TRMColorRec table, only the table and count differ
-procedure AddPaletteFromTable(var CP : TColorPalette; const tbl : array of TRMColorRec; count : integer);
+procedure TRMDrawTools.AddEGAPalette(var CP : TColorPalette);
 var
+  TC : TColor;
   i : integer;
 begin
-  CP.ClearColors;
-  if count > Length(tbl) then count:=Length(tbl);
-  for i:=0 to count-1 do
-    CP.AddColor(RGBToColor(tbl[i].r, tbl[i].g, tbl[i].b));
-end;
-
-procedure TRMDrawTools.AddEGAPalette(var CP : TColorPalette);
-begin
-  AddPaletteFromTable(CP, VGADefault256, 16);
+    CP.ClearColors;
+    for i:=0 to 15 do
+    begin
+      TC:=RGBToColor(VGADefault256[i].r,
+                     VGADefault256[i].g,
+                     VGADefault256[i].b);
+      CP.AddColor(TC);
+    end;
 end;
 
 procedure TRMDrawTools.AddMonoPalette(var CP : TColorPalette);
+var
+  TC : TColor;
+  i : integer;
 begin
-  AddPaletteFromTable(CP, MonoDefault, 2);
+    CP.ClearColors;
+    for i:=0 to 1 do
+    begin
+      TC:=RGBToColor(MonoDefault[i].r,
+                     MonoDefault[i].g,
+                     MonoDefault[i].b);
+      CP.AddColor(TC);
+    end;
 end;
 
 procedure TRMDrawTools.AddCGAPalette0(var CP : TColorPalette);
+var
+  TC : TColor;
+  i : integer;
 begin
-  AddPaletteFromTable(CP, CGADefault0, 4);
+    CP.ClearColors;
+    for i:=0 to 3 do
+    begin
+      TC:=RGBToColor(CGADefault0[i].r,
+                     CGADefault0[i].g,
+                     CGADefault0[i].b);
+      CP.AddColor(TC);
+    end;
 end;
 
 procedure TRMDrawTools.AddCGAPalette1(var CP : TColorPalette);
+var
+  TC : TColor;
+  i : integer;
 begin
-  AddPaletteFromTable(CP, CGADefault1, 4);
+    CP.ClearColors;
+    for i:=0 to 3 do
+    begin
+      TC:=RGBToColor(CGADefault1[i].r,
+                     CGADefault1[i].g,
+                     CGADefault1[i].b);
+      CP.AddColor(TC);
+    end;
 end;
 
+
 procedure TRMDrawTools.AddVGAPalette(var CP : TColorPalette);
+var
+  TC : TColor;
+  i : integer;
 begin
-  AddPaletteFromTable(CP, VGADefault256, 16);
+    CP.ClearColors;
+    for i:=0 to 15 do
+    begin
+      TC:=RGBToColor(VGADefault256[i].r,
+                     VGADefault256[i].g,
+                     VGADefault256[i].b);
+      CP.AddColor(TC);
+    end;
 end;
 
 procedure TRMDrawTools.AddVGAPalette256(var CP : TColorPalette);
+var
+  TC : TColor;
+  i : integer;
 begin
-  AddPaletteFromTable(CP, VGADefault256, 256);
+    CP.ClearColors;
+    for i:=0 to 255 do
+    begin
+      TC:=RGBToColor(VGADefault256[i].r,
+                     VGADefault256[i].g,
+                     VGADefault256[i].b);
+      CP.AddColor(TC);
+
+    end;
 end;
 
 procedure TRMDrawTools.AddAmigaPalette(var CP : TColorPalette; ColorNum : integer);
+var
+  TC : TColor;
+  i : integer;
 begin
-  AddPaletteFromTable(CP, AmigaDefault32, ColorNum);
+    CP.ClearColors;
+    for i:=0 to ColorNum-1 do
+    begin
+      TC:=RGBToColor(AmigaDefault32[i].r,
+                     AmigaDefault32[i].g,
+                     AmigaDefault32[i].b);
+      CP.AddColor(TC);
+
+    end;
 end;
 
 Procedure TRMDrawTools.Hflip(x,y,x2,y2: integer);
@@ -1262,11 +1691,95 @@ begin
 end;
 
 
+
+function TRMDrawTools.DitherIsColor2(x, y : integer) : boolean;
+begin
+  case FDitherPattern of
+    0: DitherIsColor2:=((x + y) mod 2 = 1);                          //checkerboard
+    1: DitherIsColor2:=(y mod 2 = 1);                                 //horizontal lines
+    2: DitherIsColor2:=(x mod 2 = 1);                                 //vertical lines
+    3: DitherIsColor2:=((x + y) mod 3 = 0);                           //diagonal sparse
+    4: DitherIsColor2:=((x + y) mod 2 = 1) or ((x mod 2 = 0) and (y mod 2 = 0)); //heavy (75%)
+    5: DitherIsColor2:=((x mod 3 = 0) and (y mod 3 = 0));             //sparse dots
+  else
+    DitherIsColor2:=((x + y) mod 2 = 1);
+  end;
+end;
+
+{ === dither/gradient === }
+
+procedure TRMDrawTools.SetDitherEnabled(enabled : boolean);
+begin
+  FDitherEnabled:=enabled;
+  if enabled then FGradientEnabled:=false;  //mutual exclusive
+end;
+
+function TRMDrawTools.GetDitherEnabled : boolean;
+begin
+  GetDitherEnabled:=FDitherEnabled;
+end;
+
+procedure TRMDrawTools.SetDitherColor2(color : TColor; colorIdx : integer);
+begin
+  FDitherColor2:=color;
+  FDitherColor2Ex:=colorIdx;
+end;
+
+procedure TRMDrawTools.SetDitherPattern(pattern : integer);
+begin
+  FDitherPattern:=pattern;
+end;
+
+function TRMDrawTools.GetDitherPattern : integer;
+begin
+  GetDitherPattern:=FDitherPattern;
+end;
+
+procedure TRMDrawTools.SetGradientEnabled(enabled : boolean);
+begin
+  FGradientEnabled:=enabled;
+  if enabled then FDitherEnabled:=false;
+end;
+
+function TRMDrawTools.GetGradientEnabled : boolean;
+begin
+  GetGradientEnabled:=FGradientEnabled;
+end;
+
+procedure TRMDrawTools.SetGradientMode(mode : integer);
+begin
+  FGradientMode:=mode;
+end;
+
+function TRMDrawTools.GetGradientMode : integer;
+begin
+  GetGradientMode:=FGradientMode;
+end;
+
+procedure TRMDrawTools.SetGradientColors(startIdx, endIdx : integer;
+                                         startColor, endColor : TColor);
+begin
+  FGradStartIdx:=startIdx;
+  FGradEndIdx:=endIdx;
+  FGradStartColor:=startColor;
+  FGradEndColor:=endColor;
+end;
+
+procedure TRMDrawTools.SetGradientBounds(x, y, x2, y2 : integer);
+var
+  tmp : integer;
+begin
+  //normalize so bounds are always min..max
+  if x2 < x then begin tmp:=x; x:=x2; x2:=tmp; end;
+  if y2 < y then begin tmp:=y; y:=y2; y2:=tmp; end;
+  FGradBoundsX:=x;
+  FGradBoundsY:=y;
+  FGradBoundsX2:=x2;
+  FGradBoundsY2:=y2;
+end;
+
+
 initialization
   RMDrawTools:=TRMDrawTools.Create;
 
-
-
 end.
-
-
