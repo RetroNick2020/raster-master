@@ -89,6 +89,8 @@ Type
                 FDitherPattern  : integer;  //0=checker, 1=horiz lines, 2=vert lines, 3=diagonal, 4=heavy, 5=sparse
                 FDitherColor2   : TColor;
                 FDitherColor2Ex : integer;  //palette index for Color 2
+                FDitherBitmap   : array[0..7, 0..7] of byte;  //current 8x8 pattern
+                FDitherUseBitmap : boolean;  //true=use bitmap pattern, false=use formula
 
                 FGradientEnabled : boolean;
                 FGradientMode    : integer;  //0=horiz, 1=vert, 2=circular
@@ -101,8 +103,9 @@ Type
                 FGradBoundsX2    : integer;
                 FGradBoundsY2    : integer;
 
-                function DitherIsColor2(x, y : integer) : boolean;
              public
+
+             function DitherIsColor2(x, y : integer) : boolean;
 
              Constructor create;
              procedure Init;
@@ -194,6 +197,9 @@ Type
              procedure SetDitherColor2(color : TColor; colorIdx : integer);
              procedure SetDitherPattern(pattern : integer);
              function  GetDitherPattern : integer;
+             procedure SetDitherBitmap(var pat : array of byte);  //set 8x8 pattern from 64-byte array
+             procedure SetDitherUseBitmap(use : boolean);
+             function  GetDitherUseBitmap : boolean;
 
              //gradient support
              procedure SetGradientEnabled(enabled : boolean);
@@ -259,6 +265,8 @@ begin
  FDitherPattern:=0;
  FDitherColor2:=clBlack;
  FDitherColor2Ex:=0;
+ FDitherUseBitmap:=false;
+ FillChar(FDitherBitmap, SizeOf(FDitherBitmap), 0);
  FGradientEnabled:=false;
  FGradientMode:=0;
  FGradStartIdx:=0;
@@ -1694,6 +1702,13 @@ end;
 
 function TRMDrawTools.DitherIsColor2(x, y : integer) : boolean;
 begin
+  //bitmap-based pattern takes priority
+  if FDitherUseBitmap then
+  begin
+    DitherIsColor2:=(FDitherBitmap[x mod 8, y mod 8] = 1);
+    exit;
+  end;
+
   case FDitherPattern of
     0: DitherIsColor2:=((x + y) mod 2 = 1);                          //checkerboard
     1: DitherIsColor2:=(y mod 2 = 1);                                 //horizontal lines
@@ -1728,11 +1743,34 @@ end;
 procedure TRMDrawTools.SetDitherPattern(pattern : integer);
 begin
   FDitherPattern:=pattern;
+  FDitherUseBitmap:=false;  //switch back to formula mode
 end;
 
 function TRMDrawTools.GetDitherPattern : integer;
 begin
   GetDitherPattern:=FDitherPattern;
+end;
+
+procedure TRMDrawTools.SetDitherBitmap(var pat : array of byte);
+var
+  i, j : integer;
+begin
+  for i:=0 to 7 do
+    for j:=0 to 7 do
+      FDitherBitmap[i, j]:=pat[j * 8 + i];  //row-major input to [x,y] storage
+  FDitherUseBitmap:=true;
+  FDitherEnabled:=true;
+  FGradientEnabled:=false;
+end;
+
+procedure TRMDrawTools.SetDitherUseBitmap(use : boolean);
+begin
+  FDitherUseBitmap:=use;
+end;
+
+function TRMDrawTools.GetDitherUseBitmap : boolean;
+begin
+  GetDitherUseBitmap:=FDitherUseBitmap;
 end;
 
 procedure TRMDrawTools.SetGradientEnabled(enabled : boolean);

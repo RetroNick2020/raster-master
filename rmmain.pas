@@ -28,11 +28,13 @@ type
     ActionList1: TActionList;
     ActualBox: TImage;
     ActualPane: TPanel;
+    GradientMethod: TComboBox;
+    DitherPatternPaintBox: TPaintBox;
     MenuItem19: TMenuItem;
     PaletteCopyToClipboard: TMenuItem;
     PalettePasteFromClipboard: TMenuItem;
+    DrawMethod: TRadioGroup;
     rmToggle: TMenuItem;
-    ToolDitherToggle: TMenuItem;
     ToolBrushIcon: TImage;
     ToolBrushFXIcon: TImage;
     ToolVFLIP: TButton;
@@ -252,21 +254,8 @@ type
     SaveProjectJSONFile: TMenuItem;
     ExportJSONSprite: TMenuItem;
 
-    ToolSepDither: TMenuItem;
-    ToolDitherMenu: TMenuItem;
-    ToolDitherChecker: TMenuItem;
-    ToolDitherHLines: TMenuItem;
-    ToolDitherVLines: TMenuItem;
-    ToolDitherDiagonal: TMenuItem;
-    ToolDitherHeavy: TMenuItem;
-    ToolDitherSparse: TMenuItem;
-    ToolDitherSep: TMenuItem;
-    ToolDitherOff: TMenuItem;
-    ToolGradientMenu: TMenuItem;
-    ToolGradHoriz: TMenuItem;
-    ToolGradVert: TMenuItem;
-    ToolGradCircular: TMenuItem;
-    ToolGradOff: TMenuItem;
+    DitherPatternPanel: TPanel;
+    DrawMethodPreview: TPaintBox;
     BrushMenu: TMenuItem;
     MnuBrushGrabSelection: TMenuItem;
     MnuBrushGrabSprite: TMenuItem;
@@ -464,12 +453,12 @@ type
     procedure OpenProjectJSONClick(Sender: TObject);
     procedure SaveProjectJSONClick(Sender: TObject);
     procedure ExportJSONSpriteClick(Sender: TObject);
-    procedure ToolDitherPatternClick(Sender: TObject);
-    procedure ToolDitherOffClick(Sender: TObject);
-    procedure ToolGradHorizClick(Sender: TObject);
-    procedure ToolGradVertClick(Sender: TObject);
-    procedure ToolGradCircularClick(Sender: TObject);
-    procedure ToolGradOffClick(Sender: TObject);
+    procedure DrawMethodClick(Sender: TObject);
+    procedure DrawMethodPreviewPaint(Sender: TObject);
+    procedure GradientMethodChange(Sender: TObject);
+    procedure DitherPatternPaintBoxPaint(Sender: TObject);
+    procedure DitherPatternPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure BrushEffectsClick(Sender: TObject);
     procedure BrushGrabSelectionClick(Sender: TObject);
     procedure BrushGrabSpriteClick(Sender: TObject);
@@ -576,6 +565,7 @@ type
        MaxYOffset : Integer;
        ShowTransparent : Boolean;
        BrushOverlayActive : Boolean;
+       FSelectedDitherPattern : integer;
        FCheckerBmp : TBitmap;
 
        RenderBitMap  : TBitMap;
@@ -625,6 +615,7 @@ type
        procedure UpdateRenderBitMap;
        procedure ZPaintBoxMouseMoveDrawBrushTool(Sender: TObject; Shift: TShiftState; X, Y: Integer);
        procedure UpdateDitherGradientColors;
+       procedure DitherGradientFloodFill(StartX, StartY, FillWidth, FillHeight, ColorIndex : integer);
        procedure StampBrushToCore;
        procedure DrawBrushOverlay(ACanvas : TCanvas);
        procedure ZPaintBoxMouseDownXYTool(Sender: TObject; Button: TMouseButton;  Shift: TShiftState; X, Y: Integer);
@@ -667,8 +658,128 @@ var
 
 implementation
 
+const
+  DrawShapeBrush = 14;
+  DitherPatternCount = 36;
+  DitherPatternSize = 8;   //pattern data is 8x8
+  DitherPreviewSize = 32;  //preview drawn at 32x32 (4x scale)
+  DitherPreviewScale = 4;
+  DitherCols = 12;
+  DitherRows = 3;
 
-
+  DitherPatterns : array[0..DitherPatternCount-1, 0..63] of byte = (
+    //row 1: basic patterns
+    //0: 50% checkerboard
+    (1,0,1,0,1,0,1,0, 0,1,0,1,0,1,0,1, 1,0,1,0,1,0,1,0, 0,1,0,1,0,1,0,1,
+     1,0,1,0,1,0,1,0, 0,1,0,1,0,1,0,1, 1,0,1,0,1,0,1,0, 0,1,0,1,0,1,0,1),
+    //1: 25% light dots
+    (1,0,0,0,1,0,0,0, 0,0,0,0,0,0,0,0, 0,0,1,0,0,0,1,0, 0,0,0,0,0,0,0,0,
+     1,0,0,0,1,0,0,0, 0,0,0,0,0,0,0,0, 0,0,1,0,0,0,1,0, 0,0,0,0,0,0,0,0),
+    //2: 75% heavy
+    (1,1,1,0,1,1,1,0, 1,1,1,1,1,1,1,1, 1,0,1,1,1,0,1,1, 1,1,1,1,1,1,1,1,
+     1,1,1,0,1,1,1,0, 1,1,1,1,1,1,1,1, 1,0,1,1,1,0,1,1, 1,1,1,1,1,1,1,1),
+    //3: horizontal lines thin
+    (0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0),
+    //4: horizontal lines thick
+    (0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0),
+    //5: vertical lines thin
+    (0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0,
+     0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0),
+    //6: vertical lines thick
+    (0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,0,
+     0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,0, 0,1,1,0,0,1,1,0),
+    //7: diagonal right
+    (1,0,0,0,0,0,0,0, 0,1,0,0,0,0,0,0, 0,0,1,0,0,0,0,0, 0,0,0,1,0,0,0,0,
+     0,0,0,0,1,0,0,0, 0,0,0,0,0,1,0,0, 0,0,0,0,0,0,1,0, 0,0,0,0,0,0,0,1),
+    //8: diagonal left
+    (0,0,0,0,0,0,0,1, 0,0,0,0,0,0,1,0, 0,0,0,0,0,1,0,0, 0,0,0,0,1,0,0,0,
+     0,0,0,1,0,0,0,0, 0,0,1,0,0,0,0,0, 0,1,0,0,0,0,0,0, 1,0,0,0,0,0,0,0),
+    //9: cross-hatch
+    (1,0,0,0,1,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+     1,0,0,0,1,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0),
+    //10: diagonal cross X
+    (1,0,0,0,0,0,0,1, 0,1,0,0,0,0,1,0, 0,0,1,0,0,1,0,0, 0,0,0,1,1,0,0,0,
+     0,0,0,1,1,0,0,0, 0,0,1,0,0,1,0,0, 0,1,0,0,0,0,1,0, 1,0,0,0,0,0,0,1),
+    //11: brick
+    (1,1,1,1,1,1,1,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,1,1,1,1,1,
+     1,1,1,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,0),
+    //row 2: more patterns
+    //12: basket weave
+    (1,1,0,0,1,1,0,0, 1,1,0,0,1,1,0,0, 0,0,1,1,0,0,1,1, 0,0,1,1,0,0,1,1,
+     1,1,0,0,1,1,0,0, 1,1,0,0,1,1,0,0, 0,0,1,1,0,0,1,1, 0,0,1,1,0,0,1,1),
+    //13: dots sparse
+    (0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,1,0,0,0,0,
+     0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 1,0,0,0,0,0,0,0),
+    //14: dots medium
+    (1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,1,0,0,0, 0,0,0,0,0,0,0,0,
+     1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,1,0,0,0, 0,0,0,0,0,0,0,0),
+    //15: grid
+    (1,1,1,1,1,1,1,1, 1,0,0,0,0,0,0,0, 1,0,0,0,0,0,0,0, 1,0,0,0,0,0,0,0,
+     1,0,0,0,0,0,0,0, 1,0,0,0,0,0,0,0, 1,0,0,0,0,0,0,0, 1,0,0,0,0,0,0,0),
+    //16: zigzag
+    (1,0,0,0,0,0,0,0, 0,1,0,0,0,0,0,0, 0,0,1,0,0,0,0,0, 0,1,0,0,0,0,0,0,
+     1,0,0,0,0,0,0,0, 0,1,0,0,0,0,0,0, 0,0,1,0,0,0,0,0, 0,1,0,0,0,0,0,0),
+    //17: waves
+    (0,0,1,1,0,0,0,0, 0,1,0,0,1,0,0,0, 1,0,0,0,0,1,0,0, 0,0,0,0,0,0,1,1,
+     0,0,1,1,0,0,0,0, 0,1,0,0,1,0,0,0, 1,0,0,0,0,1,0,0, 0,0,0,0,0,0,1,1),
+    //18: double diagonal
+    (1,0,0,0,1,0,0,0, 0,1,0,0,0,1,0,0, 0,0,1,0,0,0,1,0, 0,0,0,1,0,0,0,1,
+     1,0,0,0,1,0,0,0, 0,1,0,0,0,1,0,0, 0,0,1,0,0,0,1,0, 0,0,0,1,0,0,0,1),
+    //19: diamond
+    (0,0,0,1,0,0,0,0, 0,0,1,0,1,0,0,0, 0,1,0,0,0,1,0,0, 1,0,0,0,0,0,1,0,
+     0,1,0,0,0,1,0,0, 0,0,1,0,1,0,0,0, 0,0,0,1,0,0,0,0, 0,0,0,0,0,0,0,0),
+    //20: fish scale
+    (0,0,0,1,1,0,0,0, 0,0,1,0,0,1,0,0, 0,1,0,0,0,0,1,0, 1,0,0,0,0,0,0,1,
+     0,0,0,0,1,1,0,0, 0,0,0,1,0,0,1,0, 0,0,1,0,0,0,0,1, 0,1,0,0,0,0,0,0),
+    //21: Bayer ordered 25%
+    (0,0,0,0,0,0,0,0, 0,0,1,0,0,0,1,0, 0,0,0,0,0,0,0,0, 0,1,0,0,0,1,0,0,
+     0,0,0,0,0,0,0,0, 0,0,1,0,0,0,1,0, 0,0,0,0,0,0,0,0, 0,1,0,0,0,1,0,0),
+    //22: Bayer ordered 50%
+    (1,0,1,0,1,0,1,0, 0,0,0,1,0,0,0,1, 1,0,1,0,1,0,1,0, 0,1,0,0,0,1,0,0,
+     1,0,1,0,1,0,1,0, 0,0,0,1,0,0,0,1, 1,0,1,0,1,0,1,0, 0,1,0,0,0,1,0,0),
+    //23: horizontal stripe 3px
+    (0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+     1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0),
+    //row 3: additional patterns
+    //24: vertical stripe 3px
+    (0,0,1,1,1,0,0,1, 0,0,1,1,1,0,0,1, 0,0,1,1,1,0,0,1, 0,0,1,1,1,0,0,1,
+     0,0,1,1,1,0,0,1, 0,0,1,1,1,0,0,1, 0,0,1,1,1,0,0,1, 0,0,1,1,1,0,0,1),
+    //25: herringbone
+    (1,1,0,0,0,0,0,0, 0,1,1,0,0,0,0,0, 0,0,1,1,0,0,0,0, 0,0,0,1,1,0,0,0,
+     0,0,0,0,1,1,0,0, 0,0,0,0,0,1,1,0, 0,0,0,0,0,0,1,1, 0,0,0,0,0,0,0,1),
+    //26: dotted grid
+    (1,0,0,0,1,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+     1,0,0,0,1,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0),
+    //27: fine checker 2x2
+    (1,1,0,0,1,1,0,0, 1,1,0,0,1,1,0,0, 0,0,1,1,0,0,1,1, 0,0,1,1,0,0,1,1,
+     1,1,0,0,1,1,0,0, 1,1,0,0,1,1,0,0, 0,0,1,1,0,0,1,1, 0,0,1,1,0,0,1,1),
+    //28: thick diagonal right
+    (1,1,0,0,0,0,0,1, 0,1,1,0,0,0,0,0, 0,0,1,1,0,0,0,0, 0,0,0,1,1,0,0,0,
+     0,0,0,0,1,1,0,0, 0,0,0,0,0,1,1,0, 0,0,0,0,0,0,1,1, 1,0,0,0,0,0,0,1),
+    //29: thick diagonal left
+    (1,0,0,0,0,0,1,1, 0,0,0,0,0,1,1,0, 0,0,0,0,1,1,0,0, 0,0,0,1,1,0,0,0,
+     0,0,1,1,0,0,0,0, 0,1,1,0,0,0,0,0, 1,1,0,0,0,0,0,0, 1,0,0,0,0,0,0,1),
+    //30: plus signs
+    (0,0,0,0,0,0,0,0, 0,0,1,0,0,0,0,0, 0,1,1,1,0,0,0,0, 0,0,1,0,0,0,0,0,
+     0,0,0,0,0,0,0,0, 0,0,0,0,0,0,1,0, 0,0,0,0,0,1,1,1, 0,0,0,0,0,0,1,0),
+    //31: horizontal dashes
+    (0,0,0,0,0,0,0,0, 1,1,1,0,0,1,1,1, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0, 0,0,1,1,1,0,0,1, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0),
+    //32: vertical dashes
+    (0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0, 0,1,0,0,0,1,0,0, 0,0,0,0,0,0,0,0,
+     0,0,0,1,0,0,0,1, 0,0,0,1,0,0,0,1, 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,0),
+    //33: small squares
+    (1,1,0,0,1,1,0,0, 1,1,0,0,1,1,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+     1,1,0,0,1,1,0,0, 1,1,0,0,1,1,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0),
+    //34: maze-like
+    (1,1,1,0,0,0,1,1, 0,0,1,0,0,0,1,0, 0,0,1,0,1,1,1,0, 0,0,1,0,1,0,0,0,
+     0,0,0,0,1,0,0,0, 1,1,1,0,1,0,0,0, 1,0,0,0,1,0,1,1, 1,0,0,0,0,0,0,0),
+    //35: stipple
+    (1,0,0,1,0,0,1,0, 0,0,0,0,0,0,0,0, 0,1,0,0,1,0,0,1, 0,0,0,0,0,0,0,0,
+     1,0,0,1,0,0,1,0, 0,0,0,0,0,0,0,0, 0,1,0,0,1,0,0,1, 0,0,0,0,0,0,0,0)
+  );
 
 {$R *.lfm}
 
@@ -726,6 +837,7 @@ RenderBitMap2.SetSize(256,256);
  DrawMode:=False;
  DrawFirst:=False;
  ShowTransparent:=False;
+ FSelectedDitherPattern:=0;
  BrushOverlayActive:=False;
 
  // create checkerboard pattern for transparency display - fixed size, never scaled
@@ -1228,12 +1340,14 @@ var
   ACBitMap : TBitMap;
   saveDither, saveGradient : boolean;
   saveDitherPattern : integer;
+  saveDitherUseBitmap : boolean;
 begin
    //temporarily disable dither/gradient - we're rendering existing buffer
    //content, not drawing new shapes
    saveDither:=RMDrawTools.GetDitherEnabled;
    saveGradient:=RMDrawTools.GetGradientEnabled;
    saveDitherPattern:=RMDrawTools.GetDitherPattern;
+   saveDitherUseBitmap:=RMDrawTools.GetDitherUseBitmap;
    RMDrawTools.SetDitherEnabled(false);
    RMDrawTools.SetGradientEnabled(false);
 
@@ -1277,6 +1391,7 @@ begin
 
    //restore dither/gradient state
    RMDrawTools.SetDitherPattern(saveDitherPattern);
+   RMDrawTools.SetDitherUseBitmap(saveDitherUseBitmap);
    if saveDither then RMDrawTools.SetDitherEnabled(true);
    if saveGradient then RMDrawTools.SetGradientEnabled(true);
 end;
@@ -1321,6 +1436,7 @@ begin
 
    ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor2;
   end;
+  DrawMethodPreview.Invalidate;
 end;
 
 procedure TRMMainForm.LoadDefaultPalette;
@@ -1719,6 +1835,7 @@ begin
    RMCoreBase.SetCurColor2(ColorPalette1.PickedIndex);
    ///RMDrawTools.SetTextInfoTColor(AColor);
   end;
+  DrawMethodPreview.Invalidate;
 end;
 
 //disable - not happy with zoom in with mouse wheel
@@ -1910,6 +2027,8 @@ begin
   begin
     if (ssLeft in Shift) and (ssShift in Shift) then
       ReplaceAllFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,ColorIndex)
+    else if RMDrawTools.GetDitherEnabled or RMDrawTools.GetGradientEnabled then
+      DitherGradientFloodFill(ZoomX, ZoomY, RMCoreBase.GetWidth, RMCoreBase.GetHeight, ColorIndex)
     else
       ScanFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,ColorIndex);
 
@@ -4474,9 +4593,48 @@ procedure TRMMainForm.EditCopyClick(Sender: TObject);
 var
  x,y,x2,y2 : integer;
  TextBmp : TBitmap;
- w, h : integer;
+ BrushBmp : TBitmap;
+ w, h, i, j : integer;
  TextStr : string;
+ ci : byte;
+ pal : TRMPaletteBuf;
 begin
+  //when brush stamp tool is active, copy working brush to clipboard
+  if RMDrawTools.GetDrawTool = DrawShapeBrush then
+  begin
+    if not RetroBrush.HasBrush then exit;
+
+    RMCoreBase.Palette.GetPalette(pal);
+    RetroBrush.InvalidateRemap;
+    RetroBrush.BuildRemapTable(pal,
+      RMCoreBase.Palette.GetPaletteMode,
+      RMCoreBase.Palette.GetColorCount);
+
+    BrushBmp:=TBitmap.Create;
+    try
+      w:=RetroBrush.WorkWidth;
+      h:=RetroBrush.WorkHeight;
+      BrushBmp.SetSize(w, h);
+      BrushBmp.Canvas.Brush.Color:=clBlack;
+      BrushBmp.Canvas.FillRect(0, 0, w, h);
+
+      for i:=0 to w-1 do
+        for j:=0 to h-1 do
+        begin
+          ci:=RetroBrush.WorkPixels[i][j];
+          if ci <> RetroBrush.TransColor then
+            BrushBmp.Canvas.Pixels[i, j]:=
+              RGBToColor(pal[RetroBrush.RemapIndex(ci)].r,
+                         pal[RetroBrush.RemapIndex(ci)].g,
+                         pal[RetroBrush.RemapIndex(ci)].b);
+        end;
+      Clipboard.Assign(BrushBmp);
+    finally
+      BrushBmp.Free;
+    end;
+    exit;
+  end;
+
   //when text tool is active, copy the text bitmap to clipboard
   if RMDrawTools.GetDrawTool = DrawShapeText then
   begin
@@ -5960,87 +6118,186 @@ begin
   end;
 end;
 
-procedure TRMMainForm.ToolDitherPatternClick(Sender: TObject);
+procedure TRMMainForm.DrawMethodClick(Sender: TObject);
 begin
-  RMDrawTools.SetDitherEnabled(true);
-  RMDrawTools.SetDitherPattern((Sender as TMenuItem).Tag);
-
-  //update checkmarks
-  ToolDitherChecker.Checked:=((Sender as TMenuItem).Tag = 0);
-  ToolDitherHLines.Checked:=((Sender as TMenuItem).Tag = 1);
-  ToolDitherVLines.Checked:=((Sender as TMenuItem).Tag = 2);
-  ToolDitherDiagonal.Checked:=((Sender as TMenuItem).Tag = 3);
-  ToolDitherHeavy.Checked:=((Sender as TMenuItem).Tag = 4);
-  ToolDitherSparse.Checked:=((Sender as TMenuItem).Tag = 5);
-
-  //turn off gradient
-  ToolGradHoriz.Checked:=false;
-  ToolGradVert.Checked:=false;
-  ToolGradCircular.Checked:=false;
+  DrawMethodPreview.Invalidate;
+  case DrawMethod.ItemIndex of
+    0: begin  //Color - disable both
+         RMDrawTools.SetDitherEnabled(false);
+         RMDrawTools.SetGradientEnabled(false);
+         FSelectedDitherPattern:=0;
+         DitherPatternPaintBox.Invalidate;
+       end;
+    1: begin  //Dither - enable dither with current pattern
+         RMDrawTools.SetDitherEnabled(true);
+         RMDrawTools.SetGradientEnabled(false);
+         UpdateDitherGradientColors;
+         //if no bitmap pattern selected, use checkerboard formula
+         if not RMDrawTools.GetDitherUseBitmap then
+           RMDrawTools.SetDitherPattern(0);
+       end;
+    2: begin  //Gradient - enable gradient with combo selection
+         RMDrawTools.SetDitherEnabled(false);
+         RMDrawTools.SetGradientEnabled(true);
+         RMDrawTools.SetGradientMode(GradientMethod.ItemIndex);
+         UpdateDitherGradientColors;
+         FSelectedDitherPattern:=0;
+         DitherPatternPaintBox.Invalidate;
+       end;
+  end;
 end;
 
-procedure TRMMainForm.ToolDitherOffClick(Sender: TObject);
+procedure TRMMainForm.GradientMethodChange(Sender: TObject);
 begin
+  DrawMethodPreview.Invalidate;
+  //switch to gradient mode and update direction
+  DrawMethod.ItemIndex:=2;
   RMDrawTools.SetDitherEnabled(false);
-  ToolDitherChecker.Checked:=false;
-  ToolDitherHLines.Checked:=false;
-  ToolDitherVLines.Checked:=false;
-  ToolDitherDiagonal.Checked:=false;
-  ToolDitherHeavy.Checked:=false;
-  ToolDitherSparse.Checked:=false;
-end;
-
-procedure TRMMainForm.ToolGradHorizClick(Sender: TObject);
-begin
   RMDrawTools.SetGradientEnabled(true);
-  RMDrawTools.SetGradientMode(0);
-  ToolGradHoriz.Checked:=true;
-  ToolGradVert.Checked:=false;
-  ToolGradCircular.Checked:=false;
-  ToolDitherChecker.Checked:=false;
-  ToolDitherHLines.Checked:=false;
-  ToolDitherVLines.Checked:=false;
-  ToolDitherDiagonal.Checked:=false;
-  ToolDitherHeavy.Checked:=false;
-  ToolDitherSparse.Checked:=false;
+  RMDrawTools.SetGradientMode(GradientMethod.ItemIndex);
+  UpdateDitherGradientColors;
+  FSelectedDitherPattern:=0;
+  DitherPatternPaintBox.Invalidate;
 end;
 
-procedure TRMMainForm.ToolGradVertClick(Sender: TObject);
+procedure TRMMainForm.DrawMethodPreviewPaint(Sender: TObject);
+var
+  i, j : integer;
+  ci : integer;
+  pal : TRMPaletteBuf;
+  c1Idx, c2Idx : integer;
+  pw, ph : integer;
+  dist, maxDist : double;
+  dx, dy : integer;
 begin
-  RMDrawTools.SetGradientEnabled(true);
-  RMDrawTools.SetGradientMode(1);
-  ToolGradHoriz.Checked:=false;
-  ToolGradVert.Checked:=true;
-  ToolGradCircular.Checked:=false;
-  ToolDitherChecker.Checked:=false;
-  ToolDitherHLines.Checked:=false;
-  ToolDitherVLines.Checked:=false;
-  ToolDitherDiagonal.Checked:=false;
-  ToolDitherHeavy.Checked:=false;
-  ToolDitherSparse.Checked:=false;
+  pw:=DrawMethodPreview.Width;
+  ph:=DrawMethodPreview.Height;
+
+  RMCoreBase.Palette.GetPalette(pal);
+  c1Idx:=RMCoreBase.GetCurColor1;
+  c2Idx:=RMCoreBase.GetCurColor2;
+
+  for i:=0 to pw-1 do
+  begin
+    for j:=0 to ph-1 do
+    begin
+      ci:=c1Idx;
+
+      case DrawMethod.ItemIndex of
+        0: begin //Color - solid Color 1
+             ci:=c1Idx;
+           end;
+        1: begin //Dither - use pattern
+             if RMDrawTools.DitherIsColor2(i, j) then
+               ci:=c2Idx;
+           end;
+        2: begin //Gradient
+             case GradientMethod.ItemIndex of
+               0: begin //horizontal
+                    if pw > 1 then
+                      ci:=c1Idx + ((c2Idx - c1Idx) * i) div (pw - 1);
+                  end;
+               1: begin //vertical
+                    if ph > 1 then
+                      ci:=c1Idx + ((c2Idx - c1Idx) * j) div (ph - 1);
+                  end;
+               2: begin //circular
+                    dx:=i - pw div 2;
+                    dy:=j - ph div 2;
+                    dist:=Sqrt(dx*dx + dy*dy);
+                    maxDist:=Sqrt(Sqr(pw / 2.0) + Sqr(ph / 2.0));
+                    if maxDist < 1 then maxDist:=1;
+                    if dist > maxDist then dist:=maxDist;
+                    ci:=c1Idx + Round((c2Idx - c1Idx) * (dist / maxDist));
+                  end;
+             end;
+             if ci < 0 then ci:=0;
+             if ci > 255 then ci:=255;
+           end;
+      end;
+
+      DrawMethodPreview.Canvas.Pixels[i, j]:=
+        RGBToColor(pal[ci].r, pal[ci].g, pal[ci].b);
+    end;
+  end;
 end;
 
-procedure TRMMainForm.ToolGradCircularClick(Sender: TObject);
+procedure TRMMainForm.DitherPatternPaintBoxPaint(Sender: TObject);
+var
+  p, i, j, col, row : integer;
+  cx, cy, sx, sy : integer;
 begin
-  RMDrawTools.SetGradientEnabled(true);
-  RMDrawTools.SetGradientMode(2);
-  ToolGradHoriz.Checked:=false;
-  ToolGradVert.Checked:=false;
-  ToolGradCircular.Checked:=true;
-  ToolDitherChecker.Checked:=false;
-  ToolDitherHLines.Checked:=false;
-  ToolDitherVLines.Checked:=false;
-  ToolDitherDiagonal.Checked:=false;
-  ToolDitherHeavy.Checked:=false;
-  ToolDitherSparse.Checked:=false;
+  DitherPatternPaintBox.Canvas.Brush.Color:=clBtnFace;
+  DitherPatternPaintBox.Canvas.FillRect(0, 0, DitherPatternPaintBox.Width, DitherPatternPaintBox.Height);
+
+  for p:=0 to DitherPatternCount-1 do
+  begin
+    col:=p mod DitherCols;
+    row:=p div DitherCols;
+    cx:=col * (DitherPreviewSize + 2) + 2;
+    cy:=row * (DitherPreviewSize + 2) + 2;
+
+    //draw 8x8 pattern scaled up to 32x32
+    for i:=0 to 7 do
+    begin
+      for j:=0 to 7 do
+      begin
+        sx:=cx + i * DitherPreviewScale;
+        sy:=cy + j * DitherPreviewScale;
+        if DitherPatterns[p, j * 8 + i] = 1 then
+          DitherPatternPaintBox.Canvas.Brush.Color:=clBlack
+        else
+          DitherPatternPaintBox.Canvas.Brush.Color:=clWhite;
+        DitherPatternPaintBox.Canvas.FillRect(sx, sy, sx + DitherPreviewScale, sy + DitherPreviewScale);
+      end;
+    end;
+
+    //draw border - red for selected, gray for others
+    if (p = FSelectedDitherPattern) then
+    begin
+      DitherPatternPaintBox.Canvas.Pen.Color:=clRed;
+      DitherPatternPaintBox.Canvas.Pen.Width:=2;
+    end
+    else
+    begin
+      DitherPatternPaintBox.Canvas.Pen.Color:=clGray;
+      DitherPatternPaintBox.Canvas.Pen.Width:=1;
+    end;
+    DitherPatternPaintBox.Canvas.Brush.Style:=bsClear;
+    DitherPatternPaintBox.Canvas.Rectangle(cx - 1, cy - 1, cx + DitherPreviewSize + 1, cy + DitherPreviewSize + 1);
+    DitherPatternPaintBox.Canvas.Brush.Style:=bsSolid;
+    DitherPatternPaintBox.Canvas.Pen.Width:=1;
+  end;
 end;
 
-procedure TRMMainForm.ToolGradOffClick(Sender: TObject);
+procedure TRMMainForm.DitherPatternPaintBoxMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  col, row, idx : integer;
+  pat : array[0..63] of byte;
+  i : integer;
 begin
-  RMDrawTools.SetGradientEnabled(false);
-  ToolGradHoriz.Checked:=false;
-  ToolGradVert.Checked:=false;
-  ToolGradCircular.Checked:=false;
+  col:=(X - 2) div (DitherPreviewSize + 2);
+  row:=(Y - 2) div (DitherPreviewSize + 2);
+  if (col < 0) or (col >= DitherCols) then exit;
+  if (row < 0) or (row >= DitherRows) then exit;
+  idx:=row * DitherCols + col;
+  if idx >= DitherPatternCount then exit;
+
+  //copy pattern data
+  for i:=0 to 63 do
+    pat[i]:=DitherPatterns[idx, i];
+
+  //activate bitmap dither
+  FSelectedDitherPattern:=idx;
+  RMDrawTools.SetDitherBitmap(pat);
+  UpdateDitherGradientColors;
+
+  //switch radio group to Dither
+  DrawMethod.ItemIndex:=1;
+
+  DitherPatternPaintBox.Invalidate;
+  DrawMethodPreview.Invalidate;
 end;
 
 procedure TRMMainForm.BrushEffectsClick(Sender: TObject);
@@ -6059,6 +6316,162 @@ begin
     Dlg.Free;
   end;
   ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.DitherGradientFloodFill(StartX, StartY, FillWidth, FillHeight, ColorIndex : integer);
+var
+  TargetColor : integer;
+  Visited : array of boolean;
+  Queue : array of TPoint;
+  QHead, QTail, QSize : integer;
+  CX, CY, LX, RX, ScanX : integer;
+  PixCount : integer;
+  FillColor : integer;
+  ci : integer;
+  dist, maxDist : double;
+  dx, dy : integer;
+  Color2Index : integer;
+  GradMode : integer;
+  GradStartIdx, GradEndIdx : integer;
+
+  procedure Enqueue(AX, AY : integer);
+  begin
+    if (AX < 0) or (AX >= FillWidth) or (AY < 0) or (AY >= FillHeight) then exit;
+    if Visited[AY * FillWidth + AX] then exit;
+    if RMCoreBase.GetPixel(AX, AY) <> TargetColor then exit;
+
+    if QTail >= QSize then
+    begin
+      QSize:=QSize * 2;
+      if QSize > PixCount then QSize:=PixCount;
+      SetLength(Queue, QSize);
+    end;
+    Queue[QTail].X:=AX;
+    Queue[QTail].Y:=AY;
+    inc(QTail);
+  end;
+
+  function ComputeFillColor(px, py, baseColor : integer) : integer;
+  var
+    c : integer;
+  begin
+    c:=baseColor;
+
+    //apply gradient
+    if RMDrawTools.GetGradientEnabled then
+    begin
+      case GradMode of
+        0: begin //horizontal
+             if FillWidth > 1 then
+               c:=GradStartIdx + ((GradEndIdx - GradStartIdx) * px) div (FillWidth - 1);
+           end;
+        1: begin //vertical
+             if FillHeight > 1 then
+               c:=GradStartIdx + ((GradEndIdx - GradStartIdx) * py) div (FillHeight - 1);
+           end;
+        2: begin //circular
+             dx:=px - (FillWidth div 2);
+             dy:=py - (FillHeight div 2);
+             dist:=Sqrt(dx*dx + dy*dy);
+             maxDist:=Sqrt(Sqr(FillWidth / 2.0) + Sqr(FillHeight / 2.0));
+             if maxDist < 1 then maxDist:=1;
+             if dist > maxDist then dist:=maxDist;
+             c:=GradStartIdx + Round((GradEndIdx - GradStartIdx) * (dist / maxDist));
+           end;
+      end;
+      if c < 0 then c:=0;
+      if c > 255 then c:=255;
+    end;
+
+    //apply dither pattern
+    if RMDrawTools.GetDitherEnabled then
+    begin
+      if RMDrawTools.DitherIsColor2(px, py) then
+        c:=Color2Index;
+    end;
+
+    ComputeFillColor:=c;
+  end;
+
+begin
+  if (StartX < 0) or (StartX >= FillWidth) or
+     (StartY < 0) or (StartY >= FillHeight) then exit;
+
+  TargetColor:=RMCoreBase.GetPixel(StartX, StartY);
+  Color2Index:=RMCoreBase.GetCurColor2;
+  GradMode:=RMDrawTools.GetGradientMode;
+  GradStartIdx:=RMCoreBase.GetCurColor1;
+  GradEndIdx:=Color2Index;
+
+  //if fill color equals target and no effects active, skip
+  if (TargetColor = ColorIndex) and
+     (not RMDrawTools.GetDitherEnabled) and
+     (not RMDrawTools.GetGradientEnabled) then exit;
+
+  PixCount:=FillWidth * FillHeight;
+
+  //visited array prevents infinite loops when dither/gradient
+  //writes pixels that match TargetColor
+  Visited:=nil;
+  SetLength(Visited, PixCount);
+  FillChar(Visited[0], PixCount * SizeOf(Boolean), 0);
+
+  QSize:=4096;
+  SetLength(Queue, QSize);
+  QHead:=0;
+  QTail:=0;
+
+  Enqueue(StartX, StartY);
+
+  while QHead < QTail do
+  begin
+    CX:=Queue[QHead].X;
+    CY:=Queue[QHead].Y;
+    inc(QHead);
+
+    //skip if already visited
+    if Visited[CY * FillWidth + CX] then continue;
+
+    //verify still target color
+    if RMCoreBase.GetPixel(CX, CY) <> TargetColor then continue;
+
+    //scan left to find span start
+    LX:=CX;
+    while (LX > 0) and (not Visited[CY * FillWidth + LX - 1]) and
+          (RMCoreBase.GetPixel(LX - 1, CY) = TargetColor) do
+      dec(LX);
+
+    //scan right to find span end
+    RX:=CX;
+    while (RX < FillWidth - 1) and (not Visited[CY * FillWidth + RX + 1]) and
+          (RMCoreBase.GetPixel(RX + 1, CY) = TargetColor) do
+      inc(RX);
+
+    //mark span as visited BEFORE filling
+    for ScanX:=LX to RX do
+      Visited[CY * FillWidth + ScanX]:=True;
+
+    //fill the span with dither/gradient-aware color
+    for ScanX:=LX to RX do
+    begin
+      FillColor:=ComputeFillColor(ScanX, CY, ColorIndex);
+      RMCoreBase.SetColorEx(FillColor);
+      RMCoreBase.PutPixelEx(ScanX, CY);
+    end;
+
+    //enqueue seeds for row above and below
+    for ScanX:=LX to RX do
+    begin
+      if CY > 0 then Enqueue(ScanX, CY - 1);
+      if CY < FillHeight - 1 then Enqueue(ScanX, CY + 1);
+    end;
+  end;
+
+  SetLength(Queue, 0);
+  SetLength(Visited, 0);
+
+  //restore ColorEx
+  RMCoreBase.SetColorEx(ColorIndex);
 end;
 
 procedure TRMMainForm.UpdateDitherGradientColors;
