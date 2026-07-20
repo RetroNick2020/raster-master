@@ -48,29 +48,6 @@ type
     MenuItem15: TMenuItem;
     ExportEmscriptenAnimArray: TMenuItem;
     ExportPascalAnimArray: TMenuItem;
-    //extended compiler export menu items
-    MnuAnimExpAB, AD_AB : TMenuItem;
-    MnuAnimExpAC, AD_AC : TMenuItem;
-    MnuAnimExpAP, AD_AP : TMenuItem;
-    MnuAnimExpAQB, AD_AQB : TMenuItem;
-    MnuAnimExpBAM, AD_BAM : TMenuItem;
-    MnuAnimExpFBQB, AD_FBQB : TMenuItem;
-    MnuAnimExpFB, AD_FB : TMenuItem;
-    MnuAnimExpFP, AD_FP : TMenuItem;
-    MnuAnimExpGCC, AD_GCC : TMenuItem;
-    MnuAnimExpGW, AD_GW : TMenuItem;
-    MnuAnimExpJS, AD_JS : TMenuItem;
-    MnuAnimExpJSON, AD_JSON : TMenuItem;
-    MnuAnimExpOW, AD_OW : TMenuItem;
-    MnuAnimExpQB, AD_QB : TMenuItem;
-    MnuAnimExpQB64, AD_QB64 : TMenuItem;
-    MnuAnimExpQBJS, AD_QBJS : TMenuItem;
-    MnuAnimExpQC, AD_QC : TMenuItem;
-    MnuAnimExpQP, AD_QP : TMenuItem;
-    MnuAnimExpTB, AD_TB : TMenuItem;
-    MnuAnimExpTP, AD_TP : TMenuItem;
-    MnuAnimExpTC, AD_TC : TMenuItem;
-    MnuAnimExpTMT, AD_TMT : TMenuItem;
     FileExportBasicData: TMenuItem;
     ExportBasicAnimData: TMenuItem;
     pascal: TMenuItem;
@@ -95,7 +72,6 @@ type
     SelectDirectoryDialog1: TSelectDirectoryDialog;
     SimPanel: TPanel;
     SimPaintBox: TPaintBox;
-    StatusBar1: TStatusBar;
     SimStyleCombo: TComboBox;
     MovementSpeedTrackBar: TTrackBar;
     lblMovementSpeed: TLabel;
@@ -107,10 +83,12 @@ type
     MiddlePanel: TPanel;
     RightPanel: TPanel;
     Timer1: TTimer;
+    SpeedTimer: TTimer;
     TopSplitter: TSplitter;
     LeftSplitter: TSplitter;
     RightSplitter: TSplitter;
     FPSTrackBar: TTrackBar;
+    SpeedTrackBar: TTrackBar;
     procedure AddFrameMenuClick(Sender: TObject);
     procedure AllAnimListViewClick(Sender: TObject);
     procedure AllAnimListViewShowHint(Sender: TObject; HintInfo: PHintInfo);
@@ -151,7 +129,6 @@ type
     procedure MenuItem11Click(Sender: TObject);
     procedure ExportEmscriptenAnimArrayClick(Sender: TObject);
     procedure FileExportPascalArrayClick(Sender: TObject);
-    procedure MenuExportAnimLanClick(Sender: TObject);
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
     procedure MenuItem9Click(Sender: TObject);
@@ -167,15 +144,13 @@ type
 
     procedure Timer1StartTimer(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure SpeedTimerTimer(Sender: TObject);
     procedure FPSTrackBarChange(Sender: TObject);
+    procedure SpeedTrackBarChange(Sender: TObject);
   private
-    procedure ExportAnimationJSON(filename : string);
-    procedure ExportAnimationJS(filename : string);
-    procedure UpdateStatusBar;
+
   public
     AnimFrameCounter : integer;
-    FAnimAccumMs : integer;   //ms accumulator - decouples frame advance (speed) from display rate (fps)
-    FPSDelay         : integer;
 
     { Frame grid state - palette editor style }
     FSelectedFrame : integer;
@@ -235,7 +210,6 @@ procedure TAnimationForm.FormCreate(Sender: TObject);
 var
   i, j : integer;
 begin
-  FPSDelay:=1000 Div FPSTrackBar.Position;
   FSelectedFrame:=-1;
   FDragActive:=False;
   FDragIndex:=-1;
@@ -294,11 +268,11 @@ procedure TAnimationForm.AnimCopyMenuClick(Sender: TObject);
  begin
    index:=FSelectedFrame;
    if index > -1 then AnimateBase.CopyToClipBoard(AnimateBase.GetImageIndex(index),AnimateBase.GetUID(index));
- end
- else if AllAnimListView.ItemIndex > -1 then
- begin
-
  end;
+// else if AllAnimListView.ItemIndex > -1 then
+// begin
+
+// end;
 end;
 
 procedure TAnimationForm.AnimPasteMenuClick(Sender: TObject);
@@ -322,14 +296,12 @@ end;
 procedure TAnimationForm.MenuDeleteAllClick(Sender: TObject);
 begin
   DeleteAll;
-  UpdateStatusBar;
 end;
 
 procedure TAnimationForm.MenuItem10Click(Sender: TObject);
 begin
   AddEmptyFrame;
 end;
-
 
 procedure TAnimationForm.MenuItem2Click(Sender: TObject);
 begin
@@ -363,10 +335,8 @@ procedure TAnimationForm.AddAnimation;
 begin
   AnimateBase.AddAnimation;
   AnimateBase.SetCurrentAnimation(AnimateBase.GetAnimationCount-1);    //animation will be added to end of list - switch to that
-
   LoadCurrentAnimList;
   LoadAnimThumbList;
-
   FramePaintBox.Invalidate;
   AllAnimListView.Repaint;
 end;
@@ -375,10 +345,8 @@ end;
 procedure TAnimationForm.DeleteAnimation(AnimationIndex : integer);
 begin
   AnimateBase.DeleteAnimation(AnimationIndex);
-
   LoadCurrentAnimList;
   LoadAnimThumbList;
-
   FramePaintBox.Invalidate;
   AllAnimListView.Repaint;
 end;
@@ -389,7 +357,6 @@ var
 begin
   index:=FSelectedFrame;
   if index > -1 then DeleteFrame(Index);
-
   index:=AllAnimListView.ItemIndex;
   if index > -1 then DeleteAnimation(Index);
 end;
@@ -397,7 +364,6 @@ end;
 procedure TAnimationForm.ExportEmscriptenAnimArrayClick(Sender: TObject);
 begin
   if ExportTextFileToClipboard(Sender) then exit;
-
   SaveDialog1.Filter := 'C Source Files|*.c|C Header Files|*.h|All Files|*.*';
   if SaveDialog1.Execute then
   begin
@@ -408,7 +374,6 @@ end;
 procedure TAnimationForm.FileExportPascalArrayClick(Sender: TObject);
 begin
   if ExportTextFileToClipboard(Sender) then exit;
-
   SaveDialog1.Filter := 'Pascal Source Files|*.pas|Pascal Include Files|*.inc|All Files|*.*';
   if SaveDialog1.Execute then
   begin
@@ -418,134 +383,17 @@ end;
 
 procedure TAnimationForm.ExportBasicAnimDataClick(Sender: TObject);
 begin
-if ExportTextFileToClipboard(Sender) then exit;
-
-SaveDialog1.Filter := 'Basic Source Files|*.bas|Basic Include Files|*.bi|All Files|*.*';
-if SaveDialog1.Execute then
-begin
-  ExportAnimation(SaveDialog1.FileName,BasicLan);
-end;
-
-end;
-
-//exports the current animation as a pure JSON data descriptor
-procedure TAnimationForm.ExportAnimationJSON(filename : string);
-var
-  F : TextFile;
-  i, fcount, cur : integer;
-  exportname, line : string;
-begin
-  cur:=AnimateBase.GetCurrentAnimation;
-  fcount:=AnimateBase.GetFrameCount;
-  exportname:=AnimateBase.GetExportName(cur);
-  if exportname = '' then exportname:='anim' + IntToStr(cur);
-
-  AssignFile(F, filename);
-  Rewrite(F);
-  WriteLn(F,'{');
-  WriteLn(F,'  "name": "',exportname,'",');
-  WriteLn(F,'  "frameCount": ',fcount,',');
-  line:='  "frames": [';
-  for i:=0 to fcount-1 do
-  begin
-    line:=line+IntToStr(AnimateBase.GetImageIndex(i));
-    if i < fcount-1 then line:=line+',';
-  end;
-  line:=line+']';
-  WriteLn(F,line);
-  WriteLn(F,'}');
-  CloseFile(F);
-end;
-
-//exports the current animation as a JavaScript const array
-procedure TAnimationForm.ExportAnimationJS(filename : string);
-var
-  F : TextFile;
-  i, fcount, cur : integer;
-  exportname, line : string;
-begin
-  cur:=AnimateBase.GetCurrentAnimation;
-  fcount:=AnimateBase.GetFrameCount;
-  exportname:=AnimateBase.GetExportName(cur);
-  if exportname = '' then exportname:='anim' + IntToStr(cur);
-
-  AssignFile(F, filename);
-  Rewrite(F);
-  WriteLn(F,'// JavaScript Animation Data Created By Raster Master');
-  WriteLn(F,'// Frame Count = ',fcount);
-  line:='const '+exportname+'Anim = [';
-  for i:=0 to fcount-1 do
-  begin
-    line:=line+IntToStr(AnimateBase.GetImageIndex(i));
-    if i < fcount-1 then line:=line+',';
-  end;
-  line:=line+'];';
-  WriteLn(F,line);
-  CloseFile(F);
-end;
-
-procedure TAnimationForm.UpdateStatusBar;
-var
-  cur, total, fcount : integer;
-  exportname : string;
-begin
-  if StatusBar1.Panels.Count < 5 then exit;
-
-  cur:=AnimateBase.GetCurrentAnimation;
-  total:=AnimateBase.GetAnimationCount;
-  fcount:=AnimateBase.GetFrameCount;
-  exportname:=AnimateBase.GetExportName(cur);
-  if exportname = '' then exportname:='(unnamed)';
-
-  StatusBar1.Panels[0].Text:='Animation: '+IntToStr(cur+1)+'/'+IntToStr(total)+' '+exportname;
-  StatusBar1.Panels[1].Text:='Frames: '+IntToStr(fcount);
-  StatusBar1.Panels[2].Text:='Frame: '+IntToStr(AnimFrameCounter)+'/'+IntToStr(fcount);
-  StatusBar1.Panels[3].Text:='FPS: '+IntToStr(FPSTrackBar.Position)+' Move: '+IntToStr(FMovementSpeed);
-  if ShowTransparent then
-    StatusBar1.Panels[4].Text:='Transparent'
-  else
-    StatusBar1.Panels[4].Text:='';
-end;
-
-//shared handler for all extended compiler targets - the menu item Tag
-//holds the map Lan constant, which we map to the syntax family that
-//ExportAnimation understands
-procedure TAnimationForm.MenuExportAnimLanClick(Sender: TObject);
-var
-  Lan : integer;
-begin
   if ExportTextFileToClipboard(Sender) then exit;
-
-  Lan:=(Sender as TMenuItem).Tag;
-
-  if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
-    SaveDialog1.Filter := 'Basic Source Files|*.bas|Basic Include Files|*.bi|All Files|*.*'
-  else if MapLanIsPascal(Lan) then
-    SaveDialog1.Filter := 'Pascal Source Files|*.pas|Pascal Include Files|*.inc|All Files|*.*'
-  else if MapLanIsC(Lan) then
-    SaveDialog1.Filter := 'C Source Files|*.c|C Header Files|*.h|All Files|*.*'
-  else if MapLanIsJS(Lan) then
-    SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
-  else if MapLanIsJSON(Lan) then
-    SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
-  else
-    SaveDialog1.Filter := 'All Files|*.*';
-
-  if not SaveDialog1.Execute then exit;
-
-  if MapLanIsBasic(Lan) then ExportAnimation(SaveDialog1.FileName,BasicLan)
-  else if MapLanIsBasicLN(Lan) then ExportAnimation(SaveDialog1.FileName,BasicLNLan)
-  else if MapLanIsPascal(Lan) then ExportAnimation(SaveDialog1.FileName,PascalLan)
-  else if MapLanIsC(Lan) then ExportAnimation(SaveDialog1.FileName,CLan)
-  else if MapLanIsJS(Lan) then ExportAnimationJS(SaveDialog1.FileName)
-  else if MapLanIsJSON(Lan) then ExportAnimationJSON(SaveDialog1.FileName);
+  SaveDialog1.Filter := 'Basic Source Files|*.bas|Basic Include Files|*.bi|All Files|*.*';
+  if SaveDialog1.Execute then
+  begin
+    ExportAnimation(SaveDialog1.FileName,PascalLan);
+  end;
 end;
 
 function TAnimationForm.ExportTextFileToClipboard(Sender: TObject) : boolean;
 var
  filename : string;
- mi : TMenuItem;
- Lan : integer;
 begin
  if rmconfigbase.GetExportTextFileToClipStatus = false then
  begin
@@ -554,34 +402,14 @@ begin
  end;
 
  filename:=GetTemporaryPathAndFileName;
- mi:=Sender As TMenuItem;
- Case mi.Name of  'ExportBasicAnimData':ExportAnimation(FileName,BasicLan);
+ Case (Sender As TMenuItem).Name of  'ExportBasicAnimData':ExportAnimation(FileName,BasicLan);
                                      'ExportBasicLNAnimData':ExportAnimation(FileName,BasicLNLan);
                                      'ExportCAnimArray','ExportEmscriptenAnimArray','ExportgccAnimArray': ExportAnimation(FileName,CLan);
                                      'ExportPascalAnimArray':ExportAnimation(FileName,PascalLan);
 
  else
-   //Tag-based dispatch for extended compiler targets (items named AD_*)
-   if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'AD_') then
-   begin
-     Lan:=mi.Tag;
-     if MapLanIsBasic(Lan) then ExportAnimation(FileName,BasicLan)
-     else if MapLanIsBasicLN(Lan) then ExportAnimation(FileName,BasicLNLan)
-     else if MapLanIsPascal(Lan) then ExportAnimation(FileName,PascalLan)
-     else if MapLanIsC(Lan) then ExportAnimation(FileName,CLan)
-     else if MapLanIsJS(Lan) then ExportAnimationJS(FileName)
-     else if MapLanIsJSON(Lan) then ExportAnimationJSON(FileName)
-     else
-     begin
-       result:=false;
-       exit;
-     end;
-   end
-   else
-   begin
-     result:=false;  //did not find a supported format return false
-     exit;
-   end;
+   result:=false;  //did not find a supported format return false
+   exit;
  End;
 
  result:=true;  //found supported format - return true
@@ -591,27 +419,21 @@ begin
  ShowMessage('Exported to Clipboard!');
 end;
 
-
 procedure TAnimationForm.AnimDeleteMenuClick(Sender: TObject);
 var
   index : integer;
 begin
    index:=AllAnimListView.ItemIndex;
    if index > -1 then  DeleteAnimation(index);
-  UpdateStatusBar;
 end;
-
-
 
 procedure TAnimationForm.DeleteAll;
 begin
 // AnimateBase.DeleteAll;
  AnimateBase.InitAnimation;
  FSelectedFrame:=-1;
-
  LoadCurrentAnimList;
  LoadAnimThumbList;
-
  FramePaintBox.Invalidate;
  AllAnimListView.Repaint;
 end;
@@ -622,19 +444,14 @@ begin
   FSelectedFrame:=-1;
   LoadCurrentAnimList;
   LoadAnimThumbList;
-
   FramePaintBox.Invalidate;
   AllAnimListView.Repaint;
 end;
 
-
 procedure TAnimationForm.NewAnimationMenuClick(Sender: TObject);
 begin
  AddAnimation;
-  UpdateStatusBar;
 end;
-
-
 
 procedure TAnimationForm.PasteMenuClick(Sender: TObject);
 var
@@ -665,6 +482,7 @@ end;
 procedure TAnimationForm.PlayButtonClick(Sender: TObject);
 begin
   Timer1.Enabled:=true;
+  SpeedTimer.Enabled:=true;
 end;
 
 procedure TAnimationForm.SpriteListViewDblClick(Sender: TObject);
@@ -676,9 +494,8 @@ end;
 procedure TAnimationForm.LoadCurrentAnimList;
 var
   ImageCount,i : integer;
-  MEBitMap  : TBitMap;
-  FoundImage     : integer;
-
+  MEBitMap     : TBitMap;
+  FoundImage   : integer;
 begin
    CurrentAnimationImageList.Clear;
    CurrentAnimationImageList.Width:=128;
@@ -772,14 +589,13 @@ end;
 procedure TAnimationForm.StopButtonClick(Sender: TObject);
 begin
   Timer1.Enabled:=false;
+  SpeedTimer.Enabled:=false;
   SimPaintBox.Invalidate;
 end;
 
-
-
 procedure TAnimationForm.Timer1StartTimer(Sender: TObject);
 begin
-  AnimFrameCounter:=0;
+  AnimFrameCounter:=1;
   FSimTick:=0;
   FSimMovePos:=0;
 end;
@@ -787,56 +603,50 @@ end;
 procedure TAnimationForm.Timer1Timer(Sender: TObject);
 var
    ImageIndex : integer;
-   FramePeriod : integer;
 begin
-  //the timer ticks at the FPS rate (display refresh only).
-  //the animation frame advances on a time accumulator driven by the
-  //Speed gauge, so FPS controls smoothness and Speed controls speed.
-  inc(FAnimAccumMs, Timer1.Interval);
-  FramePeriod:=1000 div FMovementSpeed;   //speed 1 = 1 frame/sec ... speed 10 = 10 frames/sec
+  if AnimateBase.GetFrameCount = 0 then exit;
+  inc(AnimFrameCounter);
+  //clamp frame counter
+  if AnimFrameCounter < 1 then AnimFrameCounter:=1;
+  if AnimFrameCounter > AnimateBase.GetFrameCount then
+    AnimFrameCounter:=1;
 
-  //advance as many frames as the elapsed time calls for - a while loop
-  //so a low FPS (long tick) still plays the animation at the same speed
-  //by stepping several frames in one tick
-  while FAnimAccumMs >= FramePeriod do
-  begin
-    dec(FAnimAccumMs, FramePeriod);
+  ImageIndex:=AnimateBase.GetImageIndex(AnimFrameCounter-1);
 
-    inc(AnimFrameCounter);
-    if AnimFrameCounter > AnimateBase.GetFrameCount then
-      AnimFrameCounter:=1;
+  //Panel1 preview
+  Panel1.Canvas.Brush.Color:=Panel1.Color;
+  Panel1.Canvas.FillRect(Rect(10,10,138,138));
+  DrawSimSprite(Panel1.Canvas, 10, 10, ImageIndex);
 
-    //movement advances with the animation, not with the display rate
-    inc(FSimTick);
-    inc(FSimMovePos, FMovementSpeed);
-  end;
+  //redraw simulation (display only, no state changes)
+  UpdateSimulation;
+end;
 
-  if  AnimateBase.GetFrameCount > 0 then
-  begin
-    //clamp - frames may have been deleted while the timer was running
-    //and the reset above only runs when a frame advance happens
-    if (AnimFrameCounter < 1) or (AnimFrameCounter > AnimateBase.GetFrameCount) then
-      AnimFrameCounter:=1;
+procedure TAnimationForm.SpeedTimerTimer(Sender: TObject);
+begin
+//  if AnimateBase.GetFrameCount = 0 then exit;
 
-    ImageIndex:=AnimateBase.GetImageIndex(AnimFrameCounter-1);
+  //advance animation frame
+ // inc(AnimFrameCounter);
+ // if AnimFrameCounter > AnimateBase.GetFrameCount then
+ //   AnimFrameCounter:=1;
 
-    // Panel1 preview - original working draw call
-    Panel1.Canvas.Brush.Color:=Panel1.Color;
-    Panel1.Canvas.FillRect(Rect(10,10,138,138));
-    DrawSimSprite(Panel1.Canvas, 10, 10, ImageIndex);
-
-    UpdateSimulation;
-  end;
-  //update frame counter display during playback
-  if StatusBar1.Panels.Count >= 3 then
-    StatusBar1.Panels[2].Text:='Frame: '+IntToStr(AnimFrameCounter)+'/'+IntToStr(AnimateBase.GetFrameCount);
+  //advance simulation movement
+  inc(FSimTick);
+  inc(FSimMovePos, FMovementSpeed);
+  UpdateSimulation;
 end;
 
 procedure TAnimationForm.FPSTrackBarChange(Sender: TObject);
 begin
-  FPSDelay:=1000 div FPSTrackBar.Position;
-  Timer1.Interval:=FPSDelay;
-  UpdateStatusBar;
+  //FPS controls display refresh rate
+  Timer1.Interval:=1000 div FPSTrackBar.Position;
+end;
+
+procedure TAnimationForm.SpeedTrackBarChange(Sender: TObject);
+begin
+  //Speed controls how fast frames advance
+  SpeedTimer.Interval:=1000 div SpeedTrackBar.Position;
 end;
 
 procedure TAnimationForm.FormActivate(Sender: TObject);
@@ -853,7 +663,6 @@ begin
    SpriteListView.Repaint;
    FramePaintBox.Invalidate;
    AllAnimListView.Repaint;
-   UpdateStatusBar;
 end;
 
 procedure TAnimationForm.AddFrame(ImageIndex : integer);
@@ -867,7 +676,6 @@ begin
    FramePaintBox.Invalidate;
    LoadAnimThumbList;
    AllAnimListView.Repaint;
-   UpdateStatusBar;
 end;
 
 
@@ -1266,7 +1074,6 @@ var
 begin
    index:=(Sender As TListView).ItemIndex;
    if (index > -1) and (index<>AnimateBase.GetCurrentAnimation) then SelectAnimation(index);
-   UpdateStatusBar;
 end;
 
 procedure TAnimationForm.CopyFromThumbViewClick(Sender: TObject);
@@ -1335,7 +1142,6 @@ end;
 procedure TAnimationForm.MovementSpeedTrackBarChange(Sender: TObject);
 begin
   FMovementSpeed:=MovementSpeedTrackBar.Position;
-  UpdateStatusBar;
 end;
 
 procedure TAnimationForm.RebuildTransSpriteImageList;
@@ -1523,8 +1329,11 @@ begin
 
   DrawSimSprite(SimPaintBox.Canvas, SpriteX, SpriteY, ImgIdx);
 
-  //style info now shown in the status bar - removed the TextOut here
-  //which was causing flicker during animation playback
+ // SimPaintBox.Canvas.Brush.Style:=bsClear;
+ // SimPaintBox.Canvas.Font.Color:=clWhite;
+ // SimPaintBox.Canvas.Font.Size:=8;
+ // SimPaintBox.Canvas.TextOut(4, 2, SimStyleCombo.Items[SimStyle]);
+ // SimPaintBox.Canvas.Brush.Style:=bsSolid;
 end;
 
 procedure TAnimationForm.SimPaintBoxPaint(Sender: TObject);

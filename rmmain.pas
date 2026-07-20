@@ -57,6 +57,7 @@ type
     MenuEdit: TMenuItem;
     EditCopy: TMenuItem;
     EditPaste: TMenuItem;
+    EditPastePalette: TMenuItem;
     EditColor: TMenuItem;
     EditUndo: TMenuItem;
     EditClear: TMenuItem;
@@ -261,6 +262,9 @@ type
     MnuBrushGrabSprite: TMenuItem;
     MnuBrushGrabClipboard: TMenuItem;
     MnuBrushSep1: TMenuItem;
+    MnuBrushOpen: TMenuItem;
+    MnuBrushSave: TMenuItem;
+    MnuBrushSep1b: TMenuItem;
     MnuBrushEffects: TMenuItem;
     MnuBrushSep2: TMenuItem;
     MnuBrushStampTool: TMenuItem;
@@ -330,6 +334,54 @@ type
     PaletteExport: TMenuItem;
     PaletteOpen: TMenuItem;
     PaletteSave: TMenuItem;
+    MaterialsMenu: TMenuItem;
+    MnuMatDirt: TMenuItem;
+    MnuMatDirtSide: TMenuItem;
+    MnuMatDirtTop: TMenuItem;
+    MnuMatRock: TMenuItem;
+    MnuMatRockSide: TMenuItem;
+    MnuMatRockTop: TMenuItem;
+    MnuMatGrass: TMenuItem;
+    MnuMatGrassSide: TMenuItem;
+    MnuMatGrassTop: TMenuItem;
+    MnuMatSnow: TMenuItem;
+    MnuMatSnowSide: TMenuItem;
+    MnuMatSnowTop: TMenuItem;
+    MnuMatIce: TMenuItem;
+    MnuMatIceSide: TMenuItem;
+    MnuMatIceTop: TMenuItem;
+    MnuMatWood: TMenuItem;
+    MnuMatWoodSide: TMenuItem;
+    MnuMatWoodTop: TMenuItem;
+    MnuMatMetal: TMenuItem;
+    MnuMatMetalSide: TMenuItem;
+    MnuMatMetalTop: TMenuItem;
+    MnuMatSilver: TMenuItem;
+    MnuMatSilverSide: TMenuItem;
+    MnuMatSilverTop: TMenuItem;
+    MnuMatGold: TMenuItem;
+    MnuMatGoldSide: TMenuItem;
+    MnuMatGoldTop: TMenuItem;
+    MnuMatWater: TMenuItem;
+    MnuMatWaterSide: TMenuItem;
+    MnuMatWaterTop: TMenuItem;
+    MnuMatCrate: TMenuItem;
+    MnuMatCrateSide: TMenuItem;
+    MnuMatCrateTop: TMenuItem;
+    MnuMatBrownBrick: TMenuItem;
+    MnuMatBrownBrickSide: TMenuItem;
+    MnuMatBrownBrickTop: TMenuItem;
+    MnuMatStoneBrick: TMenuItem;
+    MnuMatStoneBrickSide: TMenuItem;
+    MnuMatStoneBrickTop: TMenuItem;
+    MnuMatWoodFloor: TMenuItem;
+    MnuMatWoodFloorSide: TMenuItem;
+    MnuMatWoodFloorTop: TMenuItem;
+    MnuMatCeramicTile: TMenuItem;
+    MnuMatCeramicTileSide: TMenuItem;
+    MnuMatCeramicTileTop: TMenuItem;
+    PaletteResetDefault: TMenuItem;
+    PaletteSortColors: TMenuItem;
     PaletteAmiga2: TMenuItem;
     PaletteAmiga4: TMenuItem;
     PaletteAmiga8: TMenuItem;
@@ -414,6 +466,7 @@ type
     procedure TransparentToggleClick(Sender: TObject);
     procedure EditCopyClick(Sender: TObject);
     procedure EditPasteClick(Sender: TObject);
+    procedure EditPastePaletteClick(Sender: TObject);
     procedure FontSheetExportMenuClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
 
@@ -459,6 +512,8 @@ type
     procedure DitherPatternPaintBoxPaint(Sender: TObject);
     procedure DitherPatternPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure BrushOpenClick(Sender: TObject);
+    procedure BrushSaveClick(Sender: TObject);
     procedure BrushEffectsClick(Sender: TObject);
     procedure BrushGrabSelectionClick(Sender: TObject);
     procedure BrushGrabSpriteClick(Sender: TObject);
@@ -489,6 +544,9 @@ type
     procedure PaletteExportTurboPascalClick(Sender: TObject);
     procedure PaletteOpenClick(Sender: TObject);
     procedure PaletteSaveClick(Sender: TObject);
+    procedure MaterialClick(Sender: TObject);
+    procedure PaletteResetDefaultClick(Sender: TObject);
+    procedure PaletteSortColorsClick(Sender: TObject);
     procedure PaletteAmiga16Click(Sender: TObject);
     procedure PaletteAmiga2Click(Sender: TObject);
     procedure PaletteAmiga32Click(Sender: TObject);
@@ -579,6 +637,15 @@ type
        procedure UpdateZoomScroller;
        procedure UpdateActualArea;
        procedure LoadDefaultPalette;
+       procedure SetDefaultDrawColors;
+       function  ImageHasData : boolean;
+       function  ConfirmPaletteSwitch(newMode : integer) : boolean;
+       procedure RemapImageToNewPalette(newMode : integer);
+       procedure GenerateMaterial(const MatName : string; TopView : boolean);
+       procedure UpdateStatusInfo;
+       function  AllocMaterialColor(r, g, b : byte; var pal : TRMPaletteBuf;
+                   var usedColors : array of boolean; colorCount : integer;
+                   var paletteModified : boolean) : integer;
        procedure UpdatePalette;
        procedure UpdatePaletteMenu;
        procedure UpdateEditMenu;
@@ -615,6 +682,7 @@ type
        procedure UpdateRenderBitMap;
        procedure ZPaintBoxMouseMoveDrawBrushTool(Sender: TObject; Shift: TShiftState; X, Y: Integer);
        procedure UpdateDitherGradientColors;
+       procedure UpdateBrushRadioState;
        procedure DitherGradientFloodFill(StartX, StartY, FillWidth, FillHeight, ColorIndex : integer);
        procedure StampBrushToCore;
        procedure DrawBrushOverlay(ACanvas : TCanvas);
@@ -1121,12 +1189,21 @@ end;
 
 procedure TRMMainForm.PaletteMonoClick(Sender: TObject);
 begin
+  if not ConfirmPaletteSwitch(PaletteModeMono) then exit;
+
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeMono)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteMono.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeMono);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
   ClearSelectedPaletteMenu;
   PaletteMono.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeMono);
-  LoadDefaultPalette;
-
-  RMCoreBase.SetCurColor1(1);
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
@@ -1135,12 +1212,21 @@ end;
 
 procedure TRMMainForm.PaletteCGA0Click(Sender: TObject);
 begin
+  if not ConfirmPaletteSwitch(PaletteModeCGA0) then exit;
+
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeCGA0)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteCGA0.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA0);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
   ClearSelectedPaletteMenu;
   PaletteCGA0.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA0);
-
-  LoadDefaultPalette;
-  RMCoreBase.SetCurColor1(1);
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
@@ -1149,28 +1235,44 @@ end;
 
 procedure TRMMainForm.PaletteCGA1Click(Sender: TObject);
 begin
+  if not ConfirmPaletteSwitch(PaletteModeCGA1) then exit;
+
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeCGA1)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteCGA1.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA1);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
   ClearSelectedPaletteMenu;
   PaletteCGA1.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeCGA1);
-
-  LoadDefaultPalette;
-  RMCoreBase.SetCurColor1(1);
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
 end;
 
-
 procedure TRMMainForm.PaletteAmiga2Click(Sender: TObject);
 begin
-  ClearSelectedPaletteMenu;
-  PaletteAmiga.Checked:=true;
-  PaletteAmiga2.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga2);
+  if not ConfirmPaletteSwitch(PaletteModeAmiga2) then exit;
 
-  LoadDefaultPalette;
-  RMCoreBase.SetCurColor1(1);
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeAmiga2)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteAmiga2.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga2);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  ClearSelectedPaletteMenu;
+  PaletteAmiga2.Checked:=true;
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
@@ -1179,43 +1281,67 @@ end;
 
 procedure TRMMainForm.PaletteAmiga4Click(Sender: TObject);
 begin
- ClearSelectedPaletteMenu;
- PaletteAmiga.Checked:=true;
- PaletteAmiga4.Checked:=true;
- RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga4);
+  if not ConfirmPaletteSwitch(PaletteModeAmiga4) then exit;
 
- LoadDefaultPalette;
- RMCoreBase.SetCurColor1(1);
- UpdateColorBoxes;
- UpdateActualArea;
- UpdateZoomArea;
- UpdateThumbview;
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeAmiga4)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteAmiga4.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga4);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  ClearSelectedPaletteMenu;
+  PaletteAmiga4.Checked:=true;
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
 end;
 
 procedure TRMMainForm.PaletteAmiga8Click(Sender: TObject);
 begin
- ClearSelectedPaletteMenu;
- PaletteAmiga.Checked:=true;
- PaletteAmiga8.Checked:=true;
- RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga8);
+  if not ConfirmPaletteSwitch(PaletteModeAmiga8) then exit;
 
- LoadDefaultPalette;
- RMCoreBase.SetCurColor1(1);
- UpdateColorBoxes;
- UpdateActualArea;
- UpdateZoomArea;
- UpdateThumbview;
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeAmiga8)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteAmiga8.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga8);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  ClearSelectedPaletteMenu;
+  PaletteAmiga8.Checked:=true;
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
 end;
 
 procedure TRMMainForm.PaletteAmiga16Click(Sender: TObject);
 begin
-  ClearSelectedPaletteMenu;
-  PaletteAmiga.Checked:=true;
-  PaletteAmiga16.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga16);
+  if not ConfirmPaletteSwitch(PaletteModeAmiga16) then exit;
 
-  LoadDefaultPalette;
-  RMCoreBase.SetCurColor1(1);
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeAmiga16)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteAmiga16.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga16);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  ClearSelectedPaletteMenu;
+  PaletteAmiga16.Checked:=true;
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
@@ -1224,19 +1350,26 @@ end;
 
 procedure TRMMainForm.PaletteAmiga32Click(Sender: TObject);
 begin
- ClearSelectedPaletteMenu;
- PaletteAmiga.Checked:=true;
- PaletteAmiga32.Checked:=true;
- RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga32);
+  if not ConfirmPaletteSwitch(PaletteModeAmiga32) then exit;
 
- LoadDefaultPalette;
- RMCoreBase.SetCurColor1(1);
- UpdateColorBoxes;
- UpdateActualArea;
- UpdateZoomArea;
- UpdateThumbview;
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeAmiga32)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteAmiga32.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeAmiga32);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  ClearSelectedPaletteMenu;
+  PaletteAmiga32.Checked:=true;
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
 end;
-
 
 procedure TRMMainForm.ClearSelectedPaletteMenu;
 begin
@@ -1258,12 +1391,21 @@ end;
 
 procedure TRMMainForm.PaletteVGAClick(Sender: TObject);
 begin
+  if not ConfirmPaletteSwitch(PaletteModeVGA) then exit;
+
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeVGA)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteVGA.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
   ClearSelectedPaletteMenu;
   PaletteVGA.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA);
-
-  LoadDefaultPalette;
-  RMCoreBase.SetCurColor1(1);
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
@@ -1272,11 +1414,21 @@ end;
 
 procedure TRMMainForm.PaletteVGA256Click(Sender: TObject);
 begin
+  if not ConfirmPaletteSwitch(PaletteModeVGA256) then exit;
+
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeVGA256)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteVGA256.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA256);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
   ClearSelectedPaletteMenu;
   PaletteVGA256.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeVGA256);
-  LoadDefaultPalette;
-  RMCoreBase.SetCurColor1(1);
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
@@ -1285,12 +1437,21 @@ end;
 
 procedure TRMMainForm.PaletteEGAClick(Sender: TObject);
 begin
+  if not ConfirmPaletteSwitch(PaletteModeEGA) then exit;
+
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeEGA)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteEGA.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeEGA);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
   ClearSelectedPaletteMenu;
   PaletteEGA.Checked:=true;
-  RMCoreBase.Palette.SetPaletteMode(PaletteModeEGA);
-
-  LoadDefaultPalette;
-  RMCoreBase.SetCurColor1(1);
   UpdateColorBoxes;
   UpdateActualArea;
   UpdateZoomArea;
@@ -1338,18 +1499,20 @@ var
   zoommode : integer;
   tc : TColor;
   ACBitMap : TBitMap;
-  saveDither, saveGradient : boolean;
+  saveDither, saveGradient, saveBrushFill : boolean;
   saveDitherPattern : integer;
   saveDitherUseBitmap : boolean;
 begin
-   //temporarily disable dither/gradient - we're rendering existing buffer
+   //temporarily disable dither/gradient/brush - we're rendering existing buffer
    //content, not drawing new shapes
    saveDither:=RMDrawTools.GetDitherEnabled;
    saveGradient:=RMDrawTools.GetGradientEnabled;
+   saveBrushFill:=RMDrawTools.GetBrushFillEnabled;
    saveDitherPattern:=RMDrawTools.GetDitherPattern;
    saveDitherUseBitmap:=RMDrawTools.GetDitherUseBitmap;
    RMDrawTools.SetDitherEnabled(false);
    RMDrawTools.SetGradientEnabled(false);
+   RMDrawTools.SetBrushFillEnabled(false);
 
    ACBitMap:=TBitMap.Create;
    ACBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
@@ -1389,9 +1552,10 @@ begin
    RMDrawTools.SetZoomMode(zoommode);
    ACBitMap.Free;
 
-   //restore dither/gradient state
+   //restore dither/gradient/brush state
    RMDrawTools.SetDitherPattern(saveDitherPattern);
    RMDrawTools.SetDitherUseBitmap(saveDitherUseBitmap);
+   if saveBrushFill then RMDrawTools.SetBrushFillEnabled(true);
    if saveDither then RMDrawTools.SetDitherEnabled(true);
    if saveGradient then RMDrawTools.SetGradientEnabled(true);
 end;
@@ -1436,7 +1600,9 @@ begin
 
    ColorPalette1.PickedIndex:=RMCoreBase.GetCurColor2;
   end;
-  DrawMethodPreview.Invalidate;
+  if DrawMethodPreview <> nil then
+    DrawMethodPreview.Invalidate;
+  UpdateStatusInfo;
 end;
 
 procedure TRMMainForm.LoadDefaultPalette;
@@ -1549,6 +1715,7 @@ begin
     ColorPalette1.ButtonWidth:=30;
     PaletteToCore;
    end;
+  SetDefaultDrawColors;
 end;
 
 procedure TRMMainForm.UpdatePalette;
@@ -1918,6 +2085,7 @@ end;
 procedure TRMMainForm.ZoomTrackBarChange(Sender: TObject);
 begin
   ApplyZoom(ZoomTrackBar.Position, False);
+  UpdateStatusInfo;
 end;
 
 procedure TRMMainForm.ZoomScrollBoxMouseWheel(Sender: TObject; Shift: TShiftState;
@@ -2027,7 +2195,7 @@ begin
   begin
     if (ssLeft in Shift) and (ssShift in Shift) then
       ReplaceAllFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,ColorIndex)
-    else if RMDrawTools.GetDitherEnabled or RMDrawTools.GetGradientEnabled then
+    else if RMDrawTools.GetDitherEnabled or RMDrawTools.GetGradientEnabled or RMDrawTools.GetBrushFillEnabled then
       DitherGradientFloodFill(ZoomX, ZoomY, RMCoreBase.GetWidth, RMCoreBase.GetHeight, ColorIndex)
     else
       ScanFill(ZoomX,ZoomY,RMCoreBase.GetWidth,RMCoreBase.GetHeight,ColorIndex);
@@ -3007,6 +3175,7 @@ begin
   UpdateZoomArea;
   UpdateThumbView;
   UpdateEditMenu;
+  UpdateStatusInfo;
 end;
 
 procedure TRMMainForm.GWBASICClick(Sender: TObject);
@@ -3183,7 +3352,8 @@ var
   pm : integer;
 begin
    pm:=RMCoreBase.Palette.GetPaletteMode;
-   If (pm = PaletteModeVGA) OR (pm = PaletteModeVGA256) then
+   If (pm = PaletteModeVGA) OR (pm = PaletteModeVGA256) OR
+      (pm = PaletteModeMono) OR (pm = PaletteModeCGA0) OR (pm = PaletteModeCGA1) then
    begin
       if ColorBox = cbColorBox1 then
          RMVGAColorDialog.SetPickedIndex(RMCoreBase.GetCurColor1)
@@ -3191,7 +3361,12 @@ begin
 
       if pm = PaletteModeVGA then
          RMVGAColorDialog.InitColorBox16
-      else RMVGAColorDialog.InitColorBox256;
+      else if pm = PaletteModeVGA256 then
+         RMVGAColorDialog.InitColorBox256
+      else if pm = PaletteModeMono then
+         RMVGAColorDialog.InitColorBox2
+      else //CGA0 or CGA1
+         RMVGAColorDialog.InitColorBox4;
 
       if RMVGAColorDialog.ShowModal = mrOK then
       begin
@@ -3824,30 +3999,48 @@ end;
 
 procedure TRMMainForm.PaletteXGA256Click(Sender: TObject);
 begin
- ClearSelectedPaletteMenu;
- PaletteXGA256.Checked:=true;
- RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA256);
+  if not ConfirmPaletteSwitch(PaletteModeXGA256) then exit;
 
- LoadDefaultPalette;
- RMCoreBase.SetCurColor1(1);
- UpdateColorBoxes;
- UpdateActualArea;
- UpdateZoomArea;
- UpdateThumbview;
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeXGA256)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteXGA256.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA256);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  ClearSelectedPaletteMenu;
+  PaletteXGA256.Checked:=true;
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
 end;
 
 procedure TRMMainForm.PaletteXGAClick(Sender: TObject);
 begin
- ClearSelectedPaletteMenu;
- PaletteXGA.Checked:=true;
- RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA);
+  if not ConfirmPaletteSwitch(PaletteModeXGA) then exit;
 
- LoadDefaultPalette;
- RMCoreBase.SetCurColor1(1);
- UpdateColorBoxes;
- UpdateActualArea;
- UpdateZoomArea;
- UpdateThumbview;
+  if ImageHasData then
+    RemapImageToNewPalette(PaletteModeXGA)
+  else
+  begin
+    ClearSelectedPaletteMenu;
+    PaletteXGA.Checked:=true;
+    RMCoreBase.Palette.SetPaletteMode(PaletteModeXGA);
+    LoadDefaultPalette;
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  ClearSelectedPaletteMenu;
+  PaletteXGA.Checked:=true;
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
 end;
 
 procedure TRMMainForm.PropertiesFileDialogClick(Sender: TObject);
@@ -4680,6 +4873,177 @@ begin
  UpdateThumbView;
 end;
 
+procedure TRMMainForm.EditPastePaletteClick(Sender: TObject);
+var
+  ClipBmp : TBitmap;
+  w, h, i, j : integer;
+  pal : TRMPaletteBuf;
+  colorCount : integer;
+  usedColors : array[0..255] of boolean;
+  hasImage : boolean;
+  pc : TColor;
+  r, g, b : byte;
+  ci, ni : integer;
+  bestIdx, bestDist, dist : integer;
+  nextFreeSlot : integer;
+  px, py, x, y, x2, y2 : integer;
+  found : boolean;
+  paletteModified : boolean;
+begin
+  if not Clipboard.HasFormat(PredefinedClipboardFormat(pcfBitmap)) then
+  begin
+    ShowMessage('No image found on the clipboard.');
+    exit;
+  end;
+
+  ClipBmp:=TBitmap.Create;
+  try
+    ClipBmp.LoadFromClipboardFormat(PredefinedClipboardFormat(pcfBitmap));
+    w:=ClipBmp.Width;
+    h:=ClipBmp.Height;
+    if (w <= 0) or (h <= 0) then
+    begin
+      ShowMessage('Clipboard image is empty.');
+      exit;
+    end;
+
+    //clamp paste size to sprite dimensions
+    if w > RMCoreBase.GetWidth then w:=RMCoreBase.GetWidth;
+    if h > RMCoreBase.GetHeight then h:=RMCoreBase.GetHeight;
+
+    RMCoreBase.Palette.GetPalette(pal);
+    colorCount:=RMCoreBase.Palette.GetColorCount;
+    hasImage:=ImageHasData;
+    paletteModified:=false;
+
+    //find which color indices are currently used in the image
+    for i:=0 to 255 do
+      usedColors[i]:=false;
+    usedColors[0]:=true;  //index 0 always considered used (background)
+
+    if hasImage then
+    begin
+      for py:=0 to RMCoreBase.GetHeight-1 do
+        for px:=0 to RMCoreBase.GetWidth-1 do
+        begin
+          ci:=RMCoreBase.GetPixel(px, py);
+          if (ci >= 0) and (ci < colorCount) then
+            usedColors[ci]:=true;
+        end;
+      nextFreeSlot:=-1;  //will search for unused slots on demand
+    end
+    else
+      nextFreeSlot:=1;  //empty image: add colors starting at index 1
+
+    RMCoreBase.CopyToUndoBuf;
+
+    //get paste region
+    GetOpenSaveRegion(x, y, x2, y2);
+
+    //paste each pixel with palette handling
+    for i:=0 to w-1 do
+    begin
+      for j:=0 to h-1 do
+      begin
+        if (x + i > x2) or (y + j > y2) then continue;
+
+        pc:=ClipBmp.Canvas.Pixels[i, j];
+        r:=Red(pc);
+        g:=Green(pc);
+        b:=Blue(pc);
+
+        //1. try exact match in current palette
+        found:=false;
+        bestIdx:=0;
+        for ni:=0 to colorCount-1 do
+        begin
+          if (pal[ni].r = r) and (pal[ni].g = g) and (pal[ni].b = b) then
+          begin
+            bestIdx:=ni;
+            found:=true;
+            break;
+          end;
+        end;
+
+        //2. no exact match - try to add to a free/unused slot
+        if not found then
+        begin
+          if not hasImage then
+          begin
+            //empty image: add sequentially starting at index 1
+            if nextFreeSlot < colorCount then
+            begin
+              pal[nextFreeSlot].r:=r;
+              pal[nextFreeSlot].g:=g;
+              pal[nextFreeSlot].b:=b;
+              usedColors[nextFreeSlot]:=true;
+              bestIdx:=nextFreeSlot;
+              inc(nextFreeSlot);
+              found:=true;
+              paletteModified:=true;
+            end;
+          end
+          else
+          begin
+            //existing image: find an unused palette slot to replace
+            for ni:=1 to colorCount-1 do
+            begin
+              if not usedColors[ni] then
+              begin
+                pal[ni].r:=r;
+                pal[ni].g:=g;
+                pal[ni].b:=b;
+                usedColors[ni]:=true;
+                bestIdx:=ni;
+                found:=true;
+                paletteModified:=true;
+                break;
+              end;
+            end;
+          end;
+        end;
+
+        //3. all slots used - nearest color match
+        if not found then
+        begin
+          bestDist:=MaxInt;
+          for ni:=0 to colorCount-1 do
+          begin
+            dist:=(r - pal[ni].r) * (r - pal[ni].r) +
+                  (g - pal[ni].g) * (g - pal[ni].g) +
+                  (b - pal[ni].b) * (b - pal[ni].b);
+            if dist < bestDist then
+            begin
+              bestDist:=dist;
+              bestIdx:=ni;
+            end;
+          end;
+        end;
+
+        RMCoreBase.SetColorEx(bestIdx);
+        RMCoreBase.PutPixelEx(x + i, y + j);
+      end;
+    end;
+
+    //write modified palette back to core and UI
+    if paletteModified then
+    begin
+      for ni:=0 to colorCount-1 do
+        RMCoreBase.Palette.SetColor(ni, pal[ni]);
+      CoreToPalette;
+    end;
+
+    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+    UpdateColorBoxes;
+    UpdateActualArea;
+    UpdateZoomArea;
+    UpdateThumbView;
+  finally
+    ClipBmp.Free;
+  end;
+end;
+
 procedure TRMMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
  if MessageDlg('Exiting Raster Master', 'Are you sure you want to Exit?', mtConfirmation,
@@ -4752,7 +5116,7 @@ begin
  RMCoreBase.SetWidth(ImgWidth);
  RMCoreBase.SetHeight(ImgHeight);
  RMCoreBase.ClearBuf(0);
- RMCoreBase.SetCurColor1(1);
+ SetDefaultDrawColors;
  RMDrawTools.SetDrawTool(DrawShapePencil);
 
  UpdateToolSelectionIcons;
@@ -4897,6 +5261,7 @@ begin
                                                               Lan:=QB64Lan;
                                                               format:=2;
                                                             end;
+
 
                                           'qb64RGBACustom':begin
                                                               ExportDialog.Filter := 'Basic Array|*.bas';
@@ -5635,8 +6000,7 @@ begin
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
 
  RMCoreBase.ClearBuf(0);
- RMCoreBase.SetCurColor1(1);
- RMCoreBase.SetCurColor2(1);
+ SetDefaultDrawColors;
  RMCoreBase.SetCurColorBox(cbColorBox1);
 
  RMDrawTools.SetDrawTool(DrawShapePencil);
@@ -5674,8 +6038,7 @@ procedure TRMMainForm.Clear;
 begin
  //  ClearClipAreaOutline;
  RMCoreBase.ClearBuf(0);
- RMCoreBase.SetCurColor1(1);
- RMCoreBase.SetCurColor2(1);
+ SetDefaultDrawColors;
  RMDrawTools.SetDrawTool(DrawShapePencil);
  UpdateToolSelectionIcons;
 
@@ -6122,36 +6485,48 @@ procedure TRMMainForm.DrawMethodClick(Sender: TObject);
 begin
   DrawMethodPreview.Invalidate;
   case DrawMethod.ItemIndex of
-    0: begin  //Color - disable both
+    0: begin  //Color - disable all
          RMDrawTools.SetDitherEnabled(false);
          RMDrawTools.SetGradientEnabled(false);
-         FSelectedDitherPattern:=0;
-         DitherPatternPaintBox.Invalidate;
+         RMDrawTools.SetBrushFillEnabled(false);
        end;
-    1: begin  //Dither - enable dither with current pattern
+    1: begin  //Brush - use active brush as fill pattern
+         if not RetroBrush.HasBrush then
+         begin
+           DrawMethod.ItemIndex:=0;  //fall back to Color
+           RMDrawTools.SetBrushFillEnabled(false);
+           exit;
+         end;
+         RMDrawTools.SetDitherEnabled(false);
+         RMDrawTools.SetGradientEnabled(false);
+         RMDrawTools.SetBrushFillEnabled(true);
+       end;
+    2: begin  //Dither - enable dither with current pattern
          RMDrawTools.SetDitherEnabled(true);
          RMDrawTools.SetGradientEnabled(false);
+         RMDrawTools.SetBrushFillEnabled(false);
          UpdateDitherGradientColors;
-         //if no bitmap pattern selected, use checkerboard formula
          if not RMDrawTools.GetDitherUseBitmap then
            RMDrawTools.SetDitherPattern(0);
        end;
-    2: begin  //Gradient - enable gradient with combo selection
+    3: begin  //Gradient - enable gradient with combo selection
          RMDrawTools.SetDitherEnabled(false);
          RMDrawTools.SetGradientEnabled(true);
+         RMDrawTools.SetBrushFillEnabled(false);
          RMDrawTools.SetGradientMode(GradientMethod.ItemIndex);
          UpdateDitherGradientColors;
-         FSelectedDitherPattern:=0;
-         DitherPatternPaintBox.Invalidate;
        end;
   end;
+  DitherPatternPaintBox.Invalidate;
+  UpdateStatusInfo;
 end;
 
 procedure TRMMainForm.GradientMethodChange(Sender: TObject);
 begin
   DrawMethodPreview.Invalidate;
   //switch to gradient mode and update direction
-  DrawMethod.ItemIndex:=2;
+  DrawMethod.ItemIndex:=3;
+  RMDrawTools.SetBrushFillEnabled(false);
   RMDrawTools.SetDitherEnabled(false);
   RMDrawTools.SetGradientEnabled(true);
   RMDrawTools.SetGradientMode(GradientMethod.ItemIndex);
@@ -6170,6 +6545,9 @@ var
   dist, maxDist : double;
   dx, dy : integer;
 begin
+  if RMCoreBase = nil then exit;
+  if DrawMethod = nil then exit;
+
   pw:=DrawMethodPreview.Width;
   ph:=DrawMethodPreview.Height;
 
@@ -6187,11 +6565,22 @@ begin
         0: begin //Color - solid Color 1
              ci:=c1Idx;
            end;
-        1: begin //Dither - use pattern
+        1: begin //Brush - tile brush pattern
+             if RetroBrush.HasBrush and (RetroBrush.WorkWidth > 0) and (RetroBrush.WorkHeight > 0) then
+             begin
+               ci:=RetroBrush.WorkPixels[i mod RetroBrush.WorkWidth][j mod RetroBrush.WorkHeight];
+               //clamp to valid palette range
+               if ci >= RMCoreBase.Palette.GetColorCount then
+                 ci:=ci mod RMCoreBase.Palette.GetColorCount;
+               if ci = RetroBrush.TransColor then
+                 ci:=c1Idx;  //transparent pixels show Color 1
+             end;
+           end;
+        2: begin //Dither - use pattern
              if RMDrawTools.DitherIsColor2(i, j) then
                ci:=c2Idx;
            end;
-        2: begin //Gradient
+        3: begin //Gradient
              case GradientMethod.ItemIndex of
                0: begin //horizontal
                     if pw > 1 then
@@ -6294,10 +6683,172 @@ begin
   UpdateDitherGradientColors;
 
   //switch radio group to Dither
-  DrawMethod.ItemIndex:=1;
+  DrawMethod.ItemIndex:=2;
+  RMDrawTools.SetBrushFillEnabled(false);
 
   DitherPatternPaintBox.Invalidate;
   DrawMethodPreview.Invalidate;
+end;
+
+procedure TRMMainForm.BrushOpenClick(Sender: TObject);
+var
+  OpenDlg : TOpenDialog;
+  Bmp : TBitmap;
+  Png : TPortableNetworkGraphic;
+  i, j, w, h : integer;
+  r, g, b : byte;
+  pc : TColor;
+  bestIdx, bestDist, dist, ci : integer;
+  pr, pg, pb : byte;
+  pal : TRMPaletteBuf;
+  colorCount : integer;
+begin
+  OpenDlg:=TOpenDialog.Create(Self);
+  try
+    OpenDlg.Title:='Open Brush';
+    OpenDlg.Filter:='Image Files|*.bmp;*.png|Bitmap|*.bmp|PNG|*.png|All Files|*.*';
+    if not OpenDlg.Execute then exit;
+
+    Bmp:=TBitmap.Create;
+    try
+      if LowerCase(ExtractFileExt(OpenDlg.FileName)) = '.png' then
+      begin
+        Png:=TPortableNetworkGraphic.Create;
+        try
+          Png.LoadFromFile(OpenDlg.FileName);
+          Bmp.Assign(Png);
+        finally
+          Png.Free;
+        end;
+      end
+      else
+        Bmp.LoadFromFile(OpenDlg.FileName);
+
+      w:=Bmp.Width;
+      h:=Bmp.Height;
+      if (w < 1) or (h < 1) or (w > 512) or (h > 512) then
+      begin
+        ShowMessage('Brush image must be 1-512 pixels in each dimension.');
+        exit;
+      end;
+
+      //get current palette for remapping
+      RMCoreBase.Palette.GetPalette(pal);
+      colorCount:=RMCoreBase.Palette.GetColorCount;
+
+      //load into brush, remap each pixel to closest palette color
+      RetroBrush.OrigWidth:=w;
+      RetroBrush.OrigHeight:=h;
+      RetroBrush.WorkWidth:=w;
+      RetroBrush.WorkHeight:=h;
+      SetLength(RetroBrush.OrigPixels, w, h);
+      SetLength(RetroBrush.WorkPixels, w, h);
+      RetroBrush.TransColor:=0;
+      RetroBrush.HasBrush:=true;
+      RetroBrush.ColorCount:=colorCount;
+
+      //copy current palette into brush so RemapIndex works correctly
+      //since we're already remapping to this palette during load
+      for ci:=0 to colorCount-1 do
+        RetroBrush.Palette[ci]:=pal[ci];
+
+      for i:=0 to w-1 do
+      begin
+        for j:=0 to h-1 do
+        begin
+          pc:=Bmp.Canvas.Pixels[i, j];
+          r:=Red(pc);
+          g:=Green(pc);
+          b:=Blue(pc);
+
+          //find closest palette color
+          bestIdx:=0;
+          bestDist:=MaxInt;
+          for ci:=0 to colorCount-1 do
+          begin
+            pr:=pal[ci].r;
+            pg:=pal[ci].g;
+            pb:=pal[ci].b;
+            dist:=(r - pr) * (r - pr) + (g - pg) * (g - pg) + (b - pb) * (b - pb);
+            if dist < bestDist then
+            begin
+              bestDist:=dist;
+              bestIdx:=ci;
+            end;
+          end;
+
+          RetroBrush.OrigPixels[i][j]:=bestIdx;
+          RetroBrush.WorkPixels[i][j]:=bestIdx;
+        end;
+      end;
+
+      RetroBrush.InvalidateRemap;
+      UpdateBrushRadioState;
+      DrawMethodPreview.Invalidate;
+      ZoomPaintBox.Invalidate;
+    finally
+      Bmp.Free;
+    end;
+  finally
+    OpenDlg.Free;
+  end;
+end;
+
+procedure TRMMainForm.BrushSaveClick(Sender: TObject);
+var
+  SaveDlg : TSaveDialog;
+  Bmp : TBitmap;
+  Png : TPortableNetworkGraphic;
+  i, j : integer;
+  ci : byte;
+  pal : TRMPaletteBuf;
+begin
+  if not RetroBrush.HasBrush then
+  begin
+    ShowMessage('No brush to save. Capture a brush first.');
+    exit;
+  end;
+
+  SaveDlg:=TSaveDialog.Create(Self);
+  try
+    SaveDlg.Title:='Save Brush';
+    SaveDlg.Filter:='PNG Image|*.png|Bitmap|*.bmp';
+    SaveDlg.DefaultExt:='.png';
+    if not SaveDlg.Execute then exit;
+
+    RMCoreBase.Palette.GetPalette(pal);
+
+    Bmp:=TBitmap.Create;
+    try
+      Bmp.SetSize(RetroBrush.WorkWidth, RetroBrush.WorkHeight);
+
+      for i:=0 to RetroBrush.WorkWidth-1 do
+      begin
+        for j:=0 to RetroBrush.WorkHeight-1 do
+        begin
+          ci:=RetroBrush.WorkPixels[i][j];
+          Bmp.Canvas.Pixels[i, j]:=RGBToColor(pal[ci].r, pal[ci].g, pal[ci].b);
+        end;
+      end;
+
+      if LowerCase(ExtractFileExt(SaveDlg.FileName)) = '.png' then
+      begin
+        Png:=TPortableNetworkGraphic.Create;
+        try
+          Png.Assign(Bmp);
+          Png.SaveToFile(SaveDlg.FileName);
+        finally
+          Png.Free;
+        end;
+      end
+      else
+        Bmp.SaveToFile(SaveDlg.FileName);
+    finally
+      Bmp.Free;
+    end;
+  finally
+    SaveDlg.Free;
+  end;
 end;
 
 procedure TRMMainForm.BrushEffectsClick(Sender: TObject);
@@ -6354,8 +6905,24 @@ var
   function ComputeFillColor(px, py, baseColor : integer) : integer;
   var
     c : integer;
+    bci : byte;
   begin
     c:=baseColor;
+
+    //apply brush fill pattern
+    if RMDrawTools.GetBrushFillEnabled and RetroBrush.HasBrush then
+    begin
+      bci:=RetroBrush.WorkPixels[px mod RetroBrush.WorkWidth][py mod RetroBrush.WorkHeight];
+      //clamp to valid palette range
+      if bci >= RMCoreBase.Palette.GetColorCount then
+        bci:=bci mod RMCoreBase.Palette.GetColorCount;
+      if bci <> RetroBrush.TransColor then
+        c:=bci
+      else
+        c:=baseColor;  //transparent pixels use base color
+      ComputeFillColor:=c;
+      exit;
+    end;
 
     //apply gradient
     if RMDrawTools.GetGradientEnabled then
@@ -6406,7 +6973,8 @@ begin
   //if fill color equals target and no effects active, skip
   if (TargetColor = ColorIndex) and
      (not RMDrawTools.GetDitherEnabled) and
-     (not RMDrawTools.GetGradientEnabled) then exit;
+     (not RMDrawTools.GetGradientEnabled) and
+     (not RMDrawTools.GetBrushFillEnabled) then exit;
 
   PixCount:=FillWidth * FillHeight;
 
@@ -6472,6 +7040,1014 @@ begin
 
   //restore ColorEx
   RMCoreBase.SetColorEx(ColorIndex);
+end;
+
+function TRMMainForm.ImageHasData : boolean;
+var
+  i, j : integer;
+begin
+  ImageHasData:=false;
+  for j:=0 to RMCoreBase.GetHeight-1 do
+    for i:=0 to RMCoreBase.GetWidth-1 do
+      if RMCoreBase.GetPixel(i, j) <> 0 then
+      begin
+        ImageHasData:=true;
+        exit;
+      end;
+end;
+
+function TRMMainForm.ConfirmPaletteSwitch(newMode : integer) : boolean;
+var
+  oldCount, newCount : integer;
+  msg : string;
+begin
+  ConfirmPaletteSwitch:=true;
+
+  if not ImageHasData then exit;  //empty image, no confirmation needed
+
+  oldCount:=RMCoreBase.Palette.GetColorCount;
+
+  case newMode of
+    PaletteModeMono:    newCount:=2;
+    PaletteModeCGA0:    newCount:=4;
+    PaletteModeCGA1:    newCount:=4;
+    PaletteModeEGA:     newCount:=16;
+    PaletteModeVGA:     newCount:=16;
+    PaletteModeVGA256:  newCount:=256;
+    PaletteModeXGA:     newCount:=16;
+    PaletteModeXGA256:  newCount:=256;
+    PaletteModeAmiga2:  newCount:=2;
+    PaletteModeAmiga4:  newCount:=4;
+    PaletteModeAmiga8:  newCount:=8;
+    PaletteModeAmiga16: newCount:=16;
+    PaletteModeAmiga32: newCount:=32;
+  else
+    newCount:=16;
+  end;
+
+  if newCount < oldCount then
+  begin
+    //going to fewer colors - severe quality loss
+    msg:='This Palette change will result in huge image quality loss, '+
+         'please consider using a program like RetroConvert(free) that can '+
+         'convert with more palette/image dithering options.' + LineEnding + LineEnding +
+         'Do you wish to continue?';
+    ConfirmPaletteSwitch:=(MessageDlg('Palette Change Warning', msg,
+      mtWarning, [mbYes, mbNo], 0) = mrYes);
+  end
+  else if newCount > oldCount then
+  begin
+    //going to more colors - minor quality concern from remapping
+    msg:='Switching Palette will require remapping the current colors '+
+         'and may result in loss of quality.' + LineEnding + LineEnding +
+         'Do you wish to continue?';
+    ConfirmPaletteSwitch:=(MessageDlg('Palette Change', msg,
+      mtConfirmation, [mbYes, mbNo], 0) = mrYes);
+  end
+  else
+  begin
+    //same color count but different palette
+    msg:='Switching Palette will require remapping the current colors '+
+         'and may result in loss of quality.' + LineEnding + LineEnding +
+         'Do you wish to continue?';
+    ConfirmPaletteSwitch:=(MessageDlg('Palette Change', msg,
+      mtConfirmation, [mbYes, mbNo], 0) = mrYes);
+  end;
+end;
+
+procedure TRMMainForm.RemapImageToNewPalette(newMode : integer);
+var
+  oldPal : TRMPaletteBuf;
+  newPal : TRMPaletteBuf;
+  oldCount, newCount : integer;
+  remapTable : array[0..255] of byte;
+  usedColors : array[0..255] of boolean;
+  usedRGB : array[0..255] of TRMColorRec;
+  usedCount : integer;
+  i, j, oi, ni, ui : integer;
+  bestIdx, bestDist, dist : integer;
+  or1, og1, ob1, nr, ng, nb : integer;
+  customColors : boolean;
+  palSlot : integer;
+begin
+  //save current palette before switching
+  RMCoreBase.Palette.GetPalette(oldPal);
+  oldCount:=RMCoreBase.Palette.GetColorCount;
+
+  //find which color indices are actually used in the image
+  for oi:=0 to 255 do
+    usedColors[oi]:=false;
+
+  for j:=0 to RMCoreBase.GetHeight-1 do
+    for i:=0 to RMCoreBase.GetWidth-1 do
+    begin
+      oi:=RMCoreBase.GetPixel(i, j);
+      if (oi >= 0) and (oi < oldCount) then
+        usedColors[oi]:=true;
+    end;
+
+  //build list of unique RGB colors actually used
+  usedCount:=0;
+  for oi:=0 to oldCount-1 do
+  begin
+    if usedColors[oi] then
+    begin
+      usedRGB[usedCount]:=oldPal[oi];
+      inc(usedCount);
+    end;
+  end;
+
+  //switch to new palette mode and load its default colors
+  ClearSelectedPaletteMenu;
+  RMCoreBase.Palette.SetPaletteMode(newMode);
+  LoadDefaultPalette;
+
+  //get the new default palette
+  RMCoreBase.Palette.GetPalette(newPal);
+  newCount:=RMCoreBase.Palette.GetColorCount;
+  customColors:=false;
+
+  //when going to fewer colors, build optimal palette from used image colors
+  if newCount < oldCount then
+  begin
+    //count frequency of each old color index
+    for oi:=0 to 255 do
+      remapTable[oi]:=0;  //reuse as frequency counter temporarily
+
+    for j:=0 to RMCoreBase.GetHeight-1 do
+      for i:=0 to RMCoreBase.GetWidth-1 do
+      begin
+        oi:=RMCoreBase.GetPixel(i, j);
+        if (oi >= 0) and (oi < oldCount) then
+          inc(remapTable[oi]);
+      end;
+
+    //keep slot 0 as background (usually black)
+    //fill remaining slots with most frequently used colors
+    //first, check if old color 0 matches new color 0 (both usually black)
+    newPal[0].r:=oldPal[0].r;
+    newPal[0].g:=oldPal[0].g;
+    newPal[0].b:=oldPal[0].b;
+
+    //build list of used color indices sorted by frequency (highest first)
+    //simple selection: pick top (newCount-1) most frequent non-zero indices
+    palSlot:=1;
+    while palSlot < newCount do
+    begin
+      bestIdx:=-1;
+      bestDist:=0;  //reuse as max frequency
+      for oi:=1 to oldCount-1 do  //skip 0
+      begin
+        if remapTable[oi] > bestDist then
+        begin
+          //check this color isn't already in the new palette
+          or1:=oldPal[oi].r;
+          og1:=oldPal[oi].g;
+          ob1:=oldPal[oi].b;
+          dist:=1;  //assume not duplicate
+          for ni:=0 to palSlot-1 do
+          begin
+            if (newPal[ni].r = or1) and (newPal[ni].g = og1) and (newPal[ni].b = ob1) then
+            begin
+              dist:=0;
+              break;
+            end;
+          end;
+          if dist = 1 then
+          begin
+            bestDist:=remapTable[oi];
+            bestIdx:=oi;
+          end;
+        end;
+      end;
+
+      if bestIdx < 0 then break;  //no more used colors
+
+      newPal[palSlot].r:=oldPal[bestIdx].r;
+      newPal[palSlot].g:=oldPal[bestIdx].g;
+      newPal[palSlot].b:=oldPal[bestIdx].b;
+      remapTable[bestIdx]:=0;  //mark as placed so we don't pick it again
+      inc(palSlot);
+    end;
+
+    customColors:=true;
+
+    //clear frequency data from remapTable before building actual remap
+    for oi:=0 to 255 do
+      remapTable[oi]:=0;
+  end;
+
+  //when going to more colors, add unmatched old colors to empty slots
+  if newCount > oldCount then
+  begin
+    palSlot:=oldCount;  //start filling after the default entries
+    for oi:=0 to oldCount-1 do
+    begin
+      if not usedColors[oi] then continue;
+      or1:=oldPal[oi].r;
+      og1:=oldPal[oi].g;
+      ob1:=oldPal[oi].b;
+
+      //check if exact match exists
+      bestDist:=MaxInt;
+      for ni:=0 to newCount-1 do
+      begin
+        if (or1 = newPal[ni].r) and (og1 = newPal[ni].g) and (ob1 = newPal[ni].b) then
+        begin
+          bestDist:=0;
+          break;
+        end;
+      end;
+
+      if (bestDist > 0) and (palSlot < newCount) then
+      begin
+        newPal[palSlot].r:=or1;
+        newPal[palSlot].g:=og1;
+        newPal[palSlot].b:=ob1;
+        inc(palSlot);
+        customColors:=true;
+      end;
+    end;
+  end;
+
+  //write custom palette back if modified
+  if customColors then
+  begin
+    for ni:=0 to newCount-1 do
+      RMCoreBase.Palette.SetColor(ni, newPal[ni]);
+    //update the UI palette from core (preserves our custom colors)
+    CoreToPalette;
+    //re-read palette to confirm
+    RMCoreBase.Palette.GetPalette(newPal);
+  end;
+
+  //build remap table: for each old index, find best new index
+  for oi:=0 to 255 do
+    remapTable[oi]:=0;
+
+  for oi:=0 to oldCount-1 do
+  begin
+    or1:=oldPal[oi].r;
+    og1:=oldPal[oi].g;
+    ob1:=oldPal[oi].b;
+
+    bestIdx:=0;
+    bestDist:=MaxInt;
+    for ni:=0 to newCount-1 do
+    begin
+      nr:=newPal[ni].r;
+      ng:=newPal[ni].g;
+      nb:=newPal[ni].b;
+      if (or1 = nr) and (og1 = ng) and (ob1 = nb) then
+      begin
+        bestIdx:=ni;
+        bestDist:=0;
+        break;
+      end;
+      dist:=(or1 - nr) * (or1 - nr) + (og1 - ng) * (og1 - ng) + (ob1 - nb) * (ob1 - nb);
+      if dist < bestDist then
+      begin
+        bestDist:=dist;
+        bestIdx:=ni;
+      end;
+    end;
+
+    remapTable[oi]:=bestIdx;
+  end;
+
+  //remap all pixels in the image buffer
+  for j:=0 to RMCoreBase.GetHeight-1 do
+  begin
+    for i:=0 to RMCoreBase.GetWidth-1 do
+    begin
+      oi:=RMCoreBase.GetPixel(i, j);
+      if oi >= oldCount then oi:=0;
+      RMCoreBase.SetColorEx(remapTable[oi]);
+      RMCoreBase.PutPixelEx(i, j);
+    end;
+  end;
+
+  //save undo buffer AFTER remap so undo cannot revert to old palette indices
+  RMCoreBase.CopyToUndoBuf;
+end;
+
+procedure TRMMainForm.PaletteResetDefaultClick(Sender: TObject);
+var
+  oldPal, newPal : TRMPaletteBuf;
+  colorCount : integer;
+  remapTable : array[0..255] of byte;
+  i, j, oi, ni : integer;
+  bestIdx, bestDist, dist : integer;
+  doRemap : boolean;
+begin
+  colorCount:=RMCoreBase.Palette.GetColorCount;
+
+  if not ImageHasData then
+  begin
+    //empty image - just reset silently
+    LoadDefaultPalette;
+    UpdateColorBoxes;
+    UpdateActualArea;
+    UpdateZoomArea;
+    UpdateThumbview;
+    exit;
+  end;
+
+  //image has data - ask about remapping
+  doRemap:=(MessageDlg('Reset Palette',
+    'Remap the sprite colors to the closest default palette colors?' + LineEnding + LineEnding +
+    'Yes = remap sprite to default colors' + LineEnding +
+    'No = keep sprite indices, just reset palette colors',
+    mtConfirmation, [mbYes, mbNo], 0) = mrYes);
+
+  //save current palette RGB values before reset
+  RMCoreBase.Palette.GetPalette(oldPal);
+
+  //reset to default palette
+  LoadDefaultPalette;
+
+  if doRemap then
+  begin
+    //get the new default palette
+    RMCoreBase.Palette.GetPalette(newPal);
+
+    //build remap table: old index -> closest default color
+    for oi:=0 to 255 do
+      remapTable[oi]:=0;
+
+    for oi:=0 to colorCount-1 do
+    begin
+      bestIdx:=0;
+      bestDist:=MaxInt;
+      for ni:=0 to colorCount-1 do
+      begin
+        if (oldPal[oi].r = newPal[ni].r) and (oldPal[oi].g = newPal[ni].g) and
+           (oldPal[oi].b = newPal[ni].b) then
+        begin
+          bestIdx:=ni;
+          break;
+        end;
+        dist:=(oldPal[oi].r - newPal[ni].r) * (oldPal[oi].r - newPal[ni].r) +
+              (oldPal[oi].g - newPal[ni].g) * (oldPal[oi].g - newPal[ni].g) +
+              (oldPal[oi].b - newPal[ni].b) * (oldPal[oi].b - newPal[ni].b);
+        if dist < bestDist then
+        begin
+          bestDist:=dist;
+          bestIdx:=ni;
+        end;
+      end;
+      remapTable[oi]:=bestIdx;
+    end;
+
+    //remap all pixels
+    for j:=0 to RMCoreBase.GetHeight-1 do
+      for i:=0 to RMCoreBase.GetWidth-1 do
+      begin
+        oi:=RMCoreBase.GetPixel(i, j);
+        if oi >= colorCount then oi:=0;
+        RMCoreBase.SetColorEx(remapTable[oi]);
+        RMCoreBase.PutPixelEx(i, j);
+      end;
+
+    RMCoreBase.CopyToUndoBuf;
+  end;
+
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
+end;
+
+procedure TRMMainForm.PaletteSortColorsClick(Sender: TObject);
+var
+  pal : TRMPaletteBuf;
+  colorCount : integer;
+  freq : array[0..255] of integer;
+  order : array[0..255] of integer;
+  remapTable : array[0..255] of byte;
+  sortedPal : TRMPaletteBuf;
+  i, j, oi, ni, tmp : integer;
+begin
+  colorCount:=RMCoreBase.Palette.GetColorCount;
+  RMCoreBase.Palette.GetPalette(pal);
+
+  //count pixel frequency of each color index
+  for i:=0 to 255 do
+    freq[i]:=0;
+
+  for j:=0 to RMCoreBase.GetHeight-1 do
+    for i:=0 to RMCoreBase.GetWidth-1 do
+    begin
+      oi:=RMCoreBase.GetPixel(i, j);
+      if (oi >= 0) and (oi < colorCount) then
+        inc(freq[oi]);
+    end;
+
+  //build order: index 0 stays at 0 (black/background)
+  for i:=0 to colorCount-1 do
+    order[i]:=i;
+
+  //bubble sort indices 1..colorCount-1 by frequency descending
+  for i:=1 to colorCount-2 do
+    for j:=1 to colorCount-1-i do
+      if freq[order[j]] < freq[order[j+1]] then
+      begin
+        tmp:=order[j];
+        order[j]:=order[j+1];
+        order[j+1]:=tmp;
+      end;
+
+  //build sorted palette and remap table
+  for ni:=0 to colorCount-1 do
+  begin
+    sortedPal[ni]:=pal[order[ni]];
+    remapTable[order[ni]]:=ni;
+  end;
+
+  //write sorted palette to core
+  for ni:=0 to colorCount-1 do
+    RMCoreBase.Palette.SetColor(ni, sortedPal[ni]);
+  CoreToPalette;
+
+  //remap all pixels to their new indices
+  for j:=0 to RMCoreBase.GetHeight-1 do
+    for i:=0 to RMCoreBase.GetWidth-1 do
+    begin
+      oi:=RMCoreBase.GetPixel(i, j);
+      if oi >= colorCount then oi:=0;
+      RMCoreBase.SetColorEx(remapTable[oi]);
+      RMCoreBase.PutPixelEx(i, j);
+    end;
+
+  RMCoreBase.CopyToUndoBuf;
+
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
+end;
+
+
+function TRMMainForm.AllocMaterialColor(r, g, b : byte; var pal : TRMPaletteBuf;
+  var usedColors : array of boolean; colorCount : integer;
+  var paletteModified : boolean) : integer;
+var
+  ni, bestIdx, bestDist, dist : integer;
+begin
+  //1. exact match
+  for ni:=0 to colorCount-1 do
+    if (pal[ni].r = r) and (pal[ni].g = g) and (pal[ni].b = b) then
+    begin
+      AllocMaterialColor:=ni;
+      exit;
+    end;
+
+  //2. unused slot starting at index 1
+  for ni:=1 to colorCount-1 do
+    if not usedColors[ni] then
+    begin
+      pal[ni].r:=r;
+      pal[ni].g:=g;
+      pal[ni].b:=b;
+      usedColors[ni]:=true;
+      paletteModified:=true;
+      AllocMaterialColor:=ni;
+      exit;
+    end;
+
+  //3. nearest match
+  bestIdx:=0;
+  bestDist:=MaxInt;
+  for ni:=0 to colorCount-1 do
+  begin
+    dist:=(r - pal[ni].r) * (r - pal[ni].r) +
+          (g - pal[ni].g) * (g - pal[ni].g) +
+          (b - pal[ni].b) * (b - pal[ni].b);
+    if dist < bestDist then
+    begin
+      bestDist:=dist;
+      bestIdx:=ni;
+    end;
+  end;
+  AllocMaterialColor:=bestIdx;
+end;
+
+procedure TRMMainForm.GenerateMaterial(const MatName : string; TopView : boolean);
+type
+  TShadeRGB = record r, g, b : byte; end;
+var
+  ca : TClipAreaRec;
+  pal : TRMPaletteBuf;
+  colorCount : integer;
+  usedColors : array[0..255] of boolean;
+  paletteModified : boolean;
+  shades : array[0..4] of TShadeRGB;
+  shadeIdx : array[0..4] of integer;
+  i, j, px, py, ci, s, w, h, n : integer;
+  fullArea : boolean;
+
+  function Noise(x, y : integer) : integer;
+  var
+    v : longword;
+  begin
+    v:=longword(x) * 374761393 + longword(y) * 668265263;
+    v:=(v xor (v shr 13)) * 1274126177;
+    Noise:=(v xor (v shr 16)) and $7FFFFFFF;
+  end;
+
+  procedure SetShade(idx : integer; rr, gg, bb : byte);
+  begin
+    shades[idx].r:=rr; shades[idx].g:=gg; shades[idx].b:=bb;
+  end;
+
+begin
+  //determine target region
+  RMDrawTools.GetClipAreaCoords(ca);
+  fullArea:=(RMDrawTools.GetClipStatus <> 1);
+
+  //full-sprite render over existing pixels needs confirmation
+  if fullArea and ImageHasData then
+  begin
+    if MessageDlg('Generate Material',
+      'The current area will be replaced by the material. Continue?',
+      mtConfirmation, [mbYes, mbNo], 0) <> mrYes then exit;
+  end;
+
+  //define material shades (index 0 = darkest ... 3 = lightest)
+  if MatName = 'Dirt' then
+  begin
+    SetShade(0, 101, 67, 33);  SetShade(1, 120, 80, 40);
+    SetShade(2, 139, 94, 47);  SetShade(3, 160, 110, 60);
+  end
+  else if MatName = 'Rock' then
+  begin
+    SetShade(0, 80, 80, 85);   SetShade(1, 105, 105, 110);
+    SetShade(2, 130, 130, 135); SetShade(3, 160, 160, 165);
+  end
+  else if MatName = 'Grass' then
+  begin
+    SetShade(0, 24, 100, 24);  SetShade(1, 34, 139, 34);
+    SetShade(2, 50, 160, 50);  SetShade(3, 80, 190, 80);
+  end
+  else if MatName = 'Snow' then
+  begin
+    SetShade(0, 200, 210, 225); SetShade(1, 220, 228, 240);
+    SetShade(2, 240, 245, 252); SetShade(3, 255, 255, 255);
+  end
+  else if MatName = 'Ice' then
+  begin
+    SetShade(0, 130, 180, 220); SetShade(1, 160, 205, 235);
+    SetShade(2, 190, 225, 245); SetShade(3, 220, 240, 252);
+  end
+  else if MatName = 'Wood' then
+  begin
+    SetShade(0, 110, 70, 35);  SetShade(1, 140, 90, 45);
+    SetShade(2, 165, 110, 55); SetShade(3, 190, 135, 70);
+  end
+  else if MatName = 'Metal' then
+  begin
+    SetShade(0, 90, 95, 100);  SetShade(1, 120, 125, 130);
+    SetShade(2, 150, 155, 160); SetShade(3, 190, 195, 200);
+  end
+  else if MatName = 'Silver' then
+  begin
+    SetShade(0, 140, 140, 150); SetShade(1, 175, 175, 185);
+    SetShade(2, 205, 205, 215); SetShade(3, 235, 235, 245);
+  end
+  else if MatName = 'Gold' then
+  begin
+    SetShade(0, 160, 120, 20); SetShade(1, 200, 155, 30);
+    SetShade(2, 230, 185, 40); SetShade(3, 255, 215, 60);
+  end
+  else if MatName = 'Crate' then
+  begin
+    SetShade(0, 105, 65, 30);  SetShade(1, 145, 95, 45);
+    SetShade(2, 170, 115, 60); SetShade(3, 200, 145, 80);
+  end
+  else if MatName = 'BrownBrick' then
+  begin
+    SetShade(0, 120, 55, 35);  SetShade(1, 150, 70, 45);
+    SetShade(2, 170, 85, 55);  SetShade(3, 190, 105, 70);
+    SetShade(4, 210, 200, 185);  //light mortar border
+  end
+  else if MatName = 'StoneBrick' then
+  begin
+    SetShade(0, 95, 95, 100);  SetShade(1, 120, 120, 128);
+    SetShade(2, 140, 140, 148); SetShade(3, 165, 165, 172);
+    SetShade(4, 60, 60, 68);   //dark mortar border
+  end
+  else if MatName = 'WoodFloor' then
+  begin
+    SetShade(0, 120, 78, 40);  SetShade(1, 150, 100, 52);
+    SetShade(2, 175, 120, 65); SetShade(3, 200, 145, 85);
+    SetShade(4, 90, 58, 28);   //dark plank border
+  end
+  else if MatName = 'CeramicTile' then
+  begin
+    SetShade(0, 200, 215, 215); SetShade(1, 220, 232, 232);
+    SetShade(2, 235, 244, 244); SetShade(3, 250, 252, 252);
+    SetShade(4, 120, 135, 140);  //grout border
+  end
+  else //Water
+  begin
+    SetShade(0, 20, 60, 140);  SetShade(1, 30, 90, 180);
+    SetShade(2, 50, 120, 210); SetShade(3, 90, 160, 235);
+  end;
+
+  //shade 4 defaults to darkest if the material didn't define a border color
+  if (MatName <> 'BrownBrick') and (MatName <> 'StoneBrick') and
+     (MatName <> 'WoodFloor') and (MatName <> 'CeramicTile') then
+    SetShade(4, shades[0].r, shades[0].g, shades[0].b);
+
+  //allocate palette entries for the 4 shades
+  RMCoreBase.Palette.GetPalette(pal);
+  colorCount:=RMCoreBase.Palette.GetColorCount;
+  paletteModified:=false;
+
+  for i:=0 to 255 do
+    usedColors[i]:=false;
+  usedColors[0]:=true;
+
+  for py:=0 to RMCoreBase.GetHeight-1 do
+    for px:=0 to RMCoreBase.GetWidth-1 do
+    begin
+      ci:=RMCoreBase.GetPixel(px, py);
+      if (ci >= 0) and (ci < colorCount) then
+        usedColors[ci]:=true;
+    end;
+
+  for s:=0 to 4 do
+    shadeIdx[s]:=AllocMaterialColor(shades[s].r, shades[s].g, shades[s].b,
+                   pal, usedColors, colorCount, paletteModified);
+
+  RMCoreBase.CopyToUndoBuf;
+
+  w:=ca.x2 - ca.x + 1;
+  h:=ca.y2 - ca.y + 1;
+
+  //render material into region
+  for j:=0 to h-1 do
+  begin
+    for i:=0 to w-1 do
+    begin
+      px:=ca.x + i;
+      py:=ca.y + j;
+      n:=Noise(px, py);
+
+      //default: random speckle between shades 1 and 2
+      s:=1 + (n mod 2);
+
+      if MatName = 'Grass' then
+      begin
+        if TopView then
+        begin
+          s:=1 + (n mod 3);  //mixed greens
+          if (n mod 17) = 0 then s:=3;  //light blade highlights
+        end
+        else
+        begin
+          //side: grass strip on top ~25% then dirt-ish darker below
+          if j < (h div 4) then
+            s:=1 + (n mod 3)
+          else
+            s:=(n mod 2);  //darker under-layer using dark shades
+        end;
+      end
+      else if MatName = 'Dirt' then
+      begin
+        s:=1 + (n mod 2);
+        if (n mod 11) = 0 then s:=0;  //dark clumps
+        if (n mod 23) = 0 then s:=3;  //light specks
+      end
+      else if MatName = 'Rock' then
+      begin
+        //blocky: quantize noise per 4x4 cell
+        n:=Noise(px div 4, py div 4);
+        s:=n mod 4;
+        //crack lines
+        if ((px + (Noise(0, py) mod 3)) mod 8) = 0 then s:=0;
+      end
+      else if MatName = 'Snow' then
+      begin
+        s:=2 + (n mod 2);
+        if (n mod 13) = 0 then s:=1;  //subtle shadows
+        if (not TopView) and (j < 2) then s:=3;  //bright top edge
+      end
+      else if MatName = 'Ice' then
+      begin
+        s:=1 + (n mod 2);
+        //diagonal streaks
+        if ((px + py) mod 7) = 0 then s:=3;
+        if ((px - py) mod 11) = 0 then s:=0;
+      end
+      else if MatName = 'Wood' then
+      begin
+        if TopView then
+        begin
+          //vertical grain
+          s:=1 + ((px + (Noise(px div 3, 0) mod 2)) mod 2);
+          if (px mod 9) = 0 then s:=0;  //grain lines
+          if (n mod 19) = 0 then s:=3;
+        end
+        else
+        begin
+          //horizontal planks every 6 rows
+          s:=1 + (n mod 2);
+          if (py mod 6) = 0 then s:=0;  //plank separation
+          if ((py mod 6) = 1) and ((n mod 3) = 0) then s:=3;  //highlight under line
+        end;
+      end
+      else if MatName = 'Metal' then
+      begin
+        s:=1 + (n mod 2);
+        //horizontal brushed lines
+        if (py mod 5) = 0 then s:=2;
+        //rivets every 8x8
+        if ((px mod 8) = 4) and ((py mod 8) = 4) then s:=3;
+        if ((px mod 8) = 5) and ((py mod 8) = 5) then s:=0;
+      end
+      else if MatName = 'Silver' then
+      begin
+        //smooth metallic bands
+        s:=((px + py) div 4) mod 4;
+        if s < 0 then s:=0;
+        if (n mod 29) = 0 then s:=3;
+      end
+      else if MatName = 'Gold' then
+      begin
+        s:=((px + py) div 3) mod 4;
+        if (n mod 21) = 0 then s:=3;  //sparkle
+        if (n mod 31) = 0 then s:=0;
+      end
+      else if MatName = 'Crate' then
+      begin
+        //crate: wood fill with dark frame border + X diagonal braces
+        s:=1 + (n mod 2);
+        if (n mod 15) = 0 then s:=3;
+        //outer frame (2px)
+        if (i < 2) or (j < 2) or (i >= w-2) or (j >= h-2) then s:=0
+        //diagonal cross braces
+        else if abs((i * (h-1)) - (j * (w-1))) < (w+h) div 2 then s:=2
+        else if abs((i * (h-1)) - ((h-1-j) * (w-1))) < (w+h) div 2 then s:=2;
+      end
+      else if MatName = 'BrownBrick' then
+      begin
+        //brick pattern: 8 wide x 4 tall, offset every other row, mortar border
+        px:=ca.x + i;
+        py:=ca.y + j;
+        if (py mod 4) = 0 then s:=4  //horizontal mortar line
+        else
+        begin
+          //offset alternate rows by half a brick
+          if ((py div 4) mod 2) = 0 then n:=px
+          else n:=px + 4;
+          if (n mod 8) = 0 then s:=4  //vertical mortar line
+          else
+          begin
+            n:=Noise((n div 8), (py div 4));  //per-brick shade
+            s:=1 + (n mod 3);
+            if (Noise(px, py) mod 19) = 0 then s:=0;  //speckle
+          end;
+        end;
+      end
+      else if MatName = 'StoneBrick' then
+      begin
+        //larger stone blocks: 10 wide x 5 tall, offset rows, dark mortar
+        px:=ca.x + i;
+        py:=ca.y + j;
+        if (py mod 5) = 0 then s:=4
+        else
+        begin
+          if ((py div 5) mod 2) = 0 then n:=px
+          else n:=px + 5;
+          if (n mod 10) = 0 then s:=4
+          else
+          begin
+            n:=Noise((n div 10), (py div 5));
+            s:=1 + (n mod 3);
+            if (Noise(px, py) mod 13) = 0 then s:=0;  //rough texture
+          end;
+        end;
+      end
+      else if MatName = 'WoodFloor' then
+      begin
+        //floor boards: horizontal planks 4 tall, staggered end joints, dark border
+        px:=ca.x + i;
+        py:=ca.y + j;
+        if (py mod 4) = 0 then s:=4  //plank separation line
+        else
+        begin
+          //stagger joints: each row of planks offset by row index * 7
+          n:=px + ((py div 4) * 7);
+          if (n mod 14) = 0 then s:=4  //end joint
+          else
+          begin
+            n:=Noise((n div 14), (py div 4));
+            s:=1 + (n mod 2);
+            if (Noise(px, py) mod 9) = 0 then s:=0;   //grain
+            if (Noise(px, py) mod 17) = 0 then s:=3;  //highlight
+          end;
+        end;
+      end
+      else if MatName = 'CeramicTile' then
+      begin
+        //square tiles 6x6 with grout border
+        px:=ca.x + i;
+        py:=ca.y + j;
+        if ((px mod 6) = 0) or ((py mod 6) = 0) then s:=4  //grout
+        else
+        begin
+          n:=Noise(px div 6, py div 6);  //per-tile tint
+          s:=1 + (n mod 2);
+          //glossy highlight in top-left of each tile
+          if ((px mod 6) = 1) and ((py mod 6) = 1) then s:=3;
+          if ((px mod 6) = 2) and ((py mod 6) = 1) then s:=3;
+        end;
+      end
+      else if MatName = 'Water' then
+      begin
+        if TopView then
+        begin
+          //ripple rings via noise cells
+          n:=Noise(px div 3, py div 3);
+          s:=1 + (n mod 2);
+          if ((px + py + (n mod 5)) mod 9) = 0 then s:=3;  //glints
+        end
+        else
+        begin
+          //horizontal waves; brighter near top
+          s:=1 + (n mod 2);
+          if (py mod 4) = 0 then s:=2;
+          if j < 2 then s:=3;  //surface highlight
+          if ((px + py div 2) mod 13) = 0 then s:=0;
+        end;
+      end;
+
+      RMCoreBase.SetColorEx(shadeIdx[s]);
+      RMCoreBase.PutPixelEx(px, py);
+    end;
+  end;
+
+  //write modified palette back
+  if paletteModified then
+  begin
+    for i:=0 to colorCount-1 do
+      RMCoreBase.Palette.SetColor(i, pal[i]);
+    CoreToPalette;
+  end;
+
+  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+  UpdateColorBoxes;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
+end;
+
+
+const
+  DitherPatternNames : array[0..35] of string = (
+    'Checkerboard','Light Dots','Heavy','H-Lines Thin','H-Lines Thick',
+    'V-Lines Thin','V-Lines Thick','Diagonal R','Diagonal L','Crosshatch',
+    'X-Cross','Brick','Basket Weave','Sparse Dots','Medium Dots','Grid',
+    'Zigzag','Waves','Double Diag','Diamond','Fish Scale','Bayer 25%',
+    'Bayer 50%','H-Stripe 3px','V-Stripe 3px','Herringbone','Dotted Grid',
+    'Checker 2x2','Thick Diag R','Thick Diag L','Plus Signs','H-Dashes',
+    'V-Dashes','Small Squares','Maze','Stipple');
+
+procedure TRMMainForm.UpdateStatusInfo;
+var
+  pm : integer;
+  palName, brushStr, methodStr, ditherStr, s : string;
+begin
+  if StatusBar = nil then exit;
+  if StatusBar.Panels.Count < 4 then exit;
+
+  //panel 2: sprite size, grid cell, zoom
+  s:='Sprite: '+IntToStr(RMCoreBase.GetWidth)+'x'+IntToStr(RMCoreBase.GetHeight)+
+     '  Cell: '+IntToStr(RMDrawTools.GetCellWidth)+'x'+IntToStr(RMDrawTools.GetCellHeight)+
+     '  Zoom: '+IntToStr(RMDrawTools.GetZoomSize)+'x';
+  StatusBar.Panels[2].Text:=s;
+
+  //panel 3: palette type, draw method, dither, brush
+  pm:=RMCoreBase.Palette.GetPaletteMode;
+  case pm of
+    PaletteModeMono:    palName:='Mono';
+    PaletteModeCGA0:    palName:='CGA 0';
+    PaletteModeCGA1:    palName:='CGA 1';
+    PaletteModeEGA:     palName:='EGA';
+    PaletteModeVGA:     palName:='VGA 16';
+    PaletteModeVGA256:  palName:='VGA 256';
+    PaletteModeXGA:     palName:='XGA 16';
+    PaletteModeXGA256:  palName:='XGA 256';
+    PaletteModeAmiga2:  palName:='Amiga 2';
+    PaletteModeAmiga4:  palName:='Amiga 4';
+    PaletteModeAmiga8:  palName:='Amiga 8';
+    PaletteModeAmiga16: palName:='Amiga 16';
+    PaletteModeAmiga32: palName:='Amiga 32';
+  else
+    palName:='?';
+  end;
+
+  case DrawMethod.ItemIndex of
+    0: methodStr:='Color';
+    1: methodStr:='Brush';
+    2: methodStr:='Dither';
+    3: begin
+         case GradientMethod.ItemIndex of
+           0: methodStr:='Gradient H';
+           1: methodStr:='Gradient V';
+           2: methodStr:='Gradient O';
+         else
+           methodStr:='Gradient';
+         end;
+       end;
+  else
+    methodStr:='?';
+  end;
+
+  ditherStr:='';
+  if (FSelectedDitherPattern >= 0) and (FSelectedDitherPattern <= 35) then
+    ditherStr:='  Dither: '+DitherPatternNames[FSelectedDitherPattern];
+
+  if RetroBrush.HasBrush then
+    brushStr:='  Brush: '+IntToStr(RetroBrush.WorkWidth)+'x'+IntToStr(RetroBrush.WorkHeight)
+  else
+    brushStr:='  Brush: none';
+
+  StatusBar.Panels[3].Text:='Palette: '+palName+'  Draw: '+methodStr+ditherStr+brushStr;
+end;
+
+procedure TRMMainForm.MaterialClick(Sender: TObject);
+var
+  mi : string;
+  matName : string;
+  topView : boolean;
+begin
+  mi:=(Sender as TMenuItem).Name;   //e.g. MnuMatDirtSide
+
+  //strip 'MnuMat' prefix
+  matName:=Copy(mi, 7, Length(mi));
+
+  topView:=false;
+  if Copy(matName, Length(matName)-3, 4) = 'Side' then
+    matName:=Copy(matName, 1, Length(matName)-4)
+  else if Copy(matName, Length(matName)-2, 3) = 'Top' then
+  begin
+    matName:=Copy(matName, 1, Length(matName)-3);
+    topView:=true;
+  end;
+
+  GenerateMaterial(matName, topView);
+end;
+
+procedure TRMMainForm.SetDefaultDrawColors;
+var
+  pm : integer;
+begin
+  pm:=RMCoreBase.Palette.GetPaletteMode;
+
+  case pm of
+    PaletteModeMono:
+    begin
+      RMCoreBase.SetCurColor1(1);   //white
+      RMCoreBase.SetCurColor2(0);   //black
+    end;
+    PaletteModeCGA0, PaletteModeCGA1:
+    begin
+      RMCoreBase.SetCurColor1(3);   //brightest color
+      RMCoreBase.SetCurColor2(0);   //black
+    end;
+    PaletteModeAmiga2, PaletteModeAmiga4, PaletteModeAmiga8,
+    PaletteModeAmiga16, PaletteModeAmiga32:
+    begin
+      //amiga palettes stay as-is, don't change
+    end;
+  else
+    //EGA, VGA, VGA256, XGA, XGA256 - all 16/256 color PC modes
+    RMCoreBase.SetCurColor1(15);  //white
+    RMCoreBase.SetCurColor2(0);   //black
+  end;
+
+  if DrawMethodPreview <> nil then
+    UpdateColorBoxes;
+end;
+
+procedure TRMMainForm.UpdateBrushRadioState;
+begin
+  //enable/disable Brush radio based on whether a brush is captured
+  //Brush is index 1 in the radio group
+  if not RetroBrush.HasBrush then
+  begin
+    //if brush mode was active, switch to Color
+    if DrawMethod.ItemIndex = 1 then
+    begin
+      DrawMethod.ItemIndex:=0;
+      RMDrawTools.SetBrushFillEnabled(false);
+      DrawMethodPreview.Invalidate;
+    end;
+  end;
+  UpdateStatusInfo;
 end;
 
 procedure TRMMainForm.UpdateDitherGradientColors;
@@ -6614,6 +8190,7 @@ procedure TRMMainForm.BrushClearClick(Sender: TObject);
 begin
   RetroBrush.ClearBrush;
   ShowMessage('Brush cleared.');
+  UpdateBrushRadioState;
 end;
 
 

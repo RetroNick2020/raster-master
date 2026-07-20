@@ -33,10 +33,13 @@ type
     procedure FormCreate(Sender: TObject);
     procedure OKClick(Sender: TObject);
 
+    procedure InitColorBox2;
+    procedure InitColorBox4;
     procedure InitColorBox16;
     procedure InitColorBox256;
     procedure AddVGA256;
     procedure AddVGA16;
+    procedure AddVGAColors(count : integer);
     procedure TrackBar1Change(Sender: TObject);
     procedure TrackBar2Change(Sender: TObject);
     procedure TrackBar3Change(Sender: TObject);
@@ -118,6 +121,42 @@ begin
   PickedIndex:=1;
 end;
 
+procedure TRMVgaColorDialog.InitColorBox2;
+begin
+  ColorPalette.ColumnCount:=2;
+  ColorPalette.ButtonHeight:=60;
+  ColorPalette.ButtonWidth:=60;
+
+  ColorPalette.ClearColors;
+
+  AddVGAColors(2);
+  if PickedIndex > 1 then PickedIndex:=1;
+  ColorPalette.PickedIndex:=PickedIndex;
+
+  PickedColor:=ColorPalette.Colors[PickedIndex];
+  Shape1.Brush.Color:=PickedColor;
+  UpdateTrackValues;
+  UpDateColorChange;
+end;
+
+procedure TRMVgaColorDialog.InitColorBox4;
+begin
+  ColorPalette.ColumnCount:=4;
+  ColorPalette.ButtonHeight:=60;
+  ColorPalette.ButtonWidth:=60;
+
+  ColorPalette.ClearColors;
+
+  AddVGAColors(4);
+  if PickedIndex > 3 then PickedIndex:=3;
+  ColorPalette.PickedIndex:=PickedIndex;
+
+  PickedColor:=ColorPalette.Colors[PickedIndex];
+  Shape1.Brush.Color:=PickedColor;
+  UpdateTrackValues;
+  UpDateColorChange;
+end;
+
 procedure TRMVgaColorDialog.InitColorBox16;
  begin
   ColorPalette.ColumnCount:=8;
@@ -172,6 +211,20 @@ var
   cr : TRMColorRec;
 begin
   for i:=0 to 15 do
+  begin
+      RMCoreBase.Palette.GetColor(i,cr);
+      TC:=RGBToColor(cr.r,cr.g,cr.b);
+      ColorPalette.AddColor(TC);
+  end;
+end;
+
+procedure TRMVgaColorDialog.AddVGAColors(count : integer);
+var
+  i : integer;
+  tc : TColor;
+  cr : TRMColorRec;
+begin
+  for i:=0 to count-1 do
   begin
       RMCoreBase.Palette.GetColor(i,cr);
       TC:=RGBToColor(cr.r,cr.g,cr.b);

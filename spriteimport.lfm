@@ -225,7 +225,8 @@ object SpriteImportForm: TSpriteImportForm
       Height = 105
       Top = 0
       Width = 105
-      OnClick = SpriteSheetPaintBoxClick
+      PopupMenu = SpritePopupMenu
+    OnClick = SpriteSheetPaintBoxClick
       OnMouseMove = SpriteSheetPaintBoxMouseMove
       OnPaint = SpriteSheetPaintBoxPaint
     end
@@ -328,4 +329,17 @@ object SpriteImportForm: TSpriteImportForm
       end
     end
   end
+  object SpritePopupMenu: TPopupMenu
+    Left = 400
+    Top = 10
+    object PopupCopyToBrush: TMenuItem
+      Caption = 'Copy to Brush'
+      OnClick = PopupCopyToBrushClick
+    end
+    object PopupCopyToClipboard: TMenuItem
+      Caption = 'Copy to Clipboard'
+      OnClick = PopupCopyToClipboardClick
+    end
+  end
+
 end

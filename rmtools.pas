@@ -4,7 +4,7 @@ unit rmtools;
 
 interface
 uses
-  Classes, SysUtils,Graphics,Clipbrd,LCLIntf,LCLType,colorpalette,rmcore,math;
+  Classes, SysUtils,Graphics,Clipbrd,LCLIntf,LCLType,colorpalette,rmcore,math,uRetrobrush;
 
 const
   CellWidthBorderRemove  =2;
@@ -91,6 +91,8 @@ Type
                 FDitherColor2Ex : integer;  //palette index for Color 2
                 FDitherBitmap   : array[0..7, 0..7] of byte;  //current 8x8 pattern
                 FDitherUseBitmap : boolean;  //true=use bitmap pattern, false=use formula
+
+                FBrushFillEnabled : boolean;  //true=use brush pattern for fill
 
                 FGradientEnabled : boolean;
                 FGradientMode    : integer;  //0=horiz, 1=vert, 2=circular
@@ -201,6 +203,10 @@ Type
              procedure SetDitherUseBitmap(use : boolean);
              function  GetDitherUseBitmap : boolean;
 
+             //brush fill support
+             procedure SetBrushFillEnabled(enabled : boolean);
+             function  GetBrushFillEnabled : boolean;
+
              //gradient support
              procedure SetGradientEnabled(enabled : boolean);
              function  GetGradientEnabled : boolean;
@@ -266,6 +272,7 @@ begin
  FDitherColor2:=clBlack;
  FDitherColor2Ex:=0;
  FDitherUseBitmap:=false;
+ FBrushFillEnabled:=false;
  FillChar(FDitherBitmap, SizeOf(FDitherBitmap), 0);
  FGradientEnabled:=false;
  FGradientMode:=0;
@@ -456,7 +463,23 @@ begin
 
   if mode = 2 then    //just plot the pixel to the internal buffer
   begin
-    if FDitherEnabled then
+    if FBrushFillEnabled and RetroBrush.HasBrush then
+    begin
+      if (x >= 0) and (x < RMCoreBase.GetWidth) and
+         (y >= 0) and (y < RMCoreBase.GetHeight) then
+      begin
+        ci:=RetroBrush.WorkPixels[((x mod RetroBrush.WorkWidth) + RetroBrush.WorkWidth) mod RetroBrush.WorkWidth]
+                                  [((y mod RetroBrush.WorkHeight) + RetroBrush.WorkHeight) mod RetroBrush.WorkHeight];
+        //clamp to valid palette range
+        if ci >= RMCoreBase.Palette.GetColorCount then
+          ci:=ci mod RMCoreBase.Palette.GetColorCount;
+        if ci <> RetroBrush.TransColor then
+          RMCoreBase.SetColorEx(ci)
+        else
+          RMCoreBase.SetColorEx(RMCoreBase.GetCurColor1);
+      end;
+    end
+    else if FDitherEnabled then
     begin
       if DitherIsColor2(x, y) then
         RMCoreBase.SetColorEx(FDitherColor2Ex)
@@ -497,8 +520,22 @@ begin
 
   if (x<0) or (x > (RMCoreBase.GetWidth-1)) or (y<0) or (y > (RMCoreBase.GetHeight-1))  then exit;
 
+  //brush fill: tile brush pattern across drawing
+  if FBrushFillEnabled and (mode <> 1) and RetroBrush.HasBrush then
+  begin
+    ci:=RetroBrush.WorkPixels[((x mod RetroBrush.WorkWidth) + RetroBrush.WorkWidth) mod RetroBrush.WorkWidth]
+                              [((y mod RetroBrush.WorkHeight) + RetroBrush.WorkHeight) mod RetroBrush.WorkHeight];
+    //clamp to valid palette range
+    if ci >= RMCoreBase.Palette.GetColorCount then
+      ci:=ci mod RMCoreBase.Palette.GetColorCount;
+    if ci <> RetroBrush.TransColor then
+      actualColor:=RGBToColor(
+        RMCoreBase.Palette.GetRed(ci),
+        RMCoreBase.Palette.GetGreen(ci),
+        RMCoreBase.Palette.GetBlue(ci));
+  end
   //dither: alternate between Color1 and Color2 based on pixel position
-  if FDitherEnabled and (mode <> 1) then
+  else if FDitherEnabled and (mode <> 1) then
   begin
     if DitherIsColor2(x, y) then
       actualColor:=FDitherColor2;
@@ -1743,7 +1780,8 @@ end;
 procedure TRMDrawTools.SetDitherPattern(pattern : integer);
 begin
   FDitherPattern:=pattern;
-  FDitherUseBitmap:=false;  //switch back to formula mode
+  FDitherUseBitmap:=false;
+ FBrushFillEnabled:=false;  //switch back to formula mode
 end;
 
 function TRMDrawTools.GetDitherPattern : integer;
@@ -1773,10 +1811,25 @@ begin
   GetDitherUseBitmap:=FDitherUseBitmap;
 end;
 
+procedure TRMDrawTools.SetBrushFillEnabled(enabled : boolean);
+begin
+  FBrushFillEnabled:=enabled;
+  if enabled then
+  begin
+    FDitherEnabled:=false;
+    FGradientEnabled:=false;
+  end;
+end;
+
+function TRMDrawTools.GetBrushFillEnabled : boolean;
+begin
+  GetBrushFillEnabled:=FBrushFillEnabled;
+end;
+
 procedure TRMDrawTools.SetGradientEnabled(enabled : boolean);
 begin
   FGradientEnabled:=enabled;
-  if enabled then FDitherEnabled:=false;
+  if enabled then begin FDitherEnabled:=false; FBrushFillEnabled:=false; end;
 end;
 
 function TRMDrawTools.GetGradientEnabled : boolean;

@@ -625,7 +625,7 @@ object RMMainForm: TRMMainForm
         Height = 40
         Hint = 'Use Color 1 and Color 2 for Dither and Gradient '
         Top = 80
-        Width = 200
+        Width = 232
         AutoFill = True
         Caption = 'Draw Method'
         ChildSizing.LeftRightSpacing = 6
@@ -634,21 +634,24 @@ object RMMainForm: TRMMainForm
         ChildSizing.ShrinkHorizontal = crsScaleChilds
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
-        ChildSizing.ControlsPerLine = 3
+        ChildSizing.ControlsPerLine = 4
         ClientHeight = 20
-        ClientWidth = 196
-        Columns = 3
+        ClientWidth = 228
+        Columns = 4
         ItemIndex = 0
         Items.Strings = (
           'Color'
+          'Brush'
           'Dither'
           'Gradient'
         )
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 3
         OnClick = DrawMethodClick
       end
       object GradientMethod: TComboBox
-        Left = 216
+        Left = 256
         Height = 23
         Hint = 'Gradient Direction'
         Top = 97
@@ -660,16 +663,18 @@ object RMMainForm: TRMMainForm
           'Vertical'
           'Circular'
         )
-        ReadOnly = True
+        ParentShowHint = False
+        ShowHint = True
+        Style = csDropDownList
         TabOrder = 4
         Text = 'Horizontal'
         OnChange = GradientMethodChange
       end
       object DrawMethodPreview: TPaintBox
-        Left = 344
+        Left = 368
         Height = 32
         Top = 88
-        Width = 212
+        Width = 187
         OnPaint = DrawMethodPreviewPaint
       end
     end
@@ -699,10 +704,16 @@ object RMMainForm: TRMMainForm
     Width = 1600
     Panels = <    
       item
-        Width = 400
+        Width = 260
       end    
       item
-        Width = 300
+        Width = 280
+      end    
+      item
+        Width = 420
+      end    
+      item
+        Width = 640
       end>
     SimplePanel = False
   end
@@ -1282,6 +1293,10 @@ object RMMainForm: TRMMainForm
         Caption = 'Paste'
         OnClick = EditPasteClick
       end
+      object EditPastePalette: TMenuItem
+        Caption = 'Paste (with Palette)'
+        OnClick = EditPastePaletteClick
+      end
       object EditProperties: TMenuItem
         Caption = 'Properties'
         OnClick = PropertiesClick
@@ -1379,6 +1394,14 @@ object RMMainForm: TRMMainForm
       object PaletteSave: TMenuItem
         Caption = 'Save'
         OnClick = PaletteSaveClick
+      end
+      object PaletteResetDefault: TMenuItem
+        Caption = 'Reset To Default'
+        OnClick = PaletteResetDefaultClick
+      end
+      object PaletteSortColors: TMenuItem
+        Caption = 'Sort Colors'
+        OnClick = PaletteSortColorsClick
       end
       object PaletteExport: TMenuItem
         Caption = 'Export'
@@ -1720,6 +1743,17 @@ object RMMainForm: TRMMainForm
       object MnuBrushSep1: TMenuItem
         Caption = '-'
       end
+      object MnuBrushOpen: TMenuItem
+        Caption = 'Open Brush...'
+        OnClick = BrushOpenClick
+      end
+      object MnuBrushSave: TMenuItem
+        Caption = 'Save Brush...'
+        OnClick = BrushSaveClick
+      end
+      object MnuBrushSep1b: TMenuItem
+        Caption = '-'
+      end
       object MnuBrushEffects: TMenuItem
         Caption = 'Brush Effects...'
         OnClick = BrushEffectsClick
@@ -1741,6 +1775,174 @@ object RMMainForm: TRMMainForm
       object MnuBrushClear: TMenuItem
         Caption = 'Clear Brush'
         OnClick = BrushClearClick
+      end
+    end
+    object MaterialsMenu: TMenuItem
+      Caption = 'Materials'
+      object MnuMatDirt: TMenuItem
+        Caption = 'Dirt'
+        object MnuMatDirtSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatDirtTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatRock: TMenuItem
+        Caption = 'Rock'
+        object MnuMatRockSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatRockTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatGrass: TMenuItem
+        Caption = 'Grass'
+        object MnuMatGrassSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatGrassTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatSnow: TMenuItem
+        Caption = 'Snow'
+        object MnuMatSnowSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatSnowTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatIce: TMenuItem
+        Caption = 'Ice'
+        object MnuMatIceSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatIceTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatWood: TMenuItem
+        Caption = 'Wood'
+        object MnuMatWoodSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatWoodTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatMetal: TMenuItem
+        Caption = 'Metal'
+        object MnuMatMetalSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatMetalTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatSilver: TMenuItem
+        Caption = 'Silver'
+        object MnuMatSilverSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatSilverTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatGold: TMenuItem
+        Caption = 'Gold'
+        object MnuMatGoldSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatGoldTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatWater: TMenuItem
+        Caption = 'Water'
+        object MnuMatWaterSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatWaterTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatCrate: TMenuItem
+        Caption = 'Wooden Crate'
+        object MnuMatCrateSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatCrateTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatBrownBrick: TMenuItem
+        Caption = 'Brown Bricks'
+        object MnuMatBrownBrickSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatBrownBrickTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatStoneBrick: TMenuItem
+        Caption = 'Stone Bricks'
+        object MnuMatStoneBrickSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatStoneBrickTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatWoodFloor: TMenuItem
+        Caption = 'Wooden Floor'
+        object MnuMatWoodFloorSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatWoodFloorTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
+      end
+      object MnuMatCeramicTile: TMenuItem
+        Caption = 'Ceramic Tiles'
+        object MnuMatCeramicTileSide: TMenuItem
+          Caption = 'Side View'
+          OnClick = MaterialClick
+        end
+        object MnuMatCeramicTileTop: TMenuItem
+          Caption = 'Top View'
+          OnClick = MaterialClick
+        end
       end
     end
     object Utilities: TMenuItem

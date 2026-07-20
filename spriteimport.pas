@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  StdCtrls, ExtDlgs, Menus, Clipbrd, LCLIntf, LCLType, SpinEx, rwpng, rmcore, rmthumb;
+  StdCtrls, ExtDlgs, Menus, Clipbrd, LCLIntf, LCLType, SpinEx, rwpng, rmcore, rmthumb,
+  uRetrobrush;
 
 type
 
@@ -22,6 +23,9 @@ type
     SpinEditWidth: TSpinEditEx;
     SpinEditHeight: TSpinEditEx;
     SpriteSheetPaintBox: TPaintBox;
+    SpritePopupMenu: TPopupMenu;
+    PopupCopyToBrush: TMenuItem;
+    PopupCopyToClipboard: TMenuItem;
     SpriteSizeComboBox: TComboBox;
     NewPaletteComboBox: TComboBox;
     PaletteComboBox: TComboBox;
@@ -66,6 +70,8 @@ type
     procedure SpriteSheetPaintBoxPaint(Sender: TObject);
     procedure PaletteComboBoxChange(Sender: TObject);
     procedure PalettePaintBoxPaint(Sender: TObject);
+    procedure PopupCopyToBrushClick(Sender: TObject);
+    procedure PopupCopyToClipboardClick(Sender: TObject);
     procedure SpriteSheetPaintBoxClick(Sender: TObject);
     procedure SpriteSizeComboBoxChange(Sender: TObject);
     procedure ZoomTrackBarChange(Sender: TObject);
@@ -453,7 +459,8 @@ begin
        end;
   end;
 
-  PalettePaintBox.Invalidate;
+  if PalettePaintBox <> nil then
+    PalettePaintBox.Invalidate;
 end;
 
 procedure TSpriteImportForm.DrawSpriteSelectBox;
@@ -691,6 +698,7 @@ end;
 
 procedure TSpriteImportForm.UpdateStatusBar;
 begin
+  if StatusBar1 = nil then exit;
   if StatusBar1.Panels.Count < 5 then exit;
 
   StatusBar1.Panels[1].Text:='Sprite: '+IntToStr(SpriteWidth)+'x'+IntToStr(SpriteHeight);
@@ -703,6 +711,96 @@ begin
 
   StatusBar1.Panels[4].Text:='Palette: '+PaletteComboBox.Text+' ('+NewPaletteComboBox.Text+')';
 end;
+
+procedure TSpriteImportForm.PopupCopyToClipboardClick(Sender: TObject);
+var
+  Bmp : TBitmap;
+  i, j : integer;
+  sx, sy : integer;
+begin
+  if EasyPNG = nil then exit;
+  if EasyPNG.Picture1 = nil then exit;
+  if (SpriteWidth < 1) or (SpriteHeight < 1) then exit;
+
+  sx:=ZoomXToReal(BoxX);
+  sy:=ZoomYToReal(BoxY);
+
+  Bmp:=TBitmap.Create;
+  try
+    Bmp.SetSize(SpriteWidth, SpriteHeight);
+    for i:=0 to SpriteWidth-1 do
+      for j:=0 to SpriteHeight-1 do
+        Bmp.Canvas.Pixels[i, j]:=EasyPNG.Picture1.Bitmap.Canvas.Pixels[sx + i, sy + j];
+    Clipboard.Assign(Bmp);
+  finally
+    Bmp.Free;
+  end;
+end;
+
+procedure TSpriteImportForm.PopupCopyToBrushClick(Sender: TObject);
+var
+  i, j, ci, bestIdx, bestDist, dist : integer;
+  pc : TColor;
+  r, g, b, pr, pg, pb : byte;
+  pal : TRMPaletteBuf;
+  colorCount : integer;
+  sx, sy : integer;
+begin
+  if EasyPNG = nil then exit;
+  if EasyPNG.Picture1 = nil then exit;
+  if (SpriteWidth < 1) or (SpriteHeight < 1) then exit;
+
+  sx:=ZoomXToReal(BoxX);
+  sy:=ZoomYToReal(BoxY);
+
+  RMCoreBase.Palette.GetPalette(pal);
+  colorCount:=RMCoreBase.Palette.GetColorCount;
+
+  RetroBrush.OrigWidth:=SpriteWidth;
+  RetroBrush.OrigHeight:=SpriteHeight;
+  RetroBrush.WorkWidth:=SpriteWidth;
+  RetroBrush.WorkHeight:=SpriteHeight;
+  SetLength(RetroBrush.OrigPixels, SpriteWidth, SpriteHeight);
+  SetLength(RetroBrush.WorkPixels, SpriteWidth, SpriteHeight);
+  RetroBrush.TransColor:=0;
+  RetroBrush.HasBrush:=true;
+  RetroBrush.ColorCount:=colorCount;
+
+  for ci:=0 to colorCount-1 do
+    RetroBrush.Palette[ci]:=pal[ci];
+
+  for i:=0 to SpriteWidth-1 do
+  begin
+    for j:=0 to SpriteHeight-1 do
+    begin
+      pc:=EasyPNG.Picture1.Bitmap.Canvas.Pixels[sx + i, sy + j];
+      r:=Red(pc);
+      g:=Green(pc);
+      b:=Blue(pc);
+
+      bestIdx:=0;
+      bestDist:=MaxInt;
+      for ci:=0 to colorCount-1 do
+      begin
+        pr:=pal[ci].r;
+        pg:=pal[ci].g;
+        pb:=pal[ci].b;
+        dist:=(r - pr) * (r - pr) + (g - pg) * (g - pg) + (b - pb) * (b - pb);
+        if dist < bestDist then
+        begin
+          bestDist:=dist;
+          bestIdx:=ci;
+        end;
+      end;
+
+      RetroBrush.OrigPixels[i][j]:=bestIdx;
+      RetroBrush.WorkPixels[i][j]:=bestIdx;
+    end;
+  end;
+
+  RetroBrush.InvalidateRemap;
+end;
+
 
 end.
 

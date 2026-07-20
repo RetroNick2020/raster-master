@@ -27,10 +27,23 @@ object AnimationForm: TAnimationForm
       Max = 60
       Min = 1
       Orientation = trVertical
-      Position = 1
+      Position = 30
       TickMarks = tmTopLeft
       OnChange = FPSTrackBarChange
       TabOrder = 0
+    end
+    object SpeedTrackBar: TTrackBar
+      Left = 200
+      Height = 128
+      Top = 8
+      Width = 25
+      Max = 30
+      Min = 1
+      Orientation = trVertical
+      Position = 10
+      TickMarks = tmTopLeft
+      OnChange = SpeedTrackBarChange
+      TabOrder = 1
     end
     object Image2: TImage
       Left = 88
@@ -111,7 +124,7 @@ object AnimationForm: TAnimationForm
   object LeftSplitter: TSplitter
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
-    AnchorSideBottom.Control = StatusBar1
+    AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 175
     Height = 474
@@ -125,7 +138,7 @@ object AnimationForm: TAnimationForm
   object RightSplitter: TSplitter
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
-    AnchorSideBottom.Control = StatusBar1
+    AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 952
     Height = 474
@@ -141,7 +154,7 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = LeftSplitter
-    AnchorSideBottom.Control = StatusBar1
+    AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
     Height = 474
@@ -188,7 +201,7 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = RightSplitter
-    AnchorSideBottom.Control = StatusBar1
+    AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 184
     Height = 474
@@ -248,7 +261,7 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = StatusBar1
+    AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 961
     Height = 474
@@ -347,6 +360,7 @@ object AnimationForm: TAnimationForm
         'Bounce'
         'Patrol'
       )
+      Style = csDropDownList
       TabOrder = 0
       OnChange = SimStyleComboChange
     end
@@ -374,41 +388,13 @@ object AnimationForm: TAnimationForm
       Height = 25
       Top = 230
       Width = 677
+      Max = 30
       Min = 1
       Position = 4
       OnChange = MovementSpeedTrackBarChange
       Anchors = [akLeft, akRight, akBottom]
       TabOrder = 1
     end
-  end
-  object StatusBar1: TStatusBar
-    Left = 0
-    Height = 23
-    Top = 724
-    Width = 1149
-    Align = alBottom
-    Panels = <
-      item
-        Text = 'Animation: 0/0'
-        Width = 160
-      end
-      item
-        Text = 'Frames: 0'
-        Width = 120
-      end
-      item
-        Text = 'Frame: 0/0'
-        Width = 120
-      end
-      item
-        Text = 'Speed: 4'
-        Width = 100
-      end
-      item
-        Text = ''
-        Width = 300
-      end>
-    SimplePanel = False
   end
   object CurrentAnimationImageList: TImageList
     Left = 712
@@ -463,9 +449,16 @@ object AnimationForm: TAnimationForm
     end
   end
   object Timer1: TTimer
+    Interval = 16
     OnTimer = Timer1Timer
     OnStartTimer = Timer1StartTimer
     Left = 224
+    Top = 312
+  end
+  object SpeedTimer: TTimer
+    Interval = 100
+    OnTimer = SpeedTimerTimer
+    Left = 280
     Top = 312
   end
   object MainMenu1: TMainMenu
@@ -535,182 +528,6 @@ object AnimationForm: TAnimationForm
           object ExportPascalAnimArray: TMenuItem
             Caption = 'Animation Array'
             OnClick = FileExportPascalArrayClick
-          end
-        end
-        object MnuAnimExpAB: TMenuItem
-          Caption = 'AmigaBasic'
-          object AD_AB: TMenuItem
-            Tag = 13
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpAC: TMenuItem
-          Caption = 'Amiga C'
-          object AD_AC: TMenuItem
-            Tag = 24
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpAP: TMenuItem
-          Caption = 'Amiga Pascal'
-          object AD_AP: TMenuItem
-            Tag = 19
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpAQB: TMenuItem
-          Caption = 'Amiga QuickBasic AQB'
-          object AD_AQB: TMenuItem
-            Tag = 7
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpBAM: TMenuItem
-          Caption = 'BAM Basic'
-          object AD_BAM: TMenuItem
-            Tag = 8
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpFBQB: TMenuItem
-          Caption = 'FreeBASIC - QB Mode'
-          object AD_FBQB: TMenuItem
-            Tag = 14
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpFB: TMenuItem
-          Caption = 'FreeBASIC'
-          object AD_FB: TMenuItem
-            Tag = 5
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpFP: TMenuItem
-          Caption = 'FreePascal'
-          object AD_FP: TMenuItem
-            Tag = 17
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpGCC: TMenuItem
-          Caption = 'gcc \ Emscripten'
-          object AD_GCC: TMenuItem
-            Tag = 23
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpGW: TMenuItem
-          Caption = 'GWBASIC'
-          object AD_GW: TMenuItem
-            Tag = 10
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpJS: TMenuItem
-          Caption = 'JavaScript'
-          object AD_JS: TMenuItem
-            Tag = 25
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpJSON: TMenuItem
-          Caption = 'JSON'
-          object AD_JSON: TMenuItem
-            Tag = 26
-            Caption = 'Animation Data (JSON)'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpOW: TMenuItem
-          Caption = 'Open Watcom C'
-          object AD_OW: TMenuItem
-            Tag = 22
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpQB: TMenuItem
-          Caption = 'QBasic\QuickBasic'
-          object AD_QB: TMenuItem
-            Tag = 11
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpQB64: TMenuItem
-          Caption = 'QB64'
-          object AD_QB64: TMenuItem
-            Tag = 6
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpQBJS: TMenuItem
-          Caption = 'QBJS'
-          object AD_QBJS: TMenuItem
-            Tag = 9
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpQC: TMenuItem
-          Caption = 'Quick C'
-          object AD_QC: TMenuItem
-            Tag = 21
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpQP: TMenuItem
-          Caption = 'Quick Pascal'
-          object AD_QP: TMenuItem
-            Tag = 16
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpTB: TMenuItem
-          Caption = 'Turbo\Power Basic'
-          object AD_TB: TMenuItem
-            Tag = 12
-            Caption = 'Animation Data Statements'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpTP: TMenuItem
-          Caption = 'Turbo Pascal'
-          object AD_TP: TMenuItem
-            Tag = 15
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpTC: TMenuItem
-          Caption = 'Turbo C'
-          object AD_TC: TMenuItem
-            Tag = 20
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpTMT: TMenuItem
-          Caption = 'TMT Pascal'
-          object AD_TMT: TMenuItem
-            Tag = 18
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
           end
         end
       end
