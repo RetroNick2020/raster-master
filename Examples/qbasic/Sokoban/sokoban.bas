@@ -1,5 +1,6 @@
 'Sokoban for QBasic\QuickBasic
 'Raster Master Sprite\Map Editor was used to create/assemble graphics/map
+'Play on the web https://retronick2020.itch.io/qbasicsokoban
 
 DEFINT A-Z
 
