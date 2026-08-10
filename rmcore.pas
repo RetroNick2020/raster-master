@@ -11,6 +11,20 @@ Const
  cbColorBox1 = 1;
  cbColorBox2 = 2;
 
+ //Multi level undo, one ring PER SPRITE - undo history must follow the sprite
+ //it belongs to, exactly like the map editor keeps a ring per map.
+ //
+ //A level stores only the sprite's ACTUAL width x height, not the fixed
+ //256x256 buffer. That is what makes per sprite affordable: a 32x32 sprite
+ //costs 4KB a level, so 32 levels is 128KB and 64 sprites about 8MB even in
+ //the worst case. Full buffer snapshots would have been 256KB a level and
+ //512MB across the list.
+ //
+ //These MUST be declared here, ahead of the type section - TUndoRing and the
+ //UndoRings field both use them.
+ MaxUndoLevels = 32;
+ MaxUndoSlots  = 64;   //must be >= rmthumb's MaxThumbImages
+
 
 Type
   TRMColorRec = Record
@@ -81,6 +95,20 @@ Type
        //
   end;
 
+  //One undo snapshot, sized to the sprite it came from.
+  TUndoLevel = Record
+                 W,H : integer;
+                 Pix : array of array of integer;
+               end;
+
+  TUndoRing  = Record
+                 Levels    : array[0..MaxUndoLevels-1] of TUndoLevel;
+                 Scratch   : TUndoLevel;
+                 Head      : integer;
+                 Depth     : integer;
+                 RedoDepth : integer;
+               end;
+
   TRMCoreBase = class(TObject)
                  // Draw Pixel to internal structure
                  // Get Pixel  from internal structure
@@ -90,7 +118,12 @@ Type
                  private
                   ImageBuf      : TRMImageBuf;
                   TempImageBuf  : TRMImageBuf;
+                  //Kept because rmthumb still reads it through a pointer.
+                  //Undo/Redo use the per sprite rings below.
                   UndoImageBuf  : TRMImageBuf;
+
+                  UndoRings     : array[0..MaxUndoSlots-1] of TUndoRing;
+                  CurUndoSlot   : integer;
                   CurColor1      : integer; // current color1
                   CurColor2     : integer; // current color2
                   CurColorBox   : integer; // which colorbox is currently seleted (colorbox0 or colorbox1)
@@ -124,7 +157,16 @@ Type
 
 
                  procedure ClearBuf(Color : integer);
-                 procedure CopyToUndoBuf;
+                 procedure CopyToUndoBuf;    //push the current state
+                 procedure SetUndoSlot(slot : integer);
+                 procedure CaptureUndoLevel(var L : TUndoLevel);
+                 procedure RestoreUndoLevel(var L : TUndoLevel);
+                 procedure Redo;
+                 procedure ClearUndo;
+                 function  CanUndo : boolean;
+                 function  CanRedo : boolean;
+                 function  GetUndoDepth : integer;
+                 function  GetRedoDepth : integer;
                  procedure UnDo;
                  procedure SetWidth(width : integer);
                  procedure SetHeight(height : integer);
@@ -1154,9 +1196,11 @@ begin
   SetCurColorBox(1);
   SetColorEx(1);
   ClearBuf(0);
-  CopyToUndoBuf;
+  ClearUndo;        //start with an empty history, not one bogus level
 end;
 
+//A snapshot taken at one size cannot be restored into another, so both of
+//these throw the history away. The UI warns before it gets here.
 procedure TRMCoreBase.SetWidth(width : integer);
 begin
   ImgBufWidth:=width;
@@ -1273,16 +1317,122 @@ begin
  GetPixelTColor:=RGBToColor(r,g,b);
 end;
 
+//=============================================================================
+// MULTI LEVEL UNDO / REDO   (one ring per sprite)
+//
+// The ring lives per sprite slot, so switching sprites keeps each sprite's
+// own history instead of leaving a ring that would restore ANOTHER sprite's
+// pixels. rmthumb calls SetUndoSlot when it switches images.
+//
+// Undo and Redo SWAP the live buffer with the slot they step onto, which is
+// what gives redo without a second stack: the state being left behind is
+// always preserved in the slot just vacated.
+//
+// Levels are sized to the sprite, and RestoreUndoLevel refuses a level whose
+// size does not match - so even if a resize failed to clear the history, a
+// stale level can never be pasted into a differently sized sprite.
+//=============================================================================
+
+procedure TRMCoreBase.SetUndoSlot(slot : integer);
+begin
+  if (slot < 0) or (slot >= MaxUndoSlots) then slot:=0;
+  CurUndoSlot:=slot;
+end;
+
+procedure TRMCoreBase.CaptureUndoLevel(var L : TUndoLevel);
+var
+  i,j : integer;
+begin
+  L.W:=ImgBufWidth;
+  L.H:=ImgBufHeight;
+  SetLength(L.Pix,L.W,L.H);
+  for i:=0 to L.W-1 do
+    for j:=0 to L.H-1 do
+      L.Pix[i,j]:=ImageBuf.Pixel[i,j];
+end;
+
+procedure TRMCoreBase.RestoreUndoLevel(var L : TUndoLevel);
+var
+  i,j : integer;
+begin
+  //size mismatch means this level belongs to a different sprite or a
+  //different size - refuse rather than corrupt the image
+  if (L.W <> ImgBufWidth) or (L.H <> ImgBufHeight) then exit;
+
+  for i:=0 to L.W-1 do
+    for j:=0 to L.H-1 do
+      ImageBuf.Pixel[i,j]:=L.Pix[i,j];
+end;
+
+//Call BEFORE modifying the image: this stores the state being replaced.
 procedure TRMCoreBase.CopyToUndoBuf;
 begin
-  UndoImageBuf:=ImageBuf;
+  CaptureUndoLevel(UndoRings[CurUndoSlot].Levels[UndoRings[CurUndoSlot].Head]);
+  UndoRings[CurUndoSlot].Head:=(UndoRings[CurUndoSlot].Head+1) mod MaxUndoLevels;
+
+  if UndoRings[CurUndoSlot].Depth < MaxUndoLevels-1 then
+    inc(UndoRings[CurUndoSlot].Depth);
+
+  UndoRings[CurUndoSlot].RedoDepth:=0;   //a new edit discards the redo branch
 end;
 
 procedure TRMCoreBase.UnDo;
+var
+  hd : integer;
 begin
-  TempImageBuf:=ImageBuf;
-  ImageBuf:=UndoImageBuf;
-  UndoImageBuf:=tempImageBuf;
+  if UndoRings[CurUndoSlot].Depth = 0 then exit;
+
+  hd:=(UndoRings[CurUndoSlot].Head-1+MaxUndoLevels) mod MaxUndoLevels;
+  CaptureUndoLevel(UndoRings[CurUndoSlot].Scratch);
+  RestoreUndoLevel(UndoRings[CurUndoSlot].Levels[hd]);
+  UndoRings[CurUndoSlot].Levels[hd]:=UndoRings[CurUndoSlot].Scratch;
+
+  UndoRings[CurUndoSlot].Head:=hd;
+  dec(UndoRings[CurUndoSlot].Depth);
+  inc(UndoRings[CurUndoSlot].RedoDepth);
+end;
+
+procedure TRMCoreBase.Redo;
+var
+  hd : integer;
+begin
+  if UndoRings[CurUndoSlot].RedoDepth = 0 then exit;
+
+  hd:=UndoRings[CurUndoSlot].Head;
+  CaptureUndoLevel(UndoRings[CurUndoSlot].Scratch);
+  RestoreUndoLevel(UndoRings[CurUndoSlot].Levels[hd]);
+  UndoRings[CurUndoSlot].Levels[hd]:=UndoRings[CurUndoSlot].Scratch;
+
+  UndoRings[CurUndoSlot].Head:=(hd+1) mod MaxUndoLevels;
+  inc(UndoRings[CurUndoSlot].Depth);
+  dec(UndoRings[CurUndoSlot].RedoDepth);
+end;
+
+procedure TRMCoreBase.ClearUndo;
+begin
+  UndoRings[CurUndoSlot].Head:=0;
+  UndoRings[CurUndoSlot].Depth:=0;
+  UndoRings[CurUndoSlot].RedoDepth:=0;
+end;
+
+function TRMCoreBase.CanUndo : boolean;
+begin
+  CanUndo:=(UndoRings[CurUndoSlot].Depth > 0);
+end;
+
+function TRMCoreBase.CanRedo : boolean;
+begin
+  CanRedo:=(UndoRings[CurUndoSlot].RedoDepth > 0);
+end;
+
+function TRMCoreBase.GetUndoDepth : integer;
+begin
+  GetUndoDepth:=UndoRings[CurUndoSlot].Depth;
+end;
+
+function TRMCoreBase.GetRedoDepth : integer;
+begin
+  GetRedoDepth:=UndoRings[CurUndoSlot].RedoDepth;
 end;
 
 

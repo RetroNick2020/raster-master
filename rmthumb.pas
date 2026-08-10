@@ -1,3 +1,16 @@
+//=============================================================================
+// CHANGE LOG (Claude edits - newest first)
+//-----------------------------------------------------------------------------
+// 2026-08-03  MAP LAYERS - phase 3 (project file)
+//   * RMProjectVersion 4 -> 5. BREAKING. The project file embeds maps via
+//     ReadAllMapsF/WriteAllMapsF, and both MapPropsRec and the tile stream
+//     changed shape for layers, so the project version had to move with the
+//     map version.
+//   * LoadProject now records why a load failed in LastProjectReadStatus.
+//     It used to fall through silently on a version mismatch, which with
+//     this break would mean every existing project opening to no message.
+//=============================================================================
+
 Unit rmthumb;
 
 Interface
@@ -5,7 +18,15 @@ Interface
 
 Const
   RMProjectSig = 'RMP';
-  RMProjectVersion = 4;
+  //v7 = sprite hit boxes. v6 = map paths. v5 = map layers.
+  //BREAKING at each step - older project files cannot be loaded.
+  RMProjectVersion = 7;
+
+  //LastProjectReadStatus values
+  ProjectReadOK         = 0;
+  ProjectReadBadSig     = 1;  //not a Raster Master project file
+  ProjectReadOldVersion = 2;  //older build - cannot be loaded
+  ProjectReadNewVersion = 3;  //newer build - cannot be loaded
 
 type
  ImageThumbRec = Record
@@ -38,6 +59,15 @@ type
              ClipArea    : TClipAreaRec;
              GridArea    : TGridAreaRec;
              ScrollPos   : TScrollPosRec;
+
+             //Sprite hit boxes. The record type is shared with the map editor
+             //(mapcore), but the COORDINATE SPACE IS DIFFERENT: map hit boxes
+             //are in tiles, sprite hit boxes are in PIXELS. Anything reading
+             //the exported data needs to know which it is looking at.
+             //
+             //This rides inside the props record, which WriteImageToProject
+             //writes wholesale, so it saves and loads with no extra IO code.
+             HitBoxProps : HitBoxesRec;
  end;
 
 
@@ -91,6 +121,10 @@ type
              function GetUID(index : integer) : TGUID;
              function GetExportPaletteCount : integer;
              function GetExportImageCount : integer;
+             //How many sprites contribute a hit box resource. Must agree with
+             //the RES header and data passes, or the header is the wrong size
+             //and every offset in the file is shifted.
+             function GetExportHitBoxCount : integer;
              function GetExportMaskCount : integer;
 
              function GetPixelTColor(index,x,y : integer) : TColor;
@@ -108,6 +142,24 @@ type
              function GetPaletteMode(index : integer ) : integer;
              procedure SetColorCount(index,colorcount : integer);
 
+
+             //--- sprite hit boxes (coordinates are PIXELS) ---------------
+             //Deliberately mirrors the mapcore API so the editor side can be
+             //ported across with the same call shapes.
+             function  GetHitBoxCount(index : integer) : integer;
+             procedure SetHitBoxCount(index,count : integer);
+             procedure GetHitBox(index,hbindex : integer;var HB : HitBoxRec);
+             procedure SetHitBox(index,hbindex : integer;var HB : HitBoxRec);
+             procedure AddHitBox(index,x,y,x2,y2 : integer);
+             procedure DeleteHitBox(index,hb : integer);
+             procedure ClearHitBoxes(index : integer);
+             function  IsValidHitBox(index,hb : integer) : boolean;
+             procedure MoveHitBox(index,hb,dx,dy : integer);
+             function  HitBoxHitTest(index,px,py : integer) : integer;
+             procedure ClampHitBoxes(index : integer);
+             //Used by Clone. NOT part of AddImage: a brand new image must
+             //start with no hit boxes, only a cloned one inherits them.
+             procedure CopyHitBoxes(destindex,srcindex : integer);
 
              function GetWidth(index : integer) : integer;
              function GetHeight(index : integer) : integer;
@@ -138,6 +190,9 @@ Const
 
 var
  ImageThumbBase  : TImageThumb;
+
+ //Set by LoadProject. The UI checks this to explain a failed load.
+ LastProjectReadStatus : integer = ProjectReadOK;
 
 Implementation
 
@@ -358,6 +413,17 @@ begin
  GetExportPaletteCount:=ExportCount;
 end;
 
+function TImageThumb.GetExportHitBoxCount : integer;
+var
+  i,c : integer;
+begin
+  c:=0;
+  for i:=0 to ImageCount-1 do
+    if (ImageMain[i].Props.ExportFormat.Image > 0) and
+       (ImageMain[i].Props.HitBoxProps.HitBoxCount > 0) then inc(c);
+  GetExportHitBoxCount:=c;
+end;
+
 function TImageThumb.GetExportImageCount : integer;
 var
  i : integer;
@@ -426,6 +492,11 @@ begin
   RMCoreBase.SetWidth(Width);
   RMCoreBase.SetHeight(Height);
 
+  //Undo history belongs to the sprite, so point rmcore at this sprite's ring.
+  //Without this, undo after switching would restore the previous sprite's
+  //pixels into this one.
+  RMCoreBase.SetUndoSlot(index);
+
   for j:=0 to height-1 do
   begin
      for i:=0 to width-1 do
@@ -488,6 +559,162 @@ begin
   ImageMain[index].Props.Palette[colorIndex].r:=cr.r;
   ImageMain[index].Props.Palette[colorIndex].g:=cr.g;
   ImageMain[index].Props.Palette[colorIndex].b:=cr.b;
+end;
+
+//=============================================================================
+// SPRITE HIT BOXES
+//
+// Coordinates are PIXELS within the sprite, not tiles - the map editor's
+// boxes are in tiles and share the record type but not the meaning.
+//=============================================================================
+
+function TImageThumb.GetHitBoxCount(index : integer) : integer;
+begin
+  GetHitBoxCount:=ImageMain[index].Props.HitBoxProps.HitBoxCount;
+end;
+
+procedure TImageThumb.SetHitBoxCount(index,count : integer);
+begin
+  if count < 0 then count:=0;
+  if count > MaxHitBoxes then count:=MaxHitBoxes;
+  ImageMain[index].Props.HitBoxProps.HitBoxCount:=count;
+end;
+
+function TImageThumb.IsValidHitBox(index,hb : integer) : boolean;
+begin
+  IsValidHitBox:=(hb >= 0) and (hb < ImageMain[index].Props.HitBoxProps.HitBoxCount);
+end;
+
+procedure TImageThumb.GetHitBox(index,hbindex : integer;var HB : HitBoxRec);
+begin
+  if not IsValidHitBox(index,hbindex) then exit;
+  HB:=ImageMain[index].Props.HitBoxProps.HitBoxes[hbindex];
+end;
+
+procedure TImageThumb.SetHitBox(index,hbindex : integer;var HB : HitBoxRec);
+begin
+  if not IsValidHitBox(index,hbindex) then exit;
+  ImageMain[index].Props.HitBoxProps.HitBoxes[hbindex]:=HB;
+end;
+
+procedure TImageThumb.AddHitBox(index,x,y,x2,y2 : integer);
+var
+  c,temp : integer;
+begin
+  c:=ImageMain[index].Props.HitBoxProps.HitBoxCount;
+  if c >= MaxHitBoxes then exit;
+
+  //normalise so x<=x2 and y<=y2 - a box dragged right to left would
+  //otherwise be stored inside out and fail every hit test
+  if x > x2 then begin temp:=x; x:=x2; x2:=temp; end;
+  if y > y2 then begin temp:=y; y:=y2; y2:=temp; end;
+
+  //NO 'with' here on purpose. Inside a with block the names x, y, x2 and y2
+  //resolve to the RECORD FIELDS, not to the parameters of the same name, so
+  //"HitBoxes[c].x := x" would assign the field to itself and store garbage.
+  ImageMain[index].Props.HitBoxProps.HitBoxes[c].active:=true;
+  ImageMain[index].Props.HitBoxProps.HitBoxes[c].id:=0;
+  ImageMain[index].Props.HitBoxProps.HitBoxes[c].value:=0;
+  ImageMain[index].Props.HitBoxProps.HitBoxes[c].x:=x;
+  ImageMain[index].Props.HitBoxProps.HitBoxes[c].y:=y;
+  ImageMain[index].Props.HitBoxProps.HitBoxes[c].x2:=x2;
+  ImageMain[index].Props.HitBoxProps.HitBoxes[c].y2:=y2;
+
+  inc(ImageMain[index].Props.HitBoxProps.HitBoxCount);
+end;
+
+procedure TImageThumb.DeleteHitBox(index,hb : integer);
+var
+  i : integer;
+begin
+  if not IsValidHitBox(index,hb) then exit;
+  for i:=hb to ImageMain[index].Props.HitBoxProps.HitBoxCount-2 do
+    ImageMain[index].Props.HitBoxProps.HitBoxes[i]:=
+      ImageMain[index].Props.HitBoxProps.HitBoxes[i+1];
+  dec(ImageMain[index].Props.HitBoxProps.HitBoxCount);
+end;
+
+procedure TImageThumb.ClearHitBoxes(index : integer);
+begin
+  ImageMain[index].Props.HitBoxProps.HitBoxCount:=0;
+end;
+
+//Shifts a box, clamped as a unit so its size is preserved.
+procedure TImageThumb.MoveHitBox(index,hb,dx,dy : integer);
+var
+  w,h : integer;
+begin
+  if not IsValidHitBox(index,hb) then exit;
+  w:=ImageMain[index].Props.Width;
+  h:=ImageMain[index].Props.Height;
+
+  with ImageMain[index].Props.HitBoxProps.HitBoxes[hb] do
+  begin
+    if x+dx < 0 then dx:=-x;
+    if y+dy < 0 then dy:=-y;
+    if x2+dx > w-1 then dx:=w-1-x2;
+    if y2+dy > h-1 then dy:=h-1-y2;
+
+    inc(x,dx);   inc(y,dy);
+    inc(x2,dx);  inc(y2,dy);
+  end;
+end;
+
+//Which box contains the pixel. Searched top down so the most recently added
+//wins an overlap.
+function TImageThumb.HitBoxHitTest(index,px,py : integer) : integer;
+var
+  i : integer;
+begin
+  HitBoxHitTest:=-1;
+  for i:=ImageMain[index].Props.HitBoxProps.HitBoxCount-1 downto 0 do
+    with ImageMain[index].Props.HitBoxProps.HitBoxes[i] do
+      if (px >= x) and (px <= x2) and (py >= y) and (py <= y2) then
+      begin
+        HitBoxHitTest:=i;
+        exit;
+      end;
+end;
+
+//After a resize, pull every box back inside the sprite and drop any that no
+//longer fit at all. Clamping beats clearing: a resize is usually a small
+//adjustment and losing all the boxes would be worse than nudging them.
+//Copies the whole hit box block from one sprite to another. HitBoxProps is a
+//fixed size record, so a straight assignment carries every box, its count and
+//the id/value fields in one go.
+procedure TImageThumb.CopyHitBoxes(destindex,srcindex : integer);
+begin
+  if (destindex < 0) or (destindex >= MaxThumbImages) then exit;
+  if (srcindex  < 0) or (srcindex  >= MaxThumbImages) then exit;
+  if destindex = srcindex then exit;
+
+  ImageMain[destindex].Props.HitBoxProps:=ImageMain[srcindex].Props.HitBoxProps;
+
+  //the clone may not be the same size as the source
+  ClampHitBoxes(destindex);
+end;
+
+procedure TImageThumb.ClampHitBoxes(index : integer);
+var
+  i,w,h : integer;
+begin
+  w:=ImageMain[index].Props.Width;
+  h:=ImageMain[index].Props.Height;
+
+  i:=0;
+  while i < ImageMain[index].Props.HitBoxProps.HitBoxCount do
+  begin
+    with ImageMain[index].Props.HitBoxProps.HitBoxes[i] do
+    begin
+      if x  > w-1 then x :=w-1;
+      if y  > h-1 then y :=h-1;
+      if x2 > w-1 then x2:=w-1;
+      if y2 > h-1 then y2:=h-1;
+      if x < 0 then x:=0;
+      if y < 0 then y:=0;
+    end;
+    inc(i);
+  end;
 end;
 
 function TImageThumb.GetWidth(index : integer) : integer;
@@ -663,7 +890,17 @@ begin
  Blockread(F,head,sizeof(head));
 {$I+}
  if IORESULT <>0 then exit;
- if (head.sig=RMProjectSig) and (head.version=RMProjectVersion) then
+ //classify first so the caller can explain a refusal to load
+ if head.sig <> RMProjectSig then
+   LastProjectReadStatus:=ProjectReadBadSig
+ else if head.version < RMProjectVersion then
+   LastProjectReadStatus:=ProjectReadOldVersion
+ else if head.version > RMProjectVersion then
+   LastProjectReadStatus:=ProjectReadNewVersion
+ else
+   LastProjectReadStatus:=ProjectReadOK;
+
+ if LastProjectReadStatus = ProjectReadOK then
  begin
    //delete all current images - user should be warn when oopening files
    count:=head.ImageCount;

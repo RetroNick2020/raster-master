@@ -1,3 +1,17 @@
+//=============================================================================
+// CHANGE LOG (Claude edits - newest first)
+//-----------------------------------------------------------------------------
+// 2026-08-03  PATH LINES
+//   * MapToJSON/JSONToMap round trip paths. Every path is kept regardless of
+//     its active flag - a project file is the working document.
+//
+// 2026-08-03  MAP LAYERS
+//   * MapToJSON/JSONToMap round trip layers. Layer 0 is ALSO written as the
+//     legacy top level tileIndexes/tileUIDs, and the reader falls back to
+//     those when no 'layers' array is present, so JSON projects saved before
+//     layers still load.
+//=============================================================================
+
 unit rwjson;
 
 { rwjson.pas - Save/Open Raster Master projects in JSON format.
@@ -88,8 +102,8 @@ end;
 
 function ImageToJSON(index : integer) : TJSONObject;
 var
-  Obj, ExpObj, ClipObj, GridObj, ScrollObj : TJSONObject;
-  PalArr, RowArr, PixArr, ColorArr : TJSONArray;
+  Obj, ExpObj, ClipObj, GridObj, ScrollObj, HBObj : TJSONObject;
+  PalArr, RowArr, PixArr, ColorArr, HBArr : TJSONArray;
   i, j, w, h : integer;
   Props : ImageThumbPropsRec;
 begin
@@ -169,6 +183,23 @@ begin
   end;
   Obj.Add('pixels', PixArr);
 
+  //hit boxes - PIXEL coordinates within the sprite, unlike the map editor's
+  //which are in tiles
+  HBArr:=TJSONArray.Create;
+  for i:=0 to Props.HitBoxProps.HitBoxCount-1 do
+  begin
+    HBObj:=TJSONObject.Create;
+    HBObj.Add('id',     Props.HitBoxProps.HitBoxes[i].id);
+    HBObj.Add('value',  Props.HitBoxProps.HitBoxes[i].value);
+    HBObj.Add('x',      Props.HitBoxProps.HitBoxes[i].x);
+    HBObj.Add('y',      Props.HitBoxProps.HitBoxes[i].y);
+    HBObj.Add('x2',     Props.HitBoxProps.HitBoxes[i].x2);
+    HBObj.Add('y2',     Props.HitBoxProps.HitBoxes[i].y2);
+    HBObj.Add('active', Props.HitBoxProps.HitBoxes[i].active);
+    HBArr.Add(HBObj);
+  end;
+  Obj.Add('hitBoxes', HBArr);
+
   ImageToJSON:=Obj;
 end;
 
@@ -176,9 +207,9 @@ end;
 
 procedure JSONToImage(Obj : TJSONObject; index : integer);
 var
-  ExpObj, ClipObj, GridObj, ScrollObj : TJSONObject;
-  PalArr, RowArr, PixArr, ColorArr : TJSONArray;
-  i, j, w, h : integer;
+  ExpObj, ClipObj, GridObj, ScrollObj, HBObj : TJSONObject;
+  PalArr, RowArr, PixArr, ColorArr, HBArr : TJSONArray;
+  i, j, w, h, hbc : integer;
   Props : ImageThumbPropsRec;
 begin
   FillChar(Props, sizeof(Props), 0);
@@ -279,19 +310,52 @@ begin
       end;
     end;
   end;
+
+  //hit boxes. Absent in projects saved before sprite hit boxes existed, which
+  //simply means none - Props was zeroed above.
+  HBArr:=Obj.Get('hitBoxes', TJSONArray(nil));
+  if HBArr <> nil then
+  begin
+    hbc:=HBArr.Count;
+    if hbc > MaxHitBoxes then hbc:=MaxHitBoxes;
+    ImageThumbBase.SetHitBoxCount(index,hbc);
+
+    for i:=0 to hbc-1 do
+    begin
+      HBObj:=TJSONObject(HBArr[i]);
+      if HBObj = nil then continue;
+      with ImageThumbBase.ImageMain[index].Props.HitBoxProps.HitBoxes[i] do
+      begin
+        id:=HBObj.Get('id',0);
+        value:=HBObj.Get('value',0);
+        x:=HBObj.Get('x',0);
+        y:=HBObj.Get('y',0);
+        x2:=HBObj.Get('x2',0);
+        y2:=HBObj.Get('y2',0);
+        active:=HBObj.Get('active',true);
+      end;
+    end;
+
+    //a sprite saved at a different size could put a box out of bounds
+    ImageThumbBase.ClampHitBoxes(index);
+  end;
 end;
 
 { ===== map write ===== }
 
 function MapToJSON(index : integer) : TJSONObject;
 var
-  Obj, PropsObj, ExpObj, ClipObj, ScrollObj, HBObj : TJSONObject;
-  HBArr, TileIdxArr, TileUIDArr, RowArr, UIDRowArr : TJSONArray;
+  Obj, PropsObj, ExpObj, ClipObj, ScrollObj, HBObj, LayerObj : TJSONObject;
+  PathObj, PtObj : TJSONObject;
+  HBArr, TileIdxArr, TileUIDArr, RowArr, UIDRowArr, LayerArr : TJSONArray;
+  PathArr, PtArr : TJSONArray;
+  PathProps : PathRec;
+  p, pt : integer;
   MapProps : MapPropsRec;
   ExportProps : MapExportFormatRec;
   HB : HitBoxRec;
   T : TileRec;
-  i, j, w, h, hbcount : integer;
+  i, j, l, w, h, hbcount, nlayers : integer;
 begin
   MapCoreBase.GetMapProps(index, MapProps);
   MapCoreBase.GetMapExportProps(index, ExportProps);
@@ -353,7 +417,74 @@ begin
   end;
   Obj.Add('hitBoxes', HBArr);
 
-  //tiles - two parallel row arrays: image indexes and uids
+  //layers - one entry per layer, each with its own tile index/uid rows.
+  //Layer 0 is ALSO written as the legacy top level tileIndexes/tileUIDs so
+  //JSON projects saved before layers existed keep the same shape and older
+  //readers still find the base layer where they expect it.
+  nlayers:=MapCoreBase.GetLayerCount(index);
+  Obj.Add('layerCount', nlayers);
+
+  LayerArr:=TJSONArray.Create;
+  for l:=0 to nlayers-1 do
+  begin
+    LayerObj:=TJSONObject.Create;
+    LayerObj.Add('name', MapCoreBase.GetLayerName(index,l));
+    LayerObj.Add('visible', MapCoreBase.GetLayerVisible(index,l));
+    LayerObj.Add('locked', MapCoreBase.GetLayerLocked(index,l));
+
+    TileIdxArr:=TJSONArray.Create;
+    TileUIDArr:=TJSONArray.Create;
+    for j:=0 to h-1 do
+    begin
+      RowArr:=TJSONArray.Create;
+      UIDRowArr:=TJSONArray.Create;
+      for i:=0 to w-1 do
+      begin
+        MapCoreBase.GetMapTileL(index, l, i, j, T);
+        RowArr.Add(T.ImageIndex);
+        UIDRowArr.Add(GUIDToStr(T.ImageUID));
+      end;
+      TileIdxArr.Add(RowArr);
+      TileUIDArr.Add(UIDRowArr);
+    end;
+    LayerObj.Add('tileIndexes', TileIdxArr);
+    LayerObj.Add('tileUIDs', TileUIDArr);
+    LayerArr.Add(LayerObj);
+  end;
+  Obj.Add('layers', LayerArr);
+
+  //paths. Unlike the code export this keeps EVERY path, active or not - a
+  //project file is the working document, so nothing may be dropped from it.
+  PathArr:=TJSONArray.Create;
+  for p:=0 to MapCoreBase.GetPathCount(index)-1 do
+  begin
+    MapCoreBase.GetPath(index,p,PathProps);
+    PathObj:=TJSONObject.Create;
+    PathObj.Add('name',    MapCoreBase.GetPathName(index,p));
+    PathObj.Add('active',  PathProps.active);
+    PathObj.Add('visible', PathProps.visible);
+    PathObj.Add('closed',  PathProps.closed);
+    PathObj.Add('mode',    PathProps.mode);
+    PathObj.Add('speed',   PathProps.speed);
+    PathObj.Add('id',      PathProps.id);
+    PathObj.Add('value',   PathProps.value);
+
+    PtArr:=TJSONArray.Create;
+    for pt:=0 to PathProps.PointCount-1 do
+    begin
+      PtObj:=TJSONObject.Create;
+      PtObj.Add('x',     PathProps.Points[pt].x);
+      PtObj.Add('y',     PathProps.Points[pt].y);
+      PtObj.Add('delay', PathProps.Points[pt].delay);
+      PtObj.Add('id',    PathProps.Points[pt].id);
+      PtArr.Add(PtObj);
+    end;
+    PathObj.Add('points', PtArr);
+    PathArr.Add(PathObj);
+  end;
+  Obj.Add('paths', PathArr);
+
+  //legacy copy of layer 0
   TileIdxArr:=TJSONArray.Create;
   TileUIDArr:=TJSONArray.Create;
   for j:=0 to h-1 do
@@ -362,7 +493,7 @@ begin
     UIDRowArr:=TJSONArray.Create;
     for i:=0 to w-1 do
     begin
-      MapCoreBase.GetMapTile(index, i, j, T);
+      MapCoreBase.GetMapTileL(index, 0, i, j, T);
       RowArr.Add(T.ImageIndex);
       UIDRowArr.Add(GUIDToStr(T.ImageUID));
     end;
@@ -379,13 +510,18 @@ end;
 
 procedure JSONToMap(Obj : TJSONObject; index : integer);
 var
-  PropsObj, ExpObj, ClipObj, ScrollObj, HBObj : TJSONObject;
-  HBArr, TileIdxArr, TileUIDArr, RowArr, UIDRowArr : TJSONArray;
+  PropsObj, ExpObj, ClipObj, ScrollObj, HBObj, LayerObj : TJSONObject;
+  PathObj, PtObj : TJSONObject;
+  HBArr, TileIdxArr, TileUIDArr, RowArr, UIDRowArr, LayerArr : TJSONArray;
+  PathArr, PtArr : TJSONArray;
+  PathProps : PathRec;
+  PtRec : PathPointRec;
+  p, pt, np : integer;
   MapProps : MapPropsRec;
   ExportProps : MapExportFormatRec;
   HB : HitBoxRec;
   T : TileRec;
-  i, j, w, h : integer;
+  i, j, l, w, h, nlayers : integer;
 begin
   FillChar(MapProps, sizeof(MapProps), 0);
   FillChar(ExportProps, sizeof(ExportProps), 0);
@@ -463,25 +599,119 @@ begin
     MapCoreBase.SetHitBoxCount(index, 0);
 
   //tiles
-  TileIdxArr:=Obj.Get('tileIndexes', TJSONArray(nil));
-  TileUIDArr:=Obj.Get('tileUIDs', TJSONArray(nil));
-  if TileIdxArr <> nil then
+  //paths. Absent in projects saved before paths existed - that simply means
+  //no paths, which SetPathCount(0) already gives us.
+  MapCoreBase.SetPathCount(index,0);
+  PathArr:=Obj.Get('paths', TJSONArray(nil));
+  if PathArr <> nil then
   begin
-    for j:=0 to h-1 do
+    for p:=0 to PathArr.Count-1 do
     begin
-      if j >= TileIdxArr.Count then break;
-      RowArr:=TJSONArray(TileIdxArr[j]);
-      UIDRowArr:=nil;
-      if (TileUIDArr <> nil) and (j < TileUIDArr.Count) then
-        UIDRowArr:=TJSONArray(TileUIDArr[j]);
-      for i:=0 to w-1 do
+      if p >= MaxPaths then break;
+      PathObj:=TJSONObject(PathArr[p]);
+      if PathObj = nil then continue;
+
+      np:=MapCoreBase.AddPath(index);
+      if np < 0 then break;
+
+      MapCoreBase.SetPathName(index,np,PathObj.Get('name','Path '+IntToStr(np+1)));
+      MapCoreBase.SetPathActive(index,np,PathObj.Get('active',true));
+      MapCoreBase.SetPathVisible(index,np,PathObj.Get('visible',true));
+      MapCoreBase.SetPathClosed(index,np,PathObj.Get('closed',false));
+      MapCoreBase.SetPathMode(index,np,PathObj.Get('mode',PathModeLoop));
+
+      MapCoreBase.GetPath(index,np,PathProps);
+      PathProps.speed:=PathObj.Get('speed',0);
+      PathProps.id:=PathObj.Get('id',0);
+      PathProps.value:=PathObj.Get('value',0);
+      MapCoreBase.SetPath(index,np,PathProps);
+
+      PtArr:=PathObj.Get('points', TJSONArray(nil));
+      if PtArr = nil then continue;
+      for pt:=0 to PtArr.Count-1 do
       begin
-        if i >= RowArr.Count then break;
-        FillChar(T, sizeof(T), 0);
-        T.ImageIndex:=RowArr.Integers[i];
-        if (UIDRowArr <> nil) and (i < UIDRowArr.Count) then
-          T.ImageUID:=StrToGUIDSafe(UIDRowArr.Strings[i]);
-        MapCoreBase.SetMapTile(index, i, j, T);
+        if pt >= MaxPathPoints then break;
+        PtObj:=TJSONObject(PtArr[pt]);
+        if PtObj = nil then continue;
+        MapCoreBase.AddPathPoint(index,np,PtObj.Get('x',0),PtObj.Get('y',0));
+        //AddPathPoint only takes x,y - delay and id are applied afterwards
+        FillChar(PtRec,sizeof(PtRec),0);
+        MapCoreBase.GetPathPoint(index,np,pt,PtRec);
+        PtRec.delay:=PtObj.Get('delay',0);
+        PtRec.id:=PtObj.Get('id',0);
+        MapCoreBase.SetPathPoint(index,np,pt,PtRec);
+      end;
+    end;
+  end;
+
+  //layers. A project saved before layers existed has no 'layers' array, so
+  //fall back to the legacy top level tileIndexes/tileUIDs as a single layer.
+  LayerArr:=Obj.Get('layers', TJSONArray(nil));
+
+  if LayerArr <> nil then
+  begin
+    nlayers:=LayerArr.Count;
+    if nlayers < 1 then nlayers:=1;
+    if nlayers > MaxMapLayers then nlayers:=MaxMapLayers;
+    MapCoreBase.SetLayerCount(index, nlayers);
+
+    for l:=0 to nlayers-1 do
+    begin
+      LayerObj:=TJSONObject(LayerArr[l]);
+      if LayerObj = nil then continue;
+
+      MapCoreBase.SetLayerName(index, l, LayerObj.Get('name','Layer '+IntToStr(l+1)));
+      MapCoreBase.SetLayerVisible(index, l, LayerObj.Get('visible', true));
+      MapCoreBase.SetLayerLocked(index, l, LayerObj.Get('locked', false));
+
+      TileIdxArr:=LayerObj.Get('tileIndexes', TJSONArray(nil));
+      TileUIDArr:=LayerObj.Get('tileUIDs', TJSONArray(nil));
+      if TileIdxArr = nil then continue;
+
+      for j:=0 to h-1 do
+      begin
+        if j >= TileIdxArr.Count then break;
+        RowArr:=TJSONArray(TileIdxArr[j]);
+        UIDRowArr:=nil;
+        if (TileUIDArr <> nil) and (j < TileUIDArr.Count) then
+          UIDRowArr:=TJSONArray(TileUIDArr[j]);
+        for i:=0 to w-1 do
+        begin
+          if i >= RowArr.Count then break;
+          FillChar(T, sizeof(T), 0);
+          T.ImageIndex:=RowArr.Integers[i];
+          if (UIDRowArr <> nil) and (i < UIDRowArr.Count) then
+            T.ImageUID:=StrToGUIDSafe(UIDRowArr.Strings[i]);
+          MapCoreBase.SetMapTileL(index, l, i, j, T);
+        end;
+      end;
+    end;
+
+    MapCoreBase.SetCurrentLayer(index, 0);
+  end
+  else
+  begin
+    MapCoreBase.SetLayerCount(index, 1);
+    TileIdxArr:=Obj.Get('tileIndexes', TJSONArray(nil));
+    TileUIDArr:=Obj.Get('tileUIDs', TJSONArray(nil));
+    if TileIdxArr <> nil then
+    begin
+      for j:=0 to h-1 do
+      begin
+        if j >= TileIdxArr.Count then break;
+        RowArr:=TJSONArray(TileIdxArr[j]);
+        UIDRowArr:=nil;
+        if (TileUIDArr <> nil) and (j < TileUIDArr.Count) then
+          UIDRowArr:=TJSONArray(TileUIDArr[j]);
+        for i:=0 to w-1 do
+        begin
+          if i >= RowArr.Count then break;
+          FillChar(T, sizeof(T), 0);
+          T.ImageIndex:=RowArr.Integers[i];
+          if (UIDRowArr <> nil) and (i < UIDRowArr.Count) then
+            T.ImageUID:=StrToGUIDSafe(UIDRowArr.Strings[i]);
+          MapCoreBase.SetMapTileL(index, 0, i, j, T);
+        end;
       end;
     end;
   end;
@@ -744,10 +974,11 @@ end;
 function SpriteToExportJSON(index : integer; ImageType : integer;
   const PngRGBA : PngRGBASettingsRec) : TJSONObject;
 var
-  Obj : TJSONObject;
-  PalArr, ColorArr, PixArr, RowArr, PixColorArr : TJSONArray;
+  Obj, HBObj : TJSONObject;
+  PalArr, ColorArr, PixArr, RowArr, PixColorArr, HBArr : TJSONArray;
   i, j, w, h, ccount, ci : integer;
   cr : TRMColorRec;
+  HB : HitBoxRec;
   exportname : string;
 begin
   w:=ImageThumbBase.GetWidth(index);
@@ -820,6 +1051,27 @@ begin
     PixArr.Add(RowArr);
   end;
   Obj.Add('pixels', PixArr);
+
+  //hit boxes - PIXEL coordinates within the sprite. Only ACTIVE boxes are
+  //exported; this is a build artifact, unlike the project file which keeps
+  //everything.
+  HBArr:=TJSONArray.Create;
+  for i:=0 to ImageThumbBase.GetHitBoxCount(index)-1 do
+  begin
+    ImageThumbBase.GetHitBox(index,i,HB);
+    if not HB.active then continue;
+    HBObj:=TJSONObject.Create;
+    HBObj.Add('id',    HB.id);
+    HBObj.Add('value', HB.value);
+    HBObj.Add('x',     HB.x);
+    HBObj.Add('y',     HB.y);
+    HBObj.Add('x2',    HB.x2);
+    HBObj.Add('y2',    HB.y2);
+    HBObj.Add('width',  HB.x2-HB.x+1);
+    HBObj.Add('height', HB.y2-HB.y+1);
+    HBArr.Add(HBObj);
+  end;
+  Obj.Add('hitBoxes', HBArr);
 
   SpriteToExportJSON:=Obj;
 end;

@@ -1,3 +1,31 @@
+//=============================================================================
+// CHANGE LOG (Claude edits - newest first)
+//-----------------------------------------------------------------------------
+// 2026-08-03  MAP LAYERS - phase 4 (editor)
+//   * UpdateMapView draws visible layers bottom to top. The checkerboard is
+//     still drawn ONCE before the layer loop - it is a map level background,
+//     not a per layer one. Drawing it per layer would erase everything
+//     underneath and only the top visible layer would ever be seen.
+//   * VerifyTileImageList now walks every layer, otherwise deleting a sprite
+//     would fix indexes on the active layer only and corrupt the rest.
+//   * UpdateMapPreviewImageIcons composites visible layers (still clamped to
+//     the first 32x32 tiles - see the note there).
+//   * Flip and scroll apply to ALL layers via ForEachLayer. Applying them to
+//     the active layer alone would desynchronise layers that are meant to
+//     line up.
+//   * MenuOpenClick reports why a map failed to load instead of silently
+//     doing nothing.
+//
+// 2026-08-03 16:57 UTC
+//   * VerifyTileImageList: FIXED map tile remap on sprite delete for non-square
+//     maps. Outer/inner loop bounds had width and height swapped, so a 16x24
+//     map only remapped the first 16x16 block (GetMapTile/SetMapTile take
+//     (x,y) and silently exit when out of range). Now j walks height, i walks
+//     width, matching the drawing loop convention.
+//   * UpdateMapPreviewImageIcons: added comment only - no code change. Marks
+//     the 32-tile preview clamp as INTENTIONAL so it is not "fixed" later.
+//=============================================================================
+
 unit mapeditor;
 
 {$mode objfpc}{$H+}
@@ -6,7 +34,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,Math,
-  ComCtrls, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
+  ComCtrls, CheckLst, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
   rmconfig, LCLType,setcustommapsize,setcustomtilesize,rmcore;
 
 const
@@ -29,7 +57,40 @@ type
     Clear: TMenuItem;
     CloneMap: TMenuItem;
     CopyToClipBoard: TMenuItem;
-    HitBoxPanel: TPanel;
+    CopyLayerToClipBoard: TMenuItem;
+    RightTabs: TPageControl;
+    TabLayers: TTabSheet;
+    TabHitBoxes: TTabSheet;
+    TabPaths: TTabSheet;
+    PathListView: TListView;
+    HitBoxButtonPanel: TPanel;
+    BtnHitBoxAdd: TButton;
+    BtnHitBoxDel: TButton;
+    BtnHitBoxDeleteAll: TButton;
+    PathButtonPanel: TPanel;
+    BtnPathDelete: TButton;
+    BtnPathVisible: TButton;
+    BtnPathActive: TButton;
+    BtnPathMode: TButton;
+    BtnPathRename: TButton;
+    PathsMenu: TMenuItem;
+    PathToolMenu: TMenuItem;
+    MoveToolMenu: TMenuItem;
+    LayerPopup: TPopupMenu;
+    PopLayerCopy: TMenuItem;
+    PopLayerPaste: TMenuItem;
+    HitBoxPopup: TPopupMenu;
+    PopHitBoxCopy: TMenuItem;
+    PopHitBoxPaste: TMenuItem;
+    PathPopup: TPopupMenu;
+    PopPathCopy: TMenuItem;
+    PopPathPaste: TMenuItem;
+    PathFinishOpen: TMenuItem;
+    PathFinishClosed: TMenuItem;
+    PathSep1: TMenuItem;
+    PathsDeleteAll: TMenuItem;
+    PathSep2: TMenuItem;
+    PathsToggle: TMenuItem;
     HitBoxes: TMenuItem;
     HitBoxesAdd: TMenuItem;
     HitBoxesClearAll: TMenuItem;
@@ -41,6 +102,7 @@ type
     RightVertSplitter: TSplitter;
     StatusBar0: TStatusBar;
     Undo: TMenuItem;
+    RedoMenu: TMenuItem;
     SetTileCustomSize: TMenuItem;
     MenuItem15: TMenuItem;
     MenuDeleteAll: TMenuItem;
@@ -86,28 +148,28 @@ type
     ExportHitBoxC: TMenuItem;
     ExportHitBoxPascal: TMenuItem;
     //extended compiler export menu items
-    MnuMapExpAB, MD_AB, HB_AB : TMenuItem;
-    MnuMapExpAC, MD_AC, HB_AC : TMenuItem;
-    MnuMapExpAP, MD_AP, HB_AP : TMenuItem;
-    MnuMapExpAQB, MD_AQB, HB_AQB : TMenuItem;
-    MnuMapExpBAM, MD_BAM, HB_BAM : TMenuItem;
-    MnuMapExpFBQB, MD_FBQB, HB_FBQB : TMenuItem;
-    MnuMapExpFB, MD_FB, HB_FB : TMenuItem;
-    MnuMapExpFP, MD_FP, HB_FP : TMenuItem;
-    MnuMapExpGCC, MD_GCC, HB_GCC : TMenuItem;
-    MnuMapExpGW, MD_GW, HB_GW : TMenuItem;
-    MnuMapExpJS, MD_JS, HB_JS : TMenuItem;
-    MnuMapExpJSON, MD_JSON, HB_JSON : TMenuItem;
-    MnuMapExpOW, MD_OW, HB_OW : TMenuItem;
-    MnuMapExpQB, MD_QB, HB_QB : TMenuItem;
-    MnuMapExpQB64, MD_QB64, HB_QB64 : TMenuItem;
-    MnuMapExpQBJS, MD_QBJS, HB_QBJS : TMenuItem;
-    MnuMapExpQC, MD_QC, HB_QC : TMenuItem;
-    MnuMapExpQP, MD_QP, HB_QP : TMenuItem;
-    MnuMapExpTB, MD_TB, HB_TB : TMenuItem;
-    MnuMapExpTP, MD_TP, HB_TP : TMenuItem;
-    MnuMapExpTC, MD_TC, HB_TC : TMenuItem;
-    MnuMapExpTMT, MD_TMT, HB_TMT : TMenuItem;
+    MnuMapExpAB, MD_AB, HB_AB, PD_AB : TMenuItem;
+    MnuMapExpAC, MD_AC, HB_AC, PD_AC : TMenuItem;
+    MnuMapExpAP, MD_AP, HB_AP, PD_AP : TMenuItem;
+    MnuMapExpAQB, MD_AQB, HB_AQB, PD_AQB : TMenuItem;
+    MnuMapExpBAM, MD_BAM, HB_BAM, PD_BAM : TMenuItem;
+    MnuMapExpFBQB, MD_FBQB, HB_FBQB, PD_FBQB : TMenuItem;
+    MnuMapExpFB, MD_FB, HB_FB, PD_FB : TMenuItem;
+    MnuMapExpFP, MD_FP, HB_FP, PD_FP : TMenuItem;
+    MnuMapExpGCC, MD_GCC, HB_GCC, PD_GCC : TMenuItem;
+    MnuMapExpGW, MD_GW, HB_GW, PD_GW : TMenuItem;
+    MnuMapExpJS, MD_JS, HB_JS, PD_JS : TMenuItem;
+    MnuMapExpJSON, MD_JSON, HB_JSON, PD_JSON : TMenuItem;
+    MnuMapExpOW, MD_OW, HB_OW, PD_OW : TMenuItem;
+    MnuMapExpQB, MD_QB, HB_QB, PD_QB : TMenuItem;
+    MnuMapExpQB64, MD_QB64, HB_QB64, PD_QB64 : TMenuItem;
+    MnuMapExpQBJS, MD_QBJS, HB_QBJS, PD_QBJS : TMenuItem;
+    MnuMapExpQC, MD_QC, HB_QC, PD_QC : TMenuItem;
+    MnuMapExpQP, MD_QP, HB_QP, PD_QP : TMenuItem;
+    MnuMapExpTB, MD_TB, HB_TB, PD_TB : TMenuItem;
+    MnuMapExpTP, MD_TP, HB_TP, PD_TP : TMenuItem;
+    MnuMapExpTC, MD_TC, HB_TC, PD_TC : TMenuItem;
+    MnuMapExpTMT, MD_TMT, HB_TMT, PD_TMT : TMenuItem;
 
     MazeMenu: TMenuItem;
     MnuMazeEasy, MnuMazeMedium, MnuMazeHard : TMenuItem;
@@ -172,6 +234,15 @@ type
     ToolScrollLeftIcon: TImage;
     ToolScrollRightIcon: TImage;
     ToolScrollUpIcon: TImage;
+    LayerPanel: TPanel;
+    LayerButtonPanel: TPanel;
+    LayerListBox: TCheckListBox;
+    BtnLayerAdd: TButton;
+    BtnLayerDel: TButton;
+    BtnLayerDup: TButton;
+    BtnLayerUp: TButton;
+    BtnLayerDown: TButton;
+    BtnLayerRename: TButton;
     ToolSelectAreaIcon: TImage;
     ToolSprayPaintIcon: TImage;
     ToolUndoIcon: TImage;
@@ -187,6 +258,7 @@ type
     procedure CloneMapClick(Sender: TObject);
 
     procedure CopyToClipBoardClick(Sender: TObject);
+    procedure CopyLayerToClipBoardClick(Sender: TObject);
 
     procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -201,6 +273,29 @@ type
     procedure HitBoxesClearAllClick(Sender: TObject);
     procedure TransparentToggleClick(Sender: TObject);
     procedure ListView1Click(Sender: TObject);
+    //--- path tool. These MUST stay in the published section: the LFM
+    //    streamer resolves OnClick names through published RTTI only, and a
+    //    handler in public gives "event handler not found" at load time.
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure RedoClick(Sender: TObject);
+    procedure PathListViewClick(Sender: TObject);
+    procedure PathToolMenuClick(Sender: TObject);
+    procedure MoveToolMenuClick(Sender: TObject);
+    procedure PopLayerCopyClick(Sender: TObject);
+    procedure PopLayerPasteClick(Sender: TObject);
+    procedure PopHitBoxCopyClick(Sender: TObject);
+    procedure PopHitBoxPasteClick(Sender: TObject);
+    procedure PopPathCopyClick(Sender: TObject);
+    procedure PopPathPasteClick(Sender: TObject);
+    procedure PathsToggleClick(Sender: TObject);
+    procedure PathFinishOpenClick(Sender: TObject);
+    procedure PathFinishClosedClick(Sender: TObject);
+    procedure PathsDeleteAllClick(Sender: TObject);
+    procedure BtnPathDeleteClick(Sender: TObject);
+    procedure BtnPathVisibleClick(Sender: TObject);
+    procedure BtnPathActiveClick(Sender: TObject);
+    procedure BtnPathModeClick(Sender: TObject);
+    procedure BtnPathRenameClick(Sender: TObject);
     procedure MapListViewClick(Sender: TObject);
     procedure MapPaintBoxPaint(Sender: TObject);
 
@@ -213,6 +308,7 @@ type
     procedure MenuExportPascalArray(Sender: TObject);
     procedure MenuExportMapDataLanClick(Sender: TObject);
     procedure MenuExportHitBoxLanClick(Sender: TObject);
+    procedure MenuExportPathDataLanClick(Sender: TObject);
     procedure MazeGenerateClick(Sender: TObject);
     procedure MazeSetWallTileClick(Sender: TObject);
     procedure MazeSetPathTileClick(Sender: TObject);
@@ -220,6 +316,7 @@ type
     procedure MazeSetStartClick(Sender: TObject);
     procedure MazeSetEndClick(Sender: TObject);
     procedure MazeSolveClick(Sender: TObject);
+    function  MazeCellIsWall(mapx,mapy : integer) : boolean;
     procedure ExportHitBoxBasicClick(Sender: TObject);
     procedure ExportHitBoxBasicLNClick(Sender: TObject);
     procedure ExportHitBoxCClick(Sender: TObject);
@@ -240,6 +337,14 @@ type
     procedure RadioEraseClick(Sender: TObject);
     procedure ReSizeTiles(Sender: TObject);
 
+    procedure LayerListBoxClick(Sender: TObject);
+    procedure LayerListBoxItemClick(Sender: TObject; Index: integer);
+    procedure BtnLayerAddClick(Sender: TObject);
+    procedure BtnLayerDelClick(Sender: TObject);
+    procedure BtnLayerDupClick(Sender: TObject);
+    procedure BtnLayerUpClick(Sender: TObject);
+    procedure BtnLayerDownClick(Sender: TObject);
+    procedure BtnLayerRenameClick(Sender: TObject);
     procedure TileListViewClick(Sender: TObject);
     procedure TileZoomChange(Sender: TObject);
     procedure MapScrollBoxMouseWheel(Sender: TObject; Shift: TShiftState;
@@ -277,6 +382,9 @@ type
   public
     hpos,vpos : integer;
     CurrentMap : integer;
+    //true while RefreshLayerPanel is rewriting the list, so the list box
+    //events do not react to our own edits
+    FUpdatingLayerPanel : boolean;
     TileWidth : integer;
     TileHeight : integer;
     CTile      : TileRec;
@@ -298,6 +406,19 @@ type
     MazeEndX, MazeEndY     : integer;
     MazeStartSet, MazeEndSet : Boolean;
     SelectedHitBox      : integer;
+    SelectedPath        : integer;
+    ShowPathOverlay     : Boolean;
+    //what is being dragged by the Move tool, -1 when idle
+    FMoveKindIsPath     : boolean;
+    FMoveIndex          : integer;
+    FMoveLastX          : integer;
+    FMoveLastY          : integer;
+    //path currently being plotted, -1 when idle
+    FPathEditIndex      : integer;
+    //rubber band end point, already snapped to 8 directions
+    FPathPreviewX       : integer;
+    FPathPreviewY       : integer;
+    FPathHasPreview     : boolean;
     FCheckerBmp         : TBitmap;
 
     FormShowActivate : boolean;
@@ -320,10 +441,41 @@ type
     procedure SetDrawTool(tool : integer);
     procedure DrawOverLayOnClipArea;
     procedure DrawHitBoxOverlay;
+    procedure DrawPathOverlay;
+    procedure UpdatePathListView;
+    procedure StartNewPath(tx,ty : integer);
+    procedure FinishPath(closeIt : boolean);
+    procedure MPaintBoxMouseDownPathTool(Sender: TObject; Button: TMouseButton;
+                Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseMovePathTool(Sender: TObject; Shift: TShiftState;
+                X, Y: Integer);
+    procedure MPaintBoxMouseDownMoveTool(Sender: TObject; Button: TMouseButton;
+                Shift: TShiftState; X, Y: Integer);
+    procedure MPaintBoxMouseMoveMoveTool(Sender: TObject; Shift: TShiftState;
+                X, Y: Integer);
+    procedure MPaintBoxMouseUpMoveTool(Sender: TObject; Button: TMouseButton;
+                Shift: TShiftState; X, Y: Integer);
     procedure UpdateHitBoxListView;
     procedure LoadTile(index : integer);
     procedure LoadTilesToTileImageList;
+    //Refreshes every per map panel at once. Use THIS rather than calling the
+    //three individually - layers, hitboxes and paths all belong to the
+    //current map, so anything that swaps or resets the map must refresh all
+    //three or one is left showing the previous map's contents.
+    //A selection is a transient editing state, but it rides along inside
+    //MapPropsRec and so survives a save/load. Call this after loading so a
+    //restored rectangle cannot be mistaken for one the user just made.
+    procedure AssignShortCuts;
+    procedure ClearLoadedSelections;
+    //Panels 2 and 3 hold settings rather than mouse position, so they are
+    //rewritten whenever something changes rather than on every mouse move.
+    procedure UpdateStatusSettings;
+    procedure RefreshMapPanels;
+    procedure RefreshLayerPanel;
+    function  LayerRowToIndex(row : integer) : integer;
+    function  LayerIndexToRow(layer : integer) : integer;
     procedure VerifyTileImageList;
+    procedure ApplyToAllLayers(op,x,y,x2,y2 : integer);
 
     procedure UpdateTileView;
     procedure UpdateCurrentTile;
@@ -343,6 +495,7 @@ type
     function ExportTextFileToClipboard(Sender: TObject) : boolean;
 
     procedure ExportHitBoxes(filename : string; lan : integer);
+    procedure ExportPathData(filename : string; lan : integer);
 
     procedure MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
     procedure MapPreviewPlotTileTransparent(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
@@ -360,6 +513,22 @@ implementation
 uses rmmain;
 
 {$R *.lfm}
+
+const
+  //Path tool id. Deliberately outside the rmtools DrawShape range so it can
+  //never collide with a sprite editor tool.
+  MapToolPath = 100;
+  //Drag a whole hitbox or path. A dedicated tool rather than a modifier,
+  //so it can never be confused with drawing over a hitbox.
+  MapToolMove = 101;
+
+  //operations that must affect every layer, not just the active one
+  mlopHFlip       = 0;
+  mlopVFlip       = 1;
+  mlopScrollLeft  = 2;
+  mlopScrollRight = 3;
+  mlopScrollUp    = 4;
+  mlopScrollDown  = 5;
 
 { TMapEdit }
 
@@ -407,6 +576,7 @@ begin
 end;
 
 procedure TMapEdit.Init;
+  //(layer panel state is set up before anything can repaint)
 var
   i, j : integer;
 begin
@@ -445,6 +615,11 @@ begin
  MazeStartSet:=false;
  MazeEndSet:=false;
  SelectedHitBox:=-1;
+ SelectedPath:=-1;
+ ShowPathOverlay:=True;
+ FPathEditIndex:=-1;
+ FPathHasPreview:=false;
+ FMoveIndex:=-1;
 
  // create large checkerboard bitmap once for fast tiling
  FCheckerBmp:=TBitmap.Create;
@@ -475,7 +650,9 @@ begin
 //  UpdateToolSelectionIcons;
   UpdateMenus;
 //  UpdateEditMenus;
-  UpdateHitBoxListView;
+  //all three panels, not just the hitboxes - Delete All comes through here
+  RefreshMapPanels;
+  AssignShortCuts;
   MapPaintBox.Invalidate;
 
 end;
@@ -501,6 +678,20 @@ begin
 
   UpdateCurrentTile;
   UpdateMapListView;
+  RefreshMapPanels;
+
+  //Zoom and scroll are stored PER MAP in MapPropsRec, and therefore travel
+  //with the project file. hpos/vpos are form level leftovers from the last
+  //time this window was closed, so using them meant a freshly opened project
+  //inherited the previous project's view. Take the values from the map.
+  //Suppress OnChange: ApplyMapZoom deliberately has no early exit when the
+  //value is unchanged, and it recomputes the scroll position - which would
+  //undo the restore a few lines below.
+  TileZoom.OnChange:=nil;
+  TileZoom.Position:=MapCoreBase.GetZoomSize(CurrentMap);
+  TileZoom.OnChange:=@TileZoomChange;
+  TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
+  TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
 
   MapPaintBox.Width:=0;   //this hack updated the scrollbars properly after the 2nd and following attempts
   MapPaintBox.Height:=0;
@@ -509,8 +700,10 @@ begin
   MapPaintBox.Height:=MapCoreBase.GetZoomMapPageHeight(CurrentMap)+1;
   MapPaintBox.Invalidate;  //forces a paint which draws the map
 
-  MapScrollBox.HorzScrollBar.Position:=hpos;
-  MapScrollBox.VertScrollBar.Position:=vpos;
+  //set AFTER the paint box has been resized, or the scroll bar has no range
+  //yet and the position is silently clamped to zero
+  MapScrollBox.HorzScrollBar.Position:=MapCoreBase.GetMapScrollHorizPos(CurrentMap);
+  MapScrollBox.VertScrollBar.Position:=MapCoreBase.GetMapScrollVertPos(CurrentMap);
 
   FormShowActivate:=true; //this is going to also trigger an onfocus event - letting event handler know it was because of onopen
 end;
@@ -519,6 +712,11 @@ procedure TMapEdit.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
  hpos:=MapScrollBox.HorzScrollBar.Position;
  vpos:=MapScrollBox.VertScrollBar.Position;
+
+ //store against the map too, so the position survives a save/load rather
+ //than only surviving until the app closes
+ MapCoreBase.SetMapScrollHorizPos(CurrentMap,hpos);
+ MapCoreBase.SetMapScrollVertPos(CurrentMap,vpos);
 end;
 
 procedure TMapEdit.FormActivate(Sender: TObject);
@@ -564,8 +762,22 @@ end;
 
 procedure TMapEdit.SetDrawTool(tool : integer);
 begin
+  //switching away mid path would leave it half plotted and unreachable
+  if (DrawTool = MapToolPath) and (tool <> MapToolPath) then FinishPath(false);
+
   DrawTool:=tool;
   MapCoreBase.SetMapDrawTool(MapCoreBase.GetCurrentMap,DrawTool);
+
+  //MapToolPath appears in neither the menu case nor the icon case, so these
+  //two calls are what actually deselect the previous tool in both places.
+  //Guarded because Init calls SetDrawTool, and that can run before the LFM
+  //has streamed the menu items and tool icons.
+  if PathToolMenu <> nil then
+  begin
+    UpdateMenus;
+    UpdateToolSelectionIcons;
+    UpdateStatusSettings;
+  end;
 end;
 
 function TMapEdit.GetMapX(x : integer) : integer;
@@ -590,6 +802,7 @@ begin
   CurrentMap:=MapCoreBase.GetCurrentMap;
 
   UpdateMapListView;
+  RefreshMapPanels;   //the clone has its own layers, hitboxes and paths
   MapScrollBox.HorzScrollBar.Position:=0;
   MapScrollBox.VertScrollBar.Position:=0;
   MapPaintBox.Invalidate;
@@ -604,13 +817,30 @@ begin
  MapCoreBase.CopyToClipBoard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
 end;
 
+//Copies the current layer only. Paste puts it on whatever layer is current at
+//the destination, so a layer can be moved onto a different layer or map.
+//With no selection active GetMapClipAreaCoords returns the whole map, so this
+//covers both "entire layer" and "the selected part of it".
+procedure TMapEdit.CopyLayerToClipBoardClick(Sender: TObject);
+var
+  ca : MapClipAreaRec;
+begin
+  MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  MapCoreBase.CopyLayerToClipBoard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
+end;
+
 procedure TMapEdit.PasteFromClipBoardClick(Sender: TObject);
 var
   ca : MapClipAreaRec;
 begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
+  //paste now writes every layer, so it needs an undo snapshot like any other
+  //edit - without this a paste was unrecoverable
+  MapCoreBase.CopyToUndo(MapCoreBase.GetCurrentMap);
   MapCoreBase.PasteFromClipboard(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2);
   MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
 end;
 
 procedure TMapEdit.ImageListPlotTile(mx,my : integer;var TTile : TileRec);
@@ -732,6 +962,7 @@ var
   i : integer;
 begin
   ShowTransparent:=not ShowTransparent;
+  UpdateStatusSettings;
   TransparentToggle.Checked:=ShowTransparent;
 
   if ShowTransparent then
@@ -766,6 +997,17 @@ procedure TMapEdit.HitBoxesAddClick(Sender: TObject);
 var
   ca : MapClipAreaRec;
 begin
+  //The clip status flag lives in MapPropsRec and is therefore SAVED with the
+  //map, so a project reopens with the selection from whenever it was saved.
+  //Testing the flag alone let a hit box be added from that stale rectangle
+  //without the user ever making a selection - so require the Select Area
+  //tool to actually be the active tool as well.
+  if DrawTool <> DrawShapeClip then
+  begin
+    ShowMessage('Please choose the Select Area tool and mark the hit box area first.');
+    exit;
+  end;
+
   if MapCoreBase.GetMapClipStatus(CurrentMap) = 0 then
   begin
     ShowMessage('Please use the Select Area tool to mark the hit box area first.');
@@ -837,6 +1079,668 @@ begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
   MapPaintBox.Canvas.Rectangle(ca.x*TileWidth-2,ca.y*TileHeight-2,(ca.x2+1)*TileWidth+3,(ca.y2+1)*TileHeight+3);
   MapPaintBox.Canvas.Rectangle(ca.x*TileWidth-3,ca.y*TileHeight-3,(ca.x2+1)*TileWidth+4,(ca.y2+1)*TileHeight+4);
+end;
+
+
+//=============================================================================
+// PATH LINES - editor
+//
+// Plot with left click. Each new point snaps to one of 8 directions from the
+// previous one, so every exported segment is a signed add at runtime.
+// Right click closes the loop and finishes; Esc finishes the path open.
+//=============================================================================
+
+//Centre of a tile in paint box pixels. Paths are drawn centre to centre so a
+//segment reads as "walk from this tile to that one".
+function PathTileCX(tx,tw : integer) : integer;
+begin
+  PathTileCX:=tx*tw + tw div 2;
+end;
+
+function PathTileCY(ty,th : integer) : integer;
+begin
+  PathTileCY:=ty*th + th div 2;
+end;
+
+//Esc ends a path WITHOUT closing it - a bird's flight path should not loop
+//back on itself. Right click is the "close the loop" gesture.
+//=============================================================================
+// KEYBOARD SHORTCUTS
+//
+// Ctrl combinations go on the menu items, assigned in AssignShortCuts using
+// ShortCut(VK_x,[ssCtrl]) rather than the raw integers the LFM stores.
+//
+// Single letter tool keys live here instead, because a menu shortcut is
+// global to the form and would fire while the user is typing in a list or
+// edit box.
+//=============================================================================
+procedure TMapEdit.RedoClick(Sender: TObject);
+begin
+  MapCoreBase.Redo(CurrentMap);
+  RefreshMapPanels;
+  UpdatePageSize;
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+procedure TMapEdit.AssignShortCuts;
+begin
+  if Undo = nil then exit;        //before the LFM has streamed
+
+  MenuNew.ShortCut            := ShortCut(VK_N,[ssCtrl]);
+  MenuItem1.ShortCut          := ShortCut(VK_O,[ssCtrl]);   //Open
+  MenuSaveMap.ShortCut        := ShortCut(VK_S,[ssCtrl]);
+  Undo.ShortCut               := ShortCut(VK_Z,[ssCtrl]);
+  RedoMenu.ShortCut           := ShortCut(VK_Y,[ssCtrl]);
+  CopyToClipBoard.ShortCut    := ShortCut(VK_C,[ssCtrl]);
+  CopyLayerToClipBoard.ShortCut := ShortCut(VK_C,[ssCtrl,ssShift]);
+  PasteFromClipBoard.ShortCut := ShortCut(VK_V,[ssCtrl]);
+  MenuMapProps.ShortCut       := ShortCut(VK_P,[ssCtrl]);
+  CloneMap.ShortCut           := ShortCut(VK_D,[ssCtrl]);
+end;
+
+procedure TMapEdit.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  handled : boolean;
+begin
+  //Esc ends a path without closing it - this must stay ahead of the tool
+  //keys so it works no matter what else has focus
+  if (Key = VK_ESCAPE) and (FPathEditIndex >= 0) then
+  begin
+    FinishPath(false);
+    Key:=0;
+    exit;
+  end;
+
+  //never steal a key from something the user is typing into
+  if (ActiveControl is TCustomEdit) or (ActiveControl is TCustomComboBox) then exit;
+
+  //leave Ctrl and Alt to the menu shortcuts
+  if (ssCtrl in Shift) or (ssAlt in Shift) then exit;
+
+  //ToolMenuClick identifies the tool from Sender.Name, so it must be given
+  //the real menu item - passing nil would dereference a nil pointer
+  handled:=true;
+  case Key of
+    VK_P : ToolMenuClick(ToolPencilMenu);
+    VK_L : ToolMenuClick(ToolLineMenu);
+    VK_R : if ssShift in Shift then ToolMenuClick(ToolFRectangleMenu)
+                               else ToolMenuClick(ToolRectangleMenu);
+    VK_C : if ssShift in Shift then ToolMenuClick(ToolFCircleMenu)
+                               else ToolMenuClick(ToolCircleMenu);
+    VK_E : if ssShift in Shift then ToolMenuClick(ToolFEllipseMenu)
+                               else ToolMenuClick(ToolEllipseMenu);
+    VK_F : ToolMenuClick(ToolPaintMenu);
+    VK_S : ToolMenuClick(ToolSprayPaintMenu);
+    VK_M : ToolMenuClick(ToolSelectAreaMenu);
+    VK_A : PathToolMenuClick(nil);      //A for pAth - P is taken by pencil
+    VK_G : ToolGridIconClick(nil);
+  else
+    handled:=false;
+  end;
+
+  if handled then Key:=0;
+end;
+
+procedure TMapEdit.PathListViewClick(Sender: TObject);
+begin
+  if PathListView.Selected = nil then SelectedPath:=-1
+                                 else SelectedPath:=PathListView.Selected.Index;
+  MapPaintBox.Invalidate;
+end;
+
+//Menu only for now, as agreed - this is the testing entry point.
+procedure TMapEdit.PathToolMenuClick(Sender: TObject);
+begin
+  SetDrawTool(MapToolPath);   //also unchecks every other tool
+  RightTabs.ActivePage:=TabPaths;
+end;
+
+//=============================================================================
+// LIST VIEW COPY / PASTE
+//
+// Pasting into the SAME map offsets a hitbox or path by a tile so the copy is
+// visibly distinct, and names a layer "... Copy". Pasting into a DIFFERENT map
+// keeps the original position and names the layer "... Copy from Map N".
+//=============================================================================
+
+procedure TMapEdit.PopLayerCopyClick(Sender: TObject);
+begin
+  MapCoreBase.CopyLayerClip(CurrentMap,MapCoreBase.GetCurrentLayer(CurrentMap));
+end;
+
+procedure TMapEdit.PopLayerPasteClick(Sender: TObject);
+var
+  nl : integer;
+begin
+  if not MapCoreBase.HasLayerClip then
+  begin
+    ShowMessage('No layer has been copied yet.');
+    exit;
+  end;
+
+  MapCoreBase.CopyToUndo(CurrentMap);
+  nl:=MapCoreBase.PasteLayerClip(CurrentMap);
+  if nl < 0 then
+  begin
+    ShowMessage('This map already has the maximum of '+IntToStr(MaxMapLayers)+' layers.');
+    exit;
+  end;
+
+  MapCoreBase.SetCurrentLayer(CurrentMap,nl);
+  RefreshMapPanels;
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+procedure TMapEdit.PopHitBoxCopyClick(Sender: TObject);
+begin
+  if not MapCoreBase.IsValidHitBox(CurrentMap,SelectedHitBox) then
+  begin
+    ShowMessage('Select a hit box first.');
+    exit;
+  end;
+  MapCoreBase.CopyHitBoxClip(CurrentMap,SelectedHitBox);
+end;
+
+procedure TMapEdit.PopHitBoxPasteClick(Sender: TObject);
+var
+  nh : integer;
+begin
+  if not MapCoreBase.HasHitBoxClip then
+  begin
+    ShowMessage('No hit box has been copied yet.');
+    exit;
+  end;
+
+  MapCoreBase.CopyToUndo(CurrentMap);
+  nh:=MapCoreBase.PasteHitBoxClip(CurrentMap);
+  if nh < 0 then
+  begin
+    ShowMessage('This map already has the maximum of '+IntToStr(MaxHitBoxes)+' hit boxes.');
+    exit;
+  end;
+
+  SelectedHitBox:=nh;
+  ShowHitBoxOverlay:=true;
+  HitBoxesToggle.Checked:=true;
+  RefreshMapPanels;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.PopPathCopyClick(Sender: TObject);
+begin
+  if not MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then
+  begin
+    ShowMessage('Select a path first.');
+    exit;
+  end;
+  MapCoreBase.CopyPathClip(CurrentMap,SelectedPath);
+end;
+
+procedure TMapEdit.PopPathPasteClick(Sender: TObject);
+var
+  np : integer;
+begin
+  if not MapCoreBase.HasPathClip then
+  begin
+    ShowMessage('No path has been copied yet.');
+    exit;
+  end;
+
+  MapCoreBase.CopyToUndo(CurrentMap);
+  np:=MapCoreBase.PastePathClip(CurrentMap);
+  if np < 0 then
+  begin
+    ShowMessage('This map already has the maximum of '+IntToStr(MaxPaths)+' paths.');
+    exit;
+  end;
+
+  SelectedPath:=np;
+  ShowPathOverlay:=true;
+  PathsToggle.Checked:=true;
+  RefreshMapPanels;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.MoveToolMenuClick(Sender: TObject);
+begin
+  SetDrawTool(MapToolMove);   //also unchecks every drawing tool
+  //both overlays on, or there would be nothing visible to grab
+  ShowPathOverlay:=true;
+  PathsToggle.Checked:=true;
+  ShowHitBoxOverlay:=true;
+  HitBoxesToggle.Checked:=true;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.PathsToggleClick(Sender: TObject);
+begin
+  ShowPathOverlay:=PathsToggle.Checked;
+  UpdateStatusSettings;
+  MapPaintBox.Invalidate;
+end;
+
+//Menu equivalents of the Esc / right click gestures, so the two ways to end
+//a path are discoverable rather than something you have to already know.
+procedure TMapEdit.PathFinishOpenClick(Sender: TObject);
+begin
+  FinishPath(false);
+end;
+
+procedure TMapEdit.PathFinishClosedClick(Sender: TObject);
+begin
+  FinishPath(true);
+end;
+
+procedure TMapEdit.PathsDeleteAllClick(Sender: TObject);
+begin
+  if MapCoreBase.GetPathCount(CurrentMap) = 0 then exit;
+  if MessageDlg('Delete All Paths',
+     'Delete all paths on this map?',
+     mtConfirmation,[mbYes,mbNo],0) <> mrYes then exit;
+
+  MapCoreBase.ClearPaths(CurrentMap);
+  FPathEditIndex:=-1;
+  FPathHasPreview:=false;
+  SelectedPath:=-1;
+  UpdatePathListView;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.BtnPathDeleteClick(Sender: TObject);
+begin
+  if not MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then exit;
+  if MessageDlg('Delete Path',
+     'Delete "'+MapCoreBase.GetPathName(CurrentMap,SelectedPath)+'"?',
+     mtConfirmation,[mbYes,mbNo],0) <> mrYes then exit;
+
+  MapCoreBase.DeletePath(CurrentMap,SelectedPath);
+  if FPathEditIndex = SelectedPath then
+  begin
+    FPathEditIndex:=-1;
+    FPathHasPreview:=false;
+  end;
+  SelectedPath:=-1;
+  UpdatePathListView;
+  MapPaintBox.Invalidate;
+end;
+
+//Visible is an editing aid - it hides the path so you can draw over that
+//area. It deliberately does NOT affect whether the path is exported.
+procedure TMapEdit.BtnPathVisibleClick(Sender: TObject);
+begin
+  if not MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then exit;
+  MapCoreBase.SetPathVisible(CurrentMap,SelectedPath,
+    not MapCoreBase.GetPathVisible(CurrentMap,SelectedPath));
+  UpdatePathListView;
+  MapPaintBox.Invalidate;
+end;
+
+//Active is the real data flag - this is the one export honours.
+procedure TMapEdit.BtnPathActiveClick(Sender: TObject);
+begin
+  if not MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then exit;
+  MapCoreBase.SetPathActive(CurrentMap,SelectedPath,
+    not MapCoreBase.GetPathActive(CurrentMap,SelectedPath));
+  UpdatePathListView;
+end;
+
+procedure TMapEdit.BtnPathModeClick(Sender: TObject);
+var
+  m : integer;
+begin
+  if not MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then exit;
+  m:=MapCoreBase.GetPathMode(CurrentMap,SelectedPath)+1;
+  if m > PathModePingPong then m:=PathModeOnce;
+  MapCoreBase.SetPathMode(CurrentMap,SelectedPath,m);
+  UpdatePathListView;
+end;
+
+procedure TMapEdit.BtnPathRenameClick(Sender: TObject);
+var
+  s : string;
+begin
+  if not MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then exit;
+  s:=MapCoreBase.GetPathName(CurrentMap,SelectedPath);
+  if InputQuery('Rename Path','Path name:',s) then
+  begin
+    MapCoreBase.SetPathName(CurrentMap,SelectedPath,s);
+    UpdatePathListView;
+  end;
+end;
+
+Procedure TMapEdit.DrawPathOverlay;
+var
+  i,pt,n,pcount : integer;
+  P : PathRec;
+  PP,PN : PathPointRec;
+  x1,y1,x2,y2 : integer;
+  PColors : array[0..7] of TColor;
+  c : TColor;
+  r : integer;
+begin
+  //same cycle the hitboxes use, so the two overlays feel like one system
+  PColors[0]:=clRed;
+  PColors[1]:=clLime;
+  PColors[2]:=clAqua;
+  PColors[3]:=clFuchsia;
+  PColors[4]:=clYellow;
+  PColors[5]:=clBlue;
+  PColors[6]:=clMaroon;
+  PColors[7]:=clTeal;
+
+  pcount:=MapCoreBase.GetPathCount(CurrentMap);
+  if pcount = 0 then exit;
+
+  for i:=0 to pcount-1 do
+  begin
+    //visible is an editing flag only - an invisible path is still exported
+    if not MapCoreBase.GetPathVisible(CurrentMap,i) then continue;
+
+    MapCoreBase.GetPath(CurrentMap,i,P);
+    n:=P.PointCount;
+    if n = 0 then continue;
+
+    c:=PColors[i mod 8];
+    MapPaintBox.Canvas.Pen.Color:=c;
+    MapPaintBox.Canvas.Brush.Color:=c;
+    MapPaintBox.Canvas.Brush.Style:=bsSolid;
+    if i = SelectedPath then MapPaintBox.Canvas.Pen.Width:=3
+                        else MapPaintBox.Canvas.Pen.Width:=2;
+
+    //segments
+    for pt:=0 to n-2 do
+    begin
+      PP:=P.Points[pt];
+      PN:=P.Points[pt+1];
+      MapPaintBox.Canvas.MoveTo(PathTileCX(PP.x,TileWidth),PathTileCY(PP.y,TileHeight));
+      MapPaintBox.Canvas.LineTo(PathTileCX(PN.x,TileWidth),PathTileCY(PN.y,TileHeight));
+    end;
+
+    //closing segment back to the first point
+    if P.closed and (n > 2) then
+    begin
+      PP:=P.Points[n-1];
+      PN:=P.Points[0];
+      MapPaintBox.Canvas.MoveTo(PathTileCX(PP.x,TileWidth),PathTileCY(PP.y,TileHeight));
+      MapPaintBox.Canvas.LineTo(PathTileCX(PN.x,TileWidth),PathTileCY(PN.y,TileHeight));
+    end;
+
+    //waypoint markers - the first one is drawn larger so the start of the
+    //path is obvious, which matters for direction of travel
+    for pt:=0 to n-1 do
+    begin
+      PP:=P.Points[pt];
+      x1:=PathTileCX(PP.x,TileWidth);
+      y1:=PathTileCY(PP.y,TileHeight);
+      if pt = 0 then r:=5 else r:=3;
+      MapPaintBox.Canvas.Ellipse(x1-r,y1-r,x1+r,y1+r);
+    end;
+  end;
+
+  //rubber band for the segment being placed
+  if (FPathEditIndex >= 0) and FPathHasPreview then
+  begin
+    MapCoreBase.GetPath(CurrentMap,FPathEditIndex,P);
+    if P.PointCount > 0 then
+    begin
+      PP:=P.Points[P.PointCount-1];
+      x1:=PathTileCX(PP.x,TileWidth);
+      y1:=PathTileCY(PP.y,TileHeight);
+      x2:=PathTileCX(FPathPreviewX,TileWidth);
+      y2:=PathTileCY(FPathPreviewY,TileHeight);
+
+      MapPaintBox.Canvas.Pen.Color:=clWhite;
+      MapPaintBox.Canvas.Pen.Width:=1;
+      MapPaintBox.Canvas.Pen.Style:=psDot;
+      MapPaintBox.Canvas.MoveTo(x1,y1);
+      MapPaintBox.Canvas.LineTo(x2,y2);
+      MapPaintBox.Canvas.Pen.Style:=psSolid;
+    end;
+  end;
+
+  MapPaintBox.Canvas.Pen.Width:=1;
+end;
+
+Procedure TMapEdit.UpdatePathListView;
+var
+  i,n : integer;
+  item : TListItem;
+  P : PathRec;
+begin
+  if PathListView = nil then exit;
+
+  PathListView.Items.BeginUpdate;
+  try
+    PathListView.Items.Clear;
+    n:=MapCoreBase.GetPathCount(CurrentMap);
+    TabPaths.Caption:='Paths ('+IntToStr(n)+')';
+    for i:=0 to n-1 do
+    begin
+      MapCoreBase.GetPath(CurrentMap,i,P);
+      item:=PathListView.Items.Add;
+      item.Caption:=MapCoreBase.GetPathName(CurrentMap,i);
+      item.SubItems.Add(IntToStr(P.PointCount));
+      if P.closed then item.SubItems.Add('Yes') else item.SubItems.Add('No');
+      case P.mode of
+        PathModeOnce     : item.SubItems.Add('Once');
+        PathModePingPong : item.SubItems.Add('PingPong');
+      else
+        item.SubItems.Add('Loop');
+      end;
+      if P.visible then item.SubItems.Add('Yes') else item.SubItems.Add('No');
+      if P.active  then item.SubItems.Add('Yes') else item.SubItems.Add('No');
+    end;
+  finally
+    PathListView.Items.EndUpdate;
+  end;
+  UpdateStatusSettings;
+end;
+
+procedure TMapEdit.StartNewPath(tx,ty : integer);
+var
+  p : integer;
+begin
+  p:=MapCoreBase.AddPath(CurrentMap);
+  if p < 0 then
+  begin
+    ShowMessage('This map already has the maximum of '+IntToStr(MaxPaths)+' paths.');
+    exit;
+  end;
+  MapCoreBase.AddPathPoint(CurrentMap,p,tx,ty);
+  FPathEditIndex:=p;
+  SelectedPath:=p;
+  FPathHasPreview:=false;
+  UpdatePathListView;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.FinishPath(closeIt : boolean);
+begin
+  if FPathEditIndex < 0 then exit;
+
+  //a single point is not a path - drop it rather than leaving a stray dot
+  if MapCoreBase.GetPathPointCount(CurrentMap,FPathEditIndex) < 2 then
+    MapCoreBase.DeletePath(CurrentMap,FPathEditIndex)
+  else
+    MapCoreBase.SetPathClosed(CurrentMap,FPathEditIndex,closeIt);
+
+  FPathEditIndex:=-1;
+  FPathHasPreview:=false;
+  if SelectedPath >= MapCoreBase.GetPathCount(CurrentMap) then
+    SelectedPath:=MapCoreBase.GetPathCount(CurrentMap)-1;
+  UpdatePathListView;
+  MapPaintBox.Invalidate;
+end;
+
+//=============================================================================
+// MOVE TOOL
+//
+// Drags a whole hitbox or a whole path. Whole object only: shifting every
+// waypoint by the same amount keeps each segment on its 8 direction axis,
+// whereas dragging a single waypoint would create an arbitrary angle that
+// the exporter cannot represent.
+//
+// Paths are hit tested before hitboxes, because a path drawn across a hitbox
+// would otherwise be impossible to grab.
+//=============================================================================
+procedure TMapEdit.MPaintBoxMouseDownMoveTool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  tx,ty,hit : integer;
+begin
+  if Button <> mbLeft then exit;
+
+  tx:=GetMapX(x);
+  ty:=GetMapY(y);
+  FMoveIndex:=-1;
+
+  //paths first - a waypoint within one tile of the click
+  hit:=MapCoreBase.PathHitTest(CurrentMap,tx,ty,1);
+  if hit >= 0 then
+  begin
+    FMoveKindIsPath:=true;
+    FMoveIndex:=hit;
+    SelectedPath:=hit;
+  end
+  else
+  begin
+    hit:=MapCoreBase.HitBoxHitTest(CurrentMap,tx,ty);
+    if hit >= 0 then
+    begin
+      FMoveKindIsPath:=false;
+      FMoveIndex:=hit;
+      SelectedHitBox:=hit;
+    end;
+  end;
+
+  if FMoveIndex < 0 then exit;
+
+  //one undo level for the whole drag, taken before the first movement
+  MapCoreBase.CopyToUndo(CurrentMap);
+  FMoveLastX:=tx;
+  FMoveLastY:=ty;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.MPaintBoxMouseMoveMoveTool(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+  tx,ty,dx,dy : integer;
+begin
+  MapX:=GetMapX(x);
+  MapY:=GetMapY(y);
+  UpdateMapInfo(MapX,MapY);
+
+  if FMoveIndex < 0 then exit;
+  if not (ssLeft in Shift) then exit;
+
+  tx:=MapX;
+  ty:=MapY;
+  dx:=tx-FMoveLastX;
+  dy:=ty-FMoveLastY;
+  if (dx = 0) and (dy = 0) then exit;   //still on the same tile
+
+  if FMoveKindIsPath then
+    MapCoreBase.MovePath(CurrentMap,FMoveIndex,dx,dy)
+  else
+    MapCoreBase.MoveHitBox(CurrentMap,FMoveIndex,dx,dy);
+
+  //Track the cursor, not the object. If the object clamped at an edge the two
+  //diverge, and using the cursor means dragging back moves it immediately
+  //instead of first working off the difference.
+  FMoveLastX:=tx;
+  FMoveLastY:=ty;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.MPaintBoxMouseUpMoveTool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if FMoveIndex < 0 then exit;
+  FMoveIndex:=-1;
+  //the lists show coordinates, so they are stale until the drag ends
+  RefreshMapPanels;
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+procedure TMapEdit.MPaintBoxMouseDownPathTool(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  tx,ty,nx,ny,last : integer;
+  PP : PathPointRec;
+begin
+  tx:=GetMapX(x);
+  ty:=GetMapY(y);
+
+  if Button = mbRight then
+  begin
+    //right click closes the loop and ends the path
+    FinishPath(true);
+    exit;
+  end;
+
+  if Button <> mbLeft then exit;
+
+  if FPathEditIndex < 0 then
+  begin
+    StartNewPath(tx,ty);
+    exit;
+  end;
+
+  //snap this point to 8 directions from the previous one
+  last:=MapCoreBase.GetPathPointCount(CurrentMap,FPathEditIndex)-1;
+  MapCoreBase.GetPathPoint(CurrentMap,FPathEditIndex,last,PP);
+  MapCoreBase.SnapTo8(CurrentMap,PP.x,PP.y,tx,ty,nx,ny);
+
+  //ignore a click that did not move anywhere
+  if (nx = PP.x) and (ny = PP.y) then exit;
+
+  if MapCoreBase.AddPathPoint(CurrentMap,FPathEditIndex,nx,ny) < 0 then
+  begin
+    ShowMessage('A path can have at most '+IntToStr(MaxPathPoints)+' points.');
+    FinishPath(false);
+    exit;
+  end;
+
+  UpdatePathListView;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.MPaintBoxMouseMovePathTool(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+  tx,ty,nx,ny,last : integer;
+  PP : PathPointRec;
+begin
+  MapX:=GetMapX(x);
+  MapY:=GetMapY(y);
+  UpdateMapInfo(MapX,MapY);
+
+  if FPathEditIndex < 0 then exit;
+
+  last:=MapCoreBase.GetPathPointCount(CurrentMap,FPathEditIndex)-1;
+  if last < 0 then exit;
+
+  tx:=MapX;
+  ty:=MapY;
+  MapCoreBase.GetPathPoint(CurrentMap,FPathEditIndex,last,PP);
+  MapCoreBase.SnapTo8(CurrentMap,PP.x,PP.y,tx,ty,nx,ny);
+
+  //only repaint when the snapped end point actually changed, otherwise the
+  //overlay redraws on every pixel of mouse movement
+  if (not FPathHasPreview) or (nx <> FPathPreviewX) or (ny <> FPathPreviewY) then
+  begin
+    FPathPreviewX:=nx;
+    FPathPreviewY:=ny;
+    FPathHasPreview:=true;
+    MapPaintBox.Invalidate;
+  end;
 end;
 
 Procedure TMapEdit.DrawHitBoxOverlay;
@@ -920,12 +1824,14 @@ begin
     item.SubItems.Add(IntToStr(HB.y2));
     item.SubItems.Add(IntToStr(HB.x2-HB.x+1)+'x'+IntToStr(HB.y2-HB.y+1));
   end;
-  HitBoxPanel.Caption:='Hit Boxes ('+IntToStr(hbcount)+')';
+  TabHitBoxes.Caption:='Hit Boxes ('+IntToStr(hbcount)+')';
+  UpdateStatusSettings;
 end;
 
 procedure TMapEdit.HitBoxesToggleClick(Sender: TObject);
 begin
   ShowHitBoxOverlay:=not ShowHitBoxOverlay;
+  UpdateStatusSettings;
   HitBoxesToggle.Checked:=ShowHitBoxOverlay;
   MapPaintBox.Invalidate;
 end;
@@ -959,28 +1865,47 @@ end;
 
 procedure TMapEdit.UpdateMapView;
 var
-  i,j : integer;
+  i,j,l : integer;
   T   : TileRec;
+  nlayers : integer;
+  UseTrans : boolean;
 begin
- // draw checkerboard background first when transparency is on
+ // Draw the checkerboard ONCE, before the layer loop. It is a map level
+ // background - drawing it per layer would paint over everything beneath
+ // and only the topmost visible layer would survive.
  if ShowTransparent then DrawCheckerboard;
 
- for j:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
+ nlayers:=MapCoreBase.GetLayerCount(CurrentMap);
+
+ // Bottom to top: layer 0 first, each later layer painted over it. Cells
+ // holding TileClear are skipped, so lower layers show through wherever an
+ // upper layer has nothing - that is what makes layers useful.
+ for l:=0 to nlayers-1 do
  begin
-    for i:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
+   if not MapCoreBase.GetLayerVisible(CurrentMap,l) then continue;
+
+   // Layers above the base must honour per tile transparency or a sprite
+   // with a transparent background would be drawn as an opaque box and
+   // hide the terrain below it.
+   UseTrans:=ShowTransparent or (l > 0);
+
+   for j:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
    begin
-      MapCoreBase.GetMapTile(CurrentMap,i,j,T);
-      if T.ImageIndex = TileMissing then
-        PlotMissingTile(i,j)
-      else if T.ImageIndex <> TileClear then
-      begin
-        if ShowTransparent then
-          ImageListPlotTileTransparent(i,j,T)
-        else
-          ImageListPlotTile(i,j,T);
-      end;
-    end;
-  end;
+     for i:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
+     begin
+       MapCoreBase.GetMapTileL(CurrentMap,l,i,j,T);
+       if T.ImageIndex = TileMissing then
+         PlotMissingTile(i,j)
+       else if T.ImageIndex <> TileClear then
+       begin
+         if UseTrans then
+           ImageListPlotTileTransparent(i,j,T)
+         else
+           ImageListPlotTile(i,j,T);
+       end;
+     end;
+   end;
+ end;
 end;
 
 procedure TMapEdit.MapPaintBoxPaint(Sender: TObject);
@@ -990,6 +1915,7 @@ begin
   if MapCoreBase.GetMapGridStatus(MapCoreBase.GetCurrentMap) = 1 then DrawGrid;
   if MapCoreBase.GetMapClipStatus(MapCoreBase.GetCurrentMap) = 1 then DrawOverLayOnClipArea;
   if ShowHitBoxOverlay then DrawHitBoxOverlay;
+  if ShowPathOverlay then DrawPathOverlay;
 end;
 
 procedure TMapEdit.MenuDeleteAllClick(Sender: TObject);
@@ -1066,18 +1992,31 @@ begin
                                      'ExportHitBoxC':ExportHitBoxes(FileName,CLan);
                                      'ExportHitBoxPascal':ExportHitBoxes(FileName,PascalLan);
  else
-   //Tag-based dispatch for extended compiler targets
-   //map data items are named MD_*, hitbox items HB_*, Tag holds the Lan constant
+   //Tag-based dispatch for extended compiler targets. Menu item names carry
+   //the kind (MD_ map data, HB_ hitboxes, PD_ path data) and Tag holds the
+   //Lan constant, so every language target is handled by these three lines.
    if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'MD_') then
      ExportMap(FileName,mi.Tag,True)
    else if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'HB_') then
      ExportHitBoxes(FileName,mi.Tag)
+   else if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'PD_') then
+     ExportPathData(FileName,mi.Tag)
    else
    begin
      result:=false;  //did not find a supported format return false
      exit;
    end;
  End;
+
+ //An exporter can decline to write anything - ExportPathData does exactly
+ //that when the map has no active paths, and it has already said why. Without
+ //this check we would read a file that was never created and then claim the
+ //export succeeded.
+ if not FileExists(filename) then
+ begin
+   result:=true;   //handled: the exporter reported the problem itself
+   exit;
+ end;
 
  result:=true;  //found supported format - return true
  ReadFileAndCopyToClipboard(filename);
@@ -1109,6 +2048,282 @@ begin
  begin
    ExportMap(SaveDialog1.FileName,Lan,True);
  end;
+end;
+
+
+procedure TMapEdit.MenuExportPathDataLanClick(Sender: TObject);
+var
+  Lan : integer;
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  Lan:=(Sender as TMenuItem).Tag;
+  if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
+    SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*'
+  else if MapLanIsPascal(Lan) then
+    SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*'
+  else if MapLanIsC(Lan) then
+    SaveDialog1.Filter := 'c|*.c;*.h|All Files|*.*'
+  else if MapLanIsJS(Lan) then
+    SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
+  else if MapLanIsJSON(Lan) then
+    SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
+  else
+    SaveDialog1.Filter := 'All Files|*.*';
+
+  if SaveDialog1.Execute then
+    ExportPathData(SaveDialog1.FileName,Lan);
+end;
+
+//=============================================================================
+// PATH DATA EXPORT
+//
+// One flat integer array, the same shape in every language:
+//
+//   [0]        NP                 number of paths
+//   [1..NP]    offset of each path header, into this same array
+//   header:    +0 startTileX  +1 startTileY
+//              +2 startPixelX +3 startPixelY
+//              +4 closed      +5 mode (0=once 1=loop 2=pingpong)
+//              +6 segCount
+//              +7 segments, stride 4: dx, dy, pixels, delay
+//
+// The offset table lives inside the array so a program needs no parallel
+// arrays - one lookup gives the header of any path.
+//
+// dx,dy come from the 8 direction set so they are always -1/0/+1, which
+// makes "pixels" the exact number of one pixel steps to the next waypoint,
+// diagonals included. Following a path is an add and a decrement per frame,
+// with no division and no fixed point.
+//
+// Only ACTIVE paths are exported - "visible" is an editor flag and must
+// never decide what ends up in a build.
+//=============================================================================
+procedure TMapEdit.ExportPathData(filename : string; lan : integer);
+var
+  F : TextFile;
+  exportname : string;
+  tw,th : integer;
+  i,j,k,p : integer;
+  P1 : PathRec;
+  npaths,segcount,dirn,steps : integer;
+  offs : array[0..MaxPaths-1] of integer;
+  idx  : array[0..MaxPaths-1] of integer;
+  total,linenum : integer;
+  vals : array of integer;
+  nvals : integer;
+  line : string;
+
+  function SegCountOf(var PP : PathRec) : integer;
+  begin
+    if PP.PointCount < 2 then SegCountOf:=0
+    else if PP.closed then SegCountOf:=PP.PointCount
+    else SegCountOf:=PP.PointCount-1;
+  end;
+
+  procedure PushVal(v : integer);
+  begin
+    if nvals >= Length(vals) then SetLength(vals,Length(vals)+256);
+    vals[nvals]:=v;
+    inc(nvals);
+  end;
+
+  //Emit the flat array wrapped at a sensible width.
+  //  numbered - prepend BASIC line numbers
+  //  contsep  - put a comma at the end of every line but the last. That is
+  //             what an array initialiser needs, but a BASIC DATA statement
+  //             must NOT have one, so the two cases differ.
+  procedure WriteValues(const prefix,suffix : string; perline : integer;
+                        numbered,contsep : boolean);
+  var
+    a,b2 : integer;
+  begin
+    a:=0;
+    while a < nvals do
+    begin
+      line:='';
+      for b2:=a to a+perline-1 do
+      begin
+        if b2 >= nvals then break;
+        if b2 > a then line:=line+',';
+        line:=line+IntToStr(vals[b2]);
+      end;
+
+      if numbered then
+      begin
+        WriteLn(F,IntToStr(linenum)+' '+prefix+line);
+        inc(linenum,10);
+      end
+      else if (a+perline) >= nvals then
+        WriteLn(F,prefix+line+suffix)
+      else if contsep then
+        WriteLn(F,prefix+line+',')
+      else
+        WriteLn(F,prefix+line);
+
+      a:=a+perline;
+    end;
+  end;
+
+begin
+  exportname:=MapCoreBase.GetExportName(CurrentMap);
+  if exportname = '' then exportname:='map' + IntToStr(CurrentMap);
+  tw:=MapCoreBase.GetMapTileWidth(CurrentMap);
+  th:=MapCoreBase.GetMapTileHeight(CurrentMap);
+
+  //gather the exportable paths first - the offset table has to be emitted
+  //before the blocks, so every size must be known up front
+  npaths:=0;
+  for p:=0 to MapCoreBase.GetPathCount(CurrentMap)-1 do
+  begin
+    if not MapCoreBase.GetPathActive(CurrentMap,p) then continue;
+    MapCoreBase.GetPath(CurrentMap,p,P1);
+    if SegCountOf(P1) = 0 then continue;
+    idx[npaths]:=p;
+    inc(npaths);
+    if npaths >= MaxPaths then break;
+  end;
+
+  if npaths = 0 then
+  begin
+    ShowMessage('This map has no active paths with at least two points.');
+    exit;
+  end;
+
+  total:=1+npaths;
+  for i:=0 to npaths-1 do
+  begin
+    offs[i]:=total;
+    MapCoreBase.GetPath(CurrentMap,idx[i],P1);
+    total:=total + 7 + SegCountOf(P1)*4;
+  end;
+
+  //build the flat array once, then format it per language
+  nvals:=0;
+  SetLength(vals,total+16);
+  PushVal(npaths);
+  for i:=0 to npaths-1 do PushVal(offs[i]);
+
+  for i:=0 to npaths-1 do
+  begin
+    MapCoreBase.GetPath(CurrentMap,idx[i],P1);
+    segcount:=SegCountOf(P1);
+
+    PushVal(P1.Points[0].x);
+    PushVal(P1.Points[0].y);
+    PushVal(P1.Points[0].x*tw + tw div 2);
+    PushVal(P1.Points[0].y*th + th div 2);
+    if P1.closed then PushVal(1) else PushVal(0);
+    PushVal(P1.mode);
+    PushVal(segcount);
+
+    for j:=0 to segcount-1 do
+    begin
+      k:=j+1;
+      if k >= P1.PointCount then k:=0;
+      dirn:=MapCoreBase.DirectionBetween(P1.Points[j].x,P1.Points[j].y,
+                                         P1.Points[k].x,P1.Points[k].y);
+      if dirn < 0 then
+      begin
+        //identical waypoints - keep a zero length hop so segCount stays true
+        PushVal(0); PushVal(0); PushVal(0); PushVal(P1.Points[k].delay);
+        continue;
+      end;
+      steps:=abs(P1.Points[k].x-P1.Points[j].x);
+      if abs(P1.Points[k].y-P1.Points[j].y) > steps then
+        steps:=abs(P1.Points[k].y-P1.Points[j].y);
+
+      PushVal(PathDirX[dirn]);
+      PushVal(PathDirY[dirn]);
+      PushVal(steps*tw);
+      PushVal(P1.Points[k].delay);
+    end;
+  end;
+
+  AssignFile(F, filename);
+  Rewrite(F);
+
+  if MapLanIsC(lan) then
+  begin
+    WriteLn(F,'/* Path data for '+exportname+' - created by Raster Master */');
+    WriteLn(F,'/* [0]=path count, [1..count]=offset of each path header.   */');
+    WriteLn(F,'/* header: sx,sy,px,py,closed,mode,segcount then segcount   */');
+    WriteLn(F,'/* groups of dx,dy,pixels,delay. mode 0=once 1=loop 2=pong  */');
+    WriteLn(F,'#define '+exportname+'_path_size '+IntToStr(nvals));
+    WriteLn(F,'#define '+exportname+'_path_count '+IntToStr(npaths));
+    WriteLn(F,'const int '+exportname+'_paths['+IntToStr(nvals)+'] = {');
+    WriteValues('  ','',12,false,true);
+    WriteLn(F,'};');
+  end
+  else if MapLanIsPascal(lan) then
+  begin
+    WriteLn(F,'{ Path data for '+exportname+' - created by Raster Master }');
+    WriteLn(F,'{ [0]=path count, [1..count]=offset of each path header.   }');
+    WriteLn(F,'{ header: sx,sy,px,py,closed,mode,segcount then segcount   }');
+    WriteLn(F,'{ groups of dx,dy,pixels,delay. mode 0=once 1=loop 2=pong  }');
+    WriteLn(F,'const');
+    WriteLn(F,'  '+exportname+'_path_size = '+IntToStr(nvals)+';');
+    WriteLn(F,'  '+exportname+'_path_count = '+IntToStr(npaths)+';');
+    WriteLn(F,'  '+exportname+'_paths : array[0..'+IntToStr(nvals-1)+'] of integer = (');
+    WriteValues('    ',');',12,false,true);
+  end
+  else if MapLanIsJS(lan) then
+  begin
+    WriteLn(F,'// Path data for '+exportname+' - created by Raster Master');
+    WriteLn(F,'// [0]=path count, [1..count]=offset of each path header.');
+    WriteLn(F,'// header: sx,sy,px,py,closed,mode,segcount then segcount');
+    WriteLn(F,'// groups of dx,dy,pixels,delay. mode 0=once 1=loop 2=pingpong');
+    WriteLn(F,'const '+exportname+'PathCount = '+IntToStr(npaths)+';');
+    WriteLn(F,'const '+exportname+'Paths = [');
+    WriteValues('  ','',12,false,true);
+    WriteLn(F,'];');
+  end
+  else if MapLanIsJSON(lan) then
+  begin
+    WriteLn(F,'{');
+    WriteLn(F,'  "name": "'+exportname+'",');
+    WriteLn(F,'  "pathCount": '+IntToStr(npaths)+',');
+    WriteLn(F,'  "tileWidth": '+IntToStr(tw)+',');
+    WriteLn(F,'  "tileHeight": '+IntToStr(th)+',');
+    WriteLn(F,'  "format": "flat: [0]=count, [1..count]=header offsets, header=sx,sy,px,py,closed,mode,segcount, then segcount x (dx,dy,pixels,delay)",');
+    WriteLn(F,'  "data": [');
+    WriteValues('    ','',12,false,true);
+    WriteLn(F,'  ]');
+    WriteLn(F,'}');
+  end
+  else if MapLanIsBasicLN(lan) then
+  begin
+    linenum:=1000;
+    WriteLn(F,IntToStr(linenum)+' REM Path data for '+exportname);
+    inc(linenum,10);
+    WriteLn(F,IntToStr(linenum)+' REM [0]=count [1..count]=header offsets');
+    inc(linenum,10);
+    WriteLn(F,IntToStr(linenum)+' REM header sx,sy,px,py,closed,mode,segcount');
+    inc(linenum,10);
+    WriteLn(F,IntToStr(linenum)+' REM then segcount groups of dx,dy,pixels,delay');
+    inc(linenum,10);
+    WriteLn(F,IntToStr(linenum)+' REM size '+IntToStr(nvals));
+    inc(linenum,10);
+    WriteValues('DATA ','',10,true,false);
+  end
+  else
+  begin
+    //plain BASIC - QBasic, QB64, FreeBASIC, AmigaBasic and friends
+    WriteLn(F,''' Path data for '+exportname+' - created by Raster Master');
+    WriteLn(F,''' Single integer array. P(0)=path count, P(1..count)=offset of');
+    WriteLn(F,''' each path header. Header: sx,sy,px,py,closed,mode,segcount');
+    WriteLn(F,''' then segcount groups of dx,dy,pixels,delay.');
+    WriteLn(F,''' mode: 0=once 1=loop 2=pingpong');
+    WriteLn(F,''' Tile size '+IntToStr(tw)+'x'+IntToStr(th));
+    WriteLn(F,'');
+    WriteLn(F,exportname+'PathSize = '+IntToStr(nvals));
+    WriteLn(F,exportname+'PathCount = '+IntToStr(npaths));
+    WriteLn(F,'');
+    WriteLn(F,exportname+'PathData:');
+    WriteValues('DATA ','',10,false,false);
+  end;
+
+  CloseFile(F);
 end;
 
 procedure TMapEdit.MenuExportHitBoxLanClick(Sender: TObject);
@@ -1406,8 +2621,18 @@ begin
   if OpenDialog1.Execute then
   begin
    ReadMap(OpenDialog1.FileName);
+   //ReadMap used to fail silently on a version mismatch. With the v3->v4
+   //break that would be every older map file, so say what happened.
+   case LastMapReadStatus of
+     MapReadBadSig     : ShowMessage('That file is not a Raster Master map file.');
+     MapReadOldVersion : ShowMessage('This map was made with an older version of '+
+                                     'Raster Master and cannot be opened.');
+     MapReadNewVersion : ShowMessage('This map was made with a newer version of '+
+                                     'Raster Master and cannot be opened.');
+   end;
    UpdatePageSize;
-   UpdateHitBoxListView;
+   ClearLoadedSelections;  //a restored selection is not one the user made
+   RefreshMapPanels;    //the loaded map carries its own layers/hitboxes/paths
    //UpdateMapView;
    MapPaintBox.Invalidate;
   end;
@@ -1513,7 +2738,16 @@ begin
                                                     end;
 
  end;
+
+ //Resizing invalidates every undo snapshot - a level captured at one size
+ //cannot be restored into another - so say so before throwing the history away.
+ if MapCoreBase.CanUndo(CurrentMap) or MapCoreBase.CanRedo(CurrentMap) then
+   if MessageDlg('Resize Map',
+      'Resizing will clear the undo history for this map.'+LineEnding+LineEnding+
+      'Continue?',mtConfirmation,[mbYes,mbNo],0) <> mrYes then exit;
+
  MapCoreBase.ResizeMapSize(CurrentMap,mwidth,mheight);
+ UpdateStatusSettings;   //map size is shown in the status bar
 // TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
 // TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
  UpdateEditMenus;
@@ -1620,6 +2854,7 @@ begin
   LoadTilesToTileImageList;
   //UpdateMapView;
   UpdateEditMenus;
+  UpdateStatusSettings;   //tile size is shown in the status bar
   MapPaintBox.Invalidate;
 end;
 
@@ -1723,33 +2958,307 @@ begin
  DstBitMap.Free;
 end;
 
+//Flip and scroll are whole map operations. Running them on the active layer
+//alone would slide the terrain out from under the decoration that was drawn
+//to match it, so they are applied to every layer.
+procedure TMapEdit.ApplyToAllLayers(op,x,y,x2,y2 : integer);
+var
+  l,save,cm : integer;
+begin
+  cm:=MapCoreBase.GetCurrentMap;
+  save:=MapCoreBase.GetCurrentLayer(cm);
+  for l:=0 to MapCoreBase.GetLayerCount(cm)-1 do
+  begin
+    MapCoreBase.SetCurrentLayer(cm,l);
+    case op of
+      mlopHFlip       : MapCoreBase.HFlip(cm,x,y,x2,y2);
+      mlopVFlip       : MapCoreBase.VFlip(cm,x,y,x2,y2);
+      mlopScrollLeft  : MapCoreBase.ScrollLeft(cm,x,y,x2,y2);
+      mlopScrollRight : MapCoreBase.ScrollRight(cm,x,y,x2,y2);
+      mlopScrollUp    : MapCoreBase.ScrollUp(cm,x,y,x2,y2);
+      mlopScrollDown  : MapCoreBase.ScrollDown(cm,x,y,x2,y2);
+    end;
+  end;
+  MapCoreBase.SetCurrentLayer(cm,save);
+end;
+
+
+//=============================================================================
+// LAYER PANEL
+//
+// One control does both jobs: the CHECKBOX is visibility, the SELECTED ROW is
+// the layer being edited. That is the convention every layer UI uses, so it
+// needs no explanation and costs one list box instead of a set of widgets.
+//
+// The list shows the TOPMOST layer first, which is the reverse of the array
+// index - see LayerRowToIndex. Do not "tidy" that away.
+//=============================================================================
+
+function TMapEdit.LayerRowToIndex(row : integer) : integer;
+begin
+  //row 0 is the top of the draw order = highest layer index
+  LayerRowToIndex:=MapCoreBase.GetLayerCount(CurrentMap)-1-row;
+end;
+
+function TMapEdit.LayerIndexToRow(layer : integer) : integer;
+begin
+  LayerIndexToRow:=MapCoreBase.GetLayerCount(CurrentMap)-1-layer;
+end;
+
+procedure TMapEdit.ClearLoadedSelections;
+var
+  m : integer;
+begin
+  for m:=0 to MapCoreBase.GetMapCount-1 do
+    MapCoreBase.SetMapClipStatus(m,0);
+end;
+
+//Each of the three refreshers updates the status bar itself, so adding or
+//deleting a layer, hitbox or path is reflected there no matter which handler
+//did it - several call the individual refreshers rather than this one.
+procedure TMapEdit.RefreshMapPanels;
+begin
+  RefreshLayerPanel;
+  UpdateHitBoxListView;
+  UpdatePathListView;
+end;
+
+procedure TMapEdit.RefreshLayerPanel;
+var
+  l,row,n : integer;
+begin
+  if LayerListBox = nil then exit;      //can fire before the form is streamed
+  if LayerPanel = nil then exit;
+
+  n:=MapCoreBase.GetLayerCount(CurrentMap);
+
+  //The panel lives on its own tab now, so it is always present - no hiding
+  //rule and no View menu toggle. The tab caption carries the count.
+  TabLayers.Caption:='Layers ('+IntToStr(n)+')';
+
+  FUpdatingLayerPanel:=true;            //stop OnClick reacting to our own edits
+  try
+    LayerListBox.Items.BeginUpdate;
+    LayerListBox.Items.Clear;
+    for row:=0 to n-1 do
+    begin
+      l:=LayerRowToIndex(row);
+      LayerListBox.Items.Add(MapCoreBase.GetLayerName(CurrentMap,l));
+      LayerListBox.Checked[row]:=MapCoreBase.GetLayerVisible(CurrentMap,l);
+    end;
+    LayerListBox.Items.EndUpdate;
+
+    LayerListBox.ItemIndex:=LayerIndexToRow(MapCoreBase.GetCurrentLayer(CurrentMap));
+  finally
+    FUpdatingLayerPanel:=false;
+  end;
+
+  BtnLayerAdd.Enabled:=(n < MaxMapLayers);
+  BtnLayerDel.Enabled:=(n > 1);
+  UpdateStatusSettings;
+end;
+
+procedure TMapEdit.LayerListBoxClick(Sender: TObject);
+var
+  l : integer;
+begin
+  if FUpdatingLayerPanel then exit;
+  if LayerListBox.ItemIndex < 0 then exit;
+
+  l:=LayerRowToIndex(LayerListBox.ItemIndex);
+  MapCoreBase.SetCurrentLayer(CurrentMap,l);
+  UpdateStatusSettings;
+
+  //Selecting a hidden layer would mean drawing into something you cannot
+  //see, which is never what was meant - make it visible instead.
+  if not MapCoreBase.GetLayerVisible(CurrentMap,l) then
+  begin
+    MapCoreBase.SetLayerVisible(CurrentMap,l,true);
+    RefreshLayerPanel;
+    MapPaintBox.Invalidate;
+  end;
+  UpdateInfoBar;
+end;
+
+procedure TMapEdit.LayerListBoxItemClick(Sender: TObject; Index: integer);
+var
+  l,k,other : integer;
+begin
+  if FUpdatingLayerPanel then exit;
+  if (Index < 0) or (Index >= LayerListBox.Items.Count) then exit;
+
+  l:=LayerRowToIndex(Index);
+  MapCoreBase.SetLayerVisible(CurrentMap,l,LayerListBox.Checked[Index]);
+
+  //Clicking a check box also SELECTS that row, so OnClick has already run and
+  //made this the active layer. Forcing the tick back on here would mean no
+  //box could ever be unchecked - instead move editing to another visible
+  //layer and leave the tick alone.
+  if (not LayerListBox.Checked[Index]) and (MapCoreBase.GetCurrentLayer(CurrentMap) = l) then
+  begin
+    other:=-1;
+    for k:=0 to MapCoreBase.GetLayerCount(CurrentMap)-1 do
+      if (k <> l) and MapCoreBase.GetLayerVisible(CurrentMap,k) then
+      begin
+        other:=k;
+        break;
+      end;
+
+    if other >= 0 then
+    begin
+      MapCoreBase.SetCurrentLayer(CurrentMap,other);
+      FUpdatingLayerPanel:=true;
+      LayerListBox.ItemIndex:=LayerIndexToRow(other);
+      FUpdatingLayerPanel:=false;
+    end
+    else
+    begin
+      //last visible layer - hiding it would leave nothing to draw into
+      MapCoreBase.SetLayerVisible(CurrentMap,l,true);
+      FUpdatingLayerPanel:=true;
+      LayerListBox.Checked[Index]:=true;
+      FUpdatingLayerPanel:=false;
+    end;
+  end;
+
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+procedure TMapEdit.BtnLayerAddClick(Sender: TObject);
+var
+  l : integer;
+begin
+  l:=MapCoreBase.AddLayer(CurrentMap);
+  if l < 0 then
+  begin
+    ShowMessage('A map can have at most '+IntToStr(MaxMapLayers)+' layers.');
+    exit;
+  end;
+  MapCoreBase.SetCurrentLayer(CurrentMap,l);
+  RefreshLayerPanel;
+  MapPaintBox.Invalidate;
+end;
+
+procedure TMapEdit.BtnLayerDelClick(Sender: TObject);
+var
+  l : integer;
+begin
+  if MapCoreBase.GetLayerCount(CurrentMap) <= 1 then exit;
+  l:=MapCoreBase.GetCurrentLayer(CurrentMap);
+
+  if MessageDlg('Delete Layer',
+     'Delete layer "'+MapCoreBase.GetLayerName(CurrentMap,l)+'" and everything on it?',
+     mtConfirmation,[mbYes,mbNo],0) <> mrYes then exit;
+
+  MapCoreBase.CopyToUndo(CurrentMap);
+  MapCoreBase.DeleteLayer(CurrentMap,l);
+  RefreshLayerPanel;
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+procedure TMapEdit.BtnLayerDupClick(Sender: TObject);
+var
+  src,dst,i,j : integer;
+  T : TileRec;
+begin
+  src:=MapCoreBase.GetCurrentLayer(CurrentMap);
+  dst:=MapCoreBase.AddLayer(CurrentMap);
+  if dst < 0 then
+  begin
+    ShowMessage('A map can have at most '+IntToStr(MaxMapLayers)+' layers.');
+    exit;
+  end;
+
+  for j:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
+    for i:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
+    begin
+      MapCoreBase.GetMapTileL(CurrentMap,src,i,j,T);
+      MapCoreBase.SetMapTileL(CurrentMap,dst,i,j,T);
+    end;
+
+  MapCoreBase.SetLayerName(CurrentMap,dst,
+    Copy(MapCoreBase.GetLayerName(CurrentMap,src)+' copy',1,31));
+  MapCoreBase.SetCurrentLayer(CurrentMap,dst);
+  RefreshLayerPanel;
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+//"Up" means up the draw order - closer to the viewer - which is a HIGHER
+//layer index and a row nearer the top of the list.
+procedure TMapEdit.BtnLayerUpClick(Sender: TObject);
+begin
+  MapCoreBase.MoveLayer(CurrentMap,MapCoreBase.GetCurrentLayer(CurrentMap),1);
+  RefreshLayerPanel;
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+procedure TMapEdit.BtnLayerDownClick(Sender: TObject);
+begin
+  MapCoreBase.MoveLayer(CurrentMap,MapCoreBase.GetCurrentLayer(CurrentMap),-1);
+  RefreshLayerPanel;
+  MapPaintBox.Invalidate;
+  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
+  MapListView.Repaint;
+end;
+
+procedure TMapEdit.BtnLayerRenameClick(Sender: TObject);
+var
+  l : integer;
+  s : string;
+begin
+  l:=MapCoreBase.GetCurrentLayer(CurrentMap);
+  s:=MapCoreBase.GetLayerName(CurrentMap,l);
+  if InputQuery('Rename Layer','Layer name:',s) then
+  begin
+    MapCoreBase.SetLayerName(CurrentMap,l,s);
+    RefreshLayerPanel;
+  end;
+end;
+
 Procedure TMapEdit.VerifyTileImageList;
 var
-  i,j    : integer;
+  i,j,l  : integer;
   T      : TileRec;
   FIndex : integer;
 begin
- for j:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
-  begin
-    for i:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
-    begin
-      MapCoreBase.GetMapTile(CurrentMap,i,j,T);
-      if (T.ImageIndex<>TileMissing) and (T.ImageIndex<>TileClear)  then
-      begin
-        FIndex:=ImageThumbBase.FindUID(T.ImageUID);
-        if  FIndex = -1 then             // if -1 it was deleted lets update map info
-        begin
-          T.ImageIndex:=TileMissing;
-          MapCoreBase.SetMapTile(CurrentMap,i,j,T);
-        end
-        else if Findex<>T.ImageIndex then  //oh oh image is in a different index now - lets update
-        begin
-          T.ImageIndex:=FIndex;
-          MapCoreBase.SetMapTile(CurrentMap,i,j,T);
-        end;
-      end;
-    end;
-  end;
+ //Every layer must be remapped, not just the active one - a sprite delete
+ //affects tile indexes wherever that sprite was used.
+ //
+ //j = row (y) walks the map HEIGHT, i = column (x) walks the map WIDTH.
+ //GetMapTileL/SetMapTileL take (x,y) and silently exit when out of range,
+ //so swapping these bounds makes non-square maps only partly remap.
+ for l:=0 to MapCoreBase.GetLayerCount(CurrentMap)-1 do
+ begin
+   for j:=0 to MapCoreBase.GetMapHeight(CurrentMap)-1 do
+   begin
+     for i:=0 to MapCoreBase.GetMapWidth(CurrentMap)-1 do
+     begin
+       MapCoreBase.GetMapTileL(CurrentMap,l,i,j,T);
+       if (T.ImageIndex<>TileMissing) and (T.ImageIndex<>TileClear)  then
+       begin
+         FIndex:=ImageThumbBase.FindUID(T.ImageUID);
+         if  FIndex = -1 then             // if -1 it was deleted lets update map info
+         begin
+           T.ImageIndex:=TileMissing;
+           MapCoreBase.SetMapTileL(CurrentMap,l,i,j,T);
+         end
+         else if Findex<>T.ImageIndex then  //oh oh image is in a different index now - lets update
+         begin
+           T.ImageIndex:=FIndex;
+           MapCoreBase.SetMapTileL(CurrentMap,l,i,j,T);
+         end;
+       end;
+     end;
+   end;
+ end;
 end;
 
 procedure TMapEdit.TileListViewClick(Sender: TObject);
@@ -1832,6 +3341,8 @@ begin
   end;
 
   UpdateEditMenus;
+  //zoom, and the tile size derived from it, are both shown in the status bar
+  UpdateStatusSettings;
   MapPaintBox.Invalidate;
 end;
 
@@ -1896,11 +3407,19 @@ end;
 
 Procedure TMapEdit.UpdateMapPreviewImageIcons(MapIndex,ImageAction : integer);
 var
-  i,j,index : integer;
+  i,j,l,index : integer;
   T   : TileRec;
   SrcBitMap,DstBitMap : TBitMap;
   mwidth,mheight : integer;
 begin
+ //=== INTENTIONAL - DO NOT "FIX" ===========================================
+ // The preview icon deliberately renders ONLY the first 32x32 tiles of the
+ // map, starting at the top-left corner. It is NOT meant to show the whole
+ // map. Rendering every tile of a large map here makes the program hang and
+ // become very slow, because this runs on every map add/update.
+ // If this looks like a bug because big maps show only a partial preview:
+ // it is not. Leave the 32 tile clamp alone.
+ //==========================================================================
  mwidth:=MapCoreBase.GetMapWidth(MapIndex);
  if mwidth > 32 then mwidth:=32;
  mheight:=MapCoreBase.GetMapHeight(MapIndex);
@@ -1927,20 +3446,28 @@ begin
    DstBitMap.Canvas.Draw(0, 0, FCheckerBmp);
  end;
 
- for j:=0 to mheight-1 do
-  begin
-    for i:=0 to mwidth-1 do
-    begin
-      MapCoreBase.GetMapTile(MapIndex,i,j,T);
+ //composite the visible layers bottom to top, same order as the main view
+ for l:=0 to MapCoreBase.GetLayerCount(MapIndex)-1 do
+ begin
+   if not MapCoreBase.GetLayerVisible(MapIndex,l) then continue;
+
+   for j:=0 to mheight-1 do
+   begin
+     for i:=0 to mwidth-1 do
+     begin
+       MapCoreBase.GetMapTileL(MapIndex,l,i,j,T);
        if T.ImageIndex > TileClear then
        begin
-         if ShowTransparent then
+         //layers above the base always composite with transparency so the
+         //terrain underneath is not boxed out
+         if ShowTransparent or (l > 0) then
            MapPreviewPlotTileTransparent(SrcBitMap.Canvas,i,j,T)
          else
            MapPreviewPlotTile(SrcBitMap.Canvas,i,j,T);
        end;
-    end;
-  end;
+     end;
+   end;
+ end;
 
   if ShowTransparent then
     DstBitMap.Canvas.StretchDraw(Rect(0, 0, 256, 256), SrcBitMap)
@@ -1974,6 +3501,7 @@ begin
 
      MapCoreBase.SetCurrentMap(item.Index);
      CurrentMap:=MapCoreBase.GetCurrentMap;
+     RefreshMapPanels;       //these lists all belong to the selected map
 
      tw:=MapCoreBase.GetMapTileWidth(CurrentMap);
      th:=MapCoreBase.GetMapTileHeight(CurrentMap);
@@ -2074,6 +3602,63 @@ begin
   begin
     SelectedTileImage.canvas.CopyRect(Rect(0, 0, 256, 256), CTileBitMap.Canvas, Rect(0, 0, CTileBitMap.Width, CTileBitMap.Height));
   end;
+end;
+
+function MapToolName(tool : integer) : string;
+begin
+  case tool of
+    DrawShapePencil     : MapToolName:='Pencil';
+    DrawShapeLine       : MapToolName:='Line';
+    DrawShapeRectangle  : MapToolName:='Rectangle';
+    DrawShapeFRectangle : MapToolName:='Filled Rect';
+    DrawShapeCircle     : MapToolName:='Circle';
+    DrawShapeFCircle    : MapToolName:='Filled Circle';
+    DrawShapeEllipse    : MapToolName:='Ellipse';
+    DrawShapeFEllipse   : MapToolName:='Filled Ellipse';
+    DrawShapePaint      : MapToolName:='Fill';
+    DrawShapeClip       : MapToolName:='Select Area';
+    MapToolPath         : MapToolName:='Path';
+    MapToolMove         : MapToolName:='Move';
+  else
+    MapToolName:='?';
+  end;
+end;
+
+procedure TMapEdit.UpdateStatusSettings;
+var
+  s : string;
+  cm,n : integer;
+begin
+  if StatusBar0 = nil then exit;              //can fire before streaming
+  if StatusBar0.Panels.Count < 4 then exit;
+
+  cm:=MapCoreBase.GetCurrentMap;
+
+  //panel 2 - what the map is
+  s:='Map '+IntToStr(cm+1)+'/'+IntToStr(MapCoreBase.GetMapCount)+
+     '  Size: '+IntToStr(MapCoreBase.GetMapWidth(cm))+'x'+IntToStr(MapCoreBase.GetMapHeight(cm))+
+     '  Tile: '+IntToStr(MapCoreBase.GetMapTileWidth(cm))+'x'+IntToStr(MapCoreBase.GetMapTileHeight(cm))+
+     '  Zoom: '+IntToStr(MapCoreBase.GetZoomSize(cm))+'x';
+  StatusBar0.Panels[2].Text:=s;
+
+  //panel 3 - how it is being edited
+  s:='Tool: '+MapToolName(DrawTool);
+
+  n:=MapCoreBase.GetLayerCount(cm);
+  s:=s+'  Layer: '+IntToStr(MapCoreBase.GetCurrentLayer(cm)+1)+'/'+IntToStr(n);
+  if not MapCoreBase.GetLayerVisible(cm,MapCoreBase.GetCurrentLayer(cm)) then
+    s:=s+'(hidden)';
+
+  s:=s+'  Tiles: '+IntToStr(ImageThumbBase.GetCount);
+  s:=s+'  HitBox: '+IntToStr(MapCoreBase.GetHitBoxCount(cm));
+  s:=s+'  Paths: '+IntToStr(MapCoreBase.GetPathCount(cm));
+
+  if MapCoreBase.GetMapGridStatus(cm) = 1 then s:=s+'  Grid';
+  if ShowTransparent then s:=s+'  Trans';
+  if ShowHitBoxOverlay then s:=s+'  HB';
+  if ShowPathOverlay then s:=s+'  PathOv';
+
+  StatusBar0.Panels[3].Text:=s;
 end;
 
 procedure TMapEdit.UpdateInfoBar;
@@ -2281,6 +3866,20 @@ end;
 procedure TMapEdit.MPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
+ //The path tool edits path records, not tiles - it must not disturb the clip
+ //area and must not push a tile undo snapshot for something undo cannot restore.
+ if DrawTool = MapToolPath then
+ begin
+   MPaintBoxMouseDownPathTool(Sender,Button,Shift,X,Y);
+   exit;
+ end;
+
+ if DrawTool = MapToolMove then
+ begin
+   MPaintBoxMouseDownMoveTool(Sender,Button,Shift,X,Y);
+   exit;
+ end;
+
  MapCoreBase.SetMapClipStatus(MapCoreBase.GetCurrentMap,0);  //turn it off - we turn on again when new area is selected
  if DrawTool<>DrawShapeClip then MapCoreBase.CopyToUndo(MapCoreBase.GetCurrentMap);
  Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:MPaintBoxMouseDownXYTool(Sender,Button,Shift,X,Y);
@@ -2291,6 +3890,18 @@ end;
 
 procedure TMapEdit.MPaintBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
+ if DrawTool = MapToolPath then
+ begin
+   MPaintBoxMouseMovePathTool(Sender,Shift,X,Y);
+   exit;
+ end;
+
+ if DrawTool = MapToolMove then
+ begin
+   MPaintBoxMouseMoveMoveTool(Sender,Shift,X,Y);
+   exit;
+ end;
+
  Case DrawTool of DrawShapePencil,DrawShapeSpray,DrawShapePaint:MPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
                DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
                DrawShapeEllipse,DrawShapeFEllipse,DrawShapeClip:MPaintBoxMouseMoveXYX2Y2Tool(Sender,Shift,X,Y);
@@ -2301,6 +3912,15 @@ end;
 procedure TMapEdit.MPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
+ //path points are placed on mouse DOWN - nothing to do here
+ if DrawTool = MapToolPath then exit;
+
+ if DrawTool = MapToolMove then
+ begin
+   MPaintBoxMouseUpMoveTool(Sender,Button,Shift,X,Y);
+   exit;
+ end;
+
  Case DrawTool of DrawShapePencil,DrawShapeSpray:MPaintBoxMouseUpXYTool(Sender,Button,Shift,X,Y);
                DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
                DrawShapeEllipse,DrawShapeFEllipse:MPaintBoxMouseUpXYX2Y2Tool(Sender,Button,Shift,X,Y);
@@ -2321,6 +3941,7 @@ begin
    MapCoreBase.SetMapGridStatus(MapCoreBase.GetCurrentMap,1);
  end;
  UpdateMenus;
+ UpdateStatusSettings;
  MapPaintBox.Invalidate;
 end;
 
@@ -2329,7 +3950,7 @@ var
  ca : MapClipAreaRec;
 begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
-  MapCoreBase.Hflip(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  ApplyToAllLayers(mlopHFlip,ca.x,ca.y,ca.x2,ca.y2);
   MapPaintBox.Invalidate;
   UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
@@ -2377,6 +3998,7 @@ begin
  MapCoreBase.SetMapDrawTool(MapCoreBase.GetCurrentMap,DrawTool);
  UpdateToolSelectionIcons;
  UpdateMenus;
+ UpdateStatusSettings;   //this path bypasses SetDrawTool
 end;
 
 procedure TMapEdit.ToolScrollDownIconClick(Sender: TObject);
@@ -2384,7 +4006,7 @@ var
  ca : MapClipAreaRec;
 begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
-  MapCoreBase.ScrollDown(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  ApplyToAllLayers(mlopScrollDown,ca.x,ca.y,ca.x2,ca.y2);
   MapPaintBox.Invalidate;
   UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
@@ -2395,7 +4017,7 @@ var
  ca : MapClipAreaRec;
 begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
-  MapCoreBase.ScrollLeft(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  ApplyToAllLayers(mlopScrollLeft,ca.x,ca.y,ca.x2,ca.y2);
   MapPaintBox.Invalidate;
   UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
@@ -2406,7 +4028,7 @@ var
  ca : MapClipAreaRec;
 begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
-  MapCoreBase.ScrollRight(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  ApplyToAllLayers(mlopScrollRight,ca.x,ca.y,ca.x2,ca.y2);
   MapPaintBox.Invalidate;
   UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
@@ -2417,7 +4039,7 @@ var
  ca : MapClipAreaRec;
 begin
   MapCoreBase.GetMapClipAreaCoords(MapCoreBase.GetCurrentMap,ca);
-  MapCoreBase.ScrollUp(MapCoreBase.GetCurrentMap,ca.x,ca.y,ca.x2,ca.y2 );
+  ApplyToAllLayers(mlopScrollUp,ca.x,ca.y,ca.x2,ca.y2);
   MapPaintBox.Invalidate;
   UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
@@ -2426,6 +4048,10 @@ end;
 procedure TMapEdit.ToolUndoIconClick(Sender: TObject);
 begin
  MapCoreBase.Undo(MapCoreBase.GetCurrentMap);
+ //An undo level carries layers, hitboxes AND paths, so all three panels can
+ //be out of date - not just the canvas.
+ RefreshMapPanels;
+ UpdatePageSize;
  MapPaintBox.Invalidate;
  UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
  MapListView.Repaint;
@@ -2512,6 +4138,11 @@ begin
              DrawShapePaint:  ToolPaintMenu.Checked:=true;
               DrawShapeClip:ToolSelectAreaMenu.Checked:=true;
   end;
+  //MapToolPath is not in the case above, so ClearCheckedMenus has already
+  //left every drawing tool unchecked - just tick the path entry itself.
+  PathToolMenu.Checked:=(DrawTool = MapToolPath);
+  MoveToolMenu.Checked:=(DrawTool = MapToolMove);
+
   if  MapCoreBase.GetMapGridStatus(MapCoreBase.GetCurrentMap)=1 then  ToolGridMenu.Checked:=true;
 end;
 
@@ -2831,6 +4462,45 @@ begin
   UpdateMapListView;
 end;
 
+//Is this cell blocked for the maze solver?
+//
+//SINGLE LAYER: unchanged - the cell is blocked when the current layer holds
+//the wall tile, so existing maps behave exactly as before.
+//
+//MULTI LAYER: the walls may live on a layer other than the one being drawn
+//on. Reading only the current layer meant a freshly added solution layer
+//looked completely empty, nothing matched the wall tile, every cell came back
+//passable and the solver drew a straight line through the walls.
+//A cell is blocked if ANY layer holds the wall tile there.
+//
+//Hidden layers are included on purpose: "visible" is an editing aid, and a
+//wall you have hidden to see underneath is still a wall.
+function TMapEdit.MazeCellIsWall(mapx,mapy : integer) : boolean;
+var
+  l, n : integer;
+  T : TileRec;
+begin
+  MazeCellIsWall:=false;
+
+  n:=MapCoreBase.GetLayerCount(CurrentMap);
+  if n <= 1 then
+  begin
+    MapCoreBase.GetMapTile(CurrentMap, mapx, mapy, T);
+    MazeCellIsWall:=(T.ImageIndex = MazeWallTile.ImageIndex);
+    exit;
+  end;
+
+  for l:=0 to n-1 do
+  begin
+    MapCoreBase.GetMapTileL(CurrentMap, l, mapx, mapy, T);
+    if T.ImageIndex = MazeWallTile.ImageIndex then
+    begin
+      MazeCellIsWall:=true;
+      exit;
+    end;
+  end;
+end;
+
 procedure TMapEdit.MazeSolveClick(Sender: TObject);
 var
   ca : MapClipAreaRec;
@@ -2842,7 +4512,6 @@ var
     qHead, qTail : integer;
     prev : array of array of TMazePos;
     vis  : array of array of boolean;
-    T : TileRec;
     i, j, nx, ny, d : integer;
     found : boolean;
     dx : array[0..3] of integer;
@@ -2920,6 +4589,22 @@ begin
   qHead:=0;
   qTail:=0;
 
+  //Refuse a start or end that sits inside a wall. Without this the solver
+  //walks out of a wall and reports a route that cannot be taken - easy to
+  //trip over now that the walls may be on another layer.
+  if MazeCellIsWall(mx+sx, my+sy) then
+  begin
+    ShowMessage('The start position is on a wall tile.');
+    SetLength(vis,0); SetLength(prev,0); SetLength(queue,0);
+    exit;
+  end;
+  if MazeCellIsWall(mx+ex, my+ey) then
+  begin
+    ShowMessage('The end position is on a wall tile.');
+    SetLength(vis,0); SetLength(prev,0); SetLength(queue,0);
+    exit;
+  end;
+
   vis[sx][sy]:=true;
   queue[qTail].x:=sx;
   queue[qTail].y:=sy;
@@ -2946,9 +4631,8 @@ begin
       begin
         if not vis[nx][ny] then
         begin
-          MapCoreBase.GetMapTile(CurrentMap, mx+nx, my+ny, T);
-          //passable = any tile that is not the wall tile
-          if T.ImageIndex <> MazeWallTile.ImageIndex then
+          //passable = not a wall on ANY layer - see MazeCellIsWall
+          if not MazeCellIsWall(mx+nx, my+ny) then
           begin
             vis[nx][ny]:=true;
             prev[nx][ny].x:=i;
@@ -2970,6 +4654,11 @@ begin
     SetLength(queue, 0);
     exit;
   end;
+
+  //Draw the solution on the CURRENT layer - that is the whole point of the
+  //multi layer support, walls stay where they are and the route goes on its
+  //own layer. SetMapTile targets the current layer.
+  MapCoreBase.CopyToUndo(CurrentMap);
 
   //trace back from end to start and draw solution tiles
   i:=ex;

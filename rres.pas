@@ -4,7 +4,9 @@ Unit rres;
 
 Interface
    uses rmcore,rmthumb,rmxgfcore,rwxgf,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
-     wraylib,rwaqb,wmouse,rwspriteanim,animbase;
+     wraylib,rwaqb,wmouse,rwspriteanim,animbase,
+     //IntToStr. Listed last so it cannot shadow anything this unit already uses.
+     SysUtils;
 
 //Function RESInclude(filename:string):word;
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
@@ -71,6 +73,8 @@ const
   ResTypeImageMask = 3;
   ResTypeMap       = 4;
   ResTypeAnimation = 5;
+  ResTypeSprHitBox = 6;   //sprite hit boxes (PIXEL coords, unlike map ones)
+  ResTypePath      = 7;   //map paths, as the flat array mapcore builds
 
 function EncodeResType(Category, Lan, Format : integer) : integer;
 procedure DecodeResType(rt : integer; var Category, Lan, Format : integer);
@@ -476,11 +480,102 @@ begin
   GetRESPaletteSize:=Size;
 end;
 
-function GetRESMapSize(mwidth,mheight : integer) : longint;
+//Must match EXACTLY what ResExportMaps writes, because RR.size and the
+//running RR.offset are both derived from it - get it wrong and every
+//resource after this map points at the wrong place in the file.
+//
+//ResExportMaps writes SMALLINTS: a 5 value header (width, height, tilewidth,
+//tileheight, layercount) followed by layercount x width x height tiles.
+//
+//Two things were wrong here before: the layer count was not counted at all,
+//so a 2 layer map reported the size of 1; and the element size was
+//sizeof(integer) (4 bytes) while the writer uses sizeof(smallint) (2).
+//Must match EXACTLY what ResExportPaths writes: the flat array as smallints.
+function GetRESPathSize(nv : integer) : longint;
+begin
+  GetRESPathSize:=longint(nv)*sizeof(smallint);
+end;
+
+//Writes each exported map's path array, in the same order the header pass
+//walked them.
+procedure ResExportPaths(var F : File);
+var
+  i,nv,j : integer;
+  MPE : MapExportFormatRec;
+  //longint, NOT integer: this unit is {$MODE TP} where integer is 16 bit,
+  //but mapcore is objfpc where it is 32 bit, and the var parameter must
+  //match the declared type exactly.
+  vals : array[0..8191] of longint;
+  w : smallint;
+begin
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i,MPE);
+    if MPE.MapFormat <= 0 then continue;
+    if MapCoreBase.PathExportCount(i) = 0 then continue;
+
+    nv:=MapCoreBase.BuildPathExportArray(i,vals);
+    if nv <= 0 then continue;
+
+    for j:=0 to nv-1 do
+    begin
+      w:=vals[j];
+      {$I-}
+      Blockwrite(F,w,sizeof(w));
+      {$I+}
+      if IORESULT <> 0 then exit;
+    end;
+  end;
+end;
+
+//Must match EXACTLY what ResExportSpriteHitBoxes writes: a count followed by
+//4 smallints per box. RR.size and the running RR.offset both derive from it,
+//so an error here shifts every later resource in the file.
+function GetRESSprHitBoxSize(hbcount : integer) : longint;
+begin
+  GetRESSprHitBoxSize:=(longint(hbcount)*4*sizeof(smallint))+sizeof(smallint);
+end;
+
+//Writes the sprite hit boxes of every exported sprite, in the same order the
+//header pass walked them.
+procedure ResExportSpriteHitBoxes(var F : File);
+var
+  i,j,hbcount : integer;
+  HB : HitBoxRec;
+  EO : ImageExportFormatRec;
+  Line : array[0..4] of smallint;
+begin
+  for i:=0 to ImageThumbBase.GetCount-1 do
+  begin
+    ImageThumbBase.GetExportOptions(i,EO);
+    hbcount:=ImageThumbBase.GetHitBoxCount(i);
+    if (EO.Image <= 0) or (hbcount = 0) then continue;
+
+    Line[0]:=hbcount;
+    {$I-}
+    Blockwrite(F,Line,sizeof(smallint));
+    {$I+}
+    if IORESULT <> 0 then exit;
+
+    for j:=0 to hbcount-1 do
+    begin
+      ImageThumbBase.GetHitBox(i,j,HB);
+      Line[0]:=HB.x;  Line[1]:=HB.y;
+      Line[2]:=HB.x2; Line[3]:=HB.y2;
+      {$I-}
+      Blockwrite(F,Line,4*sizeof(smallint));
+      {$I+}
+      if IORESULT <> 0 then exit;
+    end;
+  end;
+end;
+
+function GetRESMapSize(mwidth,mheight,nlayers : integer) : longint;
 var
  size : longint;
 begin
-  size:=(mwidth*mheight*sizeof(integer))+(4*sizeof(integer));
+  if nlayers < 1 then nlayers:=1;
+  size:=(longint(nlayers)*mwidth*mheight*sizeof(smallint))+(5*sizeof(smallint));
   GetRESMapSize:=Size;
 end;
 
@@ -951,20 +1046,74 @@ end;
 
 
 
+//Map hit boxes as source code. Coordinates are TILES here - the sprite
+//version emits pixels.
+//
+//Emitted for EVERY language family. This used to be BASIC only, so a map
+//exported to C or Pascal silently lost its hit boxes.
 procedure WriteHitBoxDataToBuffer(var data : BufferRec);
 var
   i, j, hbcount : integer;
   HB : HitBoxRec;
   MPE : MapExportFormatRec;
   Lan : integer;
+  nm, line : string;
 begin
   for i:=0 to MapCoreBase.GetMapCount-1 do
   begin
     MapCoreBase.GetMapExportProps(i, MPE);
     hbcount:=MapCoreBase.GetHitBoxCount(i);
+    if (MPE.MapFormat <= 0) or (hbcount = 0) then continue;
 
-    if (MPE.MapFormat > 0) and (hbcount > 0) and
-       (MapLanIsBasic(MPE.Lan) or MapLanIsBasicLN(MPE.Lan)) then
+    nm:=MPE.Name;
+    if nm = '' then nm:='map'+IntToStr(i);
+
+    if MapLanIsC(MPE.Lan) then
+    begin
+      writeln(data.fText,'/* hit boxes for ',nm,' - tiles, x,y,x2,y2 */');
+      writeln(data.fText,'#define ',nm,'_hitbox_count ',hbcount);
+      writeln(data.fText,'const int ',nm,'_hitbox[',hbcount*4,'] = {');
+      for j:=0 to hbcount-1 do
+      begin
+        MapCoreBase.GetHitBox(i,j,HB);
+        line:='  '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+                   IntToStr(HB.x2)+','+IntToStr(HB.y2);
+        if j < hbcount-1 then line:=line+',';
+        writeln(data.fText,line);
+      end;
+      writeln(data.fText,'};');
+    end
+    else if MapLanIsPascal(MPE.Lan) then
+    begin
+      writeln(data.fText,'{ hit boxes for ',nm,' - tiles, x,y,x2,y2 }');
+      writeln(data.fText,'const');
+      writeln(data.fText,'  ',nm,'_hitbox_count = ',hbcount,';');
+      writeln(data.fText,'  ',nm,'_hitbox : array[0..',hbcount*4-1,'] of integer = (');
+      for j:=0 to hbcount-1 do
+      begin
+        MapCoreBase.GetHitBox(i,j,HB);
+        line:='    '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+                     IntToStr(HB.x2)+','+IntToStr(HB.y2);
+        if j < hbcount-1 then line:=line+',' else line:=line+');';
+        writeln(data.fText,line);
+      end;
+    end
+    else if MapLanIsJS(MPE.Lan) then
+    begin
+      writeln(data.fText,'// hit boxes for ',nm,' - tiles');
+      writeln(data.fText,'const ',nm,'HitBoxes = [');
+      for j:=0 to hbcount-1 do
+      begin
+        MapCoreBase.GetHitBox(i,j,HB);
+        line:='  {x:'+IntToStr(HB.x)+', y:'+IntToStr(HB.y)+
+              ', x2:'+IntToStr(HB.x2)+', y2:'+IntToStr(HB.y2)+
+              ', w:'+IntToStr(HB.x2-HB.x+1)+', h:'+IntToStr(HB.y2-HB.y+1)+'}';
+        if j < hbcount-1 then line:=line+',';
+        writeln(data.fText,line);
+      end;
+      writeln(data.fText,'];');
+    end
+    else
     begin
       Lan:=QBLan;
       if (MPE.Lan = BasicLnLan) or (MPE.Lan = GWBasicLan) then Lan:=GWLan
@@ -972,11 +1121,242 @@ begin
       else if MPE.Lan = AQBBasicLan then Lan:=AQBLan
       else if MPE.Lan = BAMBasicLan then Lan:=BAMLan;
 
-      writeln(data.fText,LineCountToStr(Lan),'''HitBox data for ',MPE.Name);
-      WriteBasicLabel(data,Lan,MPE.Name+'HitBox');
+      writeln(data.fText,LineCountToStr(Lan),'''HitBox data for ',nm,' (tiles)');
+      WriteBasicVariable(data,Lan,nm+'HitBox','Count',hbcount);
+      WriteBasicLabel(data,Lan,nm+'HitBox');
       for j:=0 to hbcount-1 do
       begin
         MapCoreBase.GetHitBox(i, j, HB);
+        writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
+      end;
+    end;
+  end;
+end;
+
+//Map paths as source code, for every language family.
+//
+//The array itself is built by MapCoreBase.BuildPathExportArray, which the
+//standalone "Path Data Statements" menu export uses too - one builder means
+//the two can never disagree about the layout.
+procedure WritePathDataToBuffer(var data : BufferRec);
+var
+  i,j,nv,per,a,b2,Lan : integer;
+  MPE : MapExportFormatRec;
+  //longint, NOT integer: this unit is {$MODE TP} where integer is 16 bit,
+  //but mapcore is objfpc where it is 32 bit, and the var parameter must
+  //match the declared type exactly.
+  vals : array[0..8191] of longint;
+  nm, line : string;
+begin
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i, MPE);
+    if MPE.MapFormat <= 0 then continue;
+    if MapCoreBase.PathExportCount(i) = 0 then continue;
+
+    nv:=MapCoreBase.BuildPathExportArray(i,vals);
+    if nv <= 0 then continue;
+
+    nm:=MPE.Name;
+    if nm = '' then nm:='map'+IntToStr(i);
+
+    if MapLanIsC(MPE.Lan) then
+    begin
+      writeln(data.fText,'/* paths for ',nm,' - [0]=count, [1..count]=header offsets */');
+      writeln(data.fText,'#define ',nm,'_path_size ',nv);
+      writeln(data.fText,'const int ',nm,'_paths[',nv,'] = {');
+      per:=12; a:=0;
+      while a < nv do
+      begin
+        line:='  ';
+        for b2:=a to a+per-1 do
+        begin
+          if b2 >= nv then break;
+          if b2 > a then line:=line+',';
+          line:=line+IntToStr(vals[b2]);
+        end;
+        if (a+per) < nv then line:=line+',';
+        writeln(data.fText,line);
+        a:=a+per;
+      end;
+      writeln(data.fText,'};');
+    end
+    else if MapLanIsPascal(MPE.Lan) then
+    begin
+      writeln(data.fText,'{ paths for ',nm,' - [0]=count, [1..count]=header offsets }');
+      writeln(data.fText,'const');
+      writeln(data.fText,'  ',nm,'_path_size = ',nv,';');
+      writeln(data.fText,'  ',nm,'_paths : array[0..',nv-1,'] of integer = (');
+      per:=12; a:=0;
+      while a < nv do
+      begin
+        line:='    ';
+        for b2:=a to a+per-1 do
+        begin
+          if b2 >= nv then break;
+          if b2 > a then line:=line+',';
+          line:=line+IntToStr(vals[b2]);
+        end;
+        if (a+per) < nv then line:=line+',' else line:=line+');';
+        writeln(data.fText,line);
+        a:=a+per;
+      end;
+    end
+    else if MapLanIsJS(MPE.Lan) then
+    begin
+      writeln(data.fText,'// paths for ',nm,' - [0]=count, [1..count]=header offsets');
+      writeln(data.fText,'const ',nm,'Paths = [');
+      per:=12; a:=0;
+      while a < nv do
+      begin
+        line:='  ';
+        for b2:=a to a+per-1 do
+        begin
+          if b2 >= nv then break;
+          if b2 > a then line:=line+',';
+          line:=line+IntToStr(vals[b2]);
+        end;
+        if (a+per) < nv then line:=line+',';
+        writeln(data.fText,line);
+        a:=a+per;
+      end;
+      writeln(data.fText,'];');
+    end
+    else
+    begin
+      Lan:=QBLan;
+      if (MPE.Lan = BasicLnLan) or (MPE.Lan = GWBasicLan) then Lan:=GWLan
+      else if MPE.Lan = FBBasicLan then Lan:=FBLan
+      else if MPE.Lan = AQBBasicLan then Lan:=AQBLan
+      else if MPE.Lan = BAMBasicLan then Lan:=BAMLan;
+
+      writeln(data.fText,LineCountToStr(Lan),'''Path data for ',nm);
+      WriteBasicVariable(data,Lan,nm+'Path','Size',nv);
+      WriteBasicLabel(data,Lan,nm+'Path');
+      per:=10; a:=0;
+      while a < nv do
+      begin
+        line:='';
+        for b2:=a to a+per-1 do
+        begin
+          if b2 >= nv then break;
+          if b2 > a then line:=line+',';
+          line:=line+IntToStr(vals[b2]);
+        end;
+        //DATA lines must NOT carry a trailing comma
+        writeln(data.fText,LineCountToStr(Lan),'DATA ',line);
+        a:=a+per;
+      end;
+    end;
+  end;
+end;
+
+//ImageExportFormatRec.Lan uses the SPRITE compiler constants (TPLan, TCLan,
+//QBLan ...), which are a DIFFERENT numbering from the map ones (TPPascalLan,
+//TCCLan, QBBasicLan ...). Passing a sprite Lan to MapLanIsPascal silently
+//returns false, which is how Turbo Pascal sprites ended up emitting BASIC.
+function SprLanIsC(Lan : integer) : boolean;
+begin
+  SprLanIsC:=(Lan=TCLan) or (Lan=QCLan) or (Lan=OWLan) or (Lan=gccLan) or
+             (Lan=ACLan);
+end;
+
+function SprLanIsPascal(Lan : integer) : boolean;
+begin
+  SprLanIsPascal:=(Lan=TPLan) or (Lan=QPLan) or (Lan=FPLan) or (Lan=TMTLan) or
+                  (Lan=APLan);
+end;
+
+function SprLanIsJS(Lan : integer) : boolean;
+begin
+  SprLanIsJS:=(Lan=QBJSLan);
+end;
+
+//Sprite hit boxes as source code. Coordinates are PIXELS within the sprite,
+//where the map version emits tiles.
+//
+//Emitted for EVERY language family, not just BASIC. Sprites export to C,
+//Pascal and JS as well, and those targets were silently getting no hit box
+//data at all.
+//
+//startindex/count let the single sprite "Export Include" path emit just its
+//own sprite - that path skips the whole-project block below.
+procedure WriteSpriteHitBoxDataToBuffer(var data : BufferRec; startindex,stopcount : integer);
+var
+  i, j, hbcount : integer;
+  HB : HitBoxRec;
+  EO : ImageExportFormatRec;
+  Lan : integer;
+  nm, line : string;
+begin
+  for i:=startindex to stopcount-1 do
+  begin
+    ImageThumbBase.GetExportOptions(i, EO);
+    hbcount:=ImageThumbBase.GetHitBoxCount(i);
+    if (EO.Image <= 0) or (hbcount = 0) then continue;
+
+    nm:=EO.Name;
+    if nm = '' then nm:='sprite'+IntToStr(i);
+
+    if SprLanIsC(EO.Lan) then
+    begin
+      writeln(data.fText,'/* hit boxes for ',nm,' - pixels, x,y,x2,y2 */');
+      writeln(data.fText,'#define ',nm,'_hitbox_count ',hbcount);
+      writeln(data.fText,'const int ',nm,'_hitbox[',hbcount*4,'] = {');
+      for j:=0 to hbcount-1 do
+      begin
+        ImageThumbBase.GetHitBox(i,j,HB);
+        line:='  '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+                   IntToStr(HB.x2)+','+IntToStr(HB.y2);
+        if j < hbcount-1 then line:=line+',';
+        writeln(data.fText,line);
+      end;
+      writeln(data.fText,'};');
+    end
+    else if SprLanIsPascal(EO.Lan) then
+    begin
+      writeln(data.fText,'{ hit boxes for ',nm,' - pixels, x,y,x2,y2 }');
+      writeln(data.fText,'const');
+      writeln(data.fText,'  ',nm,'_hitbox_count = ',hbcount,';');
+      writeln(data.fText,'  ',nm,'_hitbox : array[0..',hbcount*4-1,'] of integer = (');
+      for j:=0 to hbcount-1 do
+      begin
+        ImageThumbBase.GetHitBox(i,j,HB);
+        line:='    '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+                     IntToStr(HB.x2)+','+IntToStr(HB.y2);
+        if j < hbcount-1 then line:=line+',' else line:=line+');';
+        writeln(data.fText,line);
+      end;
+    end
+    else if SprLanIsJS(EO.Lan) then
+    begin
+      writeln(data.fText,'// hit boxes for ',nm,' - pixels');
+      writeln(data.fText,'const ',nm,'HitBoxes = [');
+      for j:=0 to hbcount-1 do
+      begin
+        ImageThumbBase.GetHitBox(i,j,HB);
+        line:='  {x:'+IntToStr(HB.x)+', y:'+IntToStr(HB.y)+
+              ', x2:'+IntToStr(HB.x2)+', y2:'+IntToStr(HB.y2)+
+              ', w:'+IntToStr(HB.x2-HB.x+1)+', h:'+IntToStr(HB.y2-HB.y+1)+'}';
+        if j < hbcount-1 then line:=line+',';
+        writeln(data.fText,line);
+      end;
+      writeln(data.fText,'];');
+    end
+    else
+    begin
+      //BASIC, with or without line numbers. EO.Lan is ALREADY a sprite
+      //compiler constant, so it can be used directly - the old code compared
+      //it against map constants and always fell through to QBLan.
+      Lan:=EO.Lan;
+      if Lan = 0 then Lan:=QBLan;
+
+      writeln(data.fText,LineCountToStr(Lan),'''HitBox data for ',nm,' (pixels)');
+      WriteBasicVariable(data,Lan,nm+'HitBox','Count',hbcount);
+      WriteBasicLabel(data,Lan,nm+'HitBox');
+      for j:=0 to hbcount-1 do
+      begin
+        ImageThumbBase.GetHitBox(i, j, HB);
         writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
       end;
     end;
@@ -1141,7 +1521,15 @@ begin
  begin
      WriteMapsCodeToBuffer(data.fText);
      WriteHitBoxDataToBuffer(data);
+     WritePathDataToBuffer(data);
+     WriteSpriteHitBoxDataToBuffer(data,0,ImageThumbBase.GetCount);
      WriteAllAnimationCodeToBuffer(data.fText);
+ end
+ else
+ begin
+     //single sprite export. The block above is skipped, so its hit boxes
+     //would otherwise be left out entirely.
+     WriteSpriteHitBoxDataToBuffer(data,StartIndex,count);
  end;
  close(data.fText);
  {$I+}
@@ -1207,12 +1595,23 @@ var
  AnimName    : string;
  AnimSize    : longint;
  AnimExport  : AnimExportFormatRec;
+ hbcount     : integer;
+ HBName      : string;
+ PathName    : string;
+ pathvals    : integer;
+ //longint for the same reason as vals above - {$MODE TP} integer is 16 bit
+ pathbuf     : array[0..8191] of longint;
  ImageExportFormat : integer;
 begin
  ExportCount:=ImageThumbBase.GetExportImageCount;
  inc(ExportCount,ImageThumbBase.GetExportMaskCount);
  inc(ExportCount,ImageThumbBase.GetExportPaletteCount);
  inc(ExportCount,MapCoreBase.GetExportMapCount);
+ //sprite hit boxes are their own resources - the header is sized from this
+ //count, so omitting them would shift every offset in the file
+ inc(ExportCount,ImageThumbBase.GetExportHitBoxCount);
+ //map paths are their own resources - same reason as above
+ inc(ExportCount,MapCoreBase.GetExportPathCount);
  inc(ExportCount,AnimateBase.GetExportAnimCount);
 
  if ExportCount = 0 then exit;
@@ -1336,7 +1735,9 @@ begin
       begin
         width:=MapCoreBase.GetExportWidth(i);
         height:=MapCoreBase.GetExportHeight(i);
-        MapSize:=GetRESMapSize(width,height);
+        //ExportLayerCount honours MapFormat: Simple exports one layer,
+        //Layered exports them all - the same rule the writer uses
+        MapSize:=GetRESMapSize(width,height,ExportLayerCount(i));
 
         fillchar(RR.rid,sizeof(RR.rid),32);
         MapName:=MapExport.Name;
@@ -1349,6 +1750,72 @@ begin
         RR.rt:=EncodeResType(ResTypeMap,MapExport.Lan,MapExport.MapFormat);
 
         inc(OffsetCount,MapSize);
+        {$I-}
+        Blockwrite(data.f,RR,sizeof(RR));
+        {$I+}
+        Error:=IORESULT;
+        if Error<>0 then
+        begin
+          RESBinary:=Error;
+          exit;
+        end;
+      end;
+  end;
+
+  // dump res header fields for sprite hit boxes.
+  // MUST be walked in the same order as ResExportSpriteHitBoxes writes them,
+  // and placed between the map and animation blocks to match the data pass.
+  for i:=0 to ImageThumbBase.GetCount-1 do
+  begin
+      ImageThumbBase.GetExportOptions(i,EO);
+      hbcount:=ImageThumbBase.GetHitBoxCount(i);
+      if (EO.Image > 0) and (hbcount > 0) then
+      begin
+        fillchar(RR.rid,sizeof(RR.rid),32);
+        HBName:=EO.Name+'HitBox';
+        slen:=Length(HBName);
+        if slen > 20 then slen:=20;
+        Move(HBName[1],RR.rid,slen);
+
+        RR.size:=GetRESSprHitBoxSize(hbcount);
+        RR.offset:=OffsetCount;
+        RR.rt:=EncodeResType(ResTypeSprHitBox,EO.Lan,EO.Image);
+
+        inc(OffsetCount,RR.size);
+        {$I-}
+        Blockwrite(data.f,RR,sizeof(RR));
+        {$I+}
+        Error:=IORESULT;
+        if Error<>0 then
+        begin
+          RESBinary:=Error;
+          exit;
+        end;
+      end;
+  end;
+
+  // dump res header fields for map paths.
+  // Walked in the same order as ResExportPaths writes, and placed after the
+  // sprite hit boxes to match the data pass.
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+      MapCoreBase.GetMapExportProps(i,MapExport);
+      if (MapExport.MapFormat > 0) and (MapCoreBase.PathExportCount(i) > 0) then
+      begin
+        pathvals:=MapCoreBase.BuildPathExportArray(i,pathbuf);
+        if pathvals <= 0 then continue;
+
+        fillchar(RR.rid,sizeof(RR.rid),32);
+        PathName:=MapExport.Name+'Path';
+        slen:=Length(PathName);
+        if slen > 20 then slen:=20;
+        Move(PathName[1],RR.rid,slen);
+
+        RR.size:=GetRESPathSize(pathvals);
+        RR.offset:=OffsetCount;
+        RR.rt:=EncodeResType(ResTypePath,MapExport.Lan,MapExport.MapFormat);
+
+        inc(OffsetCount,RR.size);
         {$I-}
         Blockwrite(data.f,RR,sizeof(RR));
         {$I+}
@@ -1483,6 +1950,8 @@ begin
  end;
 
  ResExportMaps(data.f); //export the maps
+ ResExportSpriteHitBoxes(data.f); //sprite hit boxes, in header pass order
+ ResExportPaths(data.f);          //map paths, in header pass order
  ResExportAnimations(data.f); //export the animations
 
  {$I-}

@@ -7,10 +7,12 @@ object AnimationForm: TAnimationForm
   ClientHeight = 747
   ClientWidth = 1149
   Menu = MainMenu1
+  KeyPreview = True
   Position = poOwnerFormCenter
   LCLVersion = '4.8.0.0'
   OnActivate = FormActivate
   OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
   object Panel1: TPanel
     Left = 32
     Height = 209
@@ -124,10 +126,9 @@ object AnimationForm: TAnimationForm
   object LeftSplitter: TSplitter
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 175
-    Height = 474
+    Height = 451
     Top = 273
     Width = 9
     Align = alNone
@@ -138,10 +139,9 @@ object AnimationForm: TAnimationForm
   object RightSplitter: TSplitter
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 952
-    Height = 474
+    Height = 451
     Top = 273
     Width = 9
     Align = alNone
@@ -154,15 +154,14 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = LeftSplitter
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 0
-    Height = 474
+    Height = 451
     Top = 273
     Width = 175
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'LeftPanel'
-    ClientHeight = 474
+    ClientHeight = 451
     ClientWidth = 175
     Color = 15790320
     ParentBackground = False
@@ -176,7 +175,7 @@ object AnimationForm: TAnimationForm
       AnchorSideBottom.Control = LeftPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 472
+      Height = 449
       Top = 1
       Width = 173
       Anchors = [akTop, akLeft, akRight, akBottom]
@@ -201,15 +200,14 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Control = TopSplitter
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = RightSplitter
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 184
-    Height = 474
+    Height = 451
     Top = 273
     Width = 768
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'MiddlePanel'
-    ClientHeight = 474
+    ClientHeight = 451
     ClientWidth = 768
     TabOrder = 1
     object FrameScrollBox: TScrollBox
@@ -220,7 +218,7 @@ object AnimationForm: TAnimationForm
       AnchorSideBottom.Control = MiddlePanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 472
+      Height = 449
       Top = 1
       Width = 766
       HorzScrollBar.Page = 1
@@ -261,15 +259,14 @@ object AnimationForm: TAnimationForm
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
     Left = 961
-    Height = 474
+    Height = 451
     Top = 273
     Width = 188
     Anchors = [akTop, akLeft, akRight, akBottom]
     Caption = 'RightPanel'
-    ClientHeight = 474
+    ClientHeight = 451
     ClientWidth = 188
     TabOrder = 2
     object AllAnimListView: TListView
@@ -280,7 +277,7 @@ object AnimationForm: TAnimationForm
       AnchorSideBottom.Control = RightPanel
       AnchorSideBottom.Side = asrBottom
       Left = 1
-      Height = 472
+      Height = 449
       Top = 1
       Width = 186
       Anchors = [akTop, akLeft, akRight, akBottom]
@@ -395,6 +392,35 @@ object AnimationForm: TAnimationForm
       Anchors = [akLeft, akRight, akBottom]
       TabOrder = 1
     end
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 724
+    Width = 1149
+    Align = alBottom
+    Panels = <
+      item
+        Text = 'Animation: 0/0'
+        Width = 160
+      end
+      item
+        Text = 'Frames: 0'
+        Width = 120
+      end
+      item
+        Text = 'Frame: 0/0'
+        Width = 120
+      end
+      item
+        Text = 'Speed: 4'
+        Width = 100
+      end
+      item
+        Text = ''
+        Width = 300
+      end>
+    SimplePanel = False
   end
   object CurrentAnimationImageList: TImageList
     Left = 712
@@ -528,6 +554,182 @@ object AnimationForm: TAnimationForm
           object ExportPascalAnimArray: TMenuItem
             Caption = 'Animation Array'
             OnClick = FileExportPascalArrayClick
+          end
+        end
+        object MnuAnimExpAB: TMenuItem
+          Caption = 'AmigaBasic'
+          object AD_AB: TMenuItem
+            Tag = 13
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpAC: TMenuItem
+          Caption = 'Amiga C'
+          object AD_AC: TMenuItem
+            Tag = 24
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpAP: TMenuItem
+          Caption = 'Amiga Pascal'
+          object AD_AP: TMenuItem
+            Tag = 19
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpAQB: TMenuItem
+          Caption = 'Amiga QuickBasic AQB'
+          object AD_AQB: TMenuItem
+            Tag = 7
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpBAM: TMenuItem
+          Caption = 'BAM Basic'
+          object AD_BAM: TMenuItem
+            Tag = 8
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpFBQB: TMenuItem
+          Caption = 'FreeBASIC - QB Mode'
+          object AD_FBQB: TMenuItem
+            Tag = 14
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpFB: TMenuItem
+          Caption = 'FreeBASIC'
+          object AD_FB: TMenuItem
+            Tag = 5
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpFP: TMenuItem
+          Caption = 'FreePascal'
+          object AD_FP: TMenuItem
+            Tag = 17
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpGCC: TMenuItem
+          Caption = 'gcc \ Emscripten'
+          object AD_GCC: TMenuItem
+            Tag = 23
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpGW: TMenuItem
+          Caption = 'GWBASIC'
+          object AD_GW: TMenuItem
+            Tag = 10
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpJS: TMenuItem
+          Caption = 'JavaScript'
+          object AD_JS: TMenuItem
+            Tag = 25
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpJSON: TMenuItem
+          Caption = 'JSON'
+          object AD_JSON: TMenuItem
+            Tag = 26
+            Caption = 'Animation Data (JSON)'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpOW: TMenuItem
+          Caption = 'Open Watcom C'
+          object AD_OW: TMenuItem
+            Tag = 22
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpQB: TMenuItem
+          Caption = 'QBasic\QuickBasic'
+          object AD_QB: TMenuItem
+            Tag = 11
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpQB64: TMenuItem
+          Caption = 'QB64'
+          object AD_QB64: TMenuItem
+            Tag = 6
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpQBJS: TMenuItem
+          Caption = 'QBJS'
+          object AD_QBJS: TMenuItem
+            Tag = 9
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpQC: TMenuItem
+          Caption = 'Quick C'
+          object AD_QC: TMenuItem
+            Tag = 21
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpQP: TMenuItem
+          Caption = 'Quick Pascal'
+          object AD_QP: TMenuItem
+            Tag = 16
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpTB: TMenuItem
+          Caption = 'Turbo\Power Basic'
+          object AD_TB: TMenuItem
+            Tag = 12
+            Caption = 'Animation Data Statements'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpTP: TMenuItem
+          Caption = 'Turbo Pascal'
+          object AD_TP: TMenuItem
+            Tag = 15
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpTC: TMenuItem
+          Caption = 'Turbo C'
+          object AD_TC: TMenuItem
+            Tag = 20
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
+          end
+        end
+        object MnuAnimExpTMT: TMenuItem
+          Caption = 'TMT Pascal'
+          object AD_TMT: TMenuItem
+            Tag = 18
+            Caption = 'Animation Array'
+            OnClick = MenuExportAnimLanClick
           end
         end
       end

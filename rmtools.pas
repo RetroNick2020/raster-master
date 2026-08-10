@@ -10,6 +10,13 @@ const
   CellWidthBorderRemove  =2;
   CellHeightBorderRemove =2;
 
+  //Symmetry (mirror) drawing. Applies to EVERY tool because they all plot
+  //through PutPixel.
+  SymmetryOff        = 0;
+  SymmetryLeftRight  = 1;   //mirror across the vertical centre line
+  SymmetryTopBottom  = 2;   //mirror across the horizontal centre line
+  SymmetryFourWay    = 3;   //both at once
+
   DrawShapeNothing    = 0;
   DrawShapePencil     = 1;
   DrawShapeLine       = 2;
@@ -25,6 +32,8 @@ const
   DrawShapeFontSelect = 12;
   DrawShapeText       = 13;
   DrawShapeBrush      = 14;
+  DrawShapeDropper    = 15;   //eyedropper - pick a colour off the canvas
+  DrawShapeHBMove     = 16;   //drag a sprite hit box
 
   MaxSprayPoints = 3;
 
@@ -85,6 +94,8 @@ Type
                 SprayPoints : array[1..MaxSprayPoints] of TSprayPointsRec;
 
                 //dither and gradient state
+                FSymmetryMode   : integer;   //Symmetry* constant
+
                 FDitherEnabled  : boolean;
                 FDitherPattern  : integer;  //0=checker, 1=horiz lines, 2=vert lines, 3=diagonal, 4=heavy, 5=sparse
                 FDitherColor2   : TColor;
@@ -118,6 +129,12 @@ Type
 
              procedure _ARectangle(Image : TCanvas; x,y,x2,y2 : integer;color : TColor; mode : Integer);
              procedure PutPixel(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
+             procedure PutPixelCore(Image : TCanvas; x,y: integer; color : TColor; mode : integer);
+
+             //symmetry / mirror drawing
+             procedure DrawOverlaySymmetryAxis(Image : TCanvas;acolor : TColor);
+             procedure SetSymmetryMode(mode : integer);
+             function  GetSymmetryMode : integer;
              procedure DText(Image : TCanvas; x,y: integer; color : TColor; mode : integer);    // mode = 1 Xor 0 = Normal
 
              procedure SprayPaint(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
@@ -231,6 +248,11 @@ Type
              procedure AddAmigaPalette(var CP : TColorPalette; ColorNum : integer);
              procedure CreateRandomSprayPoints;
              Procedure HFlip(x,y,x2,y2: integer);
+             //rotation. 90 and 270 need a SQUARE region - see the note in the
+             //implementation - 180 works on any rectangle.
+             Procedure Rotate90(x,y,x2,y2 : integer);
+             Procedure Rotate270(x,y,x2,y2 : integer);
+             Procedure Rotate180(x,y,x2,y2 : integer);
              Procedure VFlip(x,y,x2,y2: integer);
              Procedure ScrollUp(x,y,x2,y2: integer);
              Procedure ScrollDown(x,y,x2,y2: integer);
@@ -273,6 +295,7 @@ begin
  FDitherColor2Ex:=0;
  FDitherUseBitmap:=false;
  FBrushFillEnabled:=false;
+ FSymmetryMode:=SymmetryOff;
  FillChar(FDitherBitmap, SizeOf(FDitherBitmap), 0);
  FGradientEnabled:=false;
  FGradientMode:=0;
@@ -449,7 +472,101 @@ begin
   GetZoomPageHeight:=GridArea.CellHeight*RMCoreBase.GetHeight;
 end;
 
+//Draw the mirror axis (or axes) the symmetry mode is reflecting about.
+//
+//PutPixel maps x to width-1-x, so the true mirror line sits BETWEEN the two
+//middle columns on an even width, and down the middle of the centre column
+//on an odd width. Drawing it at width*cw/2 gets the even case right and is
+//half a cell off on the odd case, so the odd case is handled separately -
+//otherwise the guide would not line up with where pixels actually mirror.
+procedure TRMDrawTools.DrawOverlaySymmetryAxis(Image : TCanvas;acolor : TColor);
+var
+  w,h,cw,ch,ax,ay : integer;
+begin
+  if FSymmetryMode = SymmetryOff then exit;
+
+  w:=RMCoreBase.GetWidth;
+  h:=RMCoreBase.GetHeight;
+  if (w < 1) or (h < 1) then exit;
+
+  cw:=GridArea.CellWidth;
+  ch:=GridArea.CellHeight;
+  if (cw < 1) or (ch < 1) then exit;
+
+  Image.Pen.Color:=acolor;
+  Image.Pen.Style:=psDash;
+  Image.Pen.Width:=1;
+
+  if (FSymmetryMode = SymmetryLeftRight) or (FSymmetryMode = SymmetryFourWay) then
+  begin
+    if Odd(w) then ax:=(w div 2)*cw + cw div 2    //through the centre column
+              else ax:=(w div 2)*cw;              //between the two middle ones
+    Image.Line(ax,0,ax,h*ch);
+  end;
+
+  if (FSymmetryMode = SymmetryTopBottom) or (FSymmetryMode = SymmetryFourWay) then
+  begin
+    if Odd(h) then ay:=(h div 2)*ch + ch div 2
+              else ay:=(h div 2)*ch;
+    Image.Line(0,ay,w*cw,ay);
+  end;
+
+  Image.Pen.Style:=psSolid;
+end;
+
+procedure TRMDrawTools.SetSymmetryMode(mode : integer);
+begin
+  if (mode < SymmetryOff) or (mode > SymmetryFourWay) then mode:=SymmetryOff;
+  FSymmetryMode:=mode;
+end;
+
+function TRMDrawTools.GetSymmetryMode : integer;
+begin
+  GetSymmetryMode:=FSymmetryMode;
+end;
+
+//Symmetry wrapper.
+//
+//Every drawing tool - pencil, line, the shapes, spray, text, flood fill -
+//plots through here, so mirroring at this one point gives all of them
+//symmetry for free rather than needing per tool code.
+//
+//The mirror axis is the centre of the sprite: x maps to width-1-x. On an odd
+//width the centre column maps to itself, so duplicate points are skipped
+//rather than plotted twice - which would matter in XOR mode, where drawing
+//the same pixel twice cancels it out.
 procedure TRMDrawTools.PutPixel(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
+var
+  w,h,mx,my : integer;
+begin
+  PutPixelCore(Image,x,y,color,mode);
+
+  if FSymmetryMode = SymmetryOff then exit;
+
+  w:=RMCoreBase.GetWidth;
+  h:=RMCoreBase.GetHeight;
+  if (w < 1) or (h < 1) then exit;
+
+  mx:=w-1-x;
+  my:=h-1-y;
+
+  if (FSymmetryMode = SymmetryLeftRight) or (FSymmetryMode = SymmetryFourWay) then
+    if (mx <> x) and (mx >= 0) and (mx < w) then
+      PutPixelCore(Image,mx,y,color,mode);
+
+  if (FSymmetryMode = SymmetryTopBottom) or (FSymmetryMode = SymmetryFourWay) then
+    if (my <> y) and (my >= 0) and (my < h) then
+      PutPixelCore(Image,x,my,color,mode);
+
+  //diagonal opposite - four way only, and only when it is a new point
+  if FSymmetryMode = SymmetryFourWay then
+    if (mx <> x) and (my <> y) and
+       (mx >= 0) and (mx < w) and (my >= 0) and (my < h) then
+      PutPixelCore(Image,mx,my,color,mode);
+end;
+
+//The real plotting routine, wrapped by PutPixel above.
+procedure TRMDrawTools.PutPixelCore(Image : TCanvas; x,y : integer;color : TColor; mode : integer);
 var
  px,py,px2,py2 : integer;
  actualColor : TColor;
@@ -1562,6 +1679,76 @@ begin
       CP.AddColor(TC);
 
     end;
+end;
+
+//=============================================================================
+// ROTATION
+//
+// 90 and 270 degree rotation swaps the width and height of the region, so it
+// is only meaningful on a SQUARE area - anything else would need the sprite
+// itself resized. The caller checks and refuses; these routines assume square
+// and use the width.
+//
+// All three read the region into a temporary copy first. Rotating in place
+// without one would overwrite source pixels before they had been read.
+//=============================================================================
+Procedure TRMDrawTools.Rotate90(x,y,x2,y2 : integer);   //clockwise
+Var
+  buf : array of array of integer;
+  i,j,size : integer;
+begin
+  size:=x2-x+1;
+  if size < 2 then exit;
+
+  SetLength(buf,size,size);
+  for i:=0 to size-1 do
+    for j:=0 to size-1 do
+      buf[i,j]:=RMCoreBase.GetPixel(x+i,y+j);
+
+  //clockwise: the top row becomes the right hand column
+  for i:=0 to size-1 do
+    for j:=0 to size-1 do
+      RMCoreBase.PutPixel(x + (size-1-j), y + i, buf[i,j]);
+end;
+
+Procedure TRMDrawTools.Rotate270(x,y,x2,y2 : integer);  //counter clockwise
+Var
+  buf : array of array of integer;
+  i,j,size : integer;
+begin
+  size:=x2-x+1;
+  if size < 2 then exit;
+
+  SetLength(buf,size,size);
+  for i:=0 to size-1 do
+    for j:=0 to size-1 do
+      buf[i,j]:=RMCoreBase.GetPixel(x+i,y+j);
+
+  //counter clockwise: the top row becomes the left hand column
+  for i:=0 to size-1 do
+    for j:=0 to size-1 do
+      RMCoreBase.PutPixel(x + j, y + (size-1-i), buf[i,j]);
+end;
+
+//180 is the one rotation that keeps the region's dimensions, so it works on
+//any rectangle - it is simply both flips at once.
+Procedure TRMDrawTools.Rotate180(x,y,x2,y2 : integer);
+Var
+  buf : array of array of integer;
+  i,j,w,h : integer;
+begin
+  w:=x2-x+1;
+  h:=y2-y+1;
+  if (w < 1) or (h < 1) then exit;
+
+  SetLength(buf,w,h);
+  for i:=0 to w-1 do
+    for j:=0 to h-1 do
+      buf[i,j]:=RMCoreBase.GetPixel(x+i,y+j);
+
+  for i:=0 to w-1 do
+    for j:=0 to h-1 do
+      RMCoreBase.PutPixel(x + (w-1-i), y + (h-1-j), buf[i,j]);
 end;
 
 Procedure TRMDrawTools.Hflip(x,y,x2,y2: integer);

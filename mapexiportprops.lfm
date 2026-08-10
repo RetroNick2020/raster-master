@@ -1,12 +1,12 @@
 object MapExportForm: TMapExportForm
   Left = 1400
-  Height = 265
+  Height = 281
   Top = 397
-  Width = 358
+  Width = 400
   BorderStyle = bsDialog
   Caption = 'Map Export Properties'
-  ClientHeight = 265
-  ClientWidth = 358
+  ClientHeight = 281
+  ClientWidth = 400
   Position = poOwnerFormCenter
   LCLVersion = '3.4.0.0'
   object EditName: TEdit
@@ -85,9 +85,9 @@ object MapExportForm: TMapExportForm
     ParentFont = False
   end
   object OKButton: TButton
-    Left = 248
+    Left = 305
     Height = 25
-    Top = 216
+    Top = 240
     Width = 75
     Caption = 'OK'
     ParentFont = False
@@ -117,5 +117,34 @@ object MapExportForm: TMapExportForm
     MaxValue = 256
     NullValue = 0
     Value = 0
+  end
+  object GroupApplyAll: TGroupBox
+    Left = 192
+    Height = 88
+    Top = 138
+    Width = 188
+    Caption = 'Apply to ALL maps'
+    ClientHeight = 68
+    ClientWidth = 184
+    ParentFont = False
+    TabOrder = 6
+    object CheckApplyCompiler: TCheckBox
+      Left = 12
+      Height = 19
+      Top = 6
+      Width = 72
+      Caption = 'Compiler'
+      ParentFont = False
+      TabOrder = 0
+    end
+    object CheckApplyMapType: TCheckBox
+      Left = 12
+      Height = 19
+      Top = 30
+      Width = 78
+      Caption = 'Map Type'
+      ParentFont = False
+      TabOrder = 1
+    end
   end
 end

@@ -7,6 +7,7 @@ object MapEdit: TMapEdit
   ClientHeight = 860
   ClientWidth = 1491
   DoubleBuffered = True
+  KeyPreview = True
   Menu = MainMenu1
   ParentDoubleBuffered = False
   Position = poOwnerFormCenter
@@ -15,6 +16,7 @@ object MapEdit: TMapEdit
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
   OnShow = FormShow
   object RightPanel: TPanel
     AnchorSideLeft.Control = RightSplitter
@@ -77,62 +79,334 @@ object MapEdit: TMapEdit
       ViewStyle = vsIcon
       OnClick = MapListViewClick
     end
-    object HitBoxPanel: TPanel
-      AnchorSideLeft.Control = RightVertSplitter
-      AnchorSideTop.Control = RightPanel
-      AnchorSideRight.Control = RightPanel
-      AnchorSideRight.Side = asrBottom
-      Left = 1
-      Height = 23
-      Top = 1
-      Width = 320
-      Anchors = [akTop, akLeft, akRight]
-      Caption = 'Hit Boxes'
-      TabOrder = 3
-    end
-    object ListView1: TListView
+    object RightTabs: TPageControl
       AnchorSideLeft.Control = RightPanel
-      AnchorSideTop.Control = HitBoxPanel
-      AnchorSideTop.Side = asrBottom
+      AnchorSideTop.Control = RightPanel
       AnchorSideRight.Control = RightPanel
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = RightVertSplitter
       Left = 1
-      Height = 184
-      Top = 24
+      Height = 207
+      Top = 1
       Width = 320
+      ActivePage = TabLayers
       Anchors = [akTop, akLeft, akRight, akBottom]
-      Columns = <      
-        item
-          Caption = '#'
-          Width = 30
-        end      
-        item
-          Caption = 'X'
-          Width = 40
-        end      
-        item
-          Caption = 'Y'
-          Width = 40
-        end      
-        item
-          Caption = 'X2'
-          Width = 40
-        end      
-        item
-          Caption = 'Y2'
-          Width = 40
-        end      
-        item
-          Caption = 'Size'
-          Width = 70
-        end>
-      ReadOnly = True
-      RowSelect = True
-      TabOrder = 1
-      ToolTips = False
-      ViewStyle = vsReport
-      OnClick = ListView1Click
+      TabIndex = 0
+      TabOrder = 2
+      object TabLayers: TTabSheet
+        Caption = 'Layers'
+        ClientHeight = 179
+        ClientWidth = 312
+        object LayerPanel: TPanel
+          Left = 0
+          Height = 179
+          Top = 0
+          Width = 312
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 179
+          ClientWidth = 312
+          ParentFont = False
+          TabOrder = 0
+          object LayerButtonPanel: TPanel
+            Left = 0
+            Height = 28
+            Top = 151
+            Width = 312
+            Align = alBottom
+            BevelOuter = bvNone
+            ClientHeight = 28
+            ClientWidth = 312
+            ParentFont = False
+            TabOrder = 1
+            object BtnLayerAdd: TButton
+              Left = 2
+              Height = 24
+              Hint = 'Add a layer'
+              Top = 2
+              Width = 30
+              Caption = '+'
+              ParentShowHint = False
+              ShowHint = True
+              TabOrder = 0
+              OnClick = BtnLayerAddClick
+            end
+            object BtnLayerDel: TButton
+              Left = 34
+              Height = 24
+              Hint = 'Delete the selected layer'
+              Top = 2
+              Width = 30
+              Caption = '-'
+              ParentShowHint = False
+              ShowHint = True
+              TabOrder = 1
+              OnClick = BtnLayerDelClick
+            end
+            object BtnLayerDup: TButton
+              Left = 66
+              Height = 24
+              Hint = 'Duplicate the selected layer'
+              Top = 2
+              Width = 40
+              Caption = 'Dup'
+              ParentShowHint = False
+              ShowHint = True
+              TabOrder = 2
+              OnClick = BtnLayerDupClick
+            end
+            object BtnLayerUp: TButton
+              Left = 110
+              Height = 24
+              Hint = 'Move layer up the draw order'
+              Top = 2
+              Width = 30
+              Caption = 'Up'
+              ParentShowHint = False
+              ShowHint = True
+              TabOrder = 3
+              OnClick = BtnLayerUpClick
+            end
+            object BtnLayerDown: TButton
+              Left = 142
+              Height = 24
+              Hint = 'Move layer down the draw order'
+              Top = 2
+              Width = 40
+              Caption = 'Down'
+              ParentShowHint = False
+              ShowHint = True
+              TabOrder = 4
+              OnClick = BtnLayerDownClick
+            end
+            object BtnLayerRename: TButton
+              Left = 186
+              Height = 24
+              Hint = 'Rename the selected layer'
+              Top = 2
+              Width = 60
+              Caption = 'Rename'
+              ParentShowHint = False
+              ShowHint = True
+              TabOrder = 5
+              OnClick = BtnLayerRenameClick
+            end
+          end
+          object LayerListBox: TCheckListBox
+            Left = 0
+            Height = 151
+            Top = 0
+            Width = 312
+            Align = alClient
+            ItemHeight = 0
+            ParentFont = False
+            PopupMenu = LayerPopup
+            TabOrder = 0
+            OnClick = LayerListBoxClick
+            OnItemClick = LayerListBoxItemClick
+          end
+        end
+      end
+      object TabHitBoxes: TTabSheet
+        Caption = 'Hit Boxes'
+        ClientHeight = 179
+        ClientWidth = 312
+        object ListView1: TListView
+          Left = 0
+          Height = 151
+          Top = 0
+          Width = 312
+          Align = alClient
+          Columns = <          
+            item
+              Caption = '#'
+              Width = 30
+            end          
+            item
+              Caption = 'X'
+              Width = 40
+            end          
+            item
+              Caption = 'Y'
+              Width = 40
+            end          
+            item
+              Caption = 'X2'
+              Width = 40
+            end          
+            item
+              Caption = 'Y2'
+              Width = 40
+            end          
+            item
+              Caption = 'Size'
+              Width = 70
+            end>
+          PopupMenu = HitBoxPopup
+          ReadOnly = True
+          RowSelect = True
+          TabOrder = 0
+          ToolTips = False
+          ViewStyle = vsReport
+          OnClick = ListView1Click
+        end
+        object HitBoxButtonPanel: TPanel
+          Left = 0
+          Height = 28
+          Top = 151
+          Width = 312
+          Align = alBottom
+          BevelOuter = bvNone
+          ClientHeight = 28
+          ClientWidth = 312
+          TabOrder = 1
+          object BtnHitBoxAdd: TButton
+            Left = 2
+            Height = 24
+            Hint = 'Add a hit box'
+            Top = 2
+            Width = 30
+            Caption = '+'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 0
+            OnClick = HitBoxesAddClick
+          end
+          object BtnHitBoxDel: TButton
+            Left = 34
+            Height = 24
+            Hint = 'Delete the selected hit box'
+            Top = 2
+            Width = 30
+            Caption = '-'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+            OnClick = HitBoxesDeleteClick
+          end
+          object BtnHitBoxDeleteAll: TButton
+            Left = 66
+            Height = 24
+            Hint = 'Delete every hit box on this map'
+            Top = 2
+            Width = 76
+            Caption = 'Delete All'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 2
+            OnClick = HitBoxesClearAllClick
+          end
+        end
+      end
+      object TabPaths: TTabSheet
+        Caption = 'Paths'
+        ClientHeight = 179
+        ClientWidth = 312
+        object PathListView: TListView
+          Left = 0
+          Height = 151
+          Top = 0
+          Width = 312
+          Align = alClient
+          Columns = <          
+            item
+              Caption = 'Name'
+              Width = 90
+            end          
+            item
+              Caption = 'Pts'
+              Width = 34
+            end          
+            item
+              Caption = 'Closed'
+              Width = 48
+            end          
+            item
+              Caption = 'Mode'
+              Width = 62
+            end          
+            item
+              Caption = 'Vis'
+              Width = 34
+            end          
+            item
+              Caption = 'Act'
+              Width = 34
+            end>
+          PopupMenu = PathPopup
+          ReadOnly = True
+          RowSelect = True
+          TabOrder = 0
+          ToolTips = False
+          ViewStyle = vsReport
+          OnClick = PathListViewClick
+        end
+        object PathButtonPanel: TPanel
+          Left = 0
+          Height = 28
+          Top = 151
+          Width = 312
+          Align = alBottom
+          BevelOuter = bvNone
+          ClientHeight = 28
+          ClientWidth = 312
+          TabOrder = 1
+          object BtnPathDelete: TButton
+            Left = 2
+            Height = 24
+            Top = 2
+            Width = 56
+            Caption = 'Delete'
+            TabOrder = 0
+            OnClick = BtnPathDeleteClick
+          end
+          object BtnPathVisible: TButton
+            Left = 60
+            Height = 24
+            Hint = 'Show or hide this path in the editor only'
+            Top = 2
+            Width = 56
+            Caption = 'Vis'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+            OnClick = BtnPathVisibleClick
+          end
+          object BtnPathActive: TButton
+            Left = 118
+            Height = 24
+            Hint = 'Include this path in exported data'
+            Top = 2
+            Width = 56
+            Caption = 'Active'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 2
+            OnClick = BtnPathActiveClick
+          end
+          object BtnPathMode: TButton
+            Left = 176
+            Height = 24
+            Hint = 'Cycle Loop / PingPong / Once'
+            Top = 2
+            Width = 56
+            Caption = 'Mode'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 3
+            OnClick = BtnPathModeClick
+          end
+          object BtnPathRename: TButton
+            Left = 234
+            Height = 24
+            Top = 2
+            Width = 66
+            Caption = 'Rename'
+            TabOrder = 4
+            OnClick = BtnPathRenameClick
+          end
+        end
+      end
     end
   end
   object LeftPanel: TPanel
@@ -595,12 +869,54 @@ object MapEdit: TMapEdit
     Width = 1491
     Panels = <    
       item
-        Width = 400
+        Width = 300
       end    
       item
         Width = 300
+      end    
+      item
+        Width = 330
+      end    
+      item
+        Width = 560
       end>
     SimplePanel = False
+  end
+  object LayerPopup: TPopupMenu
+    Left = 1200
+    Top = 32
+    object PopLayerCopy: TMenuItem
+      Caption = 'Copy Layer'
+      OnClick = PopLayerCopyClick
+    end
+    object PopLayerPaste: TMenuItem
+      Caption = 'Paste Layer'
+      OnClick = PopLayerPasteClick
+    end
+  end
+  object HitBoxPopup: TPopupMenu
+    Left = 1280
+    Top = 40
+    object PopHitBoxCopy: TMenuItem
+      Caption = 'Copy Hit Box'
+      OnClick = PopHitBoxCopyClick
+    end
+    object PopHitBoxPaste: TMenuItem
+      Caption = 'Paste Hit Box'
+      OnClick = PopHitBoxPasteClick
+    end
+  end
+  object PathPopup: TPopupMenu
+    Left = 1360
+    Top = 40
+    object PopPathCopy: TMenuItem
+      Caption = 'Copy Path'
+      OnClick = PopPathCopyClick
+    end
+    object PopPathPaste: TMenuItem
+      Caption = 'Paste Path'
+      OnClick = PopPathPasteClick
+    end
   end
   object MainMenu1: TMainMenu
     Left = 48
@@ -685,6 +1001,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_AB: TMenuItem
+            Tag = 13
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpAC: TMenuItem
           Caption = 'Amiga C'
@@ -697,6 +1018,11 @@ object MapEdit: TMapEdit
             Tag = 24
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_AC: TMenuItem
+            Tag = 24
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpAP: TMenuItem
@@ -711,6 +1037,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_AP: TMenuItem
+            Tag = 19
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpAQB: TMenuItem
           Caption = 'Amiga QuickBasic AQB'
@@ -723,6 +1054,11 @@ object MapEdit: TMapEdit
             Tag = 7
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_AQB: TMenuItem
+            Tag = 7
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpBAM: TMenuItem
@@ -737,6 +1073,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_BAM: TMenuItem
+            Tag = 8
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpFBQB: TMenuItem
           Caption = 'FreeBASIC - QB Mode'
@@ -749,6 +1090,11 @@ object MapEdit: TMapEdit
             Tag = 14
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_FBQB: TMenuItem
+            Tag = 14
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpFB: TMenuItem
@@ -763,6 +1109,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_FB: TMenuItem
+            Tag = 5
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpFP: TMenuItem
           Caption = 'FreePascal'
@@ -775,6 +1126,11 @@ object MapEdit: TMapEdit
             Tag = 17
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_FP: TMenuItem
+            Tag = 17
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpGCC: TMenuItem
@@ -789,6 +1145,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_GCC: TMenuItem
+            Tag = 23
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpGW: TMenuItem
           Caption = 'GWBASIC'
@@ -801,6 +1162,11 @@ object MapEdit: TMapEdit
             Tag = 10
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_GW: TMenuItem
+            Tag = 10
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpJS: TMenuItem
@@ -815,6 +1181,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_JS: TMenuItem
+            Tag = 25
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpJSON: TMenuItem
           Caption = 'JSON'
@@ -827,6 +1198,11 @@ object MapEdit: TMapEdit
             Tag = 26
             Caption = 'HitBox Data (JSON)'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_JSON: TMenuItem
+            Tag = 26
+            Caption = 'Path Data (JSON)'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpOW: TMenuItem
@@ -841,6 +1217,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_OW: TMenuItem
+            Tag = 22
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpQB: TMenuItem
           Caption = 'QBasic\QuickBasic'
@@ -853,6 +1234,11 @@ object MapEdit: TMapEdit
             Tag = 11
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_QB: TMenuItem
+            Tag = 11
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpQB64: TMenuItem
@@ -867,6 +1253,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_QB64: TMenuItem
+            Tag = 6
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpQBJS: TMenuItem
           Caption = 'QBJS'
@@ -879,6 +1270,11 @@ object MapEdit: TMapEdit
             Tag = 9
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_QBJS: TMenuItem
+            Tag = 9
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpQC: TMenuItem
@@ -893,6 +1289,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_QC: TMenuItem
+            Tag = 21
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpQP: TMenuItem
           Caption = 'Quick Pascal'
@@ -905,6 +1306,11 @@ object MapEdit: TMapEdit
             Tag = 16
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_QP: TMenuItem
+            Tag = 16
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpTB: TMenuItem
@@ -919,6 +1325,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_TB: TMenuItem
+            Tag = 12
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpTP: TMenuItem
           Caption = 'Turbo Pascal'
@@ -931,6 +1342,11 @@ object MapEdit: TMapEdit
             Tag = 15
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_TP: TMenuItem
+            Tag = 15
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
           end
         end
         object MnuMapExpTC: TMenuItem
@@ -945,6 +1361,11 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
+          object PD_TC: TMenuItem
+            Tag = 20
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
         end
         object MnuMapExpTMT: TMenuItem
           Caption = 'TMT Pascal'
@@ -957,6 +1378,11 @@ object MapEdit: TMapEdit
             Tag = 18
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
+          end
+          object PD_TMT: TMenuItem
+            Tag = 18
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
           end
         end
       end
@@ -971,13 +1397,21 @@ object MapEdit: TMapEdit
         Caption = 'Undo'
         OnClick = ToolUndoIconClick
       end
+      object RedoMenu: TMenuItem
+        Caption = 'Redo'
+        OnClick = RedoClick
+      end
       object CloneMap: TMenuItem
         Caption = 'Clone'
         OnClick = CloneMapClick
       end
       object CopyToClipBoard: TMenuItem
-        Caption = 'Copy'
+        Caption = 'Copy (All Layers)'
         OnClick = CopyToClipBoardClick
+      end
+      object CopyLayerToClipBoard: TMenuItem
+        Caption = 'Copy Current Layer'
+        OnClick = CopyLayerToClipBoardClick
       end
       object PasteFromClipBoard: TMenuItem
         Caption = 'Paste'
@@ -1174,6 +1608,41 @@ object MapEdit: TMapEdit
         Caption = 'Show Hit Boxes'
         Checked = True
         OnClick = HitBoxesToggleClick
+      end
+    end
+    object PathsMenu: TMenuItem
+      Caption = 'Paths'
+      object PathToolMenu: TMenuItem
+        Caption = 'Path Tool'
+        OnClick = PathToolMenuClick
+      end
+      object MoveToolMenu: TMenuItem
+        Caption = 'Move Hit Box / Path'
+        OnClick = MoveToolMenuClick
+      end
+      object PathFinishOpen: TMenuItem
+        Caption = 'Finish Path (open)'
+        OnClick = PathFinishOpenClick
+      end
+      object PathFinishClosed: TMenuItem
+        Caption = 'Finish Path (closed loop)'
+        OnClick = PathFinishClosedClick
+      end
+      object PathSep1: TMenuItem
+        Caption = '-'
+      end
+      object PathsDeleteAll: TMenuItem
+        Caption = 'Delete All Paths'
+        OnClick = PathsDeleteAllClick
+      end
+      object PathSep2: TMenuItem
+        Caption = '-'
+      end
+      object PathsToggle: TMenuItem
+        AutoCheck = True
+        Caption = 'Show Paths'
+        Checked = True
+        OnClick = PathsToggleClick
       end
     end
     object MazeMenu: TMenuItem

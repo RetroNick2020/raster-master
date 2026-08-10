@@ -8,11 +8,13 @@ object RMMainForm: TRMMainForm
   ClientHeight = 859
   ClientWidth = 1600
   DefaultMonitor = dmDesktop
+  KeyPreview = True
   Menu = MainMenu1
   Position = poDefault
   LCLVersion = '4.8.0.0'
   Scaled = False
   OnClose = FormClose
+  OnKeyDown = FormKeyDown
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   object RightPanel: TPanel
@@ -244,10 +246,9 @@ object RMMainForm: TRMMainForm
       AnchorSideTop.Side = asrBottom
       AnchorSideRight.Control = LeftPanel
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = LeftPanel
-      AnchorSideBottom.Side = asrBottom
+      AnchorSideBottom.Control = SpriteHitBoxPanel
       Left = 0
-      Height = 550
+      Height = 380
       Top = 286
       Width = 281
       Anchors = [akTop, akLeft, akRight, akBottom]
@@ -262,6 +263,133 @@ object RMMainForm: TRMMainForm
       TabOrder = 1
       ViewStyle = vsIcon
       OnClick = ListView1Click
+    end
+    object SpriteHitBoxPanel: TPanel
+      AnchorSideLeft.Control = LeftPanel
+      AnchorSideRight.Control = LeftPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = LeftPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 160
+      Top = 676
+      Width = 281
+      Anchors = [akLeft, akRight, akBottom]
+      BevelOuter = bvNone
+      BorderSpacing.Right = 11
+      ClientHeight = 160
+      ClientWidth = 281
+      TabOrder = 3
+      object SpriteHitBoxHeader: TPanel
+        Left = 0
+        Height = 20
+        Top = 0
+        Width = 281
+        Align = alTop
+        Alignment = taLeftJustify
+        BevelOuter = bvNone
+        Caption = ' Hit Boxes'
+        Color = 11625216
+        ParentColor = False
+        TabOrder = 0
+      end
+      object SpriteHitBoxButtons: TPanel
+        Left = 0
+        Height = 28
+        Top = 132
+        Width = 281
+        Align = alBottom
+        BevelOuter = bvNone
+        ClientHeight = 28
+        ClientWidth = 281
+        TabOrder = 1
+        object BtnSprHBAdd: TButton
+          Left = 2
+          Height = 24
+          Top = 2
+          Width = 30
+          Caption = '+'
+          Hint = 'Add a hit box from the selected area'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
+          OnClick = BtnSprHBAddClick
+        end
+        object BtnSprHBDel: TButton
+          Left = 34
+          Height = 24
+          Top = 2
+          Width = 30
+          Caption = '-'
+          Hint = 'Delete the selected hit box'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          OnClick = BtnSprHBDelClick
+        end
+        object BtnSprHBClear: TButton
+          Left = 66
+          Height = 24
+          Top = 2
+          Width = 76
+          Caption = 'Delete All'
+          Hint = 'Delete every hit box on this sprite'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 2
+          OnClick = BtnSprHBClearClick
+        end
+        object BtnSprHBShow: TButton
+          Left = 144
+          Height = 24
+          Top = 2
+          Width = 60
+          Caption = 'Show'
+          Hint = 'Show or hide the hit box overlay'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 3
+          OnClick = BtnSprHBShowClick
+        end
+      end
+      object SpriteHitBoxList: TListView
+        Left = 0
+        Height = 112
+        Top = 20
+        Width = 281
+        Align = alClient
+        Columns = <        
+          item
+            Caption = '#'
+            Width = 26
+          end        
+          item
+            Caption = 'X'
+            Width = 38
+          end        
+          item
+            Caption = 'Y'
+            Width = 38
+          end        
+          item
+            Caption = 'X2'
+            Width = 38
+          end        
+          item
+            Caption = 'Y2'
+            Width = 38
+          end        
+          item
+            Caption = 'Size'
+            Width = 70
+          end>
+        ReadOnly = True
+        RowSelect = True
+        TabOrder = 2
+        ToolTips = False
+        ViewStyle = vsReport
+        OnClick = SpriteHitBoxListClick
+      end
     end
     object ActualPane: TPanel
       AnchorSideLeft.Control = LeftPanel
@@ -1285,6 +1413,10 @@ object RMMainForm: TRMMainForm
         Caption = 'Undo'
         OnClick = ToolUndoIconClick
       end
+      object EditRedo: TMenuItem
+        Caption = 'Redo'
+        OnClick = EditRedoClick
+      end
       object EditCopy: TMenuItem
         Caption = 'Copy'
         OnClick = EditCopyClick
@@ -1304,6 +1436,17 @@ object RMMainForm: TRMMainForm
     end
     object MenuItem17: TMenuItem
       Caption = 'View'
+      object SpriteHitBoxToggle: TMenuItem
+        AutoCheck = True
+        Caption = 'Show Hit Boxes'
+        OnClick = SpriteHitBoxToggleClick
+      end
+      object SpriteHitBoxListToggle: TMenuItem
+        AutoCheck = True
+        Caption = 'Show Hit Box List'
+        Checked = True
+        OnClick = SpriteHitBoxListToggleClick
+      end
       object TransparentToggle: TMenuItem
         Caption = 'Show Color 0 Transparent'
         OnClick = TransparentToggleClick
@@ -1645,6 +1788,45 @@ object RMMainForm: TRMMainForm
     end
     object ToolMenu: TMenuItem
       Caption = 'Tools'
+      object SymmetryMenu: TMenuItem
+        Caption = 'Symmetry'
+        object SymOff: TMenuItem
+          Tag = 0
+          AutoCheck = True
+          Caption = 'Off'
+          Checked = True
+          GroupIndex = 7
+          RadioItem = True
+          OnClick = SymmetryClick
+        end
+        object SymLeftRight: TMenuItem
+          Tag = 1
+          AutoCheck = True
+          Caption = 'Left / Right'
+          GroupIndex = 7
+          RadioItem = True
+          OnClick = SymmetryClick
+        end
+        object SymTopBottom: TMenuItem
+          Tag = 2
+          AutoCheck = True
+          Caption = 'Top / Bottom'
+          GroupIndex = 7
+          RadioItem = True
+          OnClick = SymmetryClick
+        end
+        object SymFourWay: TMenuItem
+          Tag = 3
+          AutoCheck = True
+          Caption = 'Four Way'
+          GroupIndex = 7
+          RadioItem = True
+          OnClick = SymmetryClick
+        end
+      end
+      object SymmetrySep: TMenuItem
+        Caption = '-'
+      end
       object ToolPencilMenu: TMenuItem
         Caption = 'Pencil'
         OnClick = ToolPencilMenuClick
@@ -1688,6 +1870,14 @@ object RMMainForm: TRMMainForm
         Caption = 'Text'
         OnClick = ToolTextMenuClick
       end
+      object ToolDropperMenu: TMenuItem
+        Caption = 'Eyedropper'
+        OnClick = ToolDropperMenuClick
+      end
+      object ToolHBMoveMenu: TMenuItem
+        Caption = 'Move Hit Box'
+        OnClick = ToolHBMoveMenuClick
+      end
       object ToolSelectAreaMenu: TMenuItem
         Caption = 'Select Area'
         OnClick = ToolMenuSelectAreaMenuClick
@@ -1705,6 +1895,24 @@ object RMMainForm: TRMMainForm
         object ToolFlipVirtMenu: TMenuItem
           Caption = 'Vertical'
           OnClick = ToolFlipVirtMenuClick
+        end
+      end
+      object ToolRotateMenu: TMenuItem
+        Caption = 'Rotate'
+        object ToolRotate90: TMenuItem
+          Tag = 90
+          Caption = '90 Clockwise'
+          OnClick = ToolRotateClick
+        end
+        object ToolRotate270: TMenuItem
+          Tag = 270
+          Caption = '90 Counter Clockwise'
+          OnClick = ToolRotateClick
+        end
+        object ToolRotate180: TMenuItem
+          Tag = 180
+          Caption = '180'
+          OnClick = ToolRotateClick
         end
       end
       object ToolScrollMenu: TMenuItem

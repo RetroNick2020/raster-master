@@ -1,3 +1,18 @@
+//=============================================================================
+// CHANGE LOG (Claude edits - newest first)
+//-----------------------------------------------------------------------------
+// 2026-08-03  Project open restores the saved zoom level
+//   * RefreshAfterProjectOpen called SetZoomSize(1) immediately after
+//     CopyIndexImageToCore(0) had restored the image's GridArea, so the
+//     saved zoom was overwritten and every project opened at 1x. The
+//     trackbar was never resynced either. Pre-existing, not layer related.
+//
+// 2026-08-03  MAP LAYERS - phase 5
+//   * OpenProjectFileClick now reports why a project refused to load
+//     (LastProjectReadStatus). Project format is v5 as of the layer work, so
+//     every pre-existing project hits this path.
+//=============================================================================
+
 unit rmmain;
 
 {$mode objfpc}{$H+}
@@ -11,8 +26,11 @@ uses
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, uAbout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
-  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd, LCLType,
-  rwjson, uRetrobrush, brusheffects;
+  fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd, LCLType, LMessages,
+  rwjson, uRetrobrush, brusheffects,
+  //HitBoxRec/HitBoxesRec live here. rmmain only reached mapcore indirectly
+  //through mapeditor, and Pascal does not re-export types that way.
+  mapcore;
 
 const
   NoScript = 0;
@@ -60,6 +78,7 @@ type
     EditPastePalette: TMenuItem;
     EditColor: TMenuItem;
     EditUndo: TMenuItem;
+    EditRedo: TMenuItem;
     EditClear: TMenuItem;
     JavaScript: TMenuItem;
     ACVSpriteColorArray: TMenuItem;
@@ -401,6 +420,24 @@ type
     MenuItem10: TMenuItem;
     MenuItem11: TMenuItem;
     ToolMenu: TMenuItem;
+    SpriteHitBoxPanel: TPanel;
+    SpriteHitBoxHeader: TPanel;
+    SpriteHitBoxButtons: TPanel;
+    SpriteHitBoxList: TListView;
+    BtnSprHBAdd: TButton;
+    BtnSprHBDel: TButton;
+    BtnSprHBClear: TButton;
+    BtnSprHBShow: TButton;
+    SpriteHitBoxToggle: TMenuItem;
+    SpriteHitBoxListToggle: TMenuItem;
+    ToolDropperMenu: TMenuItem;
+    ToolHBMoveMenu: TMenuItem;
+    SymmetryMenu: TMenuItem;
+    SymOff: TMenuItem;
+    SymLeftRight: TMenuItem;
+    SymTopBottom: TMenuItem;
+    SymFourWay: TMenuItem;
+    SymmetrySep: TMenuItem;
     ToolPencilMenu: TMenuItem;
     ToolLineMenu: TMenuItem;
     ToolRectangleMenu: TMenuItem;
@@ -413,6 +450,10 @@ type
     ToolFlipMenu: TMenuItem;
     ToolFlipHorizMenu: TMenuItem;
     ToolFlipVirtMenu: TMenuItem;
+    ToolRotateMenu: TMenuItem;
+    ToolRotate90: TMenuItem;
+    ToolRotate270: TMenuItem;
+    ToolRotate180: TMenuItem;
     ToolScrollMenu: TMenuItem;
     ToolScrollRightMenu: TMenuItem;
     ToolScrollLeftMenu: TMenuItem;
@@ -561,6 +602,7 @@ type
     procedure ToolFEllipseMenuClick(Sender: TObject);
     procedure ToolFlipHorizMenuClick(Sender: TObject);
     procedure ToolFlipVirtMenuClick(Sender: TObject);
+    procedure ToolRotateClick(Sender: TObject);
     procedure ToolFontIconClick(Sender: TObject);
     procedure ToolGridMenuClick(Sender: TObject);
     procedure ToolCircleMenuClick(Sender: TObject);
@@ -570,6 +612,17 @@ type
     procedure ToolMenuSprayPaintClick(Sender: TObject);
     procedure ToolMenuPaintClick(Sender: TObject);
     procedure ToolFCircleMenuClick(Sender: TObject);
+    procedure SymmetryClick(Sender: TObject);
+    procedure ToolDropperMenuClick(Sender: TObject);
+    procedure SpriteHitBoxListClick(Sender: TObject);
+    procedure BtnSprHBAddClick(Sender: TObject);
+    procedure BtnSprHBDelClick(Sender: TObject);
+    procedure BtnSprHBClearClick(Sender: TObject);
+    procedure BtnSprHBShowClick(Sender: TObject);
+    procedure SpriteHitBoxToggleClick(Sender: TObject);
+    procedure SpriteHitBoxListToggleClick(Sender: TObject);
+    procedure ToolHBMoveMenuClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure ToolPencilMenuClick(Sender: TObject);
     procedure PaletteMonoClick(Sender: TObject);
     procedure PaletteCGA0Click(Sender: TObject);
@@ -588,6 +641,7 @@ type
     procedure ToolScrollUpMenuClick(Sender: TObject);
     procedure ToolTextMenuClick(Sender: TObject);
     procedure ToolUndoIconClick(Sender: TObject);
+    procedure EditRedoClick(Sender: TObject);
     procedure TurboPowerBasicClick(Sender: TObject);
     procedure TurboCClick(Sender: TObject);
     procedure TurboPascalClick(Sender: TObject);
@@ -615,6 +669,13 @@ type
 
   private
        ZoomX,ZoomY,ZoomX2,ZoomY2 : integer;
+       //sprite hit boxes
+       ShowSpriteHitBoxes  : boolean;
+       SelectedSpriteHitBox : integer;
+       //hit box being dragged by the Move tool, -1 when idle
+       FHBMoveIndex : integer;
+       FHBMoveLastX : integer;
+       FHBMoveLastY : integer;
        OldZoomX,OldZoomY : integer;
        ZoomSize : Integer;
        DrawMode : Boolean;
@@ -643,6 +704,14 @@ type
        procedure RemapImageToNewPalette(newMode : integer);
        procedure GenerateMaterial(const MatName : string; TopView : boolean);
        procedure UpdateStatusInfo;
+       procedure PickColorAt(X,Y : integer; Button : TMouseButton);
+       procedure UpdateSpriteHitBoxList;
+       procedure DrawSpriteHitBoxOverlay;
+       procedure HBMoveMouseDown(X,Y : integer; Button : TMouseButton);
+       procedure HBMoveMouseMove(X,Y : integer; Shift : TShiftState);
+       procedure HBMoveMouseUp;
+       procedure AssignShortCuts;
+       procedure OfferRemapToNewPalette(const oldPal : TRMPaletteBuf);
        function  AllocMaterialColor(r, g, b : byte; var pal : TRMPaletteBuf;
                    var usedColors : array of boolean; colorCount : integer;
                    var paletteModified : boolean) : integer;
@@ -700,6 +769,11 @@ type
        procedure ApplyZoom(newsize : integer; useAnchor : boolean; anchorX : integer = 0; anchorY : integer = 0);
 
   public
+       //TCustomForm declares this public - keep it public here rather than
+       //narrowing it in a descendant
+       function IsShortCut(var Message: TLMKey): Boolean; override;
+
+       procedure ApplyExportPropsToAll(const EO : ImageExportFormatRec; skipindex : integer);
        procedure UpdateImportedImage;
        procedure DeleteImageByIndex(index : integer);
 
@@ -958,6 +1032,15 @@ RenderBitMap2.SetSize(256,256);
  ZoomY2:=0;
  OldZoomX:=-1;
  OldZoomY:=-1;
+
+ ShowSpriteHitBoxes:=false;
+ SelectedSpriteHitBox:=-1;
+ FHBMoveIndex:=-1;
+ if SpriteHitBoxToggle <> nil then SpriteHitBoxToggle.Checked:=false;
+ if SpriteHitBoxListToggle <> nil then SpriteHitBoxListToggle.Checked:=true;
+ UpdateSpriteHitBoxList;
+
+ AssignShortCuts;
 end;
 
 procedure TRMMainForm.FormDestroy(Sender: TObject);
@@ -996,6 +1079,47 @@ begin
   UpdateThumbview;
 end;
 
+//Rotation. The Tag on each menu item carries the angle.
+//
+//90 and 270 swap the region's width and height, so they need a SQUARE area.
+//Refusing with an explanation beats silently rotating into a region of the
+//wrong shape and mangling the sprite. 180 keeps the dimensions, so it works
+//on any selection.
+procedure TRMMainForm.ToolRotateClick(Sender: TObject);
+var
+  ca : TClipAreaRec;
+  angle,w,h : integer;
+begin
+  angle:=(Sender as TMenuItem).Tag;
+
+  //returns the selection if one is active, otherwise the whole sprite
+  RMDrawTools.GetClipAreaCoords(ca);
+  w:=ca.x2-ca.x+1;
+  h:=ca.y2-ca.y+1;
+
+  if (angle <> 180) and (w <> h) then
+  begin
+    ShowMessage('A 90 degree rotation needs a square area.'+LineEnding+
+                'This area is '+IntToStr(w)+' x '+IntToStr(h)+'.'+LineEnding+LineEnding+
+                'Select a square region first, or use Rotate 180 which works '+
+                'on any shape.');
+    exit;
+  end;
+
+  RMCoreBase.CopyToUndoBuf;
+
+  case angle of
+    90  : RMDrawTools.Rotate90(ca.x,ca.y,ca.x2,ca.y2);
+    270 : RMDrawTools.Rotate270(ca.x,ca.y,ca.x2,ca.y2);
+    180 : RMDrawTools.Rotate180(ca.x,ca.y,ca.x2,ca.y2);
+  end;
+
+  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
+end;
+
 procedure TRMMainForm.ToolFlipVirtMenuClick(Sender: TObject);
 var
  ca : TClipAreaRec;
@@ -1018,6 +1142,428 @@ end;
 procedure TRMMainForm.ToolGridMenuClick(Sender: TObject);
 begin
   UpdateGridDisplay;
+end;
+
+//Symmetry is set on the draw tools object, which mirrors inside PutPixel -
+//so this single setting applies to every tool at once.
+//Eyedropper. Left button picks into Colour 1, right into Colour 2 - the same
+//convention the drawing tools use for which colour they paint with.
+//=============================================================================
+// KEYBOARD SHORTCUTS
+//
+// Ctrl combinations are assigned to menu items here rather than as raw
+// integers in the LFM. The LFM stores a ShortCut as vkey+modifier bits
+// (Ctrl+Z is 16474), which is easy to mistype into a silently wrong key -
+// ShortCut(VK_Z,[ssCtrl]) cannot be got wrong and says what it means.
+//
+// Single letter tool keys are NOT menu shortcuts. A menu shortcut is global
+// to the form, so pressing P while typing in the text tool's edit box would
+// switch tools instead of typing a P. Those live in FormKeyDown, which can
+// check what has focus first.
+//=============================================================================
+//Menu shortcuts are application wide: the LCL checks them before any form's
+//OnKeyDown, and does not scope them to the form that owns the menu. Without
+//this, Ctrl+D would clone a sprite while the map editor had focus.
+//
+//IsShortCut is the single point where a form decides whether to consume a
+//shortcut, so declining here covers every shortcut on the menu at once - and
+//keeps covering new ones added later.
+function TRMMainForm.IsShortCut(var Message: TLMKey): Boolean;
+begin
+  if Screen.ActiveForm <> Self then
+    Result:=false
+  else
+    Result:=inherited IsShortCut(Message);
+end;
+
+procedure TRMMainForm.AssignShortCuts;
+begin
+  if EditUndo = nil then exit;      //before the LFM has streamed
+
+  //ActionList1 holds two leftover actions - TFileOpen on Ctrl+O with no
+  //OnAccept, and TEditCut on Ctrl+X - neither wired to a menu item. They
+  //would swallow those keys before the menu ever saw them, so clear them.
+  if FileOpen1 <> nil then FileOpen1.ShortCut:=0;
+  if EditCut1  <> nil then EditCut1.ShortCut:=0;
+
+  //file
+  NewFile.ShortCut            := ShortCut(VK_N,[ssCtrl]);
+  OpenFile.ShortCut           := ShortCut(VK_O,[ssCtrl]);
+  SaveFile.ShortCut           := ShortCut(VK_S,[ssCtrl]);
+  OpenProjectFile.ShortCut    := ShortCut(VK_O,[ssCtrl,ssShift]);
+  SaveProjectFile.ShortCut    := ShortCut(VK_S,[ssCtrl,ssShift]);
+
+  //edit
+  EditUndo.ShortCut           := ShortCut(VK_Z,[ssCtrl]);
+  EditRedo.ShortCut           := ShortCut(VK_Y,[ssCtrl]);
+  EditCopy.ShortCut           := ShortCut(VK_C,[ssCtrl]);
+  EditPaste.ShortCut          := ShortCut(VK_V,[ssCtrl]);
+  EditPastePalette.ShortCut   := ShortCut(VK_V,[ssCtrl,ssShift]);
+  EditClear.ShortCut          := ShortCut(VK_DELETE,[ssCtrl]);
+  EditClone.ShortCut          := ShortCut(VK_D,[ssCtrl]);
+
+  //palette
+  EditColor.ShortCut          := ShortCut(VK_E,[ssCtrl]);
+
+  //map editor
+  MapEditMenu.ShortCut        := ShortCut(VK_M,[ssCtrl]);
+end;
+
+//Single letter tool keys. Deliberately not menu shortcuts - see the note on
+//AssignShortCuts above.
+procedure TRMMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  handled : boolean;
+begin
+  //never steal a key from something the user is typing into
+  if (ActiveControl is TCustomEdit) or (ActiveControl is TCustomComboBox) then exit;
+
+  //leave Ctrl and Alt combinations to the menu shortcuts
+  if (ssCtrl in Shift) or (ssAlt in Shift) then exit;
+
+  handled:=true;
+  case Key of
+    VK_P : ToolPencilMenuClick(nil);
+    VK_L : ToolLineMenuClick(nil);
+    VK_R : if ssShift in Shift then ToolFRectangleMenuClick(nil)
+                               else ToolRectangleMenuClick(nil);
+    VK_C : if ssShift in Shift then ToolFCircleMenuClick(nil)
+                               else ToolCircleMenuClick(nil);
+    VK_E : ToolEllipseMenuClick(nil);
+    VK_F : ToolMenuPaintClick(nil);
+    VK_S : ToolMenuSprayPaintClick(nil);
+    VK_T : ToolTextMenuClick(nil);
+    VK_I : ToolDropperMenuClick(nil);
+    VK_M : ToolMenuSelectAreaMenuClick(nil);
+    VK_G : ToolGridMenuClick(nil);
+    VK_B : BrushStampToolClick(nil);
+  else
+    handled:=false;
+  end;
+
+  if handled then Key:=0;
+end;
+
+//=============================================================================
+// SPRITE HIT BOXES
+//
+// Coordinates are PIXELS within the sprite. The map editor's boxes are in
+// TILES - the record type is shared but the meaning is not.
+//=============================================================================
+
+procedure TRMMainForm.UpdateSpriteHitBoxList;
+var
+  i,c,cur : integer;
+  HB : HitBoxRec;
+  item : TListItem;
+begin
+  if SpriteHitBoxList = nil then exit;      //can fire before the form streams
+
+  cur:=ImageThumbBase.GetCurrent;
+  c:=ImageThumbBase.GetHitBoxCount(cur);
+
+  SpriteHitBoxList.Items.BeginUpdate;
+  try
+    SpriteHitBoxList.Items.Clear;
+    for i:=0 to c-1 do
+    begin
+      ImageThumbBase.GetHitBox(cur,i,HB);
+      item:=SpriteHitBoxList.Items.Add;
+      item.Caption:=IntToStr(i);
+      item.SubItems.Add(IntToStr(HB.x));
+      item.SubItems.Add(IntToStr(HB.y));
+      item.SubItems.Add(IntToStr(HB.x2));
+      item.SubItems.Add(IntToStr(HB.y2));
+      item.SubItems.Add(IntToStr(HB.x2-HB.x+1)+'x'+IntToStr(HB.y2-HB.y+1));
+    end;
+  finally
+    SpriteHitBoxList.Items.EndUpdate;
+  end;
+
+  SpriteHitBoxHeader.Caption:=' Hit Boxes ('+IntToStr(c)+')';
+  BtnSprHBDel.Enabled:=(c > 0);
+  BtnSprHBClear.Enabled:=(c > 0);
+end;
+
+//Matches the map editor's overlay exactly: hatched fill in a cycling colour,
+//a thicker border on the selected box, and the index drawn in the corner.
+//The only difference is the unit - a sprite pixel is CellWidth on the zoom
+//canvas, where the map editor works in tiles.
+procedure TRMMainForm.DrawSpriteHitBoxOverlay;
+var
+  i,c,cur,cw,ch : integer;
+  HB : HitBoxRec;
+  px,py,px2,py2 : integer;
+  HBColors : array[0..7] of TColor;
+begin
+  if not ShowSpriteHitBoxes then exit;
+
+  cur:=ImageThumbBase.GetCurrent;
+  c:=ImageThumbBase.GetHitBoxCount(cur);
+  if c = 0 then exit;
+
+  cw:=RMDrawTools.GetCellWidth;
+  ch:=RMDrawTools.GetCellHeight;
+  if (cw < 1) or (ch < 1) then exit;
+
+  HBColors[0]:=clRed;
+  HBColors[1]:=clLime;
+  HBColors[2]:=clAqua;
+  HBColors[3]:=clFuchsia;
+  HBColors[4]:=clYellow;
+  HBColors[5]:=clBlue;
+  HBColors[6]:=clMaroon;
+  HBColors[7]:=clTeal;
+
+  ZoomPaintBox.Canvas.Brush.Style:=bsBDiagonal;
+  ZoomPaintBox.Canvas.Pen.Width:=2;
+
+  for i:=0 to c-1 do
+  begin
+    ImageThumbBase.GetHitBox(cur,i,HB);
+    if not HB.active then continue;
+
+    //+1 on the far edge so the box encloses the last pixel rather than
+    //stopping at its top left corner
+    px:=HB.x*cw;
+    py:=HB.y*ch;
+    px2:=(HB.x2+1)*cw;
+    py2:=(HB.y2+1)*ch;
+
+    ZoomPaintBox.Canvas.Pen.Color:=HBColors[i mod 8];
+    ZoomPaintBox.Canvas.Brush.Color:=HBColors[i mod 8];
+
+    // hatched fill rectangle
+    ZoomPaintBox.Canvas.Rectangle(px,py,px2,py2);
+
+    // highlight the selected box with a thicker border
+    if i = SelectedSpriteHitBox then
+    begin
+      ZoomPaintBox.Canvas.Brush.Style:=bsClear;
+      ZoomPaintBox.Canvas.Pen.Width:=3;
+      ZoomPaintBox.Canvas.Rectangle(px-1,py-1,px2+1,py2+1);
+      ZoomPaintBox.Canvas.Pen.Width:=2;
+      ZoomPaintBox.Canvas.Brush.Style:=bsBDiagonal;
+    end;
+
+    // index label
+    ZoomPaintBox.Canvas.Brush.Style:=bsSolid;
+    ZoomPaintBox.Canvas.Font.Color:=clWhite;
+    ZoomPaintBox.Canvas.Font.Size:=8;
+    ZoomPaintBox.Canvas.TextOut(px+2,py+2,IntToStr(i));
+    ZoomPaintBox.Canvas.Brush.Style:=bsBDiagonal;
+  end;
+
+  ZoomPaintBox.Canvas.Brush.Style:=bsSolid;
+  ZoomPaintBox.Canvas.Pen.Width:=1;
+end;
+
+//=============================================================================
+// HIT BOX MOVE TOOL
+//
+// A dedicated tool rather than a modifier, so dragging can never be confused
+// with drawing inside a hit box. Boxes move as a unit and clamp to the sprite,
+// so the size is always preserved.
+//
+// NOTE: hit boxes live in the sprite's props record, not in the pixel buffer,
+// so Undo does NOT cover a move. That matches the rest of the hit box editing.
+//=============================================================================
+procedure TRMMainForm.HBMoveMouseDown(X,Y : integer; Button : TMouseButton);
+var
+  px,py,hit,cur : integer;
+begin
+  if Button <> mbLeft then exit;
+
+  px:=RMDrawTools.GetZoomX(X);
+  py:=RMDrawTools.GetZoomY(Y);
+  cur:=ImageThumbBase.GetCurrent;
+
+  hit:=ImageThumbBase.HitBoxHitTest(cur,px,py);
+  FHBMoveIndex:=hit;
+  if hit < 0 then exit;
+
+  SelectedSpriteHitBox:=hit;
+  FHBMoveLastX:=px;
+  FHBMoveLastY:=py;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.HBMoveMouseMove(X,Y : integer; Shift : TShiftState);
+var
+  px,py,dx,dy : integer;
+begin
+  if FHBMoveIndex < 0 then exit;
+  if not (ssLeft in Shift) then exit;
+
+  px:=RMDrawTools.GetZoomX(X);
+  py:=RMDrawTools.GetZoomY(Y);
+  dx:=px-FHBMoveLastX;
+  dy:=py-FHBMoveLastY;
+  if (dx = 0) and (dy = 0) then exit;    //still on the same pixel
+
+  ImageThumbBase.MoveHitBox(ImageThumbBase.GetCurrent,FHBMoveIndex,dx,dy);
+
+  //track the cursor, not the box - if the box clamped at an edge the two
+  //diverge, and following the cursor means dragging back responds at once
+  FHBMoveLastX:=px;
+  FHBMoveLastY:=py;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.HBMoveMouseUp;
+begin
+  if FHBMoveIndex < 0 then exit;
+  FHBMoveIndex:=-1;
+  UpdateSpriteHitBoxList;    //the list shows coordinates
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.ToolHBMoveMenuClick(Sender: TObject);
+begin
+  RMDrawTools.SetDrawTool(DrawShapeHBMove);
+  UpdateToolSelectionIcons;
+  //nothing to grab unless the overlay is on
+  ShowSpriteHitBoxes:=true;
+  if SpriteHitBoxToggle <> nil then SpriteHitBoxToggle.Checked:=true;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.SpriteHitBoxListClick(Sender: TObject);
+begin
+  if SpriteHitBoxList.Selected = nil then SelectedSpriteHitBox:=-1
+                                     else SelectedSpriteHitBox:=SpriteHitBoxList.Selected.Index;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.BtnSprHBAddClick(Sender: TObject);
+var
+  ca : TClipAreaRec;
+begin
+  //The clip status flag lives in the props record and is therefore saved, so
+  //a reopened project can report a selection the user never made. Require the
+  //Select Area tool to actually be active as well - same trap the map editor
+  //hit.
+  if RMDrawTools.GetDrawTool <> DrawShapeClip then
+  begin
+    ShowMessage('Please choose the Select Area tool and mark the hit box area first.');
+    exit;
+  end;
+
+  if RMDrawTools.GetClipStatus = 0 then
+  begin
+    ShowMessage('Please use the Select Area tool to mark the hit box area first.');
+    exit;
+  end;
+
+  RMDrawTools.GetClipAreaCoords(ca);
+  ImageThumbBase.AddHitBox(ImageThumbBase.GetCurrent,ca.x,ca.y,ca.x2,ca.y2);
+
+  ShowSpriteHitBoxes:=true;
+  if SpriteHitBoxToggle <> nil then SpriteHitBoxToggle.Checked:=true;
+  UpdateSpriteHitBoxList;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.BtnSprHBDelClick(Sender: TObject);
+begin
+  if not ImageThumbBase.IsValidHitBox(ImageThumbBase.GetCurrent,SelectedSpriteHitBox) then
+  begin
+    ShowMessage('Select a hit box first.');
+    exit;
+  end;
+  ImageThumbBase.DeleteHitBox(ImageThumbBase.GetCurrent,SelectedSpriteHitBox);
+  SelectedSpriteHitBox:=-1;
+  UpdateSpriteHitBoxList;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.BtnSprHBClearClick(Sender: TObject);
+begin
+  if ImageThumbBase.GetHitBoxCount(ImageThumbBase.GetCurrent) = 0 then exit;
+  if MessageDlg('Delete All Hit Boxes',
+     'Delete every hit box on this sprite?',
+     mtConfirmation,[mbYes,mbNo],0) <> mrYes then exit;
+
+  ImageThumbBase.ClearHitBoxes(ImageThumbBase.GetCurrent);
+  SelectedSpriteHitBox:=-1;
+  UpdateSpriteHitBoxList;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.BtnSprHBShowClick(Sender: TObject);
+begin
+  ShowSpriteHitBoxes:=not ShowSpriteHitBoxes;
+  if SpriteHitBoxToggle <> nil then SpriteHitBoxToggle.Checked:=ShowSpriteHitBoxes;
+  ZoomPaintBox.Invalidate;
+end;
+
+procedure TRMMainForm.SpriteHitBoxToggleClick(Sender: TObject);
+begin
+  ShowSpriteHitBoxes:=SpriteHitBoxToggle.Checked;
+  ZoomPaintBox.Invalidate;
+end;
+
+//Hiding the panel should give the space back to the sprite thumbnail list.
+//Simply setting Visible:=false is not enough: LCL anchors still use an
+//invisible control's bounds, so ListView1 would keep its bottom where the
+//hidden panel starts and leave a gap. Re-point the anchor as well.
+procedure TRMMainForm.SpriteHitBoxListToggleClick(Sender: TObject);
+begin
+  if SpriteHitBoxListToggle.Checked then
+  begin
+    SpriteHitBoxPanel.Visible:=true;
+    ListView1.AnchorSideBottom.Control:=SpriteHitBoxPanel;
+    ListView1.AnchorSideBottom.Side:=asrTop;
+  end
+  else
+  begin
+    SpriteHitBoxPanel.Visible:=false;
+    ListView1.AnchorSideBottom.Control:=LeftPanel;
+    ListView1.AnchorSideBottom.Side:=asrBottom;
+  end;
+end;
+
+procedure TRMMainForm.PickColorAt(X,Y : integer; Button : TMouseButton);
+var
+  zx,zy,ci : integer;
+begin
+  zx:=RMDrawTools.GetZoomX(X);
+  zy:=RMDrawTools.GetZoomY(Y);
+
+  if (zx < 0) or (zx >= RMCoreBase.GetWidth) or
+     (zy < 0) or (zy >= RMCoreBase.GetHeight) then exit;
+
+  ci:=RMCoreBase.GetPixel(zx,zy);
+  if (ci < 0) or (ci >= RMCoreBase.Palette.GetColorCount) then exit;
+
+  if Button = mbRight then
+  begin
+    RMCoreBase.SetCurColor2(ci);
+    RMCoreBase.SetCurColorBox(cbColorBox2);
+  end
+  else
+  begin
+    RMCoreBase.SetCurColor1(ci);
+    RMCoreBase.SetCurColorBox(cbColorBox1);
+  end;
+
+  ColorPalette1.PickedIndex:=ci;
+  UpdateColorBoxes;          //also refreshes the draw method preview
+  UpdateDitherGradientColors;
+end;
+
+procedure TRMMainForm.ToolDropperMenuClick(Sender: TObject);
+begin
+  RMDrawTools.SetDrawTool(DrawShapeDropper);
+  UpdateToolSelectionIcons;
+  UpdateStatusInfo;
+end;
+
+procedure TRMMainForm.SymmetryClick(Sender: TObject);
+begin
+  RMDrawTools.SetSymmetryMode((Sender as TMenuItem).Tag);
+  UpdateStatusInfo;
+  ZoomPaintBox.Invalidate;   //show or hide the axis guide
 end;
 
 procedure TRMMainForm.ToolPencilMenuClick(Sender: TObject);
@@ -1110,6 +1656,16 @@ end;
 procedure TRMMainForm.ToolUndoIconClick(Sender: TObject);
 begin
   RMCoreBase.Undo;
+  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbview;
+end;
+
+procedure TRMMainForm.EditRedoClick(Sender: TObject);
+begin
+  RMCoreBase.Redo;
+  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
   UpdateActualArea;
   UpdateZoomArea;
   UpdateThumbview;
@@ -1502,17 +2058,23 @@ var
   saveDither, saveGradient, saveBrushFill : boolean;
   saveDitherPattern : integer;
   saveDitherUseBitmap : boolean;
+  saveSymmetry : integer;
 begin
-   //temporarily disable dither/gradient/brush - we're rendering existing buffer
-   //content, not drawing new shapes
+   //Temporarily disable every drawing effect - this loop REPLAYS the existing
+   //buffer, it does not draw new shapes. Symmetry matters most here: PutPixel
+   //mirrors, so replaying the buffer through it would overwrite one half of
+   //the image with a copy of the other and the actual size view would stop
+   //matching the zoom view.
    saveDither:=RMDrawTools.GetDitherEnabled;
    saveGradient:=RMDrawTools.GetGradientEnabled;
    saveBrushFill:=RMDrawTools.GetBrushFillEnabled;
    saveDitherPattern:=RMDrawTools.GetDitherPattern;
    saveDitherUseBitmap:=RMDrawTools.GetDitherUseBitmap;
+   saveSymmetry:=RMDrawTools.GetSymmetryMode;
    RMDrawTools.SetDitherEnabled(false);
    RMDrawTools.SetGradientEnabled(false);
    RMDrawTools.SetBrushFillEnabled(false);
+   RMDrawTools.SetSymmetryMode(SymmetryOff);
 
    ACBitMap:=TBitMap.Create;
    ACBitMap.SetSize(RMCoreBase.GetWidth,RMCoreBase.GetHeight);
@@ -1552,12 +2114,13 @@ begin
    RMDrawTools.SetZoomMode(zoommode);
    ACBitMap.Free;
 
-   //restore dither/gradient/brush state
+   //restore dither/gradient/brush/symmetry state
    RMDrawTools.SetDitherPattern(saveDitherPattern);
    RMDrawTools.SetDitherUseBitmap(saveDitherUseBitmap);
    if saveBrushFill then RMDrawTools.SetBrushFillEnabled(true);
    if saveDither then RMDrawTools.SetDitherEnabled(true);
    if saveGradient then RMDrawTools.SetGradientEnabled(true);
+   RMDrawTools.SetSymmetryMode(saveSymmetry);
 end;
 
 procedure TRMMainForm.updateZoomArea;
@@ -2421,8 +2984,26 @@ var
  DrawColor : TColor;
  ColorIndex : integer;
 begin
- RMDrawTools.SetClipStatus(0);  //turn it off - we turn on again when new area is selected
  DrawTool:=RMDRAWTools.GetDrawTool;
+
+ //The eyedropper reads a pixel, it does not draw one. It must run before the
+ //clip status is cleared and before an undo snapshot is pushed, because
+ //picking a colour is not an edit and must not consume the undo slot.
+ if DrawTool = DrawShapeDropper then
+ begin
+   PickColorAt(X,Y,Button);
+   exit;
+ end;
+
+ //moving a hit box is not a pixel edit - return before the clip status is
+ //cleared and before an undo snapshot is pushed
+ if DrawTool = DrawShapeHBMove then
+ begin
+   HBMoveMouseDown(X,Y,Button);
+   exit;
+ end;
+
+ RMDrawTools.SetClipStatus(0);  //turn it off - we turn on again when new area is selected
  if DrawTool<>DrawShapeClip then RMCoreBase.CopyToUndoBuf;
 
  //brush stamp tool - stamp on left or right click
@@ -2473,6 +3054,13 @@ var
 begin
  //UpdateInfoBarXY;
  DrawTool:=RMDRAWTools.GetDrawTool;
+
+ if DrawTool = DrawShapeHBMove then
+ begin
+   HBMoveMouseMove(X,Y,Shift);
+   exit;
+ end;
+
  Case DrawTool of DrawShapeText:ZPaintBoxMouseMoveDrawTextTool(Sender,Shift,X,Y);
                   DrawShapeBrush:ZPaintBoxMouseMoveDrawBrushTool(Sender,Shift,X,Y);
                   DrawShapePencil,DrawShapeSpray,DrawShapePaint:ZPaintBoxMouseMoveXYTool(Sender,Shift,X,Y);
@@ -2489,6 +3077,13 @@ var
  DrawTool : integer;
 begin
  DrawTool:=RMDRAWTools.GetDrawTool;
+
+ if DrawTool = DrawShapeHBMove then
+ begin
+   HBMoveMouseUp;
+   exit;      //no thumbnail or actual-area refresh needed - no pixels changed
+ end;
+
  Case DrawTool of DrawShapePencil,DrawShapeSpray:ZPaintBoxMouseUpXYTool(Sender,Button,Shift,X,Y);
                DrawShapeLine,DrawShapeRectangle,DrawShapeFRectangle,DrawShapeCircle,DrawShapeFCircle,
                DrawShapeEllipse,DrawShapeFEllipse:ZPaintBoxMouseUpXYX2Y2Tool(Sender,Button,Shift,X,Y);
@@ -2611,6 +3206,10 @@ begin
 
   RMDrawTools.DrawOverlayGrid(ZoomPaintBox.Canvas,clWhite);
   RMDrawTools.DrawOverlayOnClipArea(ZoomPaintBox.Canvas,clYellow,0); //mode 0 is copy
+
+  //axis last so it sits above the grid rather than being cut up by it
+  RMDrawTools.DrawOverlaySymmetryAxis(ZoomPaintBox.Canvas,clRed);
+  DrawSpriteHitBoxOverlay;
 end;
 
 procedure TRMMainForm.UpdateToolsMenu;
@@ -2725,6 +3324,9 @@ begin
   end;
   ClearSelectedToolsMenu;
   UpdateToolsMenu;
+  //every tool change routes through here, so this is the one place the
+  //status bar needs to be told the tool changed
+  UpdateStatusInfo;
 end;
 
 procedure TRMMainForm.ShowSelectAreaTools;
@@ -3258,6 +3860,18 @@ procedure TRMMainForm.EditResizeToNewSize(Sender: TObject);
 var
  ImgWidth,ImgHeight,zsize : integer;
 begin
+  //Resizing invalidates every undo snapshot - a level captured at one size
+  //cannot be restored into another - so say so before throwing it away.
+  if RMCoreBase.CanUndo or RMCoreBase.CanRedo then
+    if MessageDlg('Resize Sprite',
+       'Resizing will clear the undo history for this sprite.'+LineEnding+LineEnding+
+       'Continue?',mtConfirmation,[mbYes,mbNo],0) <> mrYes then exit;
+
+  //snapshots are sized to the sprite, so a resize invalidates them all
+  RMCoreBase.ClearUndo;
+  //hit boxes are in sprite pixels, so a smaller sprite can leave them outside
+  ImageThumbBase.ClampHitBoxes(ImageThumbBase.GetCurrent);
+
   zsize:=2;
   if (Sender As TMenuItem).Name = 'EditResizeTo8' then
   begin
@@ -3513,8 +4127,44 @@ begin
   if ImageExportForm.ShowModal = mrOK then
   begin
      ImageExportForm.GetExportProps(EO);
-     ImageThumbBase.SetExportOptions(index,EO)
+     ImageThumbBase.SetExportOptions(index,EO);
+
+     //Push the ticked properties out to every other image. Only the four the
+     //dialog offers are copied - name, width and height stay per image, since
+     //sharing those across the list would be meaningless.
+     if ImageExportForm.ApplyAnyToAll then
+       ApplyExportPropsToAll(EO,index);
   end;
+end;
+
+//Copies only the ticked properties from EO onto every image except the one
+//just edited, which already has them.
+procedure TRMMainForm.ApplyExportPropsToAll(const EO : ImageExportFormatRec; skipindex : integer);
+var
+  i,count,applied : integer;
+  other : ImageExportFormatRec;
+begin
+  count:=ImageThumbBase.GetCount;
+  applied:=0;
+  FillChar(other,sizeof(other),0);
+
+  for i:=0 to count-1 do
+  begin
+    if i = skipindex then continue;
+
+    ImageThumbBase.GetExportOptions(i,other);
+
+    if ImageExportForm.ApplyAllCompiler then other.Lan:=EO.Lan;
+    if ImageExportForm.ApplyAllImage    then other.Image:=EO.Image;
+    if ImageExportForm.ApplyAllMask     then other.Mask:=EO.Mask;
+    if ImageExportForm.ApplyAllPalette  then other.Palette:=EO.Palette;
+
+    ImageThumbBase.SetExportOptions(i,other);
+    inc(applied);
+  end;
+
+  if applied > 0 then
+    ShowMessage('Export properties applied to '+IntToStr(applied)+' other image(s).');
 end;
 
 function TRMMainForm.ExportTextFileToClipboard(Sender: TObject) : boolean;
@@ -4545,7 +5195,9 @@ Var
  pm : integer;
  fmt : integer;
  err : word;
+ oldPal : TRMPaletteBuf;
 begin
+ RMCoreBase.Palette.GetPalette(oldPal);
  OpenDialog1.Filter := 'All Palette Files|*.pal;*.vga|RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga|All Files|*.*';
  if OpenDialog1.Execute then
  begin
@@ -4575,6 +5227,7 @@ begin
         exit;
      end;
      CoreToPalette;
+     OfferRemapToNewPalette(oldPal);
      UpdateColorBoxes;
      UpDateZoomArea;
      UpdateActualArea;
@@ -5080,6 +5733,10 @@ begin
    ImageThumbBase.CopyIndexImageToCore(Item.Index);
    ImageThumbBase.SetCurrent(item.Index);
 
+   //hit boxes belong to the sprite - rebuild the list for the new one
+   SelectedSpriteHitBox:=-1;
+   UpdateSpriteHitBoxList;
+
    ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
    ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
    ZoomPaintBox.Canvas.Clear;
@@ -5347,6 +6004,8 @@ begin
  rm_getsavefilename:=RMMainForm.getsavefilename(filename,ext,filter);
 end;
 
+//Hit boxes belong to the sprite, so the list must be rebuilt whenever the
+//current sprite changes - otherwise it keeps showing the previous one's.
 procedure TRMMainForm.UpdateImportedImage;
 var
   count : integer;
@@ -5421,9 +6080,13 @@ begin
 end;
 
 procedure TRMMainForm.PalettePasteClick(Sender: TObject);
+var
+  oldPal : TRMPaletteBuf;
 begin
+  RMCoreBase.Palette.GetPalette(oldPal);
   RMCoreBase.Palette.PasteFromCBToPalette;
   CoreToPalette;
+  OfferRemapToNewPalette(oldPal);
   UpdatePalette;
   UpdateColorBoxes;
   UpdateActualArea;
@@ -5436,6 +6099,14 @@ var
   amount : integer;
   i : integer;
 begin
+   //The project just replaced every map, so the map editor is still showing
+   //the previous project's layers, hitboxes and paths until rebuilt.
+   SelectedSpriteHitBox:=-1;
+   UpdateSpriteHitBoxList;          //hit boxes came from the project file
+
+   MapEdit.ClearLoadedSelections;   //stale selection restored from the file
+   MapEdit.RefreshMapPanels;
+
    ImageThumbBase.UpdateAllThumbImages(imagelist1);
 
    if ShowTransparent then
@@ -5470,7 +6141,15 @@ begin
       ImageThumbBase.CopyIndexImageToCore(0);  //update view with this image
 
       RMDrawTools.DrawGrid(ZoomPaintBox.Canvas,0,0,ZoomPaintBox.Width,ZoomPaintBox.Height,0);
-      RMDrawTools.SetZoomSize(1);
+
+      //CopyIndexImageToCore above already restored this image's GridArea,
+      //which carries the zoom level the project was saved at. The old code
+      //hard coded SetZoomSize(1) right here and threw that away, so every
+      //project opened at 1x no matter how it was saved.
+      //Re-applying the restored value (rather than leaving it alone) makes
+      //SetZoomSize recompute the cell sizes and apply the per palette mode
+      //minimum, which matters if the image uses a mode with a higher floor.
+      RMDrawTools.SetZoomSize(RMDrawTools.GetZoomSize);
 
       ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
       ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
@@ -5478,6 +6157,16 @@ begin
       RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
 
       ZoomSize:=RMDrawTools.GetZoomSize;
+
+      //keep the trackbar showing the restored level, without retriggering
+      //ZoomTrackBarChange (which would call ApplyZoom all over again)
+      if ZoomTrackBar.Position <> ZoomSize then
+      begin
+        ZoomTrackBar.OnChange:=nil;
+        ZoomTrackBar.Position:=ZoomSize;
+        ZoomTrackBar.OnChange:=@ZoomTrackBarChange;
+      end;
+
       CopyScrollPositionFromCore;
 
       CoreToPalette;
@@ -5505,6 +6194,27 @@ begin
    CopyScrollPositionToCore;
    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
    ImageThumbBase.OpenProject(OpenDialog1.Filename,InsertMode);
+
+   //OpenProject used to fall through silently when the header did not match.
+   //Project v5 added map layers, so every older project now lands here and
+   //must be told why rather than appearing to do nothing.
+   case LastProjectReadStatus of
+     ProjectReadBadSig     : begin
+                               ShowMessage('That file is not a Raster Master project file.');
+                               exit;
+                             end;
+     ProjectReadOldVersion : begin
+                               ShowMessage('This project was made with an older version of '+
+                                           'Raster Master and cannot be opened.');
+                               exit;
+                             end;
+     ProjectReadNewVersion : begin
+                               ShowMessage('This project was made with a newer version of '+
+                                           'Raster Master and cannot be opened.');
+                               exit;
+                             end;
+   end;
+
    RefreshAfterProjectOpen(InsertMode);
 end;
 
@@ -5679,7 +6389,9 @@ var
   p1, p2 : integer;
   CR : TRMColorRec;
   ColorLine : string;
+  oldPal : TRMPaletteBuf;
 begin
+  RMCoreBase.Palette.GetPalette(oldPal);
   if not Clipboard.HasFormat(CF_TEXT) then
   begin
     ShowMessage('No text data on clipboard.');
@@ -5771,6 +6483,7 @@ begin
   end;
 
   CoreToPalette;
+  OfferRemapToNewPalette(oldPal);
   UpdatePalette;
   UpdateColorBoxes;
   UpdateActualArea;
@@ -6060,8 +6773,15 @@ begin
 end;
 
 procedure TRMMainForm.EditCloneClick(Sender: TObject);
+var
+  srcindex : integer;
 begin
  if ImageThumbBase.GetCount >= MaxThumbImages then exit;
+
+ //remember the source before AddImage moves us on - a clone must carry the
+ //hit boxes across, and AddImage cannot do it itself because New Image goes
+ //through the same call and must start empty
+ srcindex:=ImageThumbBase.GetCurrent;
 
  CopyScrollPositionToCore;
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
@@ -6070,6 +6790,9 @@ begin
  ZoomScrollBox.VertScrollBar.Position:=0;
 
  ImageThumbBase.AddImage;
+ //AddImage copies the CORE, and hit boxes are not part of the core - they
+ //live in the props record, so they have to be copied explicitly
+ ImageThumbBase.CopyHitBoxes(ImageThumbBase.GetCount-1,srcindex);
  ImageThumbBase.MakeThumbImage(ImageThumbBase.GetCount-1,imagelist1,1);
 
  if ShowTransparent then
@@ -6083,6 +6806,12 @@ begin
 
  ImageThumbBase.SetCurrent(ImageThumbBase.GetCount-1);
  Listview1.Refresh;
+
+ //the clone is now the current sprite, so the hit box list belongs to it
+ SelectedSpriteHitBox:=-1;
+ UpdateSpriteHitBoxList;
+ ZoomPaintBox.Invalidate;
+
  ShowMessage('Image Cloned!');
 
 end;
@@ -7918,7 +8647,7 @@ const
 procedure TRMMainForm.UpdateStatusInfo;
 var
   pm : integer;
-  palName, brushStr, methodStr, ditherStr, s : string;
+  palName, brushStr, methodStr, ditherStr, symStr, toolStr, s : string;
 begin
   if StatusBar = nil then exit;
   if StatusBar.Panels.Count < 4 then exit;
@@ -7975,7 +8704,98 @@ begin
   else
     brushStr:='  Brush: none';
 
-  StatusBar.Panels[3].Text:='Palette: '+palName+'  Draw: '+methodStr+ditherStr+brushStr;
+  //The active tool, so a modal tool like the eyedropper is never a mystery
+  case RMDrawTools.GetDrawTool of
+    DrawShapePencil     : toolStr:='Pencil';
+    DrawShapeLine       : toolStr:='Line';
+    DrawShapeRectangle  : toolStr:='Rect';
+    DrawShapeFRectangle : toolStr:='Filled Rect';
+    DrawShapeCircle     : toolStr:='Circle';
+    DrawShapeFCircle    : toolStr:='Filled Circle';
+    DrawShapeEllipse    : toolStr:='Ellipse';
+    DrawShapeFEllipse   : toolStr:='Filled Ellipse';
+    DrawShapePaint      : toolStr:='Fill';
+    DrawShapeSpray      : toolStr:='Spray';
+    DrawShapeClip       : toolStr:='Select Area';
+    DrawShapeText       : toolStr:='Text';
+    DrawShapeBrush      : toolStr:='Stamp';
+    DrawShapeDropper    : toolStr:='Eyedropper';
+    DrawShapeHBMove     : toolStr:='Move Hit Box';
+  else
+    toolStr:='';
+  end;
+  if toolStr <> '' then toolStr:='Tool: '+toolStr+'  ';
+
+  //Symmetry silently changes what every tool does, so it must be visible -
+  //otherwise a stray mirrored pixel looks like a bug.
+  symStr:='';
+  case RMDrawTools.GetSymmetryMode of
+    SymmetryLeftRight : symStr:='  Symmetry: L/R';
+    SymmetryTopBottom : symStr:='  Symmetry: T/B';
+    SymmetryFourWay   : symStr:='  Symmetry: 4-Way';
+  end;
+
+  StatusBar.Panels[3].Text:=toolStr+'Palette: '+palName+'  Draw: '+methodStr+ditherStr+brushStr+symStr;
+end;
+
+
+procedure TRMMainForm.OfferRemapToNewPalette(const oldPal : TRMPaletteBuf);
+var
+  newPal : TRMPaletteBuf;
+  colorCount : integer;
+  remapTable : array[0..255] of byte;
+  i, j, oi, ni : integer;
+  bestIdx, bestDist, dist : integer;
+begin
+  //no sprite data - nothing to remap
+  if not ImageHasData then exit;
+
+  if MessageDlg('Palette Loaded',
+    'Remap the sprite to the new palette?' + LineEnding + LineEnding +
+    'Yes = remap pixels to the closest new colors' + LineEnding +
+    'No = keep pixel indices unchanged',
+    mtConfirmation, [mbYes, mbNo], 0) <> mrYes then exit;
+
+  RMCoreBase.Palette.GetPalette(newPal);
+  colorCount:=RMCoreBase.Palette.GetColorCount;
+
+  for oi:=0 to 255 do
+    remapTable[oi]:=0;
+
+  for oi:=0 to colorCount-1 do
+  begin
+    bestIdx:=0;
+    bestDist:=MaxInt;
+    for ni:=0 to colorCount-1 do
+    begin
+      if (oldPal[oi].r = newPal[ni].r) and (oldPal[oi].g = newPal[ni].g) and
+         (oldPal[oi].b = newPal[ni].b) then
+      begin
+        bestIdx:=ni;
+        break;
+      end;
+      dist:=(oldPal[oi].r - newPal[ni].r) * (oldPal[oi].r - newPal[ni].r) +
+            (oldPal[oi].g - newPal[ni].g) * (oldPal[oi].g - newPal[ni].g) +
+            (oldPal[oi].b - newPal[ni].b) * (oldPal[oi].b - newPal[ni].b);
+      if dist < bestDist then
+      begin
+        bestDist:=dist;
+        bestIdx:=ni;
+      end;
+    end;
+    remapTable[oi]:=bestIdx;
+  end;
+
+  for j:=0 to RMCoreBase.GetHeight-1 do
+    for i:=0 to RMCoreBase.GetWidth-1 do
+    begin
+      oi:=RMCoreBase.GetPixel(i, j);
+      if oi >= colorCount then oi:=0;
+      RMCoreBase.SetColorEx(remapTable[oi]);
+      RMCoreBase.PutPixelEx(i, j);
+    end;
+
+  RMCoreBase.CopyToUndoBuf;
 end;
 
 procedure TRMMainForm.MaterialClick(Sender: TObject);
