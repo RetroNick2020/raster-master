@@ -26,7 +26,7 @@ unit rwmap;
 
 interface
 uses
-  Classes, SysUtils, LazFileUtils,gwbasic, mapcore,rmcodegen;
+  Classes, SysUtils, LazFileUtils,rmconst,gwbasic, mapcore,rmcodegen;
 
 const
   //MapExportFormatRec.MapFormat values. 0 = do not export.

@@ -14,7 +14,7 @@ uses
   fileprops, drawprocs, rmconfig, rmclipboard, soundgen, usfxr,
   SpriteSheetExport, animate, AnimBase, setcustommapsize, animationexport,
   rwspriteanim, setcustomspritesize, setcustomtilesize, setcustomcellsize,
-  FontSheetExport, bmfontgen,brusheffects
+  FontSheetExport, bmfontgen,brusheffects, rmconst
      { you can add units after this };
 
 {$R *.res}

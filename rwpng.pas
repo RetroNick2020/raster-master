@@ -1,3 +1,19 @@
+//=============================================================================
+// CHANGE LOG (Claude edits - newest first)
+//-----------------------------------------------------------------------------
+// 2026-08-13  ATLAS SUPPORT FOR THE TILED (TMX) EXPORT
+//   * BeginAtlas + CopyThumbToImageAt let a caller compose many sprites into
+//     one RGBA sheet. The TMX exporter needs this and was otherwise hand
+//     rolling a TBitmap with colour keyed transparency - the one PNG path in
+//     the project that did NOT match how everything else is written.
+//   * The transparency rules moved into CopyThumbToImageAt, and
+//     CopyThumbToImage now calls it, so there is exactly one copy of them and
+//     a sheet cannot disagree with a single sprite export.
+//   * Rows are addressed via RawImage.Description.BytesPerLine rather than
+//     assuming width*4. Identical on the usual targets, but a padded scanline
+//     would skew every row after the first in a large sheet.
+//=============================================================================
+
 unit rwpng;
 
 {$mode objfpc}{$H+}
@@ -54,6 +70,11 @@ type
                              var TopPalette : TRMPaletteBuf;topncolors : integer);
     procedure CopyImageToCore(var BasePalette : TRMPaletteBuf;PaletteMode,ColorCount : integer; x,y,x2,y2 : integer);
     procedure CopyThumbToImage(index : integer;PngRGBA : PngRGBASettingsRec); // 0=none,1=transparent color=0, 2=transparent color=fuschia,
+
+    //Atlas support. BeginAtlas allocates one fully transparent RGBA surface,
+    //then CopyThumbToImageAt stamps sprites into it at a destination pixel.
+    procedure BeginAtlas(width,height : integer);
+    procedure CopyThumbToImageAt(index,dx,dy : integer;PngRGBA : PngRGBASettingsRec);
 
     procedure CopyPaletteToCore(NewPalette : TRMPaletteBuf;PaletteMode : integer);
 
@@ -617,53 +638,95 @@ begin
 end;
 
 
+//Allocates a single RGBA surface for an atlas and clears it to fully
+//transparent, so any cell not covered by a sprite stays invisible rather than
+//showing an arbitrary background colour.
+procedure TEasyPNG.BeginAtlas(width,height : integer);
+var
+  pixeldata : PByte;
+  bpl : integer;
+begin
+  picture1.Bitmap.Width:=width;
+  picture1.Bitmap.Height:=height;
+  picture1.Bitmap.PixelFormat:=pf32bit;
+  pixeldata:=picture1.Bitmap.RawImage.Data;
+  bpl:=picture1.Bitmap.RawImage.Description.BytesPerLine;
+  if pixeldata <> nil then FillChar(pixeldata^,bpl*height,0);
+end;
+
+//Stamps one sprite into the current surface at dx,dy.
+//
+//This holds the ONLY copy of the transparency rules. CopyThumbToImage sizes
+//the surface to a single sprite and then calls this, so a whole sheet and a
+//lone sprite can never disagree about what is transparent.
+//
+//Rows are addressed through BytesPerLine rather than width*4: the two are
+//equal for a 32 bit LCL bitmap on the usual targets, but a padded scanline
+//would otherwise skew every row after the first.
+procedure TEasyPNG.CopyThumbToImageAt(index,dx,dy : integer;PngRGBA : PngRGBASettingsRec);
+var
+  width,height : integer;
+  i,j,ci : integer;
+  cr : TRMColorRec;
+  pixeldata : PByte;
+  pixelpos : longint;
+  sheetw,sheeth,bpl : integer;
+begin
+  cr:=Default(TRMColorRec);
+
+  sheetw:=picture1.Bitmap.Width;
+  sheeth:=picture1.Bitmap.Height;
+  width :=ImageThumbBase.GetWidth(index);
+  height:=ImageThumbBase.GetHeight(index);
+
+  pixeldata:=picture1.Bitmap.RawImage.Data;
+  if pixeldata = nil then exit;
+  bpl:=picture1.Bitmap.RawImage.Description.BytesPerLine;
+
+  for j:=0 to height-1 do
+  begin
+    if (dy+j < 0) or (dy+j >= sheeth) then continue;
+    for i:=0 to width-1 do
+    begin
+      if (dx+i < 0) or (dx+i >= sheetw) then continue;
+
+      pixelpos:=(dy+j)*bpl + (dx+i)*4;
+
+      ci:=ImageThumbBase.GetPixel(index,i,j);
+      ImageThumbBase.GetColor(index,ci,cr);
+
+      pixeldata[pixelpos]  :=cr.b;     // Blue
+      pixeldata[pixelpos+1]:=cr.g;     // Green
+      pixeldata[pixelpos+2]:=cr.r;     // Red
+      pixeldata[pixelpos+3]:=255;      // Alpha  255 = solid
+
+      if (PngRGBA.UseColorIndex) and (PngRGBA.ColorIndex=ci) then
+        pixeldata[pixelpos+3]:=0;      // Alpha  0 = transparent
+
+      if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.g=0) and (cr.b=255) then
+        pixeldata[pixelpos+3]:=0;
+
+      if (PngRGBA.UseCustom) and (cr.r = PngRGBA.R) and (cr.b=PngRGBA.B) and (cr.g=PngRGBA.G) then
+        pixeldata[pixelpos+3]:=PngRGBA.A;   // custom alpha level
+    end;
+  end;
+end;
+
 procedure TEasyPNG.CopyThumbToImage(index : integer;PngRGBA : PngRGBASettingsRec); // 0=none,1=transparent color=0, 2=transparent color=fuschia,
 var
  width,height : integer;
- i,j   : integer;
- ci    : integer;
- cr    : TRMColorRec;
- pixeldata  : PByte;
- pixelpos   : longint;
 begin
+ //The export size overrides are deliberately kept here. A single sprite
+ //export honours them; an atlas cell cannot, because the tile grid is sized
+ //from the map's tile size and a cropped sprite would not line up.
  width:=ImageThumbBase.GetExportWidth(index);
- height:=ImageThumbBase.GetExportHeight(index);;
+ height:=ImageThumbBase.GetExportHeight(index);
 
  picture1.Bitmap.Width:=width;
  Picture1.Bitmap.height:=height;
  picture1.Bitmap.PixelFormat:=pf32bit;         //change format to 32 bit/RGBA
- pixeldata:=picture1.Bitmap.RawImage.Data;
- pixelpos:=0;
- for j:=0 to height-1 do
- begin
-   for i:=0 to width-1 do
-   begin
-     ci:=ImageThumbBase.GetPixel(index,i,j);
-     ImageThumbBase.GetColor(index,ci,cr);
 
-     pixeldata[pixelpos]:=cr.b;     // Blue
-     pixeldata[pixelpos+1]:=cr.g;   // Green
-     pixeldata[pixelpos+2]:=cr.r;   // Red
-     pixeldata[pixelpos+3]:=255;    // Alpha     255 = solid
-
-     if (PngRGBA.UseColorIndex) and (PngRGBA.ColorIndex=ci) then
-     begin
-       pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
-     end;
-
-     if (PngRGBA.UseFuschia) and (cr.r = 255) and (cr.g=0) and (cr.b=255) then   //use fuschia
-     begin
-       pixeldata[pixelpos+3]:=0;  // Alpha     0 = transparent
-     end;
-
-     if (PngRGBA.UseCustom) and (cr.r = PngRGBA.R) and (cr.b=PngRGBA.B) and (cr.g=PngRGBA.G) then   //use fuschia
-     begin
-       pixeldata[pixelpos+3]:=PngRGBA.A;  // use Custom Alpha level for transperancy
-     end;
-
-     inc(pixelpos,4);
-   end;
- end;
+ CopyThumbToImageAt(index,0,0,PngRGBA);
 end;
 
 

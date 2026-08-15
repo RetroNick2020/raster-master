@@ -46,12 +46,12 @@ interface
 
 uses
   Classes, SysUtils, fpjson, jsonparser,
-  rmcore, rmtools, rmthumb, mapcore, animbase, rmcodegen, rwpng;
+  rmconst,rmcore, rmtools, rmthumb, mapcore, animbase, rmcodegen, rwpng;
 
 const
   //sprite-side compiler id for JSON - next free slot after QBJSLan=20
   //in the sprite export props combo (see rmexportprops.InitComboBoxes)
-  JSONSpriteLan = 21;
+  //  JSONSpriteLan = 21;
 
   //JSON image types (EO.Image values for the JSON compiler target)
   JSONImageIndexed = 1;  //palette index colors + palette array
@@ -1233,7 +1233,7 @@ begin
       SpriteArr:=TJSONArray.Create;
       for i:=0 to ImageThumbBase.GetCount-1 do
       begin
-        if ImageThumbBase.ImageMain[i].Props.ExportFormat.Lan = JSONSpriteLan then
+        if ImageThumbBase.ImageMain[i].Props.ExportFormat.Lan = JSONLan then
         begin
           imgtype:=ImageThumbBase.ImageMain[i].Props.ExportFormat.Image;
           if imgtype = 0 then imgtype:=JSONImageIndexed;

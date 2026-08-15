@@ -6,8 +6,8 @@ object AnimationForm: TAnimationForm
   Caption = 'Sprite Animation'
   ClientHeight = 747
   ClientWidth = 1149
-  Menu = MainMenu1
   KeyPreview = True
+  Menu = MainMenu1
   Position = poOwnerFormCenter
   LCLVersion = '4.8.0.0'
   OnActivate = FormActivate
@@ -223,11 +223,11 @@ object AnimationForm: TAnimationForm
       Width = 766
       HorzScrollBar.Page = 1
       HorzScrollBar.Visible = False
-      VertScrollBar.Page = 472
+      VertScrollBar.Page = 449
       VertScrollBar.Tracking = True
       Anchors = [akTop, akLeft, akRight, akBottom]
       BorderStyle = bsNone
-      ClientHeight = 472
+      ClientHeight = 449
       ClientWidth = 749
       Color = 15790320
       ParentBackground = False
@@ -398,26 +398,24 @@ object AnimationForm: TAnimationForm
     Height = 23
     Top = 724
     Width = 1149
-    Align = alBottom
-    Panels = <
+    Panels = <    
       item
         Text = 'Animation: 0/0'
         Width = 160
-      end
+      end    
       item
         Text = 'Frames: 0'
         Width = 120
-      end
+      end    
       item
         Text = 'Frame: 0/0'
         Width = 120
-      end
+      end    
       item
         Text = 'Speed: 4'
         Width = 100
-      end
+      end    
       item
-        Text = ''
         Width = 300
       end>
     SimplePanel = False
@@ -524,6 +522,7 @@ object AnimationForm: TAnimationForm
         object FileExportBasicData: TMenuItem
           Caption = 'Basic'
           object ExportBasicAnimData: TMenuItem
+            Tag = 22
             Caption = 'Animation Data Statements'
             OnClick = ExportBasicAnimDataClick
           end
@@ -531,13 +530,7 @@ object AnimationForm: TAnimationForm
         object MenuItem13: TMenuItem
           Caption = 'C'
           object ExportCAnimArray: TMenuItem
-            Caption = 'Animation Array'
-            OnClick = ExportEmscriptenAnimArrayClick
-          end
-        end
-        object MenuItem15: TMenuItem
-          Caption = 'Emscripten'
-          object ExportEmscriptenAnimArray: TMenuItem
+            Tag = 24
             Caption = 'Animation Array'
             OnClick = ExportEmscriptenAnimArrayClick
           end
@@ -545,12 +538,14 @@ object AnimationForm: TAnimationForm
         object MenuItem17: TMenuItem
           Caption = 'gcc'
           object ExportgccAnimArray: TMenuItem
+            Tag = 16
             Caption = 'Animation Array'
             OnClick = ExportEmscriptenAnimArrayClick
           end
         end
         object pascal: TMenuItem
-          Caption = 'pascal'
+          Tag = 25
+          Caption = 'Pascal'
           object ExportPascalAnimArray: TMenuItem
             Caption = 'Animation Array'
             OnClick = FileExportPascalArrayClick
@@ -559,7 +554,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpAB: TMenuItem
           Caption = 'AmigaBasic'
           object AD_AB: TMenuItem
-            Tag = 13
+            Tag = 11
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -567,7 +562,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpAC: TMenuItem
           Caption = 'Amiga C'
           object AD_AC: TMenuItem
-            Tag = 24
+            Tag = 13
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -575,7 +570,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpAP: TMenuItem
           Caption = 'Amiga Pascal'
           object AD_AP: TMenuItem
-            Tag = 19
+            Tag = 12
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -583,7 +578,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpAQB: TMenuItem
           Caption = 'Amiga QuickBasic AQB'
           object AD_AQB: TMenuItem
-            Tag = 7
+            Tag = 14
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -591,7 +586,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpBAM: TMenuItem
           Caption = 'BAM Basic'
           object AD_BAM: TMenuItem
-            Tag = 8
+            Tag = 18
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -599,7 +594,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpFBQB: TMenuItem
           Caption = 'FreeBASIC - QB Mode'
           object AD_FBQB: TMenuItem
-            Tag = 14
+            Tag = 9
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -607,7 +602,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpFB: TMenuItem
           Caption = 'FreeBASIC'
           object AD_FB: TMenuItem
-            Tag = 5
+            Tag = 10
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -615,15 +610,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpFP: TMenuItem
           Caption = 'FreePascal'
           object AD_FP: TMenuItem
-            Tag = 17
-            Caption = 'Animation Array'
-            OnClick = MenuExportAnimLanClick
-          end
-        end
-        object MnuAnimExpGCC: TMenuItem
-          Caption = 'gcc \ Emscripten'
-          object AD_GCC: TMenuItem
-            Tag = 23
+            Tag = 8
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -631,7 +618,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpGW: TMenuItem
           Caption = 'GWBASIC'
           object AD_GW: TMenuItem
-            Tag = 10
+            Tag = 7
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -639,7 +626,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpJS: TMenuItem
           Caption = 'JavaScript'
           object AD_JS: TMenuItem
-            Tag = 25
+            Tag = 26
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -647,7 +634,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpJSON: TMenuItem
           Caption = 'JSON'
           object AD_JSON: TMenuItem
-            Tag = 26
+            Tag = 21
             Caption = 'Animation Data (JSON)'
             OnClick = MenuExportAnimLanClick
           end
@@ -655,7 +642,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpOW: TMenuItem
           Caption = 'Open Watcom C'
           object AD_OW: TMenuItem
-            Tag = 22
+            Tag = 17
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -663,7 +650,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpQB: TMenuItem
           Caption = 'QBasic\QuickBasic'
           object AD_QB: TMenuItem
-            Tag = 11
+            Tag = 4
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -671,7 +658,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpQB64: TMenuItem
           Caption = 'QB64'
           object AD_QB64: TMenuItem
-            Tag = 6
+            Tag = 5
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -679,7 +666,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpQBJS: TMenuItem
           Caption = 'QBJS'
           object AD_QBJS: TMenuItem
-            Tag = 9
+            Tag = 20
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -687,7 +674,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpQC: TMenuItem
           Caption = 'Quick C'
           object AD_QC: TMenuItem
-            Tag = 21
+            Tag = 3
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -695,7 +682,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpQP: TMenuItem
           Caption = 'Quick Pascal'
           object AD_QP: TMenuItem
-            Tag = 16
+            Tag = 15
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -703,7 +690,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpTB: TMenuItem
           Caption = 'Turbo\Power Basic'
           object AD_TB: TMenuItem
-            Tag = 12
+            Tag = 6
             Caption = 'Animation Data Statements'
             OnClick = MenuExportAnimLanClick
           end
@@ -711,7 +698,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpTP: TMenuItem
           Caption = 'Turbo Pascal'
           object AD_TP: TMenuItem
-            Tag = 15
+            Tag = 1
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -719,7 +706,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpTC: TMenuItem
           Caption = 'Turbo C'
           object AD_TC: TMenuItem
-            Tag = 20
+            Tag = 2
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end
@@ -727,7 +714,7 @@ object AnimationForm: TAnimationForm
         object MnuAnimExpTMT: TMenuItem
           Caption = 'TMT Pascal'
           object AD_TMT: TMenuItem
-            Tag = 18
+            Tag = 19
             Caption = 'Animation Array'
             OnClick = MenuExportAnimLanClick
           end

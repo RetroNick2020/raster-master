@@ -5,7 +5,7 @@ unit rwspriteanim;
 interface
 
 uses
-  Classes, SysUtils,LazFileUtils,rmcodegen,animbase,gwbasic;
+  Classes, SysUtils,LazFileUtils,rmconst,rmcodegen,animbase,gwbasic;
 
 
 procedure ExportAnimation(filename : string;Lan : Integer);

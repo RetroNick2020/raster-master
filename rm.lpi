@@ -157,7 +157,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="47">
+    <Units Count="48">
       <Unit0>
         <Filename Value="rm.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -406,6 +406,10 @@
         <Filename Value="bmfontgen.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit46>
+      <Unit47>
+        <Filename Value="rmconst.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit47>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

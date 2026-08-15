@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, ComCtrls, Menus, Clipbrd, rmcodegen, rwxgf, rmclipboard, rmthumb, rmconfig,
+  Spin, ComCtrls, Menus, Clipbrd, rmconst,rmcodegen, rwxgf, rmclipboard, rmthumb, rmconfig,
   rwpng, LazFileUtils, SpinEx, bmfontgen;
 
 type

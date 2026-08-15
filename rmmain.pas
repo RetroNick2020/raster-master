@@ -1,6 +1,28 @@
 //=============================================================================
 // CHANGE LOG (Claude edits - newest first)
 //-----------------------------------------------------------------------------
+// 2026-08-13  RES EXPORT NOW CHECKS EXPORT PROPERTIES FIRST
+//   * A RES export silently skips any sprite or map whose export properties
+//     were never set - the file writes, reports no error, and is missing
+//     artwork. CheckExportProperties counts what is and is not configured,
+//     and ConfirmExportProperties reports it.
+//   * Silent when everything is set. A dialog on every successful export is
+//     one people learn to dismiss without reading.
+//   * The predicates mirror the exporters' own (Image/Palette for sprites,
+//     MapFormat for maps) so the dialog cannot disagree with what is written.
+//   * Lan is reported separately rather than treated as unset: a RES binary
+//     does not need it, but an include file emits nothing without it.
+//-----------------------------------------------------------------------------
+// 2026-08-13  TILED (TMX) EXPORT ON THE FILE MENU
+//   * File > Export > Tiled (TMX), directly under the RES entries. Same four
+//     options as the map editor's own menu.
+//   * DELEGATES to MapEdit.MenuExportTmxClick rather than repeating it. The
+//     Tag on the menu item carries the choice, so both menus drive one body
+//     and cannot drift apart. Duplicating ~120 lines of export logic in a
+//     second unit is exactly how two menus end up behaving differently.
+//   * Guarded on map count: reaching this from the sprite editor with no maps
+//     loaded would otherwise open a Save dialog and then fail.
+//-----------------------------------------------------------------------------
 // 2026-08-03  Project open restores the saved zoom level
 //   * RefreshAfterProjectOpen called SetZoomSize(1) immediately after
 //     CopyIndexImageToCore(0) had restored the image's GridArea, so the
@@ -22,7 +44,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, uPSComponent, uPSRuntime, uPSComponent_Forms,
   Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, ComCtrls, Menus,
-  ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmtools, rmcore, flood,
+  ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmconst,rmtools, rmcore, flood,
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, uAbout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
@@ -40,6 +62,14 @@ const
 type
 
   { TRMMainForm }
+
+  //Result of the pre-flight check run before a RES export. Counting is kept
+  //separate from reporting so the numbers can be tested on their own.
+  TExportReadyRec = record
+    SpriteTotal, SpriteSet, SpriteUnset : integer;
+    MapTotal,    MapSet,    MapUnset    : integer;
+    NoCompiler                          : integer; //has data, no compiler picked
+  end;
 
   TRMMainForm = class(TForm)
     Action1: TAction;
@@ -86,6 +116,14 @@ type
     ExportPropsMenu: TPopupMenu;
     ExportRESInclude: TMenuItem;
     ExportRESBinary: TMenuItem;
+    ExportTiledSep: TMenuItem;
+    ExportTiled: TMenuItem;
+    ExportTiledCurrentSheet: TMenuItem;
+    ExportTiledAllSheet: TMenuItem;
+    ExportTiledSep2: TMenuItem;
+    ExportTiledCurrentColl: TMenuItem;
+    ExportTiledAllColl: TMenuItem;
+    ExportTiledSep3: TMenuItem;
     ABPutPlusMaskData: TMenuItem;
     FBPutPlusMaskData: TMenuItem;
     FPPutImagePlusMaskArray: TMenuItem;
@@ -573,6 +611,9 @@ type
     procedure MouseSaveClick(Sender: TObject);
 
 
+    procedure MenuExportTiledClick(Sender: TObject);
+    function  CheckExportProperties : TExportReadyRec;
+    function  ConfirmExportProperties : boolean;
     procedure RESExportClick(Sender: TObject);
     procedure FileDeleteClick(Sender: TObject);
     procedure SaveProjectFileClick(Sender: TObject);
@@ -4497,12 +4538,155 @@ end;
 
 
 
+//=============================================================================
+// TILED (TMX) EXPORT - File > Export > Tiled (TMX)
+//
+// This exports MAPS, not the sprite list: a .tmx is layers of tile references
+// plus hit boxes and paths. The sprite images travel with it as the tileset,
+// which is why the entry belongs on the main Export menu as well as the map
+// editor's own.
+//
+// The work is done by MapEdit.MenuExportTmxClick and is NOT repeated here.
+// The menu item's Tag carries the choice (0 current+sheet, 1 all+sheet,
+// 2 current+collection, 3 all+collection) and that handler reads it straight
+// off the Sender, so both menus drive one body. Copying the export logic into
+// this unit is how two menus end up quietly behaving differently.
+//=============================================================================
+procedure TRMMainForm.MenuExportTiledClick(Sender: TObject);
+begin
+  if MapCoreBase.GetMapCount < 1 then
+  begin
+    ShowMessage('There are no maps to export.'+sLineBreak+sLineBreak+
+                'Tiled files describe a map - its layers, hit boxes and '+
+                'paths - with the sprites travelling along as the tileset. '+
+                'Create a map in the Map Editor first.');
+    exit;
+  end;
+
+  //reached from the sprite editor, where the map editor may never have been
+  //opened, so make sure its idea of the current map is the shared one
+  MapEdit.CurrentMap:=MapCoreBase.GetCurrentMap;
+  MapEdit.MenuExportTmxClick(Sender);
+end;
+
+//=============================================================================
+// EXPORT PROPERTIES PRE-FLIGHT
+//
+// A RES export silently skips anything whose export properties were never
+// set. With a large project that is easy to miss: the file writes, reports no
+// error, and is simply missing half the artwork.
+//
+// The predicates below deliberately mirror the ones the exporters themselves
+// use, so this check can never disagree with what actually gets written:
+//
+//   sprite contributes  Image > 0 or Palette > 0
+//                       (GetExportImageCount / GetExportPaletteCount)
+//   map contributes     MapFormat > 0
+//                       (GetExportMapCount, which also sizes the RES header)
+//
+// Lan is counted separately rather than folded in. The RES binary does not
+// need it, but an include file does - a map or sprite with data and no
+// compiler chosen emits nothing there, so it is worth naming without calling
+// the item unset.
+//=============================================================================
+function TRMMainForm.CheckExportProperties : TExportReadyRec;
+var
+  i : integer;
+  EO : ImageExportFormatRec;
+  MP : MapExportFormatRec;
+  r  : TExportReadyRec;
+begin
+  r:=Default(TExportReadyRec);
+  EO:=Default(ImageExportFormatRec);
+  MP:=Default(MapExportFormatRec);
+
+  r.SpriteTotal:=ImageThumbBase.GetCount;
+  for i:=0 to r.SpriteTotal-1 do
+  begin
+    ImageThumbBase.GetExportOptions(i,EO);
+    if (EO.Image > 0) or (EO.Palette > 0) then
+    begin
+      inc(r.SpriteSet);
+      if EO.Lan <= 0 then inc(r.NoCompiler);
+    end
+    else
+      inc(r.SpriteUnset);
+  end;
+
+  r.MapTotal:=MapCoreBase.GetMapCount;
+  for i:=0 to r.MapTotal-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i,MP);
+    if MP.MapFormat > 0 then
+    begin
+      inc(r.MapSet);
+      if MP.Lan <= 0 then inc(r.NoCompiler);
+    end
+    else
+      inc(r.MapUnset);
+  end;
+
+  CheckExportProperties:=r;
+end;
+
+//True to go ahead with the export.
+//
+//Silent when everything is set, which is the normal case - a dialog that
+//appears on every successful export is one people stop reading.
+function TRMMainForm.ConfirmExportProperties : boolean;
+var
+  r : TExportReadyRec;
+  msg : string;
+begin
+  ConfirmExportProperties:=true;
+  r:=CheckExportProperties;
+
+  if (r.SpriteTotal = 0) and (r.MapTotal = 0) then exit;   //nothing to check
+  if (r.SpriteUnset = 0) and (r.MapUnset = 0) and (r.NoCompiler = 0) then exit;
+
+  //nothing at all configured - the file would be empty, so say so plainly
+  //rather than reporting it as a partial export
+  if (r.SpriteSet = 0) and (r.MapSet = 0) then
+  begin
+    ShowMessage('No export properties have been set.'+sLineBreak+sLineBreak+
+      'None of the '+IntToStr(r.SpriteTotal)+' sprite(s) and '+
+      IntToStr(r.MapTotal)+' map(s) would be included, so the file would be '+
+      'empty.'+sLineBreak+sLineBreak+
+      'Set them with Export Properties on a sprite or map first.');
+    ConfirmExportProperties:=false;
+    exit;
+  end;
+
+  msg:='Some items have no export properties set and will be skipped.'+
+       sLineBreak+sLineBreak;
+
+  if r.SpriteTotal > 0 then
+    msg:=msg+'Sprites:  '+IntToStr(r.SpriteSet)+' set, '+
+             IntToStr(r.SpriteUnset)+' not set'+sLineBreak;
+  if r.MapTotal > 0 then
+    msg:=msg+'Maps:     '+IntToStr(r.MapSet)+' set, '+
+             IntToStr(r.MapUnset)+' not set'+sLineBreak;
+
+  if r.NoCompiler > 0 then
+    msg:=msg+sLineBreak+IntToStr(r.NoCompiler)+
+         ' item(s) have data selected but no compiler chosen. Those are '+
+         'written to a RES binary but produce nothing in an include file.';
+
+  msg:=msg+sLineBreak+sLineBreak+'Continue with the export?';
+
+  ConfirmExportProperties:=
+    MessageDlg('Export Properties',msg,mtWarning,[mbYes,mbNo],0) = mrYes;
+end;
+
 procedure TRMMainForm.RESExportClick(Sender: TObject);
 var
   Error : word;
 begin
  //update the current thumb image
  ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent);
+
+ //before anything is written or copied - both routes skip unset items
+ if not ConfirmExportProperties then exit;
 
  if ExportTextFileToClipboard(Sender) then exit;  //copy to clipboard found export format and was success - if it doesn't we contnue to export to file
 
@@ -6268,7 +6452,7 @@ begin
    FilePropertiesDialog.GetProps(PngRGBA);
    ImageThumbBase.GetExportOptions(ImageThumbBase.GetCurrent, EO);
    imgtype:=EO.Image;
-   if (EO.Lan <> JSONSpriteLan) or (imgtype = 0) then imgtype:=JSONImageIndexed;
+   if (EO.Lan <> JSONLan) or (imgtype = 0) then imgtype:=JSONImageIndexed;
 
    if rmconfigbase.GetExportTextFileToClipStatus then
    begin

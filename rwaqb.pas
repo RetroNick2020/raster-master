@@ -4,7 +4,7 @@ unit rwaqb;
 
 interface
 uses
-  Classes, SysUtils,LazFileUtils,rmcodegen,rmxgfcore;
+  Classes, SysUtils,LazFileUtils,rmconst,rmcodegen,rmxgfcore;
 
 Function WriteAQBBitMapCodeToFile(x,y,x2,y2 : integer;filename:string):word;
 Function WriteAQBBitMapCodeToBuffer(Var F : Text;x,y,x2,y2 : integer;imagename:string):word;

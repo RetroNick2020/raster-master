@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, ExtCtrls,
-  ComCtrls, StdCtrls, Menus, Types, Math, LCLType, AnimBase,animationexport,rmthumb,rwpng,
+  ComCtrls, StdCtrls, Menus, Types, Math, LCLType, rmconst,AnimBase,animationexport,rmthumb,rwpng,
   fileprops,rwspriteanim,rmcodegen,rmconfig,rmclipboard;
 
 const
@@ -45,8 +45,6 @@ type
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     ExportCAnimArray: TMenuItem;
-    MenuItem15: TMenuItem;
-    ExportEmscriptenAnimArray: TMenuItem;
     ExportPascalAnimArray: TMenuItem;
     //extended compiler export menu items
     MnuAnimExpAB, AD_AB : TMenuItem;
@@ -57,7 +55,6 @@ type
     MnuAnimExpFBQB, AD_FBQB : TMenuItem;
     MnuAnimExpFB, AD_FB : TMenuItem;
     MnuAnimExpFP, AD_FP : TMenuItem;
-    MnuAnimExpGCC, AD_GCC : TMenuItem;
     MnuAnimExpGW, AD_GW : TMenuItem;
     MnuAnimExpJS, AD_JS : TMenuItem;
     MnuAnimExpJSON, AD_JSON : TMenuItem;

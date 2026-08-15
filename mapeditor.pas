@@ -1,6 +1,41 @@
 //=============================================================================
 // CHANGE LOG (Claude edits - newest first)
 //-----------------------------------------------------------------------------
+// 2026-08-13  TILED (TMX) EXPORT - use the project's own PNG writer
+//   * TmxWriteTileImage was hand rolling a 24 bit TBitmap and colour keying
+//     it against a hardcoded clFuchsia. That is the ONLY PNG path in the
+//     program that did not go through rwpng, it ignored the file properties
+//     settings every other export honours, and if a sprite's own background
+//     happened to be fuchsia the whole sheet came out transparent - which
+//     displays as an empty tileset with no error at all.
+//   * Collection mode now calls SaveFromThumbAsPNG. Atlas mode uses the new
+//     BeginAtlas/CopyThumbToImageAt pair, so both share one set of alpha
+//     rules with sprite, JSON and sprite sheet export.
+//-----------------------------------------------------------------------------
+// 2026-08-13  TILED (TMX) EXPORT
+//   * Maps > Export > Tiled (TMX): current map or all maps, sprite sheet or
+//     image collection. Sprite sheet is listed first and is the default,
+//     because it is the tileset shape every TMX runtime can read.
+//   * All maps writes ONE shared tileset as an external .tsx plus one .tmx
+//     per map. A single map embeds its tileset, so it travels as one file.
+//   * rwtmx does the format and holds no LCL reference. The pixels are this
+//     unit's job: TmxWriteTileImage is handed to it as a callback and is the
+//     only place a TBitmap or TPortableNetworkGraphic appears.
+//   * The atlas sheet is built once, in memory, across the per tile calls and
+//     saved on the call flagged Finish - reopening a PNG for every tile would
+//     be both slow and lossy.
+//-----------------------------------------------------------------------------
+// 2026-08-11  CLOSED PATHS DID NOT RETURN TO THEIR START
+//   * FinishPath(true) now repairs the implicit closing leg before it sets
+//     closed. Every leg the user PLOTS goes through SnapTo8, but the leg
+//     from the last waypoint back to the first is never plotted, so it was
+//     never constrained to the 8 directions and the exported follower did
+//     not come back to its start tile.
+//   * The geometry lives in mapcore (ClosingLegNeedsCorner / RepairClosingLeg)
+//     so the tool and the repair command cannot drift apart.
+//   * New Paths -> Fix Closed Paths repairs maps saved before this fix.
+//     Surveys first, so it burns no undo level when there is nothing to do.
+//-----------------------------------------------------------------------------
 // 2026-08-03  MAP LAYERS - phase 4 (editor)
 //   * UpdateMapView draws visible layers bottom to top. The checkerboard is
 //     still drawn ONCE before the layer loop - it is a map level background,
@@ -34,8 +69,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,Math,
-  ComCtrls, CheckLst, Menus,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
-  rmconfig, LCLType,setcustommapsize,setcustomtilesize,rmcore;
+  ComCtrls, CheckLst, Menus,rmconst,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
+  rmconfig, LCLType,setcustommapsize,setcustomtilesize,rmcore,rwtmx,rwpng;
 
 const
   AddImage = 1;
@@ -87,7 +122,16 @@ type
     PopPathPaste: TMenuItem;
     PathFinishOpen: TMenuItem;
     PathFinishClosed: TMenuItem;
+    MnuMapExpTiledSep: TMenuItem;
+    MnuMapExpTiled: TMenuItem;
+    TMX_CurrentSheet: TMenuItem;
+    TMX_AllSheet: TMenuItem;
+    TMX_Sep1: TMenuItem;
+    TMX_CurrentColl: TMenuItem;
+    TMX_AllColl: TMenuItem;
     PathSep1: TMenuItem;
+    PathsFixClosed: TMenuItem;
+    PathSep3: TMenuItem;
     PathsDeleteAll: TMenuItem;
     PathSep2: TMenuItem;
     PathsToggle: TMenuItem;
@@ -291,6 +335,8 @@ type
     procedure PathFinishOpenClick(Sender: TObject);
     procedure PathFinishClosedClick(Sender: TObject);
     procedure PathsDeleteAllClick(Sender: TObject);
+    procedure PathsFixClosedClick(Sender: TObject);
+    procedure MenuExportTmxClick(Sender: TObject);
     procedure BtnPathDeleteClick(Sender: TObject);
     procedure BtnPathVisibleClick(Sender: TObject);
     procedure BtnPathActiveClick(Sender: TObject);
@@ -382,6 +428,17 @@ type
   public
     hpos,vpos : integer;
     CurrentMap : integer;
+
+    //State the TMX image callback carries between its per tile calls. It is
+    //handed one tile at a time and so cannot derive the sheet size itself.
+    //These sit with the other fields because Object Pascal will not accept a
+    //field after a method in the same visibility section (error 3251).
+    FTmxPng       : TEasyPNG;
+    FTmxAtlas     : boolean;
+    FTmxSheetW    : integer;
+    FTmxSheetH    : integer;
+    FTmxTable     : TTmxTileTable;
+
     //true while RefreshLayerPanel is rewriting the list, so the list box
     //events do not react to our own edits
     FUpdatingLayerPanel : boolean;
@@ -442,6 +499,9 @@ type
     procedure DrawOverLayOnClipArea;
     procedure DrawHitBoxOverlay;
     procedure DrawPathOverlay;
+    function  TmxWriteTileImage(const FileName : string; const UID : TGUID;
+                ImageIndex : integer; sx, sy : integer;
+                Finish : boolean) : boolean;
     procedure UpdatePathListView;
     procedure StartNewPath(tx,ty : integer);
     procedure FinishPath(closeIt : boolean);
@@ -1335,6 +1395,283 @@ begin
   FinishPath(true);
 end;
 
+//=============================================================================
+// FIX CLOSED PATHS
+//
+// Repairs maps saved before the closing leg was constrained. Walks every
+// closed path on the current map and appends the corner waypoint that makes
+// its closing leg legal.
+//
+// Surveys before it changes anything, so a map with nothing wrong costs no
+// undo level and shows no confirmation prompt.
+//=============================================================================
+//=============================================================================
+// TILED (TMX) EXPORT
+//
+// rwtmx writes the format and never touches a pixel - it asks for one tile
+// image at a time through this callback. That split is what lets rwtmx build
+// and be tested with no LCL present.
+//
+// Atlas mode calls here once per tile with a destination inside the sheet and
+// the same FileName every time, so the sheet is held in FTmxSheet across the
+// run and written on the call flagged Finish. Collection mode passes 0,0 and
+// its own name each time, and saves immediately.
+//=============================================================================
+function TMapEdit.TmxWriteTileImage(const FileName : string; const UID : TGUID;
+           ImageIndex : integer; sx, sy : integer;
+           Finish : boolean) : boolean;
+var
+  img : integer;
+  PngRGBA : PngRGBASettingsRec;
+begin
+  TmxWriteTileImage:=false;
+
+  //The UID identifies the image itself, the index only says where it sat.
+  //Resolve by UID first: if the user has inserted or deleted images since the
+  //map was drawn, the stored index points at the wrong art but the UID still
+  //finds the right one. The index is only a fallback.
+  img:=ImageThumbBase.FindUID(UID);
+  if img < 0 then img:=ImageIndex;
+  if (img < 0) or (img >= ImageThumbBase.GetCount) then exit;
+
+  //Same transparency settings as every other PNG this program writes. The
+  //first version of this routine colour keyed a 24 bit TBitmap against a
+  //hardcoded fuchsia, which is how a tileset ends up fully transparent - and
+  //an invisible tileset looks exactly like a broken one, with no error.
+  PngRGBA:=Default(PngRGBASettingsRec);
+  rmconfigbase.GetProps(PngRGBA);
+
+  try
+    if not FTmxAtlas then
+    begin
+      //one sprite, one file - rwpng already does exactly this job
+      TmxWriteTileImage:=SaveFromThumbAsPNG(img,FileName,PngRGBA) = 0;
+      exit;
+    end;
+
+    //atlas: one surface held across the per tile calls, saved on the last
+    if FTmxPng = nil then
+    begin
+      FTmxPng:=TEasyPNG.Create;
+      FTmxPng.BeginAtlas(FTmxSheetW,FTmxSheetH);
+    end;
+
+    FTmxPng.CopyThumbToImageAt(img,sx,sy,PngRGBA);
+
+    if Finish then
+    begin
+      FTmxPng.SaveToFile(FileName);
+      FreeAndNil(FTmxPng);
+    end;
+
+    TmxWriteTileImage:=true;
+  except
+    //a failed write must be reported, not raised through rwtmx
+    FreeAndNil(FTmxPng);
+    TmxWriteTileImage:=false;
+  end;
+end;
+
+//Menu Tag: 0 current+sheet, 1 all+sheet, 2 current+collection, 3 all+collection
+procedure TMapEdit.MenuExportTmxClick(Sender: TObject);
+var
+  opt  : TmxOptionsRec;
+  res  : TmxResultRec;
+  choice,idx,cols,rows,missing : integer;
+  msg  : string;
+begin
+  //NOTE: do not call this local 'Tag'. TComponent.Tag is in scope inside any
+  //TForm method, so a local of that name is a duplicate identifier (5002),
+  //not a shadow - the same trap as TControl.Changed.
+  choice:=0;
+  if Sender is TMenuItem then choice:=(Sender as TMenuItem).Tag;
+
+  //these are records with string fields, so Default() rather than FillChar -
+  //FillChar would zero the string pointers without releasing them
+  opt:=Default(TmxOptionsRec);
+  res:=Default(TmxResultRec);
+  cols:=0;
+  rows:=0;
+  missing:=0;
+
+  TmxDefaultOptions(opt);
+  if choice >= 2 then opt.Mode:=TmxModeCollection
+                 else opt.Mode:=TmxModeAtlas;
+
+  //all maps -> one shared tileset in a .tsx, so it is not duplicated into
+  //every .tmx. A single map embeds it and travels as one file.
+  if (choice = 1) or (choice = 3) then
+  begin
+    idx:=-1;
+    opt.Location:=TmxTilesetExternal;
+  end
+  else
+  begin
+    idx:=CurrentMap;
+    opt.Location:=TmxTilesetEmbedded;
+  end;
+
+  SaveDialog1.Filter:='Tiled Map|*.tmx|All Files|*.*';
+  SaveDialog1.DefaultExt:='.tmx';
+  if not SaveDialog1.Execute then exit;
+
+  //the callback needs to know the shape up front - it is handed one tile at a
+  //time and cannot work out the sheet size from that
+  FTmxAtlas:=(opt.Mode = TmxModeAtlas);
+  FreeAndNil(FTmxPng);
+
+  if FTmxAtlas then
+  begin
+    //size the sheet the same way rwtmx lays it out, or tiles would land
+    //outside it
+    //the survey's missing count is discarded here - TmxExport reports the
+    //authoritative one afterwards. Passing 'cols' as the scratch would work
+    //but reads like a bug.
+    if not TmxBuildTileTable(MapCoreBase,idx,FTmxTable,missing) then
+    begin
+      ShowMessage('This map uses more distinct tiles than the exporter supports.');
+      exit;
+    end;
+    TmxAtlasLayout(FTmxTable.Count,
+                   MapCoreBase.GetMapTileWidth(CurrentMap),
+                   MapCoreBase.GetMapTileHeight(CurrentMap),
+                   cols,rows,FTmxSheetW,FTmxSheetH);
+  end;
+
+  if not TmxExport(MapCoreBase,idx,SaveDialog1.FileName,opt,
+                   @TmxWriteTileImage,res) then
+  begin
+    FreeAndNil(FTmxPng);
+    case res.Status of
+      TmxNoTiles      : ShowMessage('There is nothing to export - every tile on this map is empty.');
+      TmxImageFailed  : ShowMessage('The tile images could not be written.'+sLineBreak+sLineBreak+
+                                    'Nothing was left on disk for at least one tile, so the '+
+                                    'export was stopped rather than leaving a tileset that '+
+                                    'points at files which are not there.'+sLineBreak+sLineBreak+
+                                    'Check there is room on the disk and that the folder is writable.');
+    else
+      ShowMessage('The export could not be written.'+sLineBreak+
+                  'Check the folder is writable.');
+    end;
+    exit;
+  end;
+  FreeAndNil(FTmxPng);
+
+  //Report the folder and every file name. Tiled resolves a tileset's image
+  //relative to the .tsx and the .tsx relative to the .tmx, so when something
+  //cannot be found the first question is always where each piece actually
+  //landed - this answers it without hunting through Explorer.
+  msg:='Exported '+IntToStr(res.MapsWritten)+' map(s) using '+
+       IntToStr(res.TilesUsed)+' tile(s).'+sLineBreak+sLineBreak+
+       'Folder: '+res.OutputDir+sLineBreak+
+       'Map:    '+res.FirstMapFile;
+  if res.MapsWritten > 1 then msg:=msg+'  (+'+IntToStr(res.MapsWritten-1)+' more)';
+  msg:=msg+sLineBreak;
+
+  if res.TsxFile <> '' then
+    msg:=msg+'Tileset: '+res.TsxFile+sLineBreak
+  else
+    msg:=msg+'Tileset: embedded in the .tmx'+sLineBreak;
+
+  if res.SheetFile <> '' then
+    msg:=msg+'Image:   '+res.SheetFile+sLineBreak
+  else if res.ImageDir <> '' then
+    msg:=msg+'Images:  '+IntToStr(res.ImageFiles)+' file(s) in '+res.ImageDir+PathDelim+sLineBreak
+  else
+    msg:=msg+'Images:  '+IntToStr(res.ImageFiles)+' file(s)'+sLineBreak;
+
+  if res.ObjectsOut > 0 then
+    msg:=msg+'Objects: '+IntToStr(res.ObjectsOut)+' hit box(es) and path(s)'+sLineBreak;
+  if res.MissingTiles > 0 then
+    msg:=msg+sLineBreak+IntToStr(res.MissingTiles)+
+         ' cell(s) referenced an image that no longer exists and were '+
+         'exported as empty.';
+
+  //Leftovers are the one failure that looks like a broken export but is not.
+  //An earlier run of the OTHER shape leaves images this run does not
+  //overwrite, and any .tmx still sitting there points at a tileset that has
+  //since been rewritten - which Tiled reports as missing referenced files.
+  if res.StaleFiles > 0 then
+    msg:=msg+sLineBreak+sLineBreak+
+         'NOTE: this folder still holds '+IntToStr(res.StaleFiles)+
+         ' image file(s) from an earlier export of the other type, and may '+
+         'hold .tmx files from it too. Those still point at the old tileset. '+
+         'Export to an empty folder if anything fails to load.';
+
+  ShowMessage(msg);
+end;
+
+procedure TMapEdit.PathsFixClosedClick(Sender: TObject);
+var
+  p,cx,cy,n,closedcount,needfix,fixed,failed : integer;
+  msg : string;
+begin
+  //filled through var parameters by ClosingLegNeedsCorner - see hint 5057
+  cx:=0;
+  cy:=0;
+  n:=MapCoreBase.GetPathCount(CurrentMap);
+  if n = 0 then
+  begin
+    ShowMessage('This map has no paths.');
+    exit;
+  end;
+
+  closedcount:=0;
+  needfix:=0;
+  for p:=0 to n-1 do
+  begin
+    if not MapCoreBase.GetPathClosed(CurrentMap,p) then continue;
+    inc(closedcount);
+    if MapCoreBase.ClosingLegNeedsCorner(CurrentMap,p,cx,cy) then inc(needfix);
+  end;
+
+  if closedcount = 0 then
+  begin
+    ShowMessage('This map has no closed paths.'+sLineBreak+sLineBreak+
+                'Only closed paths have a closing leg to repair.');
+    exit;
+  end;
+
+  if needfix = 0 then
+  begin
+    ShowMessage('Checked '+IntToStr(closedcount)+' closed path(s).'+sLineBreak+
+                'They all return to their start point already - nothing to fix.');
+    exit;
+  end;
+
+  if MessageDlg('Fix Closed Paths',
+     IntToStr(needfix)+' of '+IntToStr(closedcount)+' closed path(s) do not return '+
+     'to their start point.'+sLineBreak+sLineBreak+
+     'Add one corner waypoint to each, so the leg back to the start stays '+
+     'straight or on a 45 degree line?',
+     mtConfirmation,[mbYes,mbNo],0) <> mrYes then exit;
+
+  MapCoreBase.CopyToUndo(CurrentMap);
+
+  fixed:=0;
+  failed:=0;
+  for p:=0 to n-1 do
+  begin
+    if not MapCoreBase.GetPathClosed(CurrentMap,p) then continue;
+    case MapCoreBase.RepairClosingLeg(CurrentMap,p) of
+       1 : inc(fixed);
+      -1 : inc(failed);
+    end;
+  end;
+
+  msg:='Repaired '+IntToStr(fixed)+' of '+IntToStr(closedcount)+' closed path(s).';
+  if failed > 0 then
+    msg:=msg+sLineBreak+sLineBreak+
+         IntToStr(failed)+' could not be repaired. A path already holding the '+
+         'maximum of '+IntToStr(MaxPathPoints)+' points has no room for the '+
+         'extra corner - delete a waypoint from it and run this again.';
+
+  UpdatePathListView;
+  RefreshMapPanels;
+  MapPaintBox.Invalidate;
+  ShowMessage(msg);
+end;
+
 procedure TMapEdit.PathsDeleteAllClick(Sender: TObject);
 begin
   if MapCoreBase.GetPathCount(CurrentMap) = 0 then exit;
@@ -1558,6 +1895,15 @@ begin
   MapPaintBox.Invalidate;
 end;
 
+//Every leg the user PLOTS goes through SnapTo8. The closing leg - last
+//waypoint back to the first - is implicit: it is never plotted, so nothing
+//ever constrained it to the 8 directions, and the exporter would round it and
+//land the follower somewhere other than the start.
+//
+//RepairClosingLeg appends the one corner waypoint that splits that leg into a
+//45 degree run and a straight run. It appends rather than moving the user's
+//last point, because moving what they plotted would silently change the shape
+//they drew.
 procedure TMapEdit.FinishPath(closeIt : boolean);
 begin
   if FPathEditIndex < 0 then exit;
@@ -1566,7 +1912,20 @@ begin
   if MapCoreBase.GetPathPointCount(CurrentMap,FPathEditIndex) < 2 then
     MapCoreBase.DeletePath(CurrentMap,FPathEditIndex)
   else
+  begin
+    if closeIt then
+      if MapCoreBase.RepairClosingLeg(CurrentMap,FPathEditIndex) < 0 then
+      begin
+        ShowMessage('This path cannot be closed.'+sLineBreak+sLineBreak+
+          'Closing it needs one more corner point, so that the leg back to the '+
+          'start stays straight or on a 45 degree line, and this path already '+
+          'has the maximum of '+IntToStr(MaxPathPoints)+' points.'+sLineBreak+sLineBreak+
+          'The path has been left open.');
+        closeIt:=false;
+      end;
+
     MapCoreBase.SetPathClosed(CurrentMap,FPathEditIndex,closeIt);
+  end;
 
   FPathEditIndex:=-1;
   FPathHasPreview:=false;

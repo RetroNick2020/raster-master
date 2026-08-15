@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 107
+  Left = 335
   Height = 859
-  Top = 238
+  Top = 197
   Width = 1600
   Align = alClient
   Caption = 'Raster Master'
@@ -14,9 +14,9 @@ object RMMainForm: TRMMainForm
   LCLVersion = '4.8.0.0'
   Scaled = False
   OnClose = FormClose
-  OnKeyDown = FormKeyDown
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
   object RightPanel: TPanel
     AnchorSideLeft.Control = RightHSplitter
     AnchorSideLeft.Side = asrBottom
@@ -248,7 +248,7 @@ object RMMainForm: TRMMainForm
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = SpriteHitBoxPanel
       Left = 0
-      Height = 380
+      Height = 390
       Top = 286
       Width = 281
       Anchors = [akTop, akLeft, akRight, akBottom]
@@ -275,8 +275,8 @@ object RMMainForm: TRMMainForm
       Top = 676
       Width = 281
       Anchors = [akLeft, akRight, akBottom]
-      BevelOuter = bvNone
       BorderSpacing.Right = 11
+      BevelOuter = bvNone
       ClientHeight = 160
       ClientWidth = 281
       TabOrder = 3
@@ -290,6 +290,7 @@ object RMMainForm: TRMMainForm
         BevelOuter = bvNone
         Caption = ' Hit Boxes'
         Color = 11625216
+        ParentBackground = False
         ParentColor = False
         TabOrder = 0
       end
@@ -306,10 +307,10 @@ object RMMainForm: TRMMainForm
         object BtnSprHBAdd: TButton
           Left = 2
           Height = 24
+          Hint = 'Add a hit box from the selected area'
           Top = 2
           Width = 30
           Caption = '+'
-          Hint = 'Add a hit box from the selected area'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 0
@@ -318,10 +319,10 @@ object RMMainForm: TRMMainForm
         object BtnSprHBDel: TButton
           Left = 34
           Height = 24
+          Hint = 'Delete the selected hit box'
           Top = 2
           Width = 30
           Caption = '-'
-          Hint = 'Delete the selected hit box'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 1
@@ -330,10 +331,10 @@ object RMMainForm: TRMMainForm
         object BtnSprHBClear: TButton
           Left = 66
           Height = 24
+          Hint = 'Delete every hit box on this sprite'
           Top = 2
           Width = 76
           Caption = 'Delete All'
-          Hint = 'Delete every hit box on this sprite'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 2
@@ -342,10 +343,10 @@ object RMMainForm: TRMMainForm
         object BtnSprHBShow: TButton
           Left = 144
           Height = 24
+          Hint = 'Show or hide the hit box overlay'
           Top = 2
           Width = 60
           Caption = 'Show'
-          Hint = 'Show or hide the hit box overlay'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 3
@@ -913,6 +914,38 @@ object RMMainForm: TRMMainForm
         object ExportRESBinary: TMenuItem
           Caption = 'RES Binary File'
           OnClick = RESExportClick
+        end
+        object ExportTiledSep: TMenuItem
+          Caption = '-'
+        end
+        object ExportTiled: TMenuItem
+          Caption = 'Tiled (TMX)'
+          object ExportTiledCurrentSheet: TMenuItem
+            Tag = 0
+            Caption = 'Current Map - Sprite Sheet'
+            OnClick = MenuExportTiledClick
+          end
+          object ExportTiledAllSheet: TMenuItem
+            Tag = 1
+            Caption = 'All Maps - Sprite Sheet (shared .tsx)'
+            OnClick = MenuExportTiledClick
+          end
+          object ExportTiledSep2: TMenuItem
+            Caption = '-'
+          end
+          object ExportTiledCurrentColl: TMenuItem
+            Tag = 2
+            Caption = 'Current Map - Image Collection'
+            OnClick = MenuExportTiledClick
+          end
+          object ExportTiledAllColl: TMenuItem
+            Tag = 3
+            Caption = 'All Maps - Image Collection (shared .tsx)'
+            OnClick = MenuExportTiledClick
+          end
+        end
+        object ExportTiledSep3: TMenuItem
+          Caption = '-'
         end
         object ExportJSONSprite: TMenuItem
           Caption = 'JSON'
@@ -1791,7 +1824,6 @@ object RMMainForm: TRMMainForm
       object SymmetryMenu: TMenuItem
         Caption = 'Symmetry'
         object SymOff: TMenuItem
-          Tag = 0
           AutoCheck = True
           Caption = 'Off'
           Checked = True

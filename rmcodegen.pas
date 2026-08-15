@@ -4,39 +4,9 @@ unit rmcodegen;
 
 interface
 uses
-  Classes, SysUtils,gwbasic;
+  Classes, SysUtils,rmconst,gwbasic;
 
 const
- NoLan    = 0;
- BasicLan = 1;
- BasicLNLan = 2;
- CLan     = 3;
- PascalLan= 4;
- FBBasicLan = 5;   //fix this in the future - just a hack right now to make things work with freebasic
- QB64BasicLan = 6; //fix this in the future - just a hack right now to make things work with Qb64
- AQBBasicLan = 7;  //fix this in the future - just a hack right now to make things work with Amiga QuickBasic AQB
- BAMBasicLan = 8;
- QBJSBasicLan = 9;
-
- //extended map compiler targets - match sprite editor compiler list
- GWBasicLan     = 10;  //GWBASIC - line numbered DATA
- QBBasicLan     = 11;  //QBasic\QuickBasic
- TBBasicLan     = 12;  //Turbo\Power Basic
- ABBasicLan     = 13;  //AmigaBasic
- FBQBBasicLan   = 14;  //FreeBASIC - QB Mode
- TPPascalLan    = 15;  //Turbo Pascal
- QPPascalLan    = 16;  //Quick Pascal
- FPPascalLan    = 17;  //FreePascal
- TMTPascalLan   = 18;  //TMT Pascal
- APPascalLan    = 19;  //Amiga Pascal
- TCCLan         = 20;  //Turbo C
- QCCLan         = 21;  //Quick C
- OWCLan         = 22;  //Open Watcom C
- GCCCLan        = 23;  //gcc \ Emscripten
- ACCLan         = 24;  //Amiga C
- JSLan          = 25;  //JavaScript
- JSONLan        = 26;  //JSON data descriptor
-
  ValueFormatDecimal = 0;
  ValueFormatHex = 1;
 
@@ -77,27 +47,27 @@ implementation
 
 function MapLanIsBasic(Lan : integer) : boolean;
 begin
-  MapLanIsBasic:=(Lan=BasicLan) or (Lan=FBBasicLan) or (Lan=QB64BasicLan) or
-                 (Lan=AQBBasicLan) or (Lan=BAMBasicLan) or (Lan=QBJSBasicLan) or
-                 (Lan=QBBasicLan) or (Lan=TBBasicLan) or (Lan=ABBasicLan) or
-                 (Lan=FBQBBasicLan);
+  MapLanIsBasic:=(Lan=BasicLan) or (Lan=FBLan) or (Lan=QB64Lan) or
+                 (Lan=AQBLan) or (Lan=BAMLan) or (Lan=QBJSLan) or
+                 (Lan=QBLan) or (Lan=PBLan)  or
+                 (Lan=FBinQBModeLan) or (Lan=ABLan);
 end;
 
 function MapLanIsBasicLN(Lan : integer) : boolean;
 begin
-  MapLanIsBasicLN:=(Lan=BasicLNLan) or (Lan=GWBasicLan);
+  MapLanIsBasicLN:=(Lan=BasicLNLan) or (Lan=GWLan);
 end;
 
 function MapLanIsPascal(Lan : integer) : boolean;
 begin
-  MapLanIsPascal:=(Lan=PascalLan) or (Lan=TPPascalLan) or (Lan=QPPascalLan) or
-                  (Lan=FPPascalLan) or (Lan=TMTPascalLan) or (Lan=APPascalLan);
+  MapLanIsPascal:=(Lan=TPLan) or (Lan=PascalLan) or (Lan=QPLan) or
+                  (Lan=FPLan) or (Lan=TMTLan) or (Lan=APLan);
 end;
 
 function MapLanIsC(Lan : integer) : boolean;
 begin
-  MapLanIsC:=(Lan=CLan) or (Lan=TCCLan) or (Lan=QCCLan) or (Lan=OWCLan) or
-             (Lan=GCCCLan) or (Lan=ACCLan);
+  MapLanIsC:=(Lan=CLan) or (Lan=TCLan) or (Lan=QCLan) or (Lan=OWLan) or
+             (Lan=GCCLan) or (Lan=ACLan);
 end;
 
 function MapLanIsJS(Lan : integer) : boolean;

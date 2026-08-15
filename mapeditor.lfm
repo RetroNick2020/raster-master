@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 355
+  Left = 236
   Height = 860
-  Top = 295
+  Top = 179
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -948,10 +948,12 @@ object MapEdit: TMapEdit
         object MenuItem2: TMenuItem
           Caption = 'Basic'
           object ExportBasicMapData: TMenuItem
+            Tag = 22
             Caption = 'Map Data Statements'
             OnClick = MenuExportBasicMapData
           end
           object ExportHitBoxBasic: TMenuItem
+            Tag = 22
             Caption = 'HitBox Data'
             OnClick = ExportHitBoxBasicClick
           end
@@ -959,10 +961,12 @@ object MapEdit: TMapEdit
         object MenuItem13: TMenuItem
           Caption = 'Basic (Line# )'
           object BasicLNMapData: TMenuItem
+            Tag = 23
             Caption = 'Map Data Statements'
             OnClick = MenuExportBasicLNMapData
           end
           object ExportHitBoxBasicLN: TMenuItem
+            Tag = 23
             Caption = 'HitBox Data'
             OnClick = ExportHitBoxBasicLNClick
           end
@@ -970,10 +974,12 @@ object MapEdit: TMapEdit
         object MenuItem6: TMenuItem
           Caption = 'C'
           object ExportCArray: TMenuItem
+            Tag = 24
             Caption = 'Map Array'
             OnClick = MenuExportCArray
           end
           object ExportHitBoxC: TMenuItem
+            Tag = 24
             Caption = 'HitBox Array'
             OnClick = ExportHitBoxCClick
           end
@@ -981,10 +987,12 @@ object MapEdit: TMapEdit
         object MenuItem7: TMenuItem
           Caption = 'Pascal'
           object ExportPascalArray: TMenuItem
+            Tag = 25
             Caption = 'Map Array'
             OnClick = MenuExportPascalArray
           end
           object ExportHitBoxPascal: TMenuItem
+            Tag = 25
             Caption = 'HitBox Array'
             OnClick = ExportHitBoxPascalClick
           end
@@ -992,17 +1000,17 @@ object MapEdit: TMapEdit
         object MnuMapExpAB: TMenuItem
           Caption = 'AmigaBasic'
           object MD_AB: TMenuItem
-            Tag = 13
+            Tag = 11
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_AB: TMenuItem
-            Tag = 13
+            Tag = 11
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_AB: TMenuItem
-            Tag = 13
+            Tag = 11
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1010,17 +1018,17 @@ object MapEdit: TMapEdit
         object MnuMapExpAC: TMenuItem
           Caption = 'Amiga C'
           object MD_AC: TMenuItem
-            Tag = 24
+            Tag = 13
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_AC: TMenuItem
-            Tag = 24
+            Tag = 13
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_AC: TMenuItem
-            Tag = 24
+            Tag = 13
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1028,17 +1036,17 @@ object MapEdit: TMapEdit
         object MnuMapExpAP: TMenuItem
           Caption = 'Amiga Pascal'
           object MD_AP: TMenuItem
-            Tag = 19
+            Tag = 12
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_AP: TMenuItem
-            Tag = 19
+            Tag = 12
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_AP: TMenuItem
-            Tag = 19
+            Tag = 12
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1046,17 +1054,17 @@ object MapEdit: TMapEdit
         object MnuMapExpAQB: TMenuItem
           Caption = 'Amiga QuickBasic AQB'
           object MD_AQB: TMenuItem
-            Tag = 7
+            Tag = 14
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_AQB: TMenuItem
-            Tag = 7
+            Tag = 14
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_AQB: TMenuItem
-            Tag = 7
+            Tag = 14
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1064,17 +1072,17 @@ object MapEdit: TMapEdit
         object MnuMapExpBAM: TMenuItem
           Caption = 'BAM Basic'
           object MD_BAM: TMenuItem
-            Tag = 8
+            Tag = 18
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_BAM: TMenuItem
-            Tag = 8
+            Tag = 18
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_BAM: TMenuItem
-            Tag = 8
+            Tag = 18
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1082,17 +1090,17 @@ object MapEdit: TMapEdit
         object MnuMapExpFBQB: TMenuItem
           Caption = 'FreeBASIC - QB Mode'
           object MD_FBQB: TMenuItem
-            Tag = 14
+            Tag = 9
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_FBQB: TMenuItem
-            Tag = 14
+            Tag = 9
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_FBQB: TMenuItem
-            Tag = 14
+            Tag = 9
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1100,17 +1108,17 @@ object MapEdit: TMapEdit
         object MnuMapExpFB: TMenuItem
           Caption = 'FreeBASIC'
           object MD_FB: TMenuItem
-            Tag = 5
+            Tag = 10
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_FB: TMenuItem
-            Tag = 5
+            Tag = 10
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_FB: TMenuItem
-            Tag = 5
+            Tag = 10
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1118,17 +1126,17 @@ object MapEdit: TMapEdit
         object MnuMapExpFP: TMenuItem
           Caption = 'FreePascal'
           object MD_FP: TMenuItem
-            Tag = 17
+            Tag = 8
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_FP: TMenuItem
-            Tag = 17
+            Tag = 8
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_FP: TMenuItem
-            Tag = 17
+            Tag = 8
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1136,17 +1144,17 @@ object MapEdit: TMapEdit
         object MnuMapExpGCC: TMenuItem
           Caption = 'gcc \ Emscripten'
           object MD_GCC: TMenuItem
-            Tag = 23
+            Tag = 16
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_GCC: TMenuItem
-            Tag = 23
+            Tag = 16
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_GCC: TMenuItem
-            Tag = 23
+            Tag = 16
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1154,17 +1162,17 @@ object MapEdit: TMapEdit
         object MnuMapExpGW: TMenuItem
           Caption = 'GWBASIC'
           object MD_GW: TMenuItem
-            Tag = 10
+            Tag = 7
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_GW: TMenuItem
-            Tag = 10
+            Tag = 7
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_GW: TMenuItem
-            Tag = 10
+            Tag = 7
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1172,17 +1180,17 @@ object MapEdit: TMapEdit
         object MnuMapExpJS: TMenuItem
           Caption = 'JavaScript'
           object MD_JS: TMenuItem
-            Tag = 25
+            Tag = 26
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_JS: TMenuItem
-            Tag = 25
+            Tag = 26
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_JS: TMenuItem
-            Tag = 25
+            Tag = 26
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1190,17 +1198,17 @@ object MapEdit: TMapEdit
         object MnuMapExpJSON: TMenuItem
           Caption = 'JSON'
           object MD_JSON: TMenuItem
-            Tag = 26
+            Tag = 21
             Caption = 'Map Data (JSON)'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_JSON: TMenuItem
-            Tag = 26
+            Tag = 21
             Caption = 'HitBox Data (JSON)'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_JSON: TMenuItem
-            Tag = 26
+            Tag = 21
             Caption = 'Path Data (JSON)'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1208,17 +1216,17 @@ object MapEdit: TMapEdit
         object MnuMapExpOW: TMenuItem
           Caption = 'Open Watcom C'
           object MD_OW: TMenuItem
-            Tag = 22
+            Tag = 17
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_OW: TMenuItem
-            Tag = 22
+            Tag = 17
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_OW: TMenuItem
-            Tag = 22
+            Tag = 17
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1226,17 +1234,17 @@ object MapEdit: TMapEdit
         object MnuMapExpQB: TMenuItem
           Caption = 'QBasic\QuickBasic'
           object MD_QB: TMenuItem
-            Tag = 11
+            Tag = 4
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_QB: TMenuItem
-            Tag = 11
+            Tag = 4
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_QB: TMenuItem
-            Tag = 11
+            Tag = 4
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1244,17 +1252,17 @@ object MapEdit: TMapEdit
         object MnuMapExpQB64: TMenuItem
           Caption = 'QB64'
           object MD_QB64: TMenuItem
-            Tag = 6
+            Tag = 5
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_QB64: TMenuItem
-            Tag = 6
+            Tag = 5
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_QB64: TMenuItem
-            Tag = 6
+            Tag = 5
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1262,17 +1270,17 @@ object MapEdit: TMapEdit
         object MnuMapExpQBJS: TMenuItem
           Caption = 'QBJS'
           object MD_QBJS: TMenuItem
-            Tag = 9
+            Tag = 20
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_QBJS: TMenuItem
-            Tag = 9
+            Tag = 20
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_QBJS: TMenuItem
-            Tag = 9
+            Tag = 20
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1280,17 +1288,17 @@ object MapEdit: TMapEdit
         object MnuMapExpQC: TMenuItem
           Caption = 'Quick C'
           object MD_QC: TMenuItem
-            Tag = 21
+            Tag = 3
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_QC: TMenuItem
-            Tag = 21
+            Tag = 3
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_QC: TMenuItem
-            Tag = 21
+            Tag = 3
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1298,17 +1306,17 @@ object MapEdit: TMapEdit
         object MnuMapExpQP: TMenuItem
           Caption = 'Quick Pascal'
           object MD_QP: TMenuItem
-            Tag = 16
+            Tag = 15
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_QP: TMenuItem
-            Tag = 16
+            Tag = 15
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_QP: TMenuItem
-            Tag = 16
+            Tag = 15
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1316,17 +1324,17 @@ object MapEdit: TMapEdit
         object MnuMapExpTB: TMenuItem
           Caption = 'Turbo\Power Basic'
           object MD_TB: TMenuItem
-            Tag = 12
+            Tag = 6
             Caption = 'Map Data Statements'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_TB: TMenuItem
-            Tag = 12
+            Tag = 6
             Caption = 'HitBox Data Statements'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_TB: TMenuItem
-            Tag = 12
+            Tag = 6
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1334,17 +1342,17 @@ object MapEdit: TMapEdit
         object MnuMapExpTP: TMenuItem
           Caption = 'Turbo Pascal'
           object MD_TP: TMenuItem
-            Tag = 15
+            Tag = 1
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_TP: TMenuItem
-            Tag = 15
+            Tag = 1
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_TP: TMenuItem
-            Tag = 15
+            Tag = 1
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1352,17 +1360,17 @@ object MapEdit: TMapEdit
         object MnuMapExpTC: TMenuItem
           Caption = 'Turbo C'
           object MD_TC: TMenuItem
-            Tag = 20
+            Tag = 2
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_TC: TMenuItem
-            Tag = 20
+            Tag = 2
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_TC: TMenuItem
-            Tag = 20
+            Tag = 2
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
@@ -1370,19 +1378,48 @@ object MapEdit: TMapEdit
         object MnuMapExpTMT: TMenuItem
           Caption = 'TMT Pascal'
           object MD_TMT: TMenuItem
-            Tag = 18
+            Tag = 19
             Caption = 'Map Array'
             OnClick = MenuExportMapDataLanClick
           end
           object HB_TMT: TMenuItem
-            Tag = 18
+            Tag = 19
             Caption = 'HitBox Array'
             OnClick = MenuExportHitBoxLanClick
           end
           object PD_TMT: TMenuItem
-            Tag = 18
+            Tag = 19
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
+          end
+        end
+        object MnuMapExpTiledSep: TMenuItem
+          Caption = '-'
+        end
+        object MnuMapExpTiled: TMenuItem
+          Caption = 'Tiled (TMX)'
+          object TMX_CurrentSheet: TMenuItem
+            Tag = 0
+            Caption = 'Current Map - Sprite Sheet'
+            OnClick = MenuExportTmxClick
+          end
+          object TMX_AllSheet: TMenuItem
+            Tag = 1
+            Caption = 'All Maps - Sprite Sheet (shared .tsx)'
+            OnClick = MenuExportTmxClick
+          end
+          object TMX_Sep1: TMenuItem
+            Caption = '-'
+          end
+          object TMX_CurrentColl: TMenuItem
+            Tag = 2
+            Caption = 'Current Map - Image Collection'
+            OnClick = MenuExportTmxClick
+          end
+          object TMX_AllColl: TMenuItem
+            Tag = 3
+            Caption = 'All Maps - Image Collection (shared .tsx)'
+            OnClick = MenuExportTmxClick
           end
         end
       end
@@ -1629,6 +1666,13 @@ object MapEdit: TMapEdit
         OnClick = PathFinishClosedClick
       end
       object PathSep1: TMenuItem
+        Caption = '-'
+      end
+      object PathsFixClosed: TMenuItem
+        Caption = 'Fix Closed Paths'
+        OnClick = PathsFixClosedClick
+      end
+      object PathSep3: TMenuItem
         Caption = '-'
       end
       object PathsDeleteAll: TMenuItem

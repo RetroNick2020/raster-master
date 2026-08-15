@@ -1,6 +1,23 @@
 //=============================================================================
 // CHANGE LOG (Claude edits - newest first)
 //-----------------------------------------------------------------------------
+// 2026-08-11  CLOSED PATHS DID NOT RETURN TO THEIR START
+//   * SnapTo8 constrains every segment the user PLOTS, but the closing leg of
+//     a closed path is implicit - it is never plotted, so it was never
+//     snapped. BuildPathExportArray then rounded it with DirectionBetween and
+//     took steps = max(|dx|,|dy|), landing the follower somewhere other than
+//     the start (one real map ran a path off the top of the map to y = -3).
+//   * Added LegIsLegal8 - is a->b horizontal, vertical or exactly 45 degrees.
+//   * Added ClosingLegNeedsCorner - pure geometry, reports whether the last
+//     point back to the first is illegal and where the single corner waypoint
+//     that fixes it goes. One corner is always enough: a 45 degree run of
+//     min(|dx|,|dy|) plus one straight run reaches any offset.
+//   * Added RepairClosingLeg - applies that corner. Returns 0 nothing needed,
+//     1 repaired, -1 cannot (path full or the corner would land off map).
+//     The corner appends, so AddPathPoint does the job and no insert-in-middle
+//     routine was needed - the closing leg starts at the LAST waypoint.
+//   * Nothing here touches the file format or the export layout.
+//-----------------------------------------------------------------------------
 // 2026-08-03  MAP LAYERS - phase 1 (data model)
 //   * RMMapVersion 3 -> 4. BREAKING: v3 files can no longer be read.
 //   * Added MaxMapLayers (fixed cap) and TLayerInfoRec (name/visible/locked).
@@ -380,6 +397,13 @@ type
                     //8 direction snapping - see implementation notes
                     procedure SnapTo8(index,ax,ay,cx,cy : integer;var nx,ny : integer);
                     function  DirectionBetween(ax,ay,bx,by : integer) : integer;
+
+                    //Closed path repair. The closing leg is implicit and so
+                    //never went through SnapTo8 - see implementation notes.
+                    function  LegIsLegal8(ax,ay,bx,by : integer) : boolean;
+                    function  ClosingLegNeedsCorner(index,p : integer;
+                                var cx,cy : integer) : boolean;
+                    function  RepairClosingLeg(index,p : integer) : integer;
 
                     //Builds the exported flat path array for a map. Shared by
                     //every exporter so they cannot drift apart - the layout is
@@ -1663,6 +1687,122 @@ begin
       DirectionBetween:=i;
       exit;
     end;
+end;
+
+//=============================================================================
+// CLOSED PATH REPAIR
+//
+// SnapTo8 constrains every segment the user plots. The closing leg of a closed
+// path - last waypoint back to the first - is implicit: it is never plotted,
+// so nothing ever snapped it. BuildPathExportArray then rounds it with
+// DirectionBetween and takes steps = max(|dx|,|dy|), so the follower does not
+// come back to where it started.
+//
+// The fix is one extra waypoint, not a re-snap of the user's last point:
+// moving what they plotted would silently change the shape they drew.
+//
+//   L = last waypoint, F = first waypoint
+//   run     = min(|dx|,|dy|)                  the 45 degree portion
+//   corner  = L + (sign(dx),sign(dy)) * run
+//
+// L -> corner is then a pure diagonal and corner -> F is pure horizontal or
+// vertical. One corner always suffices, because a diagonal run followed by a
+// straight run reaches any offset. The impossible case is still checked
+// rather than assumed.
+//=============================================================================
+
+//Is a->b one of the 8 legal directions: horizontal, vertical or exactly 45.
+//Coincident points count as legal - they export as a zero length hop, which
+//BuildPathExportArray already handles.
+function TMapCoreBase.LegIsLegal8(ax,ay,bx,by : integer) : boolean;
+var
+  adx,ady : integer;
+begin
+  adx:=abs(bx-ax);
+  ady:=abs(by-ay);
+  LegIsLegal8:=(adx = 0) or (ady = 0) or (adx = ady);
+end;
+
+//Pure geometry, no data is changed. True when path p's closing leg is illegal,
+//with cx,cy set to the corner waypoint that splits it into two legal legs.
+function TMapCoreBase.ClosingLegNeedsCorner(index,p : integer;
+           var cx,cy : integer) : boolean;
+var
+  n,lx,ly,fx,fy,dx,dy,adx,ady,run,sx,sy : integer;
+begin
+  ClosingLegNeedsCorner:=false;
+  cx:=0;
+  cy:=0;
+  if not IsValidPath(index,p) then exit;
+
+  n:=Map[index].PathProps.Paths[p].PointCount;
+
+  //Under 3 points there is nothing to repair. A 2 point path closed on itself
+  //walks B->A, which is the reverse of the A->B the user already snapped, so
+  //it is legal by construction.
+  if n < 3 then exit;
+
+  lx:=Map[index].PathProps.Paths[p].Points[n-1].x;
+  ly:=Map[index].PathProps.Paths[p].Points[n-1].y;
+  fx:=Map[index].PathProps.Paths[p].Points[0].x;
+  fy:=Map[index].PathProps.Paths[p].Points[0].y;
+
+  if LegIsLegal8(lx,ly,fx,fy) then exit;   //the common case - most closes are fine
+
+  dx:=fx-lx;
+  dy:=fy-ly;
+  adx:=abs(dx);
+  ady:=abs(dy);
+
+  run:=adx;
+  if ady < run then run:=ady;
+
+  if dx < 0 then sx:=-1 else sx:=1;
+  if dy < 0 then sy:=-1 else sy:=1;
+
+  cx:=lx + sx*run;
+  cy:=ly + sy*run;
+
+  //The corner sits inside the bounding box of L and F, both of which are on
+  //the map, so it cannot be off map. Checked rather than trusted - a bad
+  //waypoint would be written straight into the export array.
+  if (cx < 0) or (cy < 0) or
+     (cx > Map[index].Props.width-1) or (cy > Map[index].Props.height-1) then exit;
+
+  //And both halves really must be legal, or the corner has bought us nothing.
+  if not LegIsLegal8(lx,ly,cx,cy) then exit;
+  if not LegIsLegal8(cx,cy,fx,fy) then exit;
+
+  ClosingLegNeedsCorner:=true;
+end;
+
+//Applies the corner. Returns:
+//   0  nothing needed - the closing leg was already legal
+//   1  repaired - one waypoint appended
+//  -1  cannot repair - the path is full, or the corner failed its checks
+function TMapCoreBase.RepairClosingLeg(index,p : integer) : integer;
+var
+  cx,cy : integer;
+begin
+  RepairClosingLeg:=0;
+  if not IsValidPath(index,p) then exit;
+  if not ClosingLegNeedsCorner(index,p,cx,cy) then exit;
+
+  if Map[index].PathProps.Paths[p].PointCount >= MaxPathPoints then
+  begin
+    RepairClosingLeg:=-1;
+    exit;
+  end;
+
+  //the corner goes AFTER the last waypoint, so this is an append - no
+  //insert-in-the-middle routine is needed
+  if AddPathPoint(index,p,cx,cy) < 0 then
+  begin
+    RepairClosingLeg:=-1;
+    exit;
+  end;
+
+  RepairClosingLeg:=1;
 end;
 
 //How many paths would be exported: ACTIVE ones with at least two points.

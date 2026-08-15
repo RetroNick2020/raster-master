@@ -1,7 +1,7 @@
 object FontSheetExportForm: TFontSheetExportForm
-  Left = 132
+  Left = 327
   Height = 703
-  Top = 358
+  Top = 256
   Width = 1429
   Caption = 'Font Sheet Export'
   ClientHeight = 703
@@ -206,6 +206,7 @@ object FontSheetExportForm: TFontSheetExportForm
       Width = 131
       Caption = 'Export To Clipboard'
       TabOrder = 11
+      OnClick = DescExportToFileClick
     end
     object StaticText5: TStaticText
       Left = 584

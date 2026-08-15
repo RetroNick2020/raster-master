@@ -4,81 +4,9 @@
 
 Unit rwxgf;
  Interface
-   uses SysUtils,LazFileUtils,rmcore,rmthumb,rmxgfcore,bits,gwbasic;
+   uses SysUtils,LazFileUtils,rmconst,rmcore,rmthumb,rmxgfcore,bits,gwbasic;
 
-Const
-   NoLan   = 0;
-   TPLan   = 1;
-   TCLan   = 2;
-   QCLan   = 3;
-   QBLan   = 4;
-   QB64Lan = 5;
 
-   PBLan   = 6;
-   GWLan   = 7;    // also update GWLan in gbasic unit
-   FPLan   = 8;
-
-   FBinQBModeLan = 9;
-   FBLan         = 10;  //modern mode - no legacy support for RGB/RGBA
-
-   ABLan   = 11; //AmigaBasic
-   APLan   = 12;
-   ACLan   = 13;
-   AQBLan  = 14; //Amiga APQBasic support - once we figure out how to access t_BitMap memory and stuff it with bitplane data
-   QPLan   = 15; //Quick Pascal
-   gccLan  = 16;
-   OWLan   = 17; //Open Watcom C/C++ compiler
-   BAMLan  = 18; //Basic Anywhere Machine
-   TMTLan  = 19; // TMT Pascal Compiler - 32bit DOS
-   QBJSLan = 20; // QB to JS transpiler
-   JsonLan = 21; //for sprite sheet description
-
-   NoExportFormat = 0;
-   PutImageExportFormat = 1;  //for all compilers the use put/putimage
-
-   AmigaBOBExportFormat = 2;  //Amiga specific formats
-   AmigaVSpriteExportFormat = 3;
-   AmigaBitMap = 4;  //for Amiga C/Pascal
-
-   XLibLBMExportFormat = 5; //Xlib format for TC/TP
-   XLibPBMExportFormat = 6;
-
-   RGBAFuchsiaExportFormat = 7;
-   RGBAIndex0ExportFormat = 8;
-   RGBExportFormat = 9;
-
-   MouseImageExportFormat = 10;
-
-   RayLibRGBAFuchsiaExportFormat = 11;
-   RayLibRGBAIndex0ExportFormat = 12;
-   RayLibRGBExportFormat = 13;
-
-   RGBACustomExportFormat = 14;
-   RayLibRGBACustomExportFormat = 15;
-
-   Binary2   = 1;
-   Binary4   = 2;
-   Binary8   = 3;
-   Binary16  = 4;
-   Binary32  = 5;
-   Binary256 = 6;
-
-   Source2   = 7;
-   Source4   = 8;
-   Source8   = 9;
-   Source16  = 10;
-   Source32  = 11;
-   Source256 = 12;
-
-   SPRBinary = 13;
-   SPRSource = 14;
-
-   PPRBinary = 15;
-   PPRSource = 16;
-
-   TEGLText  = 17;
-
-   PALSource = 18;
 
 type
  BufferRec = Record

@@ -5,7 +5,7 @@ unit animationexport;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,AnimBase,rwxgf,rmcodegen;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,rmconst,AnimBase,rwxgf,rmcodegen;
 
 type
 

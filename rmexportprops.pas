@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, MaskEdit,
-  rmthumb, rwxgf,rwjson;
+  rmthumb, rmconst,rwxgf,rwjson;
 
 type
 
@@ -375,7 +375,7 @@ begin
                              ComboPalette.ItemIndex:=EO.Palette;
                            end;
 
-                   JSONSpriteLan:begin
+                   JSONLan:begin
                              ComboImage.Items.Clear;
                              ComboMask.Items.Clear;
                              ComboImage.Items.Add('None');

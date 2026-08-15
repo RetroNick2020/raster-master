@@ -3,7 +3,7 @@
 Unit rres;
 
 Interface
-   uses rmcore,rmthumb,rmxgfcore,rwxgf,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
+   uses rmconst,rmcore,rmthumb,rmxgfcore,rwxgf,rmamigarwxgf,rwpal,wmodex,rwmap,gwbasic,mapcore,rmcodegen,
      wraylib,rwaqb,wmouse,rwspriteanim,animbase,
      //IntToStr. Listed last so it cannot shadow anything this unit already uses.
      SysUtils;

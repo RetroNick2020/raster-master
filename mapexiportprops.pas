@@ -42,7 +42,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, SpinEx,
-  mapcore, rwmap, rmcodegen;
+  rmconst,mapcore, rwmap, rmcodegen;
 
 type
 
@@ -215,32 +215,33 @@ begin
    Combocompiler.Items.Clear;
    //order must match the Lan constants in rmcodegen.pas
    ComboCompiler.Items.Add('None');                 //0  NoLan
-   ComboCompiler.Items.Add('Basic');                //1  BasicLan
-   ComboCompiler.Items.Add('Basic (Line#)');        //2  BasicLNLan
-   ComboCompiler.Items.Add('C');                    //3  CLan
-   ComboCompiler.Items.Add('Pascal');               //4  PascalLan
-   ComboCompiler.Items.Add('FreeBASIC');            //5  FBBasicLan
-   ComboCompiler.Items.Add('QB64');                 //6  QB64BasicLan
-   ComboCompiler.Items.Add('Amiga QuickBasic AQB'); //7  AQBBasicLan
-   ComboCompiler.Items.Add('BAM Basic');            //8  BAMBasicLan
-   ComboCompiler.Items.Add('QBJS');                 //9  QBJSBasicLan
-   ComboCompiler.Items.Add('GWBASIC');              //10 GWBasicLan
-   ComboCompiler.Items.Add('QBasic\QuickBasic');    //11 QBBasicLan
-   ComboCompiler.Items.Add('Turbo\Power Basic');    //12 TBBasicLan
-   ComboCompiler.Items.Add('AmigaBasic');           //13 ABBasicLan
-   ComboCompiler.Items.Add('FreeBASIC - QB Mode');  //14 FBQBBasicLan
-   ComboCompiler.Items.Add('Turbo Pascal');         //15 TPPascalLan
-   ComboCompiler.Items.Add('Quick Pascal');         //16 QPPascalLan
-   ComboCompiler.Items.Add('FreePascal');           //17 FPPascalLan
-   ComboCompiler.Items.Add('TMT Pascal');           //18 TMTPascalLan
-   ComboCompiler.Items.Add('Amiga Pascal');         //19 APPascalLan
-   ComboCompiler.Items.Add('Turbo C');              //20 TCCLan
-   ComboCompiler.Items.Add('Quick C');              //21 QCCLan
-   ComboCompiler.Items.Add('Open Watcom C');        //22 OWCLan
-   ComboCompiler.Items.Add('gcc \ Emscripten');     //23 GCCCLan
-   ComboCompiler.Items.Add('Amiga C');              //24 ACCLan
-   ComboCompiler.Items.Add('JavaScript');           //25 JSLan
-   ComboCompiler.Items.Add('JSON');                 //26 JSONLan
+   ComboCompiler.Items.Add('Turbo Pascal');         //1  TPLan
+   ComboCompiler.Items.Add('Turbo C');              //2  TCLan
+   ComboCompiler.Items.Add('Quick C');              //3  QCLan
+   ComboCompiler.Items.Add('QBasic\QuickBasic');    //4  QBLan
+   ComboCompiler.Items.Add('QB64');                 //5  QB64Lan
+   ComboCompiler.Items.Add('Turbo\Power Basic');    //6  TBLan
+   ComboCompiler.Items.Add('GWBASIC');              //7  GWLan
+   ComboCompiler.Items.Add('FreePascal');           //8  FPLan
+   ComboCompiler.Items.Add('FreeBASIC - QB Mode');  //9  FBinQBModeLan
+   ComboCompiler.Items.Add('FreeBASIC');            //10 FBLan
+   ComboCompiler.Items.Add('AmigaBasic');           //11 ABLan
+   ComboCompiler.Items.Add('Amiga Pascal');         //12 APLan
+   ComboCompiler.Items.Add('Amiga C');              //13 ACLan
+   ComboCompiler.Items.Add('Amiga QuickBasic AQB'); //14 AQBLan
+   ComboCompiler.Items.Add('Quick Pascal');         //15 QPLan
+   ComboCompiler.Items.Add('gcc \ Emscripten');     //16 GCCLan
+   ComboCompiler.Items.Add('Open Watcom C');        //17 OWLan
+   ComboCompiler.Items.Add('BAM Basic');            //18  BAMLan
+   ComboCompiler.Items.Add('TMT Pascal');           //19 TMTLan
+   ComboCompiler.Items.Add('QBJS');                 //20  QBJSLan
+   ComboCompiler.Items.Add('JSON');                 //21 JSONLan
+
+   ComboCompiler.Items.Add('Basic');                //22  BasicLan
+   ComboCompiler.Items.Add('Basic (Line#)');        //23  BasicLNLan
+   ComboCompiler.Items.Add('C');                    //24  CLan
+   ComboCompiler.Items.Add('Pascal');               //25  PascalLan
+   ComboCompiler.Items.Add('JavaScript');           //26 JSLan
    ComboCompiler.ItemIndex:=0;
 
    ComboMap.Items.Clear;

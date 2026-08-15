@@ -5,7 +5,7 @@ unit rmapi;
 interface
 
 uses
-  Classes, SysUtils,Dialogs,rmxgfcore,mapcore, rmcodegen,rmcore,rmtools,rmthumb,gwbasic;
+  Classes, SysUtils,Dialogs,rmxgfcore,rmconst,mapcore, rmcodegen,rmcore,rmtools,rmthumb,gwbasic;
 
 procedure rm_putpixel(x,y,color : integer);
 function rm_getpixel(x,y : integer) : integer;
