@@ -186,7 +186,7 @@ type
              procedure SetExportOptions(index : integer; EO :ImageExportFormatRec);
            end;
 Const
-  MaxThumbImages = 64;
+  MaxThumbImages = 2000;
 
 var
  ImageThumbBase  : TImageThumb;

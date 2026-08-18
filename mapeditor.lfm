@@ -1,7 +1,7 @@
 object MapEdit: TMapEdit
-  Left = 236
+  Left = 504
   Height = 860
-  Top = 179
+  Top = 154
   Width = 1491
   Caption = 'Map Editor'
   ClientHeight = 860
@@ -1399,7 +1399,6 @@ object MapEdit: TMapEdit
         object MnuMapExpTiled: TMenuItem
           Caption = 'Tiled (TMX)'
           object TMX_CurrentSheet: TMenuItem
-            Tag = 0
             Caption = 'Current Map - Sprite Sheet'
             OnClick = MenuExportTmxClick
           end

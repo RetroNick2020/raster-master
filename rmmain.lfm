@@ -921,7 +921,6 @@ object RMMainForm: TRMMainForm
         object ExportTiled: TMenuItem
           Caption = 'Tiled (TMX)'
           object ExportTiledCurrentSheet: TMenuItem
-            Tag = 0
             Caption = 'Current Map - Sprite Sheet'
             OnClick = MenuExportTiledClick
           end
@@ -1520,6 +1519,40 @@ object RMMainForm: TRMMainForm
         object EditResizeCustom: TMenuItem
           Caption = 'Set Custom Size'
           OnClick = EditResizeCustomClick
+        end
+      end
+      object MenuScaleToSize: TMenuItem
+        Caption = 'Scale To Size'
+        object EditScaleTo8: TMenuItem
+          Caption = '8 X 8'
+          OnClick = EditScaleToNewSize
+        end
+        object EditScaleTo16: TMenuItem
+          Caption = '16 X 16'
+          OnClick = EditScaleToNewSize
+        end
+        object EditScaleTo32: TMenuItem
+          Caption = '32 X 32'
+          OnClick = EditScaleToNewSize
+        end
+        object EditScaleTo64: TMenuItem
+          Caption = '64 X 64'
+          OnClick = EditScaleToNewSize
+        end
+        object EditScaleTo128: TMenuItem
+          Caption = '128 X 128'
+          OnClick = EditScaleToNewSize
+        end
+        object EditScaleTo256: TMenuItem
+          Caption = '256 X 256'
+          OnClick = EditScaleToNewSize
+        end
+        object ShowScaleSize: TMenuItem
+          Enabled = False
+        end
+        object EditScaleCustom: TMenuItem
+          Caption = 'Set Custom Size'
+          OnClick = EditScaleCustomClick
         end
       end
       object MenuItem27: TMenuItem

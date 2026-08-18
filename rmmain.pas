@@ -1,6 +1,31 @@
 //=============================================================================
 // CHANGE LOG (Claude edits - newest first)
 //-----------------------------------------------------------------------------
+// 2026-08-14  DITHER PATTERN PREVIEWS WERE TOO BRIGHT
+//   * The unset bits of each 8x8 pattern were painted clWhite. On a
+//     checkerboard that is half of every preview, times 36 previews, which
+//     lit up the whole panel.
+//   * They now use DitherPreviewBackColor, a named constant set to clSilver
+//     (192,192,192).
+//   * First attempt used clBtnFace and looked IDENTICAL - on a current
+//     Windows theme that is about 240,240,240, a 15/255 change from white.
+//     Do not reach for a theme colour here expecting it to read as grey.
+//   * Each preview is now filled once and only the set bits drawn over it,
+//     rather than testing all 64 cells.
+//-----------------------------------------------------------------------------
+// 2026-08-14  VIEW > SCALE TO SIZE
+//   * Same size options as Sprite Size, but the artwork is stretched or
+//     shrunk to fit instead of the canvas being cropped or padded.
+//   * With the Select Area tool active and an area marked, the SELECTION is
+//     the source: that area is scaled up to fill the new sprite size, which
+//     is how you crop-and-enlarge in one step.
+//   * Nearest neighbour, deliberately. These are indexed palette images, so
+//     any interpolation would invent colour indices that are not in the
+//     palette - it has to sample, not blend.
+//   * Destructive and clears undo, exactly like resize, and warns first with
+//     a chance to cancel. The pixels are read into a buffer BEFORE the canvas
+//     is resized, since resizing discards what is outside the new bounds.
+//-----------------------------------------------------------------------------
 // 2026-08-13  RES EXPORT NOW CHECKS EXPORT PROPERTIES FIRST
 //   * A RES export silently skips any sprite or map whose export properties
 //     were never set - the file writes, reports no error, and is missing
@@ -163,6 +188,15 @@ type
     ToolTextMenu: TMenuItem;
     ShowCustomSize: TMenuItem;
     EditResizeCustom: TMenuItem;
+    MenuScaleToSize: TMenuItem;
+    EditScaleTo8: TMenuItem;
+    EditScaleTo16: TMenuItem;
+    EditScaleTo32: TMenuItem;
+    EditScaleTo64: TMenuItem;
+    EditScaleTo128: TMenuItem;
+    EditScaleTo256: TMenuItem;
+    ShowScaleSize: TMenuItem;
+    EditScaleCustom: TMenuItem;
     MenuItem27: TMenuItem;
     gcNormal: TMenuItem;
     gcWide: TMenuItem;
@@ -564,6 +598,10 @@ type
     procedure DeleteAllClick(Sender: TObject);
     procedure MapEditMenuClick(Sender: TObject);
     procedure EditResizeCustomClick(Sender: TObject);
+    function  ConfirmScale(srcw,srch,dstw,dsth : integer;
+                UsedSelection : boolean) : boolean;
+    procedure EditScaleToNewSize(Sender: TObject);
+    procedure EditScaleCustomClick(Sender: TObject);
     procedure SoundGeneratorClick(Sender: TObject);
     procedure SpriteAnimationMenuClick(Sender: TObject);
     procedure SpriteExportMenuClick(Sender: TObject);
@@ -849,6 +887,15 @@ const
   DitherPreviewScale = 4;
   DitherCols = 12;
   DitherRows = 3;
+
+  //Background for the unset bits of a preview.
+  //
+  //NOT clBtnFace: on a current Windows theme that is around 240,240,240,
+  //which is within 6% of white and looks no different from the clWhite this
+  //replaced. clSilver is 192,192,192 - a real grey, and the same one the
+  //transparency checkerboard already uses, so the two agree.
+  //Change this one constant to retune the brightness.
+  DitherPreviewBackColor = clSilver;
 
   DitherPatterns : array[0..DitherPatternCount-1, 0..63] of byte = (
     //row 1: basic patterns
@@ -1967,6 +2014,9 @@ begin
   UpdateZoomArea;
   UpdateThumbview;
 end;
+
+
+
 
 procedure TRMMainForm.ClearSelectedPaletteMenu;
 begin
@@ -6012,6 +6062,201 @@ begin
  MapEdit.WindowState:=wsNormal;
 end;
 
+//Spells out what is about to happen and offers a way out.
+//
+//Always asks, even with no undo history to lose: scaling rewrites every pixel
+//and cannot be reversed, so the size figures are worth reading before it runs
+//- especially when a selection is silently acting as the source.
+function TRMMainForm.ConfirmScale(srcw,srch,dstw,dsth : integer;
+           UsedSelection : boolean) : boolean;
+var
+  msg : string;
+begin
+  msg:='';
+  if UsedSelection then
+    msg:=msg+'The selected area will be scaled to fill the whole sprite.'+
+             LineEnding+LineEnding+
+             'Selection: '+IntToStr(srcw)+' X '+IntToStr(srch)+LineEnding
+  else
+    msg:=msg+'The sprite will be scaled to a new size.'+LineEnding+LineEnding+
+             'Current: '+IntToStr(srcw)+' X '+IntToStr(srch)+LineEnding;
+
+  msg:=msg+'New:       '+IntToStr(dstw)+' X '+IntToStr(dsth)+LineEnding+LineEnding;
+
+  //name the lossy direction rather than a generic "this cannot be undone"
+  if (dstw < srcw) or (dsth < srch) then
+    msg:=msg+'Shrinking discards pixels permanently - enlarging afterwards '+
+             'will not bring back the detail.'+LineEnding+LineEnding;
+
+  msg:=msg+'This replaces the artwork and clears the undo history for this '+
+           'sprite. It cannot be undone.'+LineEnding+LineEnding+'Continue?';
+
+  ConfirmScale:=MessageDlg('Scale Sprite',msg,mtWarning,[mbYes,mbNo],0) = mrYes;
+end;
+
+//=============================================================================
+// SCALE TO SIZE
+//
+// Sprite Size changes the CANVAS: the artwork stays at its original pixel
+// size and is cropped or padded. Scale To Size changes the ARTWORK: it is
+// stretched or shrunk to fill the new dimensions.
+//
+// Source rectangle:
+//   Select Area tool active with an area marked -> that area is the source,
+//   so a selection can be cropped and enlarged to the full sprite in one
+//   step. Otherwise the whole sprite is the source.
+//
+// Sampling is nearest neighbour and that is not a shortcut. These are indexed
+// images: a pixel holds a palette INDEX, not a colour. Averaging two indices
+// produces a third index whose colour has no relationship to either, so any
+// interpolation would corrupt the artwork rather than smooth it. Sampling is
+// the only correct operation on indexed data.
+//=============================================================================
+procedure TRMMainForm.EditScaleToNewSize(Sender: TObject);
+var
+  ImgWidth,ImgHeight,zsize : integer;
+  srcx,srcy,srcw,srch : integer;
+  i,j,sx,sy : integer;
+  ca : TClipAreaRec;
+  UsedSelection : boolean;
+  buf : array of array of integer;
+  nm : string;
+begin
+  nm:='';
+  if Sender is TMenuItem then nm:=(Sender as TMenuItem).Name;
+
+  zsize:=2;
+  if nm = 'EditScaleTo8' then
+  begin
+    ImgWidth:=8;  ImgHeight:=8;  zsize:=9;
+  end
+  else if nm = 'EditScaleTo16' then
+  begin
+    ImgWidth:=16; ImgHeight:=16; zsize:=4;
+  end
+  else if nm = 'EditScaleTo32' then
+  begin
+    ImgWidth:=32; ImgHeight:=32;
+  end
+  else if nm = 'EditScaleTo64' then
+  begin
+    ImgWidth:=64; ImgHeight:=64;
+  end
+  else if nm = 'EditScaleTo128' then
+  begin
+    ImgWidth:=128; ImgHeight:=128;
+  end
+  else if nm = 'EditScaleTo256' then
+  begin
+    ImgWidth:=256; ImgHeight:=256;
+  end
+  else if nm = 'EditScaleCustom' then
+  begin
+    ImgWidth :=setcustomspritesizeform.SpinEditWidth.Value;
+    ImgHeight:=setcustomspritesizeform.SpinEditHeight.Value;
+  end
+  else exit;
+
+  if (ImgWidth < 1) or (ImgHeight < 1) then exit;
+
+  //--- work out the source rectangle -----------------------------------------
+  //The clip status flag is saved with the sprite, so a reopened project can
+  //report a selection the user never made. Require the tool to be active too
+  //- the same trap the hit box code hit.
+  UsedSelection:=false;
+  srcx:=0;
+  srcy:=0;
+  srcw:=RMCoreBase.GetWidth;
+  srch:=RMCoreBase.GetHeight;
+
+  if (RMDrawTools.GetDrawTool = DrawShapeClip) and (RMDrawTools.GetClipStatus <> 0) then
+  begin
+    ca:=Default(TClipAreaRec);
+    RMDrawTools.GetClipAreaCoords(ca);
+    //clip coords are inclusive, so a one pixel selection has x2 = x
+    srcx:=ca.x;
+    srcy:=ca.y;
+    srcw:=ca.x2-ca.x+1;
+    srch:=ca.y2-ca.y+1;
+    UsedSelection:=(srcw > 0) and (srch > 0);
+    if not UsedSelection then
+    begin
+      srcx:=0; srcy:=0;
+      srcw:=RMCoreBase.GetWidth;
+      srch:=RMCoreBase.GetHeight;
+    end;
+  end;
+
+  if (srcw < 1) or (srch < 1) then exit;
+
+  //--- confirm ---------------------------------------------------------------
+  if not ConfirmScale(srcw,srch,ImgWidth,ImgHeight,UsedSelection) then exit;
+
+  //--- copy the source out BEFORE the canvas changes -------------------------
+  //SetWidth/SetHeight discard whatever falls outside the new bounds, so the
+  //pixels have to be safe in a buffer first. Reading straight from the core
+  //while writing back into it would also mean sampling pixels this same pass
+  //had already overwritten.
+  SetLength(buf,srcw,srch);
+  for j:=0 to srch-1 do
+    for i:=0 to srcw-1 do
+    begin
+      sx:=srcx+i;
+      sy:=srcy+j;
+      if (sx >= 0) and (sy >= 0) and
+         (sx < RMCoreBase.GetWidth) and (sy < RMCoreBase.GetHeight) then
+        buf[i,j]:=RMCoreBase.GetPixel(sx,sy)
+      else
+        buf[i,j]:=0;
+    end;
+
+  //snapshots are sized to the sprite, so a scale invalidates them all
+  RMCoreBase.ClearUndo;
+  //hit boxes are in sprite pixels and do not follow the artwork
+  ImageThumbBase.ClampHitBoxes(ImageThumbBase.GetCurrent);
+
+  RMCoreBase.SetWidth(ImgWidth);
+  RMCoreBase.SetHeight(ImgHeight);
+
+  //--- resample --------------------------------------------------------------
+  for j:=0 to ImgHeight-1 do
+    for i:=0 to ImgWidth-1 do
+    begin
+      //map the destination centre back into the source, so a 2x enlargement
+      //doubles every pixel evenly instead of stretching the first column
+      sx:=(i*srcw) div ImgWidth;
+      sy:=(j*srch) div ImgHeight;
+      if sx > srcw-1 then sx:=srcw-1;
+      if sy > srch-1 then sy:=srch-1;
+
+      RMCoreBase.SetColorEx(buf[sx,sy]);
+      RMCoreBase.PutPixelEx(i,j);
+    end;
+
+  SetLength(buf,0,0);
+
+  //--- refresh, same tail as a resize ----------------------------------------
+  RMDrawTools.SetZoomSize(zsize);
+  ZoomPaintBox.Width:=RMDrawTools.GetZoomPageWidth;
+  ZoomPaintBox.Height:=RMDrawTools.GetZoomPageHeight;
+  RMDrawTools.SetZoomMaxX(RMDrawTools.GetZoomPageWidth);
+  RMDrawTools.SetZoomMaxY(RMDrawTools.GetZoomPageHeight);
+  //the selection was consumed as the source and its coords mean nothing now
+  RMDrawTools.SetClipStatus(0);
+  ZoomSize:=RMDrawTools.GetZoomSize;
+  ZoomTrackBar.Position:=ZoomSize;
+  UpdateActualArea;
+  UpdateZoomArea;
+  UpdateThumbView;
+  UpdateEditMenu;
+end;
+
+procedure TRMMainForm.EditScaleCustomClick(Sender: TObject);
+begin
+  if SetCustomSpriteSizeForm.ShowModal = mrOK then
+    EditScaleToNewSize(Sender);
+end;
+
 procedure TRMMainForm.EditResizeCustomClick(Sender: TObject);
 begin
   if SetCustomSpriteSizeForm.ShowModal = mrOK then
@@ -7539,17 +7784,24 @@ begin
     cx:=col * (DitherPreviewSize + 2) + 2;
     cy:=row * (DitherPreviewSize + 2) + 2;
 
-    //draw 8x8 pattern scaled up to 32x32
+    //A set bit is where colour 1 lands, an unset bit where colour 2 lands -
+    //and on a checkerboard that is half of every preview, times 36 previews,
+    //which is what made the panel glare when it was painted clWhite.
+    //
+    //Fill the whole preview with the grey once, then draw only the set bits
+    //over it. Same result as testing every cell, a third of the FillRect
+    //calls, and the unset colour is stated in one place.
+    DitherPatternPaintBox.Canvas.Brush.Color:=DitherPreviewBackColor;
+    DitherPatternPaintBox.Canvas.FillRect(cx, cy, cx + DitherPreviewSize, cy + DitherPreviewSize);
+
+    DitherPatternPaintBox.Canvas.Brush.Color:=clBlack;
     for i:=0 to 7 do
     begin
       for j:=0 to 7 do
       begin
+        if DitherPatterns[p, j * 8 + i] <> 1 then continue;
         sx:=cx + i * DitherPreviewScale;
         sy:=cy + j * DitherPreviewScale;
-        if DitherPatterns[p, j * 8 + i] = 1 then
-          DitherPatternPaintBox.Canvas.Brush.Color:=clBlack
-        else
-          DitherPatternPaintBox.Canvas.Brush.Color:=clWhite;
         DitherPatternPaintBox.Canvas.FillRect(sx, sy, sx + DitherPreviewScale, sy + DitherPreviewScale);
       end;
     end;
@@ -9022,10 +9274,10 @@ begin
       RMCoreBase.SetCurColor1(3);   //brightest color
       RMCoreBase.SetCurColor2(0);   //black
     end;
-    PaletteModeAmiga2, PaletteModeAmiga4, PaletteModeAmiga8,
-    PaletteModeAmiga16, PaletteModeAmiga32:
+    PaletteModeAmiga2,PaletteModeAmiga4,PaletteModeAmiga8,PaletteModeAmiga16, PaletteModeAmiga32:
     begin
-      //amiga palettes stay as-is, don't change
+      RMCoreBase.SetCurColor1(1);   //white
+      RMCoreBase.SetCurColor2(0);   //blue
     end;
   else
     //EGA, VGA, VGA256, XGA, XGA256 - all 16/256 color PC modes

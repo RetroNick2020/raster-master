@@ -1,7 +1,7 @@
 object FontSheetExportForm: TFontSheetExportForm
-  Left = 327
+  Left = 377
   Height = 703
-  Top = 256
+  Top = 232
   Width = 1429
   Caption = 'Font Sheet Export'
   ClientHeight = 703
