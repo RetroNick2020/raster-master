@@ -1680,6 +1680,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Palette Commands'
             OnClick = PaletteExportQBasicClick
           end
+          object FBDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
+          end
         end
         object MenuItem2: TMenuItem
           Caption = 'FreePascal'
@@ -1690,6 +1694,10 @@ object RMMainForm: TRMMainForm
           object FPPaletteCommands: TMenuItem
             Caption = 'Palette Commands'
             OnClick = PaletteExportTurboPascalClick
+          end
+          object FPDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
           end
         end
         object PaletteExportGWBasic: TMenuItem
@@ -1702,6 +1710,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Palette Commands'
             OnClick = PaletteExportGWBasicClick
           end
+          object GWDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
+          end
         end
         object MenuItem15: TMenuItem
           Caption = 'Open Watcom C'
@@ -1712,6 +1724,10 @@ object RMMainForm: TRMMainForm
           object OWPaletteCommands: TMenuItem
             Caption = 'Palette Commands'
             OnClick = PaletteExportOWCClick
+          end
+          object OWDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
           end
         end
         object PaletteExportQBasic: TMenuItem
@@ -1724,6 +1740,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Palette Commands'
             OnClick = PaletteExportQBasicClick
           end
+          object QBDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
+          end
         end
         object PaletteExportQuickC: TMenuItem
           Caption = 'Quick C'
@@ -1734,6 +1754,10 @@ object RMMainForm: TRMMainForm
           object QCPaletteCommands: TMenuItem
             Caption = 'Palette Commands'
             OnClick = PaletteExportQuickCClick
+          end
+          object QCDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
           end
         end
         object PaletteExportQuickPascal: TMenuItem
@@ -1757,6 +1781,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Palette Commands'
             OnClick = PaletteExportQBasicClick
           end
+          object PBDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
+          end
         end
         object PaletteExportTurboC: TMenuItem
           Caption = 'Turbo C'
@@ -1767,6 +1795,10 @@ object RMMainForm: TRMMainForm
           object TCPaletteCommands: TMenuItem
             Caption = 'Palette Commands'
             OnClick = PaletteExportTurboCClick
+          end
+          object TCDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
           end
         end
         object PaletteExportTurboPascal: TMenuItem
@@ -1779,6 +1811,10 @@ object RMMainForm: TRMMainForm
             Caption = 'Palette Commands'
             OnClick = PaletteExportTurboPascalClick
           end
+          object TPDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
+          end
         end
         object PaletteExportTMTPascal: TMenuItem
           Caption = 'TMT Pascal'
@@ -1790,43 +1826,50 @@ object RMMainForm: TRMMainForm
             Caption = 'Palette Commands'
             OnClick = PaletteExportTurboPascalClick
           end
+          object TMTDACOutPalette: TMenuItem
+            Caption = 'VGA DAC OUT Palette'
+            OnClick = PaletteExportDACOutClick
+          end
         end
       end
       object EditColor: TMenuItem
         Caption = 'Edit Colors'
         OnClick = PaletteEditColors
       end
-      object PaletteMono: TMenuItem
-        Caption = 'Mono'
-        OnClick = PaletteMonoClick
-      end
-      object PaletteCGA0: TMenuItem
-        Caption = 'CGA Palette 0'
-        OnClick = PaletteCGA0Click
-      end
-      object PaletteCGA1: TMenuItem
-        Caption = 'CGA Palette 1'
-        OnClick = PaletteCGA1Click
-      end
-      object PaletteEGA: TMenuItem
-        Caption = 'EGA Palette'
-        OnClick = PaletteEGAClick
-      end
-      object PaletteVGA: TMenuItem
-        Caption = 'VGA Palette'
-        OnClick = PaletteVGAClick
-      end
-      object PaletteVGA256: TMenuItem
-        Caption = 'VGA Palette 256'
-        OnClick = PaletteVGA256Click
-      end
-      object PaletteXGA: TMenuItem
-        Caption = 'XGA Palette'
-        OnClick = PaletteXGAClick
-      end
-      object PaletteXGA256: TMenuItem
-        Caption = 'XGA Palette 256'
-        OnClick = PaletteXGA256Click
+      object PalettePC: TMenuItem
+        Caption = 'PC'
+        object PaletteMono: TMenuItem
+          Caption = 'Mono'
+          OnClick = PaletteMonoClick
+        end
+        object PaletteCGA0: TMenuItem
+          Caption = 'CGA Palette 0'
+          OnClick = PaletteCGA0Click
+        end
+        object PaletteCGA1: TMenuItem
+          Caption = 'CGA Palette 1'
+          OnClick = PaletteCGA1Click
+        end
+        object PaletteEGA: TMenuItem
+          Caption = 'EGA Palette'
+          OnClick = PaletteEGAClick
+        end
+        object PaletteVGA: TMenuItem
+          Caption = 'VGA Palette'
+          OnClick = PaletteVGAClick
+        end
+        object PaletteVGA256: TMenuItem
+          Caption = 'VGA Palette 256'
+          OnClick = PaletteVGA256Click
+        end
+        object PaletteXGA: TMenuItem
+          Caption = 'XGA Palette'
+          OnClick = PaletteXGAClick
+        end
+        object PaletteXGA256: TMenuItem
+          Caption = 'XGA Palette 256'
+          OnClick = PaletteXGA256Click
+        end
       end
       object PaletteAmiga: TMenuItem
         Caption = 'Amiga'

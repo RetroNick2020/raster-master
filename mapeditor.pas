@@ -446,6 +446,10 @@ type
     TileHeight : integer;
     CTile      : TileRec;
     CTileBitMap : TBitMap;
+    //true from a Ctrl+Left mouse down until the matching mouse up. The move
+    //and up handlers test this so a Ctrl drag samples tiles instead of
+    //falling through and painting with the tool that happens to be selected.
+    TilePickActive : boolean;
     TileMode       : integer;
     DrawTool       : integer;
     RenderDrawToolShape : Boolean;
@@ -517,6 +521,9 @@ type
                 Shift: TShiftState; X, Y: Integer);
     procedure UpdateHitBoxListView;
     procedure LoadTile(index : integer);
+    //Ctrl+Left eyedropper - samples the map cell under the mouse and makes it
+    //the active tile. Returns true only when a real tile was picked up.
+    function  PickTileAt(x,y : integer) : boolean;
     procedure LoadTilesToTileImageList;
     //Refreshes every per map panel at once. Use THIS rather than calling the
     //three individually - layers, hitboxes and paths all belong to the
@@ -652,6 +659,9 @@ begin
  TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
  CTile.ImageIndex:=TileMissing;
  LoadTile(0);
+
+ //Ctrl+Left tile picker starts idle
+ TilePickActive:=false;
 
  MapX:=0;
  MapY:=0;
@@ -3261,6 +3271,69 @@ begin
  end;
 end;
 
+//Ctrl+Left click tile picker (eyedropper).
+//Reads the tile sitting under the mouse on the layer currently being edited
+//and makes it the active tile, exactly as if the user had clicked that
+//thumbnail over in the tile palette. Returns false - and changes nothing -
+//when the cell is outside the map or holds no tile, so the caller can tell a
+//real pick from a click on empty space.
+function TMapEdit.PickTileAt(x,y : integer) : boolean;
+var
+  T     : TileRec;
+  mx,my : integer;
+  index : integer;
+  cm    : integer;
+begin
+  PickTileAt:=false;
+
+  cm:=MapCoreBase.GetCurrentMap;
+
+  mx:=GetMapX(x);
+  my:=GetMapY(y);
+
+  //the paint box can be larger than the map, so a click off the right or
+  //bottom edge has to be rejected rather than clamped - clamping would pick
+  //a tile the user never pointed at
+  if (mx < 0) or (my < 0) then exit;
+  if (mx > MapCoreBase.GetMapWidth(cm)-1) then exit;
+  if (my > MapCoreBase.GetMapHeight(cm)-1) then exit;
+
+  //GetMapTile follows the current layer, which is what we want - the picker
+  //should sample the layer you are drawing on, not whatever is visible on top
+  MapCoreBase.GetMapTile(cm,mx,my,T);
+
+  //nothing to pick up out of an empty or broken cell
+  if (T.ImageIndex = TileClear) or (T.ImageIndex = TileMissing) then exit;
+
+  //The UID is the reliable handle. A stored ImageIndex can drift out of date
+  //if tiles were inserted or deleted after the map was painted, so resolve
+  //through the UID first and only fall back to the raw index for older maps
+  //that were saved before UIDs were written out.
+  index:=ImageThumbBase.FindUID(T.ImageUID);
+  if index = -1 then
+  begin
+    index:=T.ImageIndex;
+    if (index < 0) or (index > ImageThumbBase.GetCount-1) then exit;
+  end;
+
+  LoadTile(index);
+  UpdateCurrentTile;
+
+  //keep the palette in step so the highlighted thumbnail agrees with CTile,
+  //and scroll it into view - the picked tile is often far down the list.
+  //This assigns ItemIndex directly, which does not re-enter TileListViewClick.
+  if (index >= 0) and (index < TileListView.Items.Count) then
+  begin
+    TileListView.ItemIndex:=index;
+    TileListView.Items[index].MakeVisible(false);
+  end;
+
+  UpdateToolSelectionIcons;
+  UpdateMenus;
+
+  PickTileAt:=true;
+end;
+
 procedure TMapEdit.LoadTilesToTileImageList;
 var
   index,i,j,awidth,aheight : integer;
@@ -4225,6 +4298,23 @@ end;
 procedure TMapEdit.MPaintBoxMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
+ //Ctrl+Left picks up the tile under the cursor instead of painting with it.
+ //Tested before ANY tool dispatch so the picker works with every tool, and
+ //before CopyToUndo so sampling never burns an undo slot or drops the
+ //selection - picking is a read, it must not count as an edit.
+ if (Button = mbLeft) and (ssCtrl in Shift) then
+ begin
+   TilePickActive:=true;
+   //clear any stale drag state so the swallowed click cannot be mistaken for
+   //the start of a shape by a later mouse up
+   OldMapX:=-1;
+   OldMapY:=-1;
+   PickTileAt(X,Y);
+   MapPaintBox.Invalidate;
+   exit;
+ end;
+ TilePickActive:=false;
+
  //The path tool edits path records, not tiles - it must not disturb the clip
  //area and must not push a tile undo snapshot for something undo cannot restore.
  if DrawTool = MapToolPath then
@@ -4249,6 +4339,19 @@ end;
 
 procedure TMapEdit.MPaintBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
+ //A Ctrl drag keeps sampling rather than falling through to the tool. Without
+ //this the pick would happen on mouse down and the drag would then paint over
+ //the very tiles being sampled.
+ if TilePickActive then
+ begin
+   if ssLeft in Shift then
+     PickTileAt(X,Y)
+   else
+     TilePickActive:=false;   //button let go outside our up handler
+   UpdateMapInfo(X,Y);
+   exit;
+ end;
+
  if DrawTool = MapToolPath then
  begin
    MPaintBoxMouseMovePathTool(Sender,Shift,X,Y);
@@ -4271,6 +4374,14 @@ end;
 procedure TMapEdit.MPaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
+ //the pick already happened on mouse down - there is nothing to commit here,
+ //and letting this reach the tool handlers would stamp a tile on release
+ if TilePickActive then
+ begin
+   TilePickActive:=false;
+   exit;
+ end;
+
  //path points are placed on mouse DOWN - nothing to do here
  if DrawTool = MapToolPath then exit;
 

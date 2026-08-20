@@ -13,6 +13,7 @@ Const
   ColorEightBitFormat =4;
   ColorOnePercentFormat = 5;
   ColorTwoBitFormat = 6;
+  ColorVGADACFormat = 7;
 
 
 Function ReadPAL(Filename : String;pm : integer) : Word;
@@ -24,14 +25,22 @@ Function WriteJASCPAL(Filename : String) : Word;
 Function ReadVGAPAL(Filename : String; pm : integer) : Word;
 Function WriteVGAPAL(Filename : String) : Word;
 
-
 function WritePalData(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalConstants(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalStatements(filename : string; Lan,rgbFormat : integer) : word;
+//Direct VGA DAC port writes instead of a palette command. There is no
+//rgbFormat parameter - the DAC is physically six bit, so there is no format
+//to choose and ColorIndexFormat would be meaningless here.
+function WritePalDACOut(filename : string; Lan : integer) : word;
 function WriteRGBPackedPalArray(filename : string; Lan : integer; vsprite : boolean) : word;
 
 procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
 procedure WritePalToBuffer(var data : BufferRec; rgbFormat : integer);
+
+//VGA DAC port writes into a text buffer. Bare statements, meant for pasting -
+//the RES include path does not use this, it emits a six bit array like any
+//other palette format.
+procedure WritePalDACOutBuffer(var data : BufferRec; Lan : integer);
 
 function WritePalToArrayFile(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalToFile(filename : string; rgbFormat : integer) : word;
@@ -57,6 +66,7 @@ begin
                     ColorEightBitFormat:ColorFormatToStr:='8 Bit';
                     ColorOnePercentFormat:ColorFormatToStr:='1 Percent';
                     ColorTwoBitFormat:ColorFormatToStr:='2 Bit';
+                    ColorVGADACFormat:ColorFormatToStr:='6 Bit VGA DAC';
 
   end;
 end;
@@ -71,6 +81,10 @@ begin
                    ColorEightBitFormat:ColorValueToStr:=IntToStr(InValue);
                    ColorOnePercentFormat:ColorValueToStr:=FormatFloat('0.00',EightToFourBit(InValue)*0.0669);
                    ColorTwoBitFormat:ColorValueToStr:=IntToStr(EightToTwoBit(InValue));
+                   //The DAC is six bit - same numbers as ColorSixBitFormat.
+                   //Kept as its own id so the export UI and the RES type field
+                   //can tell "6 bit array" apart from "6 bit port writes".
+                   ColorVGADACFormat:ColorValueToStr:=IntToStr(EightToSixBit(InValue));
  end;
 end;
 
@@ -355,6 +369,131 @@ SetGWStartLineNumber(1000);
   Close(F);
   WritePalStatements:=IORESULT;
 {$I+}
+end;
+
+// ---------------------------------------------------------------------------
+// VGA DAC OUT palette
+//
+// Writes the palette as direct hardware port writes rather than as a PALETTE /
+// SetRGBPalette statement. Port 3C8h selects the colour slot, then three
+// writes to port 3C9h supply red, green and blue.
+//
+// DAC channels are six bit, so values go out through ColorSixBitFormat - the
+// same EightToSixBit conversion the rest of this unit already uses.
+//
+// One colour per line, matching the rest of the writers here. That also keeps
+// LineCountToStr correct, since it hands out one GW-BASIC line number per call.
+//
+// No attribute controller remapping and no 8..15 -> 56..63 index offset is
+// emitted - slot numbers go out as-is. A note is added to the header when the
+// palette is 16 colours or fewer, because the mapping is not linear there.
+// ---------------------------------------------------------------------------
+const
+  VGADACIndexPortStr = '3C8';   //slot select
+  VGADACDataPortStr  = '3C9';   //r, then g, then b
+
+//Pascal targets use the predefined Port array and $ hex. The C compilers use
+//their conio/dos port intrinsics and 0x hex. Everything else is a BASIC
+//dialect and uses OUT with &H hex.
+//APLan/ACLan/ABLan/AQBLan are deliberately absent - the Amiga has no x86 DAC.
+function PortWriteToStr(Lan : integer; portstr, valuestr : string) : string;
+begin
+  Case Lan of
+    TPLan,FPLan,QPLan,TMTLan : PortWriteToStr:='Port[$'+portstr+'] := '+valuestr+';';
+    TCLan                    : PortWriteToStr:='outportb(0x'+portstr+', '+valuestr+');';
+    QCLan,OWLan              : PortWriteToStr:='outp(0x'+portstr+', '+valuestr+');';
+  else
+    PortWriteToStr:='OUT &H'+portstr+', '+valuestr;
+  end;
+end;
+
+//statement separator when several port writes share one line. Pascal and C
+//already terminate each statement, BASIC needs a colon.
+function PortSepToStr(Lan : integer) : string;
+begin
+  Case Lan of
+    TPLan,FPLan,QPLan,TMTLan,TCLan,QCLan,OWLan : PortSepToStr:=' ';
+  else
+    PortSepToStr:=' : ';
+  end;
+end;
+
+//what the generated source has to pull in before the port writes will compile
+function PortHeaderNoteToStr(Lan : integer) : string;
+begin
+  PortHeaderNoteToStr:='';
+  Case Lan of
+    FPLan       : PortHeaderNoteToStr:='needs the Ports unit';
+    TCLan       : PortHeaderNoteToStr:='needs dos.h';
+    QCLan,OWLan : PortHeaderNoteToStr:='needs conio.h';
+  end;
+end;
+
+//Emits the port writes only - no wrapper, no routine header. This is what the
+//standalone palette export produces, where the user pastes the statements into
+//their own code at whatever point suits them.
+procedure WritePalDACOutBuffer(var data : BufferRec; Lan : integer);
+var
+ NColors : integer;
+ i : integer;
+ r,g,b : integer;
+ rstr,gstr,bstr : string;
+ sep : string;
+ notestr : string;
+ CR : TRMColorRec;
+begin
+  NColors:=GetMaxColor+1;
+  if NColors > 256 then NColors:=256;   //the DAC only has 256 slots
+  sep:=PortSepToStr(Lan);
+  notestr:=PortHeaderNoteToStr(Lan);
+
+  Writeln(data.fText,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',LanToStr(Lan),
+            ' VGA DAC Palette, ',' Size= ',NColors*3,' Colors= ',NColors,
+            ' Format=',ColorFormatToStr(ColorVGADACFormat),' ',CommentEndToStr(Lan));
+  Writeln(data.fText,LineCountToStr(Lan),CommentBeginToStr(Lan),
+            ' Port ',VGADACIndexPortStr,'h selects the slot, ',VGADACDataPortStr,
+            'h takes red, green then blue (0-63) ',CommentEndToStr(Lan));
+
+  if notestr <> '' then
+    Writeln(data.fText,LineCountToStr(Lan),CommentBeginToStr(Lan),' ',notestr,' ',CommentEndToStr(Lan));
+
+  if NColors <= 16 then
+    Writeln(data.fText,LineCountToStr(Lan),CommentBeginToStr(Lan),
+              ' NOTE: in 16 colour modes attributes 8-15 live in DAC slots 56-63 ',
+              CommentEndToStr(Lan));
+
+  For i:=0 to NColors-1 do
+  begin
+    GetColor(i,CR);
+    r:=CR.r;
+    g:=CR.g;
+    b:=CR.b;
+
+    rstr:=ColorValueToStr(r,ColorVGADACFormat);
+    gstr:=ColorValueToStr(g,ColorVGADACFormat);
+    bstr:=ColorValueToStr(b,ColorVGADACFormat);
+
+    WriteLn(data.fText,LineCountToStr(Lan),
+              PortWriteToStr(Lan,VGADACIndexPortStr,IntToStr(i)),sep,
+              PortWriteToStr(Lan,VGADACDataPortStr,rstr),sep,
+              PortWriteToStr(Lan,VGADACDataPortStr,gstr),sep,
+              PortWriteToStr(Lan,VGADACDataPortStr,bstr));
+  end;
+end;
+
+function WritePalDACOut(filename : string; Lan : integer) : word;
+var
+ data : BufferRec;
+begin
+ SetCoreActive;
+ SetGWStartLineNumber(1000);
+{$I-}
+  Assign(data.fText,filename);
+  Rewrite(data.fText);
+  WritePalDACOutBuffer(data,Lan);
+  Close(data.fText);
+{$I+}
+  WritePalDACOut:=IORESULT;
 end;
 
 Function WritePAL(FileName : String): Word;
@@ -707,6 +846,11 @@ end;
 //write c/pascal constants and basic data statements
 procedure WritePalToArrayBuffer(var data : BufferRec;imagename : string; Lan,rgbFormat : integer);
 begin
+   //ColorVGADACFormat needs no special case here. It is a six bit palette, so
+   //it falls through to the normal array/DATA writers and comes out identical
+   //to ColorSixBitFormat - ColorValueToStr already maps it to EightToSixBit
+   //and GetPalSize already gives it nColors*3. The only difference is the
+   //format name in the header comment, which records the intent for the reader.
    case Lan of BAMLan,ABLan,AQBLan,QBLan,PBLan,GWLAN,FBinQBModeLan:WritePalBasicBuffer(data,imagename,Lan,rgbFormat);
                TPLan,QPLan,APLan,FPLan,TCLan,QCLan,ACLan,OWLan:WritePalCPascalBuffer(data,imagename,Lan,rgbFormat);
    end;
@@ -733,7 +877,10 @@ begin
                                            ColorBuf[i*3+1]:= EightToFourBit(cr.g);
                                            ColorBuf[i*3+2]:= EightToFourBit(cr.b);
                                          end;
-                      ColorSixBitFormat: begin
+                      //VGA DAC binary is just six bit triplets - the values you
+                      //stream straight to port 3C9h - so it shares the six bit
+                      //branch rather than getting one of its own.
+                      ColorSixBitFormat,ColorVGADACFormat: begin
                                            ColorBuf[i*3]:= EightToSixBit(cr.r);
                                            ColorBuf[i*3+1]:= EightToSixBit(cr.g);
                                            ColorBuf[i*3+2]:= EightToSixBit(cr.b);

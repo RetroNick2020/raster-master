@@ -422,6 +422,18 @@ type
     PaletteExportTurboPascal: TMenuItem;
     PaletteExportAmigaBasic: TMenuItem;
     PaletteExportQBasic: TMenuItem;
+    //"VGA DAC OUT Palette" entries - one per language that can hit the DAC
+    //ports directly. All four share PaletteExportDACOutClick.
+    QBDACOutPalette: TMenuItem;
+    GWDACOutPalette: TMenuItem;
+    PBDACOutPalette: TMenuItem;
+    TPDACOutPalette: TMenuItem;
+    FBDACOutPalette: TMenuItem;
+    FPDACOutPalette: TMenuItem;
+    OWDACOutPalette: TMenuItem;
+    QCDACOutPalette: TMenuItem;
+    TCDACOutPalette: TMenuItem;
+    TMTDACOutPalette: TMenuItem;
     PaletteExport: TMenuItem;
     PaletteOpen: TMenuItem;
     PaletteSave: TMenuItem;
@@ -479,6 +491,8 @@ type
     PaletteAmiga16: TMenuItem;
     PaletteAmiga32: TMenuItem;
     PaletteAmiga: TMenuItem;
+    //parent of the PC palette modes, mirroring PaletteAmiga
+    PalettePC: TMenuItem;
     ExportDialog: TSaveDialog;
     TurboBasic: TMenuItem;
     QuickC: TMenuItem;
@@ -673,6 +687,7 @@ type
     procedure PaletteAmiga4Click(Sender: TObject);
     procedure PaletteAmiga8Click(Sender: TObject);
     procedure PaletteExportQBasicClick(Sender: TObject);
+    procedure PaletteExportDACOutClick(Sender: TObject);
     procedure QuickCClick(Sender: TObject);
     procedure RMAboutDialogClick(Sender: TObject);
     procedure QBasicDataClick(Sender: TObject);
@@ -772,6 +787,12 @@ type
        ScriptLoaded   : integer;
        QBInterpreter  : TQBasicInterpreter;
        ScriptFileName : String;
+
+       //true from a Ctrl+click mouse down until the matching mouse up. The
+       //move, up and click handlers test this so a Ctrl drag keeps sampling
+       //colours instead of falling through and drawing with whichever tool
+       //happens to be selected.
+       ColorPickActive : boolean;
 
        procedure UpdateZoomArea;
        procedure UpdateZoomScroller;
@@ -1069,6 +1090,8 @@ RenderBitMap2.SetSize(256,256);
  ShowTransparent:=False;
  FSelectedDitherPattern:=0;
  BrushOverlayActive:=False;
+ //Ctrl+click colour picker starts idle
+ ColorPickActive:=False;
 
  // create checkerboard pattern for transparency display - fixed size, never scaled
  FCheckerBmp:=TBitmap.Create;
@@ -2020,6 +2043,7 @@ end;
 
 procedure TRMMainForm.ClearSelectedPaletteMenu;
 begin
+  PalettePC.Checked:=false;
   PaletteMono.Checked:=false;
   PaletteCGA0.Checked:=false;
   PaletteCGA1.Checked:=false;
@@ -2449,6 +2473,7 @@ procedure TRMMainForm.UpdatePaletteMenu;
 var
  pm : integer;
 begin
+  PalettePC.Checked:=false;
   PaletteMono.Checked:=false;
   PaletteCGA0.Checked:=false;
   PaletteCGA1.Checked:=false;
@@ -2467,35 +2492,43 @@ begin
   pm:=RMCoreBase.Palette.GetPaletteMode;
   if pm = PaletteModeVGA256 then
   begin
+    PalettePC.Checked:=true;
     PaletteVGA256.Checked:=true;
   end
   else if pm = PaletteModeVGA then
   begin
+     PalettePC.Checked:=true;
      PaletteVGA.Checked:=true;
   end
   else if pm = PaletteModeXGA256 then
   begin
+     PalettePC.Checked:=true;
      PaletteXGA256.Checked:=true;
   end
   else if pm = PaletteModeXGA then
   begin
+     PalettePC.Checked:=true;
      PaletteXGA.Checked:=true;
   end
   else if pm = PaletteModeEGA then
   begin
+     PalettePC.Checked:=true;
      PaletteEGA.Checked:=true;
   end
   else if pm = PaletteModeCGA0 then
   begin
+     PalettePC.Checked:=true;
      PaletteCGA0.Checked:=true;
   end
   else if pm = PaletteModeCGA1 then
   begin
+     PalettePC.Checked:=true;
      PaletteCGA1.Checked:=true;
   end
   else if pm = PaletteModeMono then
   begin
-     PaletteMono.Checked:=false;
+     PalettePC.Checked:=true;
+     PaletteMono.Checked:=true;   //was :=false - Mono never showed its tick
   end
   else if pm = PaletteModeAmiga32 then
    begin
@@ -3077,6 +3110,23 @@ var
 begin
  DrawTool:=RMDRAWTools.GetDrawTool;
 
+ //Ctrl+click samples the pixel under the cursor no matter which tool is
+ //selected - Ctrl+Left into Colour 1, Ctrl+Right into Colour 2. Tested before
+ //ANY tool dispatch so it works everywhere, and before the clip status is
+ //cleared and before CopyToUndoBuf, because picking a colour is a read and
+ //must not consume the undo slot or drop the selection.
+ if (ssCtrl in Shift) and ((Button = mbLeft) or (Button = mbRight)) then
+ begin
+   ColorPickActive:=true;
+   //drop any stale drag state so the swallowed click cannot be mistaken for
+   //the start of a shape by a later mouse up
+   OldZoomX:=-1;
+   OldZoomY:=-1;
+   PickColorAt(X,Y,Button);
+   exit;
+ end;
+ ColorPickActive:=false;
+
  //The eyedropper reads a pixel, it does not draw one. It must run before the
  //clip status is cleared and before an undo snapshot is pushed, because
  //picking a colour is not an edit and must not consume the undo slot.
@@ -3146,6 +3196,21 @@ begin
  //UpdateInfoBarXY;
  DrawTool:=RMDRAWTools.GetDrawTool;
 
+ //A Ctrl drag keeps sampling rather than falling through to the tool. Without
+ //this the pick would happen on mouse down and the drag would then paint over
+ //the very pixels being sampled.
+ if ColorPickActive then
+ begin
+   if (ssLeft in Shift) then
+     PickColorAt(X,Y,mbLeft)
+   else if (ssRight in Shift) then
+     PickColorAt(X,Y,mbRight)
+   else
+     ColorPickActive:=false;   //button released outside our up handler
+   UpdateInfoBarXY(X,Y);
+   exit;
+ end;
+
  if DrawTool = DrawShapeHBMove then
  begin
    HBMoveMouseMove(X,Y,Shift);
@@ -3169,6 +3234,18 @@ var
 begin
  DrawTool:=RMDRAWTools.GetDrawTool;
 
+ //the pick already happened on mouse down - nothing to commit here, and
+ //letting this reach the tool handlers would stamp a shape on release.
+ //For the LEFT button the flag is deliberately left set, because the LCL
+ //fires ZoomPaintBoxClick after this and that handler has to swallow the
+ //click too. The right button gets no OnClick, so clear it here or the flag
+ //would stay stuck and block the next real edit.
+ if ColorPickActive then
+ begin
+   if Button <> mbLeft then ColorPickActive:=false;
+   exit;
+ end;
+
  if DrawTool = DrawShapeHBMove then
  begin
    HBMoveMouseUp;
@@ -3191,6 +3268,15 @@ var
   DrawColor : TColor;
   ColorIndex : integer;
 begin
+  //The LCL fires OnClick after MouseUp for the left button, so a Ctrl+Left
+  //pick would otherwise stamp text or a brush here. This is the last event of
+  //the gesture, so the flag is cleared as it is consumed.
+  if ColorPickActive then
+  begin
+    ColorPickActive:=false;
+    exit;
+  end;
+
   DrawTool:=RMDRAWTools.GetDrawTool;
   if DrawTool = DrawShapeBrush then
   begin
@@ -3590,6 +3676,51 @@ begin
       UpdateColorBoxes;
       UpDateZoomArea;
       UpdateThumbView;
+   end;
+end;
+
+//VGA DAC OUT palette export. Same shape as the other palette export handlers:
+//set the dialog filter, offer the clipboard route, then hand off to rwpal.
+//No ColorFormat is selected because WritePalDACOut has no format choice - the
+//DAC is six bit, and ColorIndexFormat would be meaningless writing to a port.
+procedure TRMMainForm.PaletteExportDACOutClick(Sender: TObject);
+var
+ error : word;
+begin
+   Case (Sender As TMenuItem).Name of 'QBDACOutPalette' : ExportDialog.Filter := 'QuickBasic\QB64 VGA DAC OUT Palette|*.bas';
+                                      'GWDACOutPalette' : ExportDialog.Filter := 'GWBasic\PC-BASIC VGA DAC OUT Palette|*.bas';
+                                      'PBDACOutPalette' : ExportDialog.Filter := 'Turbo\Power Basic VGA DAC OUT Palette|*.bas';
+                                      'FBDACOutPalette' : ExportDialog.Filter := 'FreeBASIC VGA DAC OUT Palette|*.bas';
+                                      'TPDACOutPalette' : ExportDialog.Filter := 'Turbo Pascal VGA DAC OUT Palette|*.pas';
+                                      'FPDACOutPalette' : ExportDialog.Filter := 'FreePascal VGA DAC OUT Palette|*.pas';
+                                      'TMTDACOutPalette' : ExportDialog.Filter := 'TMT Pascal VGA DAC OUT Palette|*.pas';
+                                      'TCDACOutPalette' : ExportDialog.Filter := 'Turbo C VGA DAC OUT Palette|*.c';
+                                      'QCDACOutPalette' : ExportDialog.Filter := 'Quick C VGA DAC OUT Palette|*.c';
+                                      'OWDACOutPalette' : ExportDialog.Filter := 'Open Watcom C VGA DAC OUT Palette|*.c';
+   end;
+
+   if ExportPaletteTextFileToClipboard(Sender,ColorSixBitFormat) then exit;
+
+   error:=0;
+   if ExportDialog.Execute then
+   begin
+      Case (Sender As TMenuItem).Name of 'QBDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,QBLan);
+                                         'GWDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,GWLan);
+                                         'PBDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,PBLan);
+                                         'FBDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,FBinQBModeLan);
+                                         'TPDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,TPLan);
+                                         'FPDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,FPLan);
+                                         'TMTDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,TMTLan);
+                                         'TCDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,TCLan);
+                                         'QCDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,QCLan);
+                                         'OWDACOutPalette' : error:=WritePalDACOut(ExportDialog.FileName,OWLan);
+      end;
+
+      if error<>0 then
+      begin
+         ShowMessage('Error Saving Palette file!');
+         exit;
+      end;
    end;
 end;
 
@@ -4529,6 +4660,18 @@ begin
 
                                           'GWPaletteData' : error:=WritePalData(FileName,GWLan,ColorFormat);
                                           'GWPaletteCommands' : error:=WritePalStatements(FileName,GWLan,ColorFormat);
+
+                                          //VGA DAC OUT - no ColorFormat, the DAC is always six bit
+                                          'QBDACOutPalette' : error:=WritePalDACOut(FileName,QBLan);
+                                          'GWDACOutPalette' : error:=WritePalDACOut(FileName,GWLan);
+                                          'PBDACOutPalette' : error:=WritePalDACOut(FileName,PBLan);
+                                          'FBDACOutPalette' : error:=WritePalDACOut(FileName,FBinQBModeLan);
+                                          'TPDACOutPalette' : error:=WritePalDACOut(FileName,TPLan);
+                                          'FPDACOutPalette' : error:=WritePalDACOut(FileName,FPLan);
+                                          'TMTDACOutPalette' : error:=WritePalDACOut(FileName,TMTLan);
+                                          'TCDACOutPalette' : error:=WritePalDACOut(FileName,TCLan);
+                                          'QCDACOutPalette' : error:=WritePalDACOut(FileName,QCLan);
+                                          'OWDACOutPalette' : error:=WritePalDACOut(FileName,OWLan);
 
                                           'OWPaletteArray' : error:=WritePalConstants(FileName,OWLan,ColorFormat);
                                           'OWPaletteCommands' : error:=WritePalStatements(FileName,OWLan,ColorFormat);

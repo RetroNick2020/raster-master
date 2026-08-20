@@ -475,6 +475,9 @@ var
  size : longint;
 begin
   size:=0;
+  //ColorVGADACFormat lands in the else branch and is correct there: the binary
+  //payload is three six bit bytes per colour, same footprint as ColorSixBitFormat.
+  //Only ColorIndexFormat is one byte per colour.
   if rgbFormat = ColorIndexFormat then Size:=nColors
     else Size:=nColors*3;
   GetRESPaletteSize:=Size;
@@ -884,6 +887,8 @@ begin
          end
          else
          begin
+           //ColorVGADACFormat comes through here too - it is a six bit array in
+           //a RES include, so it loads with the normal DIM/READ stub.
            WriteBasicDimReadStub(data,EO.Lan,EO.Name+'Pal',PalSize);
          end;
        end;

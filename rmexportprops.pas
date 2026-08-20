@@ -474,7 +474,7 @@ begin
    ComboPalette.Items.Add('8 Bit');
    ComboPalette.Items.Add('AmigaBASIC/AQB - 4 Bit');
    ComboPalette.Items.Add('PC - 2 Bit');
-
+   ComboPalette.Items.Add('PC - 6 Bit VGA DAC');
    ComboPalette.ItemIndex:=0;
    EditWidth.Text:='0';
    EditHeight.Text:='0';
