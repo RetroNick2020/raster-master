@@ -5529,6 +5529,15 @@ begin
       DetectPaletteFormat:=2;
       exit;
     end;
+    //check for GIMP/Aseprite text signature "GIMP Palette" - first 8 chars
+    if (sig[0]='G') and (sig[1]='I') and (sig[2]='M') and (sig[3]='P') and
+       (sig[4]=' ') and (sig[5]='P') and (sig[6]='a') and (sig[7]='l') then
+    begin
+      CloseFile(F);
+      if IOResult <> 0 then ;
+      DetectPaletteFormat:=4;
+      exit;
+    end;
     Seek(F, 0);
   end;
 
@@ -5575,7 +5584,7 @@ Var
  oldPal : TRMPaletteBuf;
 begin
  RMCoreBase.Palette.GetPalette(oldPal);
- OpenDialog1.Filter := 'All Palette Files|*.pal;*.vga|RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga|All Files|*.*';
+ OpenDialog1.Filter := 'All Palette Files|*.pal;*.vga;*.gpl|RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga|GIMP/Aseprite Palette|*.gpl|All Files|*.*';
  if OpenDialog1.Execute then
  begin
      pm:=RMCoreBase.Palette.GetPaletteMode;
@@ -5590,6 +5599,7 @@ begin
          1: err:=ReadPAL(OpenDialog1.FileName, pm);
          2: err:=ReadJASCPAL(OpenDialog1.FileName, pm);
          3: err:=ReadVGAPAL(OpenDialog1.FileName, pm);
+         4: err:=ReadGIMPPAL(OpenDialog1.FileName, pm);
        else
          err:=1000; //unknown format or corrupt file
        end;
@@ -5616,7 +5626,7 @@ procedure TRMMainForm.PaletteSaveClick(Sender: TObject);
 var
   err : word;
 begin
- SaveDialog1.Filter := 'RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga';
+ SaveDialog1.Filter := 'RM Palette (8-bit)|*.pal|JASC Palette|*.pal|VGA Palette (6-bit)|*.vga|GIMP/Aseprite Palette|*.gpl';
  if SaveDialog1.Execute then
  begin
    err:=0;
@@ -5624,6 +5634,7 @@ begin
      1: err:=WritePAL(SaveDialog1.FileName);
      2: err:=WriteJASCPAL(SaveDialog1.FileName);
      3: err:=WriteVGAPAL(SaveDialog1.FileName);
+     4: err:=WriteGIMPPAL(SaveDialog1.FileName);
    end;
    if err <> 0 then
    begin

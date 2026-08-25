@@ -25,6 +25,11 @@ Function WriteJASCPAL(Filename : String) : Word;
 Function ReadVGAPAL(Filename : String; pm : integer) : Word;
 Function WriteVGAPAL(Filename : String) : Word;
 
+//GIMP .gpl palette. Aseprite reads and writes this same format, so one pair
+//of routines covers both tools.
+Function ReadGIMPPAL(Filename : String; pm : integer) : Word;
+Function WriteGIMPPAL(Filename : String) : Word;
+
 function WritePalData(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalConstants(filename : string; Lan,rgbFormat : integer) : word;
 function WritePalStatements(filename : string; Lan,rgbFormat : integer) : word;
@@ -1143,6 +1148,189 @@ begin
   end;
 
   ReadVGAPAL:=IORESULT;
+{$I+}
+end;
+
+{ ===== GIMP .gpl palette format ===== }
+{ Aseprite uses this same format for palette import/export, so one reader and
+  one writer serve both tools.
+
+  Format:
+    GIMP Palette
+    Name: SomeName
+    Columns: 16
+    #
+      0   0   0	Index 0
+    255   0   0	Index 1
+    ...
+
+  Colour lines are whitespace separated R G B, values 0-255, optionally
+  followed by a tab and a colour name which is ignored on read.
+  Lines beginning with # are comments. }
+
+//Applies one loaded colour, clamping it to whatever the destination palette
+//mode can actually represent. Same rules the other readers in this unit use.
+procedure ApplyLoadedColor(i : integer; var CR : TRMColorRec; pm : integer);
+begin
+  if not CanLoadPaletteFile(pm) then exit;
+
+  if pm = PaletteModeEGA then
+  begin
+    //EGA can only hold its own 16 fixed entries - drop anything that has no
+    //EGA equivalent rather than writing an approximation
+    if RGBToEGAIndex(CR.r, CR.g, CR.b) > -1 then SetColor(i, CR);
+  end
+  else if isAmigaPaletteMode(pm) then
+  begin
+    CR.r:=FourToEightBit(EightToFourBit(CR.r));
+    CR.g:=FourToEightBit(EightToFourBit(CR.g));
+    CR.b:=FourToEightBit(EightToFourBit(CR.b));
+    SetColor(i, CR);
+  end
+  else if (pm = PaletteModeVGA) or (pm = PaletteModeVGA256) then
+  begin
+    CR.r:=SixToEightBit(EightToSixBit(CR.r));
+    CR.g:=SixToEightBit(EightToSixBit(CR.g));
+    CR.b:=SixToEightBit(EightToSixBit(CR.b));
+    SetColor(i, CR);
+  end
+  else
+  begin
+    SetColor(i, CR);
+  end;
+end;
+
+//Pulls the next whitespace delimited integer off the front of Line.
+//ok comes back false when there was no token left to take.
+function NextIntToken(var Line : string; var ok : boolean) : integer;
+var
+  p : integer;
+  tok : string;
+begin
+  NextIntToken:=0;
+  ok:=false;
+
+  //strip leading spaces and tabs
+  while (Length(Line) > 0) and ((Line[1] = ' ') or (Line[1] = #9)) do
+    Delete(Line, 1, 1);
+  if Length(Line) = 0 then exit;
+
+  p:=1;
+  while (p <= Length(Line)) and (Line[p] <> ' ') and (Line[p] <> #9) do inc(p);
+
+  tok:=Copy(Line, 1, p-1);
+  Delete(Line, 1, p-1);
+
+  NextIntToken:=StrToIntDef(tok, 0);
+  ok:=true;
+end;
+
+Function WriteGIMPPAL(Filename : String) : Word;
+var
+  F : Text;
+  i : integer;
+  NColors : integer;
+  cols : integer;
+  CR : TRMColorRec;
+  palname : string;
+begin
+  SetCoreActive;
+{$I-}
+  NColors:=GetMaxColor+1;
+
+  //GIMP shows the palette under this name, not the file name, so derive
+  //something sensible from the file the user picked
+  palname:=FileNameToPaletteName(Filename);
+  if palname = '' then palname:='Palette';
+
+  //swatches per row in the GIMP/Aseprite palette view - purely cosmetic
+  cols:=16;
+  if NColors < 16 then cols:=NColors;
+
+  Assign(F, Filename);
+  Rewrite(F);
+  WriteLn(F, 'GIMP Palette');
+  WriteLn(F, 'Name: ', palname);
+  WriteLn(F, 'Columns: ', cols);
+  WriteLn(F, '#');
+  for i:=0 to NColors-1 do
+  begin
+    GetColor(i, CR);
+    //three space padded columns then a tab and the swatch name, which is what
+    //GIMP itself writes
+    WriteLn(F, CR.r:3, ' ', CR.g:3, ' ', CR.b:3, #9, 'Index ', i);
+  end;
+  Close(F);
+  WriteGIMPPAL:=IORESULT;
+{$I+}
+end;
+
+Function ReadGIMPPAL(Filename : String; pm : integer) : Word;
+var
+  F : Text;
+  Line : String;
+  i : integer;
+  r, g, b : integer;
+  CR : TRMColorRec;
+  ok : boolean;
+begin
+  SetCoreActive;
+  ReadGIMPPAL:=0;
+{$I-}
+  Assign(F, Filename);
+  Reset(F);
+
+  // read and verify header
+  ReadLn(F, Line);
+  Line:=Trim(Line);
+  if Line <> 'GIMP Palette' then
+  begin
+    Close(F);
+    ReadGIMPPAL:=1000;
+    exit;
+  end;
+
+  //Everything after the header is optional and order is not guaranteed, so
+  //rather than expecting fixed lines we just skip anything that does not
+  //start with a digit and treat the rest as colours.
+  i:=0;
+  while (not EOF(F)) and (i < 256) do
+  begin
+    ReadLn(F, Line);
+    Line:=Trim(Line);
+
+    if Line = '' then continue;
+    if Line[1] = '#' then continue;                 //comment
+    if not (Line[1] in ['0'..'9']) then continue;   //Name:, Columns:, anything else
+
+    r:=NextIntToken(Line, ok);  if not ok then continue;
+    g:=NextIntToken(Line, ok);  if not ok then continue;
+    b:=NextIntToken(Line, ok);  if not ok then continue;
+    //anything left on the line is the swatch name - ignored
+
+    //a hand edited or malformed file can carry values outside 0-255, and the
+    //colour record fields are bytes - clamp rather than let them wrap
+    if r < 0 then r:=0;  if r > 255 then r:=255;
+    if g < 0 then g:=0;  if g > 255 then g:=255;
+    if b < 0 then b:=0;  if b > 255 then b:=255;
+
+    CR.r:=r;
+    CR.g:=g;
+    CR.b:=b;
+    ApplyLoadedColor(i, CR, pm);
+    inc(i);
+  end;
+
+  Close(F);
+
+  //a valid header with no colour lines is not a usable palette
+  if i = 0 then
+  begin
+    ReadGIMPPAL:=1001;
+    exit;
+  end;
+
+  ReadGIMPPAL:=IORESULT;
 {$I+}
 end;
 
