@@ -70,7 +70,8 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,Math,
   ComCtrls, CheckLst, Menus,rmconst,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
-  rmconfig, LCLType,setcustommapsize,setcustomtilesize,rmcore,rwtmx,rwpng;
+  rmconfig, LCLType,setcustommapsize,setcustomtilesize,rmcore,rwtmx,rwpng,
+  idvalueprops;
 
 const
   AddImage = 1;
@@ -102,12 +103,14 @@ type
     BtnHitBoxAdd: TButton;
     BtnHitBoxDel: TButton;
     BtnHitBoxDeleteAll: TButton;
+    BtnHitBoxProps: TButton;
     PathButtonPanel: TPanel;
     BtnPathDelete: TButton;
     BtnPathVisible: TButton;
     BtnPathActive: TButton;
     BtnPathMode: TButton;
     BtnPathRename: TButton;
+    BtnPathProps: TButton;
     PathsMenu: TMenuItem;
     PathToolMenu: TMenuItem;
     MoveToolMenu: TMenuItem;
@@ -115,6 +118,7 @@ type
     PopLayerCopy: TMenuItem;
     PopLayerPaste: TMenuItem;
     HitBoxPopup: TPopupMenu;
+    PopHitBoxProps: TMenuItem;
     PopHitBoxCopy: TMenuItem;
     PopHitBoxPaste: TMenuItem;
     PathPopup: TPopupMenu;
@@ -315,6 +319,9 @@ type
     procedure HitBoxesDeleteClick(Sender: TObject);
     procedure HitBoxesToggleClick(Sender: TObject);
     procedure HitBoxesClearAllClick(Sender: TObject);
+    //ID/Value editors - shared modal from the idvalueprops unit
+    procedure BtnHitBoxPropsClick(Sender: TObject);
+    procedure BtnPathPropsClick(Sender: TObject);
     procedure TransparentToggleClick(Sender: TObject);
     procedure ListView1Click(Sender: TObject);
     //--- path tool. These MUST stay in the published section: the LFM
@@ -538,6 +545,8 @@ type
     //rewritten whenever something changes rather than on every mouse move.
     procedure UpdateStatusSettings;
     procedure RefreshMapPanels;
+    //re-sync cached state after a project load - see the implementation
+    procedure RefreshAfterProjectLoad;
     procedure RefreshLayerPanel;
     function  LayerRowToIndex(row : integer) : integer;
     function  LayerIndexToRow(layer : integer) : integer;
@@ -692,15 +701,21 @@ begin
  FMoveIndex:=-1;
 
  // create large checkerboard bitmap once for fast tiling
- FCheckerBmp:=TBitmap.Create;
- FCheckerBmp.SetSize(256, 256);
- FCheckerBmp.Canvas.Brush.Color:=clWhite;
- FCheckerBmp.Canvas.FillRect(0, 0, 256, 256);
- FCheckerBmp.Canvas.Brush.Color:=RGBToColor(192, 192, 192);
- for i:=0 to 15 do
-   for j:=0 to 15 do
-     if ((i + j) mod 2) = 0 then
-       FCheckerBmp.Canvas.FillRect(i*16, j*16, (i+1)*16, (j+1)*16);
+ //
+ //Guarded because Init is not only startup - Delete All runs it too, and an
+ //unguarded Create here leaked the previous 256x256 bitmap every time.
+ if FCheckerBmp = nil then
+ begin
+   FCheckerBmp:=TBitmap.Create;
+   FCheckerBmp.SetSize(256, 256);
+   FCheckerBmp.Canvas.Brush.Color:=clWhite;
+   FCheckerBmp.Canvas.FillRect(0, 0, 256, 256);
+   FCheckerBmp.Canvas.Brush.Color:=RGBToColor(192, 192, 192);
+   for i:=0 to 15 do
+     for j:=0 to 15 do
+       if ((i + j) mod 2) = 0 then
+         FCheckerBmp.Canvas.FillRect(i*16, j*16, (i+1)*16, (j+1)*16);
+ end;
  UpdateToolSelectionIcons;
  UpdateEditMenus;
 
@@ -1088,6 +1103,8 @@ begin
   MapCoreBase.AddHitBox(CurrentMap,ca.x,ca.y,ca.x2,ca.y2);
   ShowHitBoxOverlay:=True;
   HitBoxesToggle.Checked:=True;
+  //select the box that was just added, so ID/Value acts on it straight away
+  SelectedHitBox:=MapCoreBase.GetHitBoxCount(CurrentMap)-1;
   UpdateHitBoxListView;
   MapPaintBox.Invalidate;
 end;
@@ -1303,6 +1320,59 @@ begin
   MapPaintBox.Invalidate;
   UpdateMapPreviewImageIcons(CurrentMap,UpdateImage);
   MapListView.Repaint;
+end;
+
+//Edits the id/value pair on the selected hit box. Both fields are free for
+//the game to interpret - Raster Master only stores and exports them.
+procedure TMapEdit.BtnHitBoxPropsClick(Sender: TObject);
+var
+  HB : HitBoxRec;
+  id, value : integer;
+begin
+  if not MapCoreBase.IsValidHitBox(CurrentMap,SelectedHitBox) then
+  begin
+    ShowMessage('Select a hit box first.');
+    exit;
+  end;
+
+  MapCoreBase.GetHitBox(CurrentMap,SelectedHitBox,HB);
+  GetIdValuePropsForm.SetProps('Hit Box '+IntToStr(SelectedHitBox),HB.id,HB.value);
+  if GetIdValuePropsForm.ShowModal <> mrOK then exit;
+
+  GetIdValuePropsForm.GetProps(id,value);
+  //read/modify/write the whole record - SetHitBox takes a HitBoxRec, and
+  //rewriting it wholesale keeps active and the coordinates untouched
+  HB.id:=id;
+  HB.value:=value;
+  MapCoreBase.SetHitBox(CurrentMap,SelectedHitBox,HB);
+
+  UpdateHitBoxListView;
+  MapPaintBox.Invalidate;
+end;
+
+//Same for the selected path.
+procedure TMapEdit.BtnPathPropsClick(Sender: TObject);
+var
+  P : PathRec;
+  id, value : integer;
+begin
+  if not MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then
+  begin
+    ShowMessage('Select a path first.');
+    exit;
+  end;
+
+  MapCoreBase.GetPath(CurrentMap,SelectedPath,P);
+  GetIdValuePropsForm.SetProps('Path '+IntToStr(SelectedPath),P.id,P.value);
+  if GetIdValuePropsForm.ShowModal <> mrOK then exit;
+
+  GetIdValuePropsForm.GetProps(id,value);
+  P.id:=id;
+  P.value:=value;
+  MapCoreBase.SetPath(CurrentMap,SelectedPath,P);
+
+  UpdatePathListView;
+  MapPaintBox.Invalidate;
 end;
 
 procedure TMapEdit.PopHitBoxCopyClick(Sender: TObject);
@@ -1880,6 +1950,8 @@ begin
       end;
       if P.visible then item.SubItems.Add('Yes') else item.SubItems.Add('No');
       if P.active  then item.SubItems.Add('Yes') else item.SubItems.Add('No');
+      item.SubItems.Add(IntToStr(P.id));
+      item.SubItems.Add(IntToStr(P.value));
     end;
   finally
     PathListView.Items.EndUpdate;
@@ -2192,7 +2264,17 @@ begin
     item.SubItems.Add(IntToStr(HB.x2));
     item.SubItems.Add(IntToStr(HB.y2));
     item.SubItems.Add(IntToStr(HB.x2-HB.x+1)+'x'+IntToStr(HB.y2-HB.y+1));
+    item.SubItems.Add(IntToStr(HB.id));
+    item.SubItems.Add(IntToStr(HB.value));
   end;
+
+  //keep SelectedHitBox and the list in step - rebuilding drops the highlight,
+  //and a map switch can leave the index pointing at a box that is gone
+  if (SelectedHitBox < 0) or (SelectedHitBox > hbcount-1) then
+    SelectedHitBox:=-1
+  else
+    ListView1.ItemIndex:=SelectedHitBox;
+
   TabHitBoxes.Caption:='Hit Boxes ('+IntToStr(hbcount)+')';
   UpdateStatusSettings;
 end;
@@ -3448,6 +3530,60 @@ end;
 //Each of the three refreshers updates the status bar itself, so adding or
 //deleting a layer, hitbox or path is reflected there no matter which handler
 //did it - several call the individual refreshers rather than this one.
+//Re-syncs everything the editor caches from the core after a project load.
+//
+//Opening a project replaces every map underneath the editor, but the editor
+//keeps its own copies of CurrentMap and the zoomed tile size, and MapPaintBox
+//keeps whatever extents were last computed. None of that was being refreshed:
+//RefreshAfterProjectOpen only rebuilt the side panels.
+//
+//It looked fine on a cold start because the editor had not sized itself yet.
+//After Delete All it did not, because Init had already run and left a 16x16
+//default map with a 32x32 tile size - so a reopened project was drawn through
+//the old page size and only the top left corner showed. Any zoom change
+//happened to call UpdatePageSize, which is why zooming "fixed" it.
+procedure TMapEdit.RefreshAfterProjectLoad;
+var
+  z : integer;
+begin
+  CurrentMap:=MapCoreBase.GetCurrentMap;
+
+  //the zoomed tile size is cached here, not read per paint
+  TileWidth:=MapCoreBase.GetZoomMapTileWidth(CurrentMap);
+  TileHeight:=MapCoreBase.GetZoomMapTileHeight(CurrentMap);
+
+  //show the zoom the project was saved at, without retriggering the change
+  //handler - that would re-apply zoom and fight the value just restored
+  z:=MapCoreBase.GetZoomSize(CurrentMap);
+  if TileZoom.Position <> z then
+  begin
+    TileZoom.OnChange:=nil;
+    TileZoom.Position:=z;
+    TileZoom.OnChange:=@TileZoomChange;
+  end;
+
+  TileMode:=MapCoreBase.GetMapTileMode(CurrentMap);
+
+  //indices restored from the file refer to the previous project's maps
+  SelectedHitBox:=-1;
+  SelectedPath:=-1;
+  FPathEditIndex:=-1;
+  FPathHasPreview:=false;
+  FMoveIndex:=-1;
+  OldMapX:=-1;
+  OldMapY:=-1;
+  RenderDrawToolShape:=False;
+
+  UpdateMapListView;
+  UpdatePageSize;          //the actual fix for the clipped map
+  MapScrollBox.HorzScrollBar.Position:=0;
+  MapScrollBox.VertScrollBar.Position:=0;
+
+  RefreshMapPanels;
+  UpdateMenus;
+  MapPaintBox.Invalidate;
+end;
+
 procedure TMapEdit.RefreshMapPanels;
 begin
   RefreshLayerPanel;

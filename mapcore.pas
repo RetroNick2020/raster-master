@@ -45,7 +45,7 @@ uses
   Classes, SysUtils;
 
 Const
-  MaxListSize = 100;
+  MaxListSize = 1000;  //was 100
   MaxHitBoxes = 100;
   ZSizeDefaults : array of integer = (8,16,32,64,128,256);
   DefMaxMapWidth = 256;
@@ -1823,11 +1823,16 @@ end;
 //
 //  [0]        NP                 number of paths
 //  [1..NP]    offset of each path header, into this same array
-//  header:    +0 startTileX  +1 startTileY
-//             +2 startPixelX +3 startPixelY
-//             +4 closed      +5 mode (0=once 1=loop 2=pingpong)
-//             +6 segCount
-//             +7 segments, stride 4: dx, dy, pixels, delay
+//  header:    +0 id          +1 value
+//             +2 startTileX  +3 startTileY
+//             +4 startPixelX +5 startPixelY
+//             +6 closed      +7 mode (0=once 1=loop 2=pingpong)
+//             +8 segCount
+//             +9 segments, stride 4: dx, dy, pixels, delay
+//
+//id and value are the caller's own classification fields - the editor sets
+//them and nothing here interprets them. They lead the header so a reader can
+//branch on the path kind before it looks at any geometry.
 //
 //dx,dy come from the 8 direction set so they are always -1/0/+1, which makes
 //"pixels" the exact number of one pixel steps to the next waypoint - diagonals
@@ -1878,7 +1883,8 @@ begin
   for i:=0 to npaths-1 do
   begin
     offs[i]:=total;
-    total:=total + 7 + SegCountOf(idx[i])*4;
+    //9, not 7: the header now leads with id and value
+    total:=total + 9 + SegCountOf(idx[i])*4;
   end;
   if total > Length(vals) then exit;    //caller's buffer is too small
 
@@ -1891,6 +1897,9 @@ begin
     p:=idx[i];
     segcount:=SegCountOf(p);
 
+    //id/value first - a reader can classify the path before parsing geometry
+    Push(Map[index].PathProps.Paths[p].id);
+    Push(Map[index].PathProps.Paths[p].value);
     Push(Map[index].PathProps.Paths[p].Points[0].x);
     Push(Map[index].PathProps.Paths[p].Points[0].y);
     Push(Map[index].PathProps.Paths[p].Points[0].x*tw + tw div 2);

@@ -74,7 +74,7 @@ uses
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
   rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
   fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd, LCLType, LMessages,
-  rwjson, uRetrobrush, brusheffects,
+  rwjson, uRetrobrush, brusheffects, idvalueprops,
   //HitBoxRec/HitBoxesRec live here. rmmain only reached mapcore indirectly
   //through mapeditor, and Pascal does not re-export types that way.
   mapcore;
@@ -513,6 +513,7 @@ type
     BtnSprHBAdd: TButton;
     BtnSprHBDel: TButton;
     BtnSprHBClear: TButton;
+    BtnSprHBProps: TButton;
     BtnSprHBShow: TButton;
     SpriteHitBoxToggle: TMenuItem;
     SpriteHitBoxListToggle: TMenuItem;
@@ -712,6 +713,7 @@ type
     procedure BtnSprHBAddClick(Sender: TObject);
     procedure BtnSprHBDelClick(Sender: TObject);
     procedure BtnSprHBClearClick(Sender: TObject);
+    procedure BtnSprHBPropsClick(Sender: TObject);
     procedure BtnSprHBShowClick(Sender: TObject);
     procedure SpriteHitBoxToggleClick(Sender: TObject);
     procedure SpriteHitBoxListToggleClick(Sender: TObject);
@@ -1386,14 +1388,25 @@ begin
       item.SubItems.Add(IntToStr(HB.x2));
       item.SubItems.Add(IntToStr(HB.y2));
       item.SubItems.Add(IntToStr(HB.x2-HB.x+1)+'x'+IntToStr(HB.y2-HB.y+1));
+      item.SubItems.Add(IntToStr(HB.id));
+      item.SubItems.Add(IntToStr(HB.value));
     end;
   finally
     SpriteHitBoxList.Items.EndUpdate;
   end;
 
+  //Keep SelectedSpriteHitBox and the list in step. Rebuilding the list drops
+  //the highlight, and switching sprites can leave the index pointing at a box
+  //that no longer exists, so re-apply it here and drop it if out of range.
+  if (SelectedSpriteHitBox < 0) or (SelectedSpriteHitBox > c-1) then
+    SelectedSpriteHitBox:=-1
+  else
+    SpriteHitBoxList.ItemIndex:=SelectedSpriteHitBox;
+
   SpriteHitBoxHeader.Caption:=' Hit Boxes ('+IntToStr(c)+')';
   BtnSprHBDel.Enabled:=(c > 0);
   BtnSprHBClear.Enabled:=(c > 0);
+  BtnSprHBProps.Enabled:=(c > 0);
 end;
 
 //Matches the map editor's overlay exactly: hatched fill in a cycling colour,
@@ -1571,6 +1584,9 @@ begin
 
   ShowSpriteHitBoxes:=true;
   if SpriteHitBoxToggle <> nil then SpriteHitBoxToggle.Checked:=true;
+  //select the box that was just added, so ID/Value and Delete act on it
+  //without the user having to click the row first
+  SelectedSpriteHitBox:=ImageThumbBase.GetHitBoxCount(ImageThumbBase.GetCurrent)-1;
   UpdateSpriteHitBoxList;
   ZoomPaintBox.Invalidate;
 end;
@@ -1584,6 +1600,35 @@ begin
   end;
   ImageThumbBase.DeleteHitBox(ImageThumbBase.GetCurrent,SelectedSpriteHitBox);
   SelectedSpriteHitBox:=-1;
+  UpdateSpriteHitBoxList;
+  ZoomPaintBox.Invalidate;
+end;
+
+//Edits the id/value pair on the selected sprite hit box. Same free-form
+//classification fields the map editor exposes - Raster Master stores and
+//exports them and never interprets them.
+procedure TRMMainForm.BtnSprHBPropsClick(Sender: TObject);
+var
+  HB : HitBoxRec;
+  cur, id, value : integer;
+begin
+  cur:=ImageThumbBase.GetCurrent;
+  if not ImageThumbBase.IsValidHitBox(cur,SelectedSpriteHitBox) then
+  begin
+    ShowMessage('Select a hit box first.');
+    exit;
+  end;
+
+  ImageThumbBase.GetHitBox(cur,SelectedSpriteHitBox,HB);
+  GetIdValuePropsForm.SetProps('Hit Box '+IntToStr(SelectedSpriteHitBox),HB.id,HB.value);
+  if GetIdValuePropsForm.ShowModal <> mrOK then exit;
+
+  GetIdValuePropsForm.GetProps(id,value);
+  //read/modify/write the whole record so active and the coordinates survive
+  HB.id:=id;
+  HB.value:=value;
+  ImageThumbBase.SetHitBox(cur,SelectedSpriteHitBox,HB);
+
   UpdateSpriteHitBoxList;
   ZoomPaintBox.Invalidate;
 end;
@@ -6152,6 +6197,7 @@ end;
 procedure TRMMainForm.DeleteAllClick(Sender: TObject);
 var
   ImgWidth,ImgHeight : integer;
+  i : integer;
 begin
  if MessageDlg('Delete All Images, Maps, and Sprite Animations!', 'Are you sure you want to do this?', mtConfirmation,
    [mbYes, mbNo],0) = mrNo    then  Exit;
@@ -6181,8 +6227,17 @@ begin
  UpdateZoomArea;
  ZoomTrackBar.Position:=RMDrawTools.getZoomSize;
 
+ //SetCount only changes the count - it does not touch the props of the images,
+ //so image 0 kept the previous project's hit boxes and the higher slots kept
+ //theirs ready to resurface if the count grows again. Clear them all while the
+ //old count is still in effect, before SetCount trims it.
+ for i:=0 to ImageThumbBase.GetCount-1 do
+   ImageThumbBase.ClearHitBoxes(i);
+ SelectedSpriteHitBox:=-1;
+
  ImageThumbBase.SetCount(1);
  ImageThumbBase.SetCurrent(0);
+ UpdateSpriteHitBoxList;
  ImageList1.Clear;
  ImageList1.Width:=128;
  ImageList1.Height:=128;
@@ -6688,7 +6743,10 @@ begin
    UpdateSpriteHitBoxList;          //hit boxes came from the project file
 
    MapEdit.ClearLoadedSelections;   //stale selection restored from the file
-   MapEdit.RefreshMapPanels;
+   //Full resync, not just the panels: the editor caches CurrentMap and the
+   //zoomed tile size, and MapPaintBox keeps its old extents, so rebuilding
+   //only the side panels left the map drawn through the previous page size.
+   MapEdit.RefreshAfterProjectLoad;
 
    ImageThumbBase.UpdateAllThumbImages(imagelist1);
 

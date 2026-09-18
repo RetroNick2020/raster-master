@@ -241,6 +241,14 @@ object MapEdit: TMapEdit
             item
               Caption = 'Size'
               Width = 70
+            end          
+            item
+              Caption = 'ID'
+              Width = 40
+            end          
+            item
+              Caption = 'Value'
+              Width = 45
             end>
           PopupMenu = HitBoxPopup
           ReadOnly = True
@@ -296,6 +304,18 @@ object MapEdit: TMapEdit
             TabOrder = 2
             OnClick = HitBoxesClearAllClick
           end
+          object BtnHitBoxProps: TButton
+            Left = 144
+            Height = 24
+            Hint = 'Edit the ID and Value of the selected hit box'
+            Top = 2
+            Width = 76
+            Caption = 'ID/Value'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 3
+            OnClick = BtnHitBoxPropsClick
+          end
         end
       end
       object TabPaths: TTabSheet
@@ -332,6 +352,14 @@ object MapEdit: TMapEdit
             item
               Caption = 'Act'
               Width = 34
+            end          
+            item
+              Caption = 'ID'
+              Width = 40
+            end          
+            item
+              Caption = 'Value'
+              Width = 45
             end>
           PopupMenu = PathPopup
           ReadOnly = True
@@ -404,6 +432,18 @@ object MapEdit: TMapEdit
             Caption = 'Rename'
             TabOrder = 4
             OnClick = BtnPathRenameClick
+          end
+          object BtnPathProps: TButton
+            Left = 302
+            Height = 24
+            Hint = 'Edit the ID and Value of the selected path'
+            Top = 2
+            Width = 66
+            Caption = 'ID/Value'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 5
+            OnClick = BtnPathPropsClick
           end
         end
       end
@@ -897,6 +937,10 @@ object MapEdit: TMapEdit
   object HitBoxPopup: TPopupMenu
     Left = 1280
     Top = 40
+    object PopHitBoxProps: TMenuItem
+      Caption = 'Edit ID / Value...'
+      OnClick = BtnHitBoxPropsClick
+    end
     object PopHitBoxCopy: TMenuItem
       Caption = 'Copy Hit Box'
       OnClick = PopHitBoxCopyClick

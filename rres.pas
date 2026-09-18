@@ -63,6 +63,13 @@ Procedure res_read(VAR IRFILE : RFILE; var rbuf; ri : integer);
   Max value = 7*4096 + 63*64 + 63 = 32767, so every encoded value fits
   a signed 16-bit integer - readers never see negative values.
 
+  Category is only 3 bits, so 7 is the hard ceiling and all seven values are
+  in use. Sprite and map hit boxes therefore share category 6 and are
+  distinguished by Format (0 = pixel coords / sprite, 1 = tile coords / map).
+  Reading hit boxes:
+     if cat = 6 then it is a hit box list; fmt = 0 means the numbers are
+     pixels and belong to a sprite, fmt = 1 means tiles and belong to a map.
+
   The RES header ver field distinguishes encodings:
   ver 1 = old ad-hoc scheme (Lan*100+Image / Lan*200+MapFormat)
   ver 2 = this scheme }
@@ -73,8 +80,18 @@ const
   ResTypeImageMask = 3;
   ResTypeMap       = 4;
   ResTypeAnimation = 5;
-  ResTypeSprHitBox = 6;   //sprite hit boxes (PIXEL coords, unlike map ones)
+  ResTypeHitBox    = 6;   //hit boxes - Format says whose, see HitBoxSpace* below
   ResTypePath      = 7;   //map paths, as the flat array mapcore builds
+
+  //Old name for category 6, kept so existing code still compiles.
+  ResTypeSprHitBox = 6;
+
+  //Format values for ResTypeHitBox. Category is only 3 bits wide and all
+  //seven values were already taken, so sprite and map hit boxes share
+  //category 6 and are told apart by Format instead. The payload layout is
+  //identical either way - only the coordinate space differs.
+  HitBoxSpacePixel = 0;   //sprite hit boxes, coordinates in pixels
+  HitBoxSpaceTile  = 1;   //map hit boxes, coordinates in tiles
 
 function EncodeResType(Category, Lan, Format : integer) : integer;
 procedure DecodeResType(rt : integer; var Category, Lan, Format : integer);
@@ -531,12 +548,35 @@ begin
   end;
 end;
 
-//Must match EXACTLY what ResExportSpriteHitBoxes writes: a count followed by
-//4 smallints per box. RR.size and the running RR.offset both derive from it,
-//so an error here shifts every later resource in the file.
-function GetRESSprHitBoxSize(hbcount : integer) : longint;
+//Must match EXACTLY what ResExportSpriteHitBoxes / ResExportMapHitBoxes write:
+//a count followed by 6 smallints per box. RR.size and the running RR.offset
+//both derive from it, so an error here shifts every later resource in the file.
+//Sprite and map hit boxes have the identical payload shape - only the
+//coordinate space differs - so one size function serves both.
+//
+//SIX values per box, not four: id and value lead each record, ahead of the
+//geometry, so a reader can classify a box before parsing its coordinates.
+function GetRESHitBoxSize(hbcount : integer) : longint;
 begin
-  GetRESSprHitBoxSize:=(longint(hbcount)*4*sizeof(smallint))+sizeof(smallint);
+  GetRESHitBoxSize:=(longint(hbcount)*6*sizeof(smallint))+sizeof(smallint);
+end;
+
+//Counts the maps that will produce a hit box resource.
+//MUST use the same guard as the header pass and ResExportMapHitBoxes: the
+//header is sized from this number, so counting a map the writer skips (or
+//vice versa) desynchronises every offset in the file.
+function GetExportMapHitBoxCount : integer;
+var
+  i,n : integer;
+  MPE : MapExportFormatRec;
+begin
+  n:=0;
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i,MPE);
+    if (MPE.MapFormat > 0) and (MapCoreBase.GetHitBoxCount(i) > 0) then inc(n);
+  end;
+  GetExportMapHitBoxCount:=n;
 end;
 
 //Writes the sprite hit boxes of every exported sprite, in the same order the
@@ -546,7 +586,7 @@ var
   i,j,hbcount : integer;
   HB : HitBoxRec;
   EO : ImageExportFormatRec;
-  Line : array[0..4] of smallint;
+  Line : array[0..5] of smallint;
 begin
   for i:=0 to ImageThumbBase.GetCount-1 do
   begin
@@ -563,10 +603,57 @@ begin
     for j:=0 to hbcount-1 do
     begin
       ImageThumbBase.GetHitBox(i,j,HB);
-      Line[0]:=HB.x;  Line[1]:=HB.y;
-      Line[2]:=HB.x2; Line[3]:=HB.y2;
+      //id and value lead, then the geometry
+      Line[0]:=HB.id; Line[1]:=HB.value;
+      Line[2]:=HB.x;  Line[3]:=HB.y;
+      Line[4]:=HB.x2; Line[5]:=HB.y2;
       {$I-}
-      Blockwrite(F,Line,4*sizeof(smallint));
+      Blockwrite(F,Line,6*sizeof(smallint));
+      {$I+}
+      if IORESULT <> 0 then exit;
+    end;
+  end;
+end;
+
+//Writes the map hit boxes of every exported map, in the same order the header
+//pass walked them.
+//
+//Same payload as the sprite version - a count then id,value,x,y,x2,y2 per
+//box - but
+//the coordinates are TILES here, not pixels, which is what HitBoxSpaceTile in
+//the resource type records. x2/y2 are inclusive, so a box is
+//(x2-x+1) by (y2-y+1) tiles.
+//
+//active/id/value are not written, matching the sprite version and the text
+//include output.
+procedure ResExportMapHitBoxes(var F : File);
+var
+  i,j,hbcount : integer;
+  HB : HitBoxRec;
+  MPE : MapExportFormatRec;
+  Line : array[0..5] of smallint;
+begin
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i,MPE);
+    hbcount:=MapCoreBase.GetHitBoxCount(i);
+    if (MPE.MapFormat <= 0) or (hbcount = 0) then continue;
+
+    Line[0]:=hbcount;
+    {$I-}
+    Blockwrite(F,Line,sizeof(smallint));
+    {$I+}
+    if IORESULT <> 0 then exit;
+
+    for j:=0 to hbcount-1 do
+    begin
+      MapCoreBase.GetHitBox(i,j,HB);
+      //id and value lead, then the geometry
+      Line[0]:=HB.id; Line[1]:=HB.value;
+      Line[2]:=HB.x;  Line[3]:=HB.y;
+      Line[4]:=HB.x2; Line[5]:=HB.y2;
+      {$I-}
+      Blockwrite(F,Line,6*sizeof(smallint));
       {$I+}
       if IORESULT <> 0 then exit;
     end;
@@ -1037,7 +1124,9 @@ begin
      else if MPE.Lan = AQBBasicLan then Lan:=AQBLan
      else if MPE.Lan = BAMBasicLan then Lan:=BAMLan;
 
-     size:=MapCoreBase.GetHitBoxCount(i) * 4;
+     //6 per box now (id,value,x,y,x2,y2) - must match the DATA the
+     //hit box writer emits or the READ loop runs past the end
+     size:=MapCoreBase.GetHitBoxCount(i) * 6;
      WriteBasicVariable(data,Lan,MPE.Name+'HitBox','Count',MapCoreBase.GetHitBoxCount(i));
      WriteBasicVariable(data,Lan,MPE.Name+'HitBox','Size',size);
      WriteBasicVariable(data,Lan,MPE.Name+'HitBox','Id',i);
@@ -1075,13 +1164,14 @@ begin
 
     if MapLanIsC(MPE.Lan) then
     begin
-      writeln(data.fText,'/* hit boxes for ',nm,' - tiles, x,y,x2,y2 */');
+      writeln(data.fText,'/* hit boxes for ',nm,' - tiles, id,value,x,y,x2,y2 */');
       writeln(data.fText,'#define ',nm,'_hitbox_count ',hbcount);
-      writeln(data.fText,'const int ',nm,'_hitbox[',hbcount*4,'] = {');
+      writeln(data.fText,'const int ',nm,'_hitbox[',hbcount*6,'] = {');
       for j:=0 to hbcount-1 do
       begin
         MapCoreBase.GetHitBox(i,j,HB);
-        line:='  '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+        line:='  '+IntToStr(HB.id)+','+IntToStr(HB.value)+','+
+                   IntToStr(HB.x)+','+IntToStr(HB.y)+','+
                    IntToStr(HB.x2)+','+IntToStr(HB.y2);
         if j < hbcount-1 then line:=line+',';
         writeln(data.fText,line);
@@ -1090,14 +1180,15 @@ begin
     end
     else if MapLanIsPascal(MPE.Lan) then
     begin
-      writeln(data.fText,'{ hit boxes for ',nm,' - tiles, x,y,x2,y2 }');
+      writeln(data.fText,'{ hit boxes for ',nm,' - tiles, id,value,x,y,x2,y2 }');
       writeln(data.fText,'const');
       writeln(data.fText,'  ',nm,'_hitbox_count = ',hbcount,';');
-      writeln(data.fText,'  ',nm,'_hitbox : array[0..',hbcount*4-1,'] of integer = (');
+      writeln(data.fText,'  ',nm,'_hitbox : array[0..',hbcount*6-1,'] of integer = (');
       for j:=0 to hbcount-1 do
       begin
         MapCoreBase.GetHitBox(i,j,HB);
-        line:='    '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+        line:='    '+IntToStr(HB.id)+','+IntToStr(HB.value)+','+
+                     IntToStr(HB.x)+','+IntToStr(HB.y)+','+
                      IntToStr(HB.x2)+','+IntToStr(HB.y2);
         if j < hbcount-1 then line:=line+',' else line:=line+');';
         writeln(data.fText,line);
@@ -1110,7 +1201,8 @@ begin
       for j:=0 to hbcount-1 do
       begin
         MapCoreBase.GetHitBox(i,j,HB);
-        line:='  {x:'+IntToStr(HB.x)+', y:'+IntToStr(HB.y)+
+        line:='  {id:'+IntToStr(HB.id)+', value:'+IntToStr(HB.value)+
+              ', x:'+IntToStr(HB.x)+', y:'+IntToStr(HB.y)+
               ', x2:'+IntToStr(HB.x2)+', y2:'+IntToStr(HB.y2)+
               ', w:'+IntToStr(HB.x2-HB.x+1)+', h:'+IntToStr(HB.y2-HB.y+1)+'}';
         if j < hbcount-1 then line:=line+',';
@@ -1132,7 +1224,7 @@ begin
       for j:=0 to hbcount-1 do
       begin
         MapCoreBase.GetHitBox(i, j, HB);
-        writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
+        writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.id,',',HB.value,',',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
       end;
     end;
   end;
@@ -1305,13 +1397,14 @@ begin
 
     if SprLanIsC(EO.Lan) then
     begin
-      writeln(data.fText,'/* hit boxes for ',nm,' - pixels, x,y,x2,y2 */');
+      writeln(data.fText,'/* hit boxes for ',nm,' - pixels, id,value,x,y,x2,y2 */');
       writeln(data.fText,'#define ',nm,'_hitbox_count ',hbcount);
-      writeln(data.fText,'const int ',nm,'_hitbox[',hbcount*4,'] = {');
+      writeln(data.fText,'const int ',nm,'_hitbox[',hbcount*6,'] = {');
       for j:=0 to hbcount-1 do
       begin
         ImageThumbBase.GetHitBox(i,j,HB);
-        line:='  '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+        line:='  '+IntToStr(HB.id)+','+IntToStr(HB.value)+','+
+                   IntToStr(HB.x)+','+IntToStr(HB.y)+','+
                    IntToStr(HB.x2)+','+IntToStr(HB.y2);
         if j < hbcount-1 then line:=line+',';
         writeln(data.fText,line);
@@ -1320,14 +1413,15 @@ begin
     end
     else if SprLanIsPascal(EO.Lan) then
     begin
-      writeln(data.fText,'{ hit boxes for ',nm,' - pixels, x,y,x2,y2 }');
+      writeln(data.fText,'{ hit boxes for ',nm,' - pixels, id,value,x,y,x2,y2 }');
       writeln(data.fText,'const');
       writeln(data.fText,'  ',nm,'_hitbox_count = ',hbcount,';');
-      writeln(data.fText,'  ',nm,'_hitbox : array[0..',hbcount*4-1,'] of integer = (');
+      writeln(data.fText,'  ',nm,'_hitbox : array[0..',hbcount*6-1,'] of integer = (');
       for j:=0 to hbcount-1 do
       begin
         ImageThumbBase.GetHitBox(i,j,HB);
-        line:='    '+IntToStr(HB.x)+','+IntToStr(HB.y)+','+
+        line:='    '+IntToStr(HB.id)+','+IntToStr(HB.value)+','+
+                     IntToStr(HB.x)+','+IntToStr(HB.y)+','+
                      IntToStr(HB.x2)+','+IntToStr(HB.y2);
         if j < hbcount-1 then line:=line+',' else line:=line+');';
         writeln(data.fText,line);
@@ -1340,7 +1434,8 @@ begin
       for j:=0 to hbcount-1 do
       begin
         ImageThumbBase.GetHitBox(i,j,HB);
-        line:='  {x:'+IntToStr(HB.x)+', y:'+IntToStr(HB.y)+
+        line:='  {id:'+IntToStr(HB.id)+', value:'+IntToStr(HB.value)+
+              ', x:'+IntToStr(HB.x)+', y:'+IntToStr(HB.y)+
               ', x2:'+IntToStr(HB.x2)+', y2:'+IntToStr(HB.y2)+
               ', w:'+IntToStr(HB.x2-HB.x+1)+', h:'+IntToStr(HB.y2-HB.y+1)+'}';
         if j < hbcount-1 then line:=line+',';
@@ -1362,7 +1457,7 @@ begin
       for j:=0 to hbcount-1 do
       begin
         ImageThumbBase.GetHitBox(i, j, HB);
-        writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
+        writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.id,',',HB.value,',',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
       end;
     end;
   end;
@@ -1615,6 +1710,8 @@ begin
  //sprite hit boxes are their own resources - the header is sized from this
  //count, so omitting them would shift every offset in the file
  inc(ExportCount,ImageThumbBase.GetExportHitBoxCount);
+ //map hit boxes are their own resources too - same reason as above
+ inc(ExportCount,GetExportMapHitBoxCount);
  //map paths are their own resources - same reason as above
  inc(ExportCount,MapCoreBase.GetExportPathCount);
  inc(ExportCount,AnimateBase.GetExportAnimCount);
@@ -1782,9 +1879,45 @@ begin
         if slen > 20 then slen:=20;
         Move(HBName[1],RR.rid,slen);
 
-        RR.size:=GetRESSprHitBoxSize(hbcount);
+        RR.size:=GetRESHitBoxSize(hbcount);
         RR.offset:=OffsetCount;
-        RR.rt:=EncodeResType(ResTypeSprHitBox,EO.Lan,EO.Image);
+        //Format is the coordinate space, not the image format. It used to be
+        //EO.Image, which said nothing about the hit box payload; it is now
+        //what tells a reader these numbers are pixels rather than tiles.
+        RR.rt:=EncodeResType(ResTypeHitBox,EO.Lan,HitBoxSpacePixel);
+
+        inc(OffsetCount,RR.size);
+        {$I-}
+        Blockwrite(data.f,RR,sizeof(RR));
+        {$I+}
+        Error:=IORESULT;
+        if Error<>0 then
+        begin
+          RESBinary:=Error;
+          exit;
+        end;
+      end;
+  end;
+
+  // dump res header fields for map hit boxes.
+  // MUST be walked in the same order as ResExportMapHitBoxes writes them,
+  // and placed between the sprite hit box and path blocks to match the
+  // data pass.
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+      MapCoreBase.GetMapExportProps(i,MapExport);
+      hbcount:=MapCoreBase.GetHitBoxCount(i);
+      if (MapExport.MapFormat > 0) and (hbcount > 0) then
+      begin
+        fillchar(RR.rid,sizeof(RR.rid),32);
+        HBName:=MapExport.Name+'HitBox';
+        slen:=Length(HBName);
+        if slen > 20 then slen:=20;
+        if slen > 0 then Move(HBName[1],RR.rid,slen);
+
+        RR.size:=GetRESHitBoxSize(hbcount);
+        RR.offset:=OffsetCount;
+        RR.rt:=EncodeResType(ResTypeHitBox,MapExport.Lan,HitBoxSpaceTile);
 
         inc(OffsetCount,RR.size);
         {$I-}
@@ -1956,6 +2089,7 @@ begin
 
  ResExportMaps(data.f); //export the maps
  ResExportSpriteHitBoxes(data.f); //sprite hit boxes, in header pass order
+ ResExportMapHitBoxes(data.f);    //map hit boxes, in header pass order
  ResExportPaths(data.f);          //map paths, in header pass order
  ResExportAnimations(data.f); //export the animations
 

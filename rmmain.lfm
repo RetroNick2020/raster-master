@@ -340,6 +340,18 @@ object RMMainForm: TRMMainForm
           TabOrder = 2
           OnClick = BtnSprHBClearClick
         end
+        object BtnSprHBProps: TButton
+          Left = 206
+          Height = 24
+          Hint = 'Edit the ID and Value of the selected hit box'
+          Top = 2
+          Width = 76
+          Caption = 'ID/Value'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 4
+          OnClick = BtnSprHBPropsClick
+        end
         object BtnSprHBShow: TButton
           Left = 144
           Height = 24
@@ -383,6 +395,14 @@ object RMMainForm: TRMMainForm
           item
             Caption = 'Size'
             Width = 70
+          end        
+          item
+            Caption = 'ID'
+            Width = 40
+          end        
+          item
+            Caption = 'Value'
+            Width = 45
           end>
         ReadOnly = True
         RowSelect = True
