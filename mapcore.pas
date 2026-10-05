@@ -45,14 +45,18 @@ uses
   Classes, SysUtils;
 
 Const
-  MaxListSize = 1000;  //was 100
+  MaxListSize = 1000;
   MaxHitBoxes = 100;
   ZSizeDefaults : array of integer = (8,16,32,64,128,256);
   DefMaxMapWidth = 256;
   DefMaxMapHeight = 256;
 
   RMMapSig = 'RMM';
-  RMMapVersion = 5;   // v5 = path lines. v4 = layers. BREAKING each time.
+  RMMapVersion = 6;   // v6 = key/value properties. v5 = path lines. v4 = layers.
+  //Oldest map stream rwmap can still read. v6 only APPENDS data (a key table
+  //before the maps, rows after each map's paths), so v5 files still load -
+  //the first bump that did not have to break existing files.
+  MinReadMapVersion = 5;
 
   //Fixed layer cap. Deliberately small: typical maps use 2-3 layers, and an
   //unbounded count would only make the UI confusing and the renderer slow.
@@ -67,6 +71,22 @@ Const
 
   MaxPaths      = 32;
   MaxPathPoints = 64;
+
+  //Map key/value properties - see the RES Binary v3 spec. Numbers here are
+  //part of that spec: change them and the spec must change with them.
+  MaxMapProps    = 256;   //rows per map
+  MaxPropKeys    = 256;   //keys per project
+  MaxPropStrLen  = 240;   //fits a quoted DATA item on one 255 char BASIC line
+  MaxPropKeyName = 16;
+
+  PropKindMap    = 0;     //the map itself        a=0          b=0
+  PropKindHitBox = 1;     //a hit box             a=box index  b=0
+  PropKindPath   = 2;     //a path                a=path index b=0
+  PropKindCell   = 3;     //one map cell          a=x          b=y
+  PropKindTile   = 4;     //every instance of a tile - held by uid, not a
+
+  PropTypeInt    = 0;
+  PropTypeString = 1;
 
   //PathRec.mode - how a follower walks the path
   PathModeOnce     = 0;   //run to the end and stop
@@ -217,12 +237,45 @@ type
                Paths : array[0..MaxPaths-1] of PathRec;
              end;
 
-  //One undo snapshot. Not part of MapRec: MapRec is BlockWrite'd to file, so
-  //anything added there would change the file format.
+  //One key/value row. id/idvalue lead, as on hit boxes and paths.
+  //
+  //Rows live in the parallel MapKV array rather than in MapRec. That was done
+  //believing MapRec is block-written to file; it is not - rwmap writes named
+  //sub-records - but a parallel array is equally correct and is kept.
+  //
+  //A PropKindTile row identifies its tile by uid, never by index - image
+  //indices shift when an image is deleted, and the property would silently
+  //move to a different tile. Export converts uid to the current index.
+  //For a string key the value is in text; export builds the string table
+  //and writes the table index into the exported value field.
+  KeyValueRec = Record
+                  id, idvalue : integer;
+                  kind, a, b  : integer;
+                  key         : integer;
+                  value       : integer;
+                  uid         : TGUID;     //PropKindTile only
+                  text        : string;    //string keys only
+                end;
+
+  KeyValuesRec = Record
+                   Count : integer;
+                   Rows  : array[0..MaxMapProps-1] of KeyValueRec;
+                 end;
+
+  //Project wide key table - a key number means the same thing on every map.
+  KeyDefRec = Record
+                key   : integer;
+                ktype : integer;   //PropTypeInt / PropTypeString
+                name  : string[MaxPropKeyName];
+              end;
+
+  //One undo snapshot, kept out of MapRec. (MapRec itself is not written to
+  //file whole - rwmap writes its sub-records one by one.)
   TMapUndoLevel = Record
                     Tiles      : array[0..MaxMapLayers-1] of array of array of TileRec;
                     HitBoxes   : HitBoxesRec;
                     Paths      : PathsRec;
+                    KeyValues  : KeyValuesRec;   //properties undo with the rest
                     LayerCount : integer;
                     Width      : integer;
                     Height     : integer;
@@ -285,6 +338,16 @@ type
                     LayerClip  : TLayerClip;
                     HitBoxClip : THitBoxClip;
                     PathClip   : TPathClip;
+
+                    //Key/value properties, one list per map - a parallel
+                    //array for the same reason as MapUndo (see KeyValueRec)
+                    MapKV       : array of KeyValuesRec;
+                    KeyDefs     : array[0..MaxPropKeys-1] of KeyDefRec;
+                    KeyDefCount : integer;
+                    //key import in progress - see BeginKeyImport
+                    KeyImpOld, KeyImpNew : array[0..MaxPropKeys-1] of integer;
+                    KeyImpCount : integer;
+                    KeyImpMerge : boolean;
 
                     CurrentMap : integer;
                     MapCount   : integer;
@@ -481,6 +544,7 @@ type
                     procedure SetMapCount(count : integer);
 
                     procedure DeleteMap(index : integer);
+                    procedure ClearMapExtras(index : integer);
                     procedure InsertMap(index : integer);
                     procedure AddMap;
                     procedure CloneMap;
@@ -503,10 +567,47 @@ type
                     procedure SetHitBox(index,HBIndex : integer;var HB : HitBoxRec);
 
                     procedure ClearAllHitBoxes(index : integer);
+
+                    //--- key/value properties ---------------------------------
+                    function  GetPropCount(index : integer) : integer;
+                    function  IsValidProp(index,n : integer) : boolean;
+                    procedure GetProp(index,n : integer;var P : KeyValueRec);
+                    function  SetProp(index,n : integer;var P : KeyValueRec) : boolean;
+                    function  AddProp(index : integer;var P : KeyValueRec) : integer;
+                    procedure DeleteProp(index,n : integer);
+                    procedure ClearProps(index : integer);
+                    function  FindProp(index : integer;var P : KeyValueRec) : integer;
+                    procedure PropOwnerDeleted(index,kind,n : integer);
+                    procedure PropOwnerKindCleared(index,kind : integer);
+                    //managed-type free read for {$MODE TP} units such as rres
+                    procedure GetPropFields(index,n : integer;
+                                var id,idvalue,kind,a,b,key,value : longint;
+                                var uid : TGUID;var text : ShortString);
+                    function  PathExportIndex(index,p : integer) : integer;
+
+                    function  GetKeyDefCount : integer;
+                    procedure GetKeyDef(n : integer;var K : KeyDefRec);
+                    function  FindKeyDef(key : integer) : integer;
+                    function  FindKeyDefByName(const name : string) : integer;
+                    function  AddKeyDef(const name : string;ktype : integer) : integer;
+                    function  AddKeyDefNumbered(key : integer;const name : string;ktype : integer) : boolean;
+                    function  SetKeyDef(n : integer;const name : string;ktype : integer) : boolean;
+                    function  KeyDefInUse(key : integer) : boolean;
+                    function  DeleteKeyDef(n : integer) : boolean;
+                    procedure ClearKeyDefs;
+                    //shared by the JSON and binary loaders
+                    procedure BeginKeyImport(merge : boolean);
+                    procedure ImportKeyDef(oldkey : integer;const name : string;ktype : integer);
+                    function  ImportedKey(oldkey : integer) : integer;
               end;
 
 var
  MapCoreBase : TMapCoreBase;
+
+//Validation shared by the editor dialogs and the JSON loader, so every entry
+//route enforces the same rules the RES v3 spec promises.
+function IsValidPropKeyName(const s : string) : boolean;
+function IsValidPropText(const s : string) : boolean;
 
 implementation
 
@@ -527,6 +628,7 @@ begin
  //without this the previous project's hitboxes and extra layers survive.
  for m:=0 to MaxListSize-1 do
    ResetMapState(m);
+ ClearKeyDefs;   //keys are project wide - Delete All must not keep them
  SetZoomSize(0,4);
  //  SetMapSize(0,DefMaxMapWidth,DefMaxMapHeight);
  SetMapSize(0,16,16);
@@ -548,6 +650,7 @@ begin
  Setlength(Map,size);
  Setlength(UndoMap,size);
  Setlength(MapUndo,size);
+ Setlength(MapKV,size);
 end;
 
 //=============================================================================
@@ -576,6 +679,7 @@ begin
   L.LayerCount:=GetLayerCount(index);
   L.HitBoxes:=Map[index].HitBoxProps;
   L.Paths:=Map[index].PathProps;
+  L.KeyValues:=MapKV[index];
 
   for l2:=0 to L.LayerCount-1 do
   begin
@@ -597,6 +701,7 @@ begin
 
   Map[index].HitBoxProps:=L.HitBoxes;
   Map[index].PathProps:=L.Paths;
+  MapKV[index]:=L.KeyValues;
 
   if L.LayerCount <> GetLayerCount(index) then
     SetLayerCount(index,L.LayerCount);
@@ -1384,6 +1489,7 @@ end;
 procedure TMapCoreBase.ClearPaths(index : integer);
 begin
   Map[index].PathProps.PathCount:=0;
+  PropOwnerKindCleared(index,PropKindPath);
 end;
 
 function TMapCoreBase.GetPathCount(index : integer) : integer;
@@ -1430,6 +1536,8 @@ begin
   for i:=p to Map[index].PathProps.PathCount-2 do
     Map[index].PathProps.Paths[i]:=Map[index].PathProps.Paths[i+1];
   dec(Map[index].PathProps.PathCount);
+  //drop rows on this path, renumber rows on the paths above it
+  PropOwnerDeleted(index,PropKindPath,p);
 end;
 
 procedure TMapCoreBase.GetPath(index,p : integer;var Path : PathRec);
@@ -1956,6 +2064,7 @@ procedure TMapCoreBase.ResetMapState(index : integer);
 begin
   Map[index].HitBoxProps.HitBoxCount:=0;
   Map[index].PathProps.PathCount:=0;
+  ClearProps(index);
   ClearUndo(index);
   Map[index].Props.CurrentLayer:=0;
   Map[index].Props.LayerCount:=1;
@@ -2226,10 +2335,17 @@ var
 begin
  if (index < 0) OR (index > (MapCount-1)) then exit;
  inc(MapCount);
+ //Every per-map parallel array moves with its map. MapUndo used to stay
+ //put, so after an insert each map below it undid into its neighbour's
+ //history.
  for i:=MapCount-1 downto index+1 do
  begin
     Map[i]:=Map[i-1];
+    MapKV[i]:=MapKV[i-1];
+    MapUndo[i]:=MapUndo[i-1];
  end;
+ //the freed slot must not keep a copy of its neighbour's data
+ ClearMapExtras(index);
 end;
 
 procedure TMapCoreBase.DeleteMap(index : integer);
@@ -2237,10 +2353,16 @@ var
  i : integer;
 begin
  if (index < 0)  then exit;
+ //see InsertMap - the undo history moves with its map too
  for i:=index to MapCount-2  do
  begin
    Map[i]:=Map[i+1];
+   MapKV[i]:=MapKV[i+1];
+   MapUndo[i]:=MapUndo[i+1];
  end;
+ //the vacated slot still holds a copy of the last map - clear it, or the
+ //next AddMap inherits those hit boxes, paths and properties
+ ClearMapExtras(MapCount-1);
  SetMapSize(MapCount-1,0,0);
  dec(MapCount);
 end;
@@ -2269,6 +2391,9 @@ begin
  ExportProps.Lan:=Lan;
  ExportProps.MapFormat:=Format;
  SetMapExportProps(MapCount-1,ExportProps);
+ //a reused slot can still hold a deleted map's hit boxes, paths, properties
+ //and undo history - SetMapSize and SetMapProps touch none of them
+ ClearMapExtras(MapCount-1);
 end;
 
 //A clone is a complete duplicate: EVERY layer, plus the hitboxes and the
@@ -2298,6 +2423,7 @@ begin
  //hitboxes and paths are whole records - a straight assignment is enough
  Map[dest].HitBoxProps:=Map[CurrentMap].HitBoxProps;
  Map[dest].PathProps:=Map[CurrentMap].PathProps;
+ MapKV[dest]:=MapKV[CurrentMap];   //static array of records - a real copy
 
  //every layer, not just the active one
  for l:=0 to GetLayerCount(CurrentMap)-1 do
@@ -2324,6 +2450,7 @@ end;
 procedure TMapCoreBase.InitHitBox;
 begin
    Map[CurrentMap].HitBoxProps.HitBoxCount:=0;
+   PropOwnerKindCleared(CurrentMap,PropKindHitBox);
 end;
 
 
@@ -2383,6 +2510,8 @@ begin
     Map[index].HitBoxProps.HitBoxes[Map[index].HitBoxProps.HitBoxCount-1].x2:=0;
     Map[index].HitBoxProps.HitBoxes[Map[index].HitBoxProps.HitBoxCount-1].y2:=0;
     dec(Map[index].HitBoxProps.HitBoxCount);
+    //drop rows on this box, renumber rows on the boxes above it
+    PropOwnerDeleted(index,PropKindHitBox,HBIndex);
   end;
 end;
 
@@ -2452,6 +2581,7 @@ var
   i : integer;
 begin
   Map[index].HitBoxProps.HitBoxCount:=0;
+  PropOwnerKindCleared(index,PropKindHitBox);
   for i:=0 to MaxHitBoxes-1 do
   begin
     Map[index].HitBoxProps.HitBoxes[i].active:=false;
@@ -2463,7 +2593,396 @@ begin
 end;
 
 
+//=============================================================================
+// KEY/VALUE PROPERTIES
+//
+// See the RES Binary v3 spec. Rows are kept per map in MapKV, keys once per
+// project in KeyDefs. Everything that adds a row goes through AddProp or
+// SetProp, so the one-row-per-owner-and-key rule holds whatever the route.
+//=============================================================================
+
+function IsValidPropKeyName(const s : string) : boolean;
+var
+  i : integer;
+begin
+  IsValidPropKeyName:=false;
+  if (Length(s) < 1) or (Length(s) > MaxPropKeyName) then exit;
+  if not (s[1] in ['A'..'Z']) then exit;
+  for i:=2 to Length(s) do
+    if not (s[i] in ['A'..'Z','0'..'9']) then exit;
+  IsValidPropKeyName:=true;
+end;
+
+//Printable ASCII only, and no double quote: the text has to survive as a
+//quoted BASIC DATA item and a DOS code page, not just a Lazarus TEdit.
+function IsValidPropText(const s : string) : boolean;
+var
+  i : integer;
+begin
+  IsValidPropText:=false;
+  if Length(s) > MaxPropStrLen then exit;
+  for i:=1 to Length(s) do
+    if (Ord(s[i]) < 32) or (Ord(s[i]) > 126) or (s[i] = '"') then exit;
+  IsValidPropText:=true;
+end;
+
+function TMapCoreBase.GetPropCount(index : integer) : integer;
+begin
+  GetPropCount:=MapKV[index].Count;
+end;
+
+function TMapCoreBase.IsValidProp(index,n : integer) : boolean;
+begin
+  IsValidProp:=(n >= 0) and (n < MapKV[index].Count);
+end;
+
+procedure TMapCoreBase.GetProp(index,n : integer;var P : KeyValueRec);
+begin
+  if not IsValidProp(index,n) then exit;
+  P:=MapKV[index].Rows[n];
+end;
+
+//Same owner and key. Owner fields that the kind does not use are forced to
+//zero on the way in (see NormaliseProp), so a plain compare is enough.
+function SameOwnerAndKey(const A,B : KeyValueRec) : boolean;
+begin
+  SameOwnerAndKey:=false;
+  if (A.kind <> B.kind) or (A.key <> B.key) then exit;
+  if A.kind = PropKindTile then
+    SameOwnerAndKey:=IsEqualGUID(A.uid,B.uid)
+  else
+    SameOwnerAndKey:=(A.a = B.a) and (A.b = B.b);
+end;
+
+procedure NormaliseProp(var P : KeyValueRec);
+begin
+  case P.kind of
+    PropKindMap                  : begin P.a:=0; P.b:=0; end;
+    PropKindHitBox,PropKindPath  : P.b:=0;
+    PropKindTile                 : begin P.a:=0; P.b:=0; end;
+  end;
+  if P.kind <> PropKindTile then FillChar(P.uid,sizeof(P.uid),0);
+  if Length(P.text) > MaxPropStrLen then SetLength(P.text,MaxPropStrLen);
+end;
+
+function TMapCoreBase.FindProp(index : integer;var P : KeyValueRec) : integer;
+var
+  n : integer;
+  Q : KeyValueRec;
+begin
+  FindProp:=-1;
+  Q:=P;
+  NormaliseProp(Q);
+  for n:=0 to MapKV[index].Count-1 do
+    if SameOwnerAndKey(MapKV[index].Rows[n],Q) then
+    begin
+      FindProp:=n;
+      exit;
+    end;
+end;
+
+//Returns the new row index, or -1 when the map is full or the owner already
+//has this key - editing an existing row goes through SetProp instead.
+function TMapCoreBase.AddProp(index : integer;var P : KeyValueRec) : integer;
+var
+  n : integer;
+begin
+  AddProp:=-1;
+  if MapKV[index].Count >= MaxMapProps then exit;
+  NormaliseProp(P);
+  if FindProp(index,P) >= 0 then exit;
+  n:=MapKV[index].Count;
+  MapKV[index].Rows[n]:=P;
+  inc(MapKV[index].Count);
+  AddProp:=n;
+end;
+
+//False, and nothing changes, if the edit would duplicate another row.
+function TMapCoreBase.SetProp(index,n : integer;var P : KeyValueRec) : boolean;
+var
+  f : integer;
+begin
+  SetProp:=false;
+  if not IsValidProp(index,n) then exit;
+  NormaliseProp(P);
+  f:=FindProp(index,P);
+  if (f >= 0) and (f <> n) then exit;
+  MapKV[index].Rows[n]:=P;
+  SetProp:=true;
+end;
+
+procedure TMapCoreBase.DeleteProp(index,n : integer);
+var
+  i : integer;
+begin
+  if not IsValidProp(index,n) then exit;
+  for i:=n to MapKV[index].Count-2 do
+    MapKV[index].Rows[i]:=MapKV[index].Rows[i+1];
+  dec(MapKV[index].Count);
+  //release the string held by the vacated slot
+  MapKV[index].Rows[MapKV[index].Count].text:='';
+end;
+
+procedure TMapCoreBase.ClearProps(index : integer);
+var
+  i : integer;
+begin
+  for i:=0 to MapKV[index].Count-1 do
+    MapKV[index].Rows[i].text:='';
+  MapKV[index].Count:=0;
+end;
+
+//Owner n of this kind was deleted and everything above it moved down one.
+//Rows on n go; rows on anything above n follow their owner down.
+procedure TMapCoreBase.PropOwnerDeleted(index,kind,n : integer);
+var
+  i : integer;
+begin
+  for i:=MapKV[index].Count-1 downto 0 do
+    if MapKV[index].Rows[i].kind = kind then
+    begin
+      if MapKV[index].Rows[i].a = n then
+        DeleteProp(index,i)
+      else if MapKV[index].Rows[i].a > n then
+        dec(MapKV[index].Rows[i].a);
+    end;
+end;
+
+procedure TMapCoreBase.PropOwnerKindCleared(index,kind : integer);
+var
+  i : integer;
+begin
+  for i:=MapKV[index].Count-1 downto 0 do
+    if MapKV[index].Rows[i].kind = kind then DeleteProp(index,i);
+end;
+
+procedure TMapCoreBase.GetPropFields(index,n : integer;
+            var id,idvalue,kind,a,b,key,value : longint;
+            var uid : TGUID;var text : ShortString);
+begin
+  if not IsValidProp(index,n) then exit;
+  id:=MapKV[index].Rows[n].id;
+  idvalue:=MapKV[index].Rows[n].idvalue;
+  kind:=MapKV[index].Rows[n].kind;
+  a:=MapKV[index].Rows[n].a;
+  b:=MapKV[index].Rows[n].b;
+  key:=MapKV[index].Rows[n].key;
+  value:=MapKV[index].Rows[n].value;
+  uid:=MapKV[index].Rows[n].uid;
+  text:=MapKV[index].Rows[n].text;
+end;
+
+//Position of path p in BuildPathExportArray, or -1 when p is not exported.
+//MUST use the same test as BuildPathExportArray and PathExportCount - active,
+//and at least two points - or property rows would point at the wrong path.
+function TMapCoreBase.PathExportIndex(index,p : integer) : integer;
+var
+  i,c : integer;
+
+  function Exported(q : integer) : boolean;
+  begin
+    Exported:=Map[index].PathProps.Paths[q].active and
+              (Map[index].PathProps.Paths[q].PointCount >= 2);
+  end;
+
+begin
+  PathExportIndex:=-1;
+  if not IsValidPath(index,p) then exit;
+  if not Exported(p) then exit;
+  c:=0;
+  for i:=0 to p-1 do
+    if Exported(i) then inc(c);
+  PathExportIndex:=c;
+end;
+
+//--- key table ---------------------------------------------------------------
+
+function TMapCoreBase.GetKeyDefCount : integer;
+begin
+  GetKeyDefCount:=KeyDefCount;
+end;
+
+procedure TMapCoreBase.GetKeyDef(n : integer;var K : KeyDefRec);
+begin
+  if (n < 0) or (n >= KeyDefCount) then exit;
+  K:=KeyDefs[n];
+end;
+
+function TMapCoreBase.FindKeyDef(key : integer) : integer;
+var
+  n : integer;
+begin
+  FindKeyDef:=-1;
+  for n:=0 to KeyDefCount-1 do
+    if KeyDefs[n].key = key then
+    begin
+      FindKeyDef:=n;
+      exit;
+    end;
+end;
+
+function TMapCoreBase.FindKeyDefByName(const name : string) : integer;
+var
+  n : integer;
+begin
+  FindKeyDefByName:=-1;
+  for n:=0 to KeyDefCount-1 do
+    if CompareText(KeyDefs[n].name,name) = 0 then
+    begin
+      FindKeyDefByName:=n;
+      exit;
+    end;
+end;
+
+//Adds a key with the next number after the highest in use and returns that
+//number, or -1 for a bad or duplicate name or a full table. Numbers are never
+//recycled while a key exists, so a row can never change meaning under you.
+function TMapCoreBase.AddKeyDef(const name : string;ktype : integer) : integer;
+var
+  n,next : integer;
+begin
+  AddKeyDef:=-1;
+  if KeyDefCount >= MaxPropKeys then exit;
+  if not IsValidPropKeyName(name) then exit;
+  if FindKeyDefByName(name) >= 0 then exit;
+
+  next:=1;
+  for n:=0 to KeyDefCount-1 do
+    if KeyDefs[n].key >= next then next:=KeyDefs[n].key+1;
+  if next > 32767 then exit;   //must fit the 16 bit export word
+
+  if not AddKeyDefNumbered(next,name,ktype) then exit;
+  AddKeyDef:=next;
+end;
+
+//Used by the project loader, which has to keep the numbers from the file.
+function TMapCoreBase.AddKeyDefNumbered(key : integer;const name : string;ktype : integer) : boolean;
+begin
+  AddKeyDefNumbered:=false;
+  if KeyDefCount >= MaxPropKeys then exit;
+  if (key < 1) or (key > 32767) then exit;
+  if not IsValidPropKeyName(name) then exit;
+  if (FindKeyDef(key) >= 0) or (FindKeyDefByName(name) >= 0) then exit;
+  if (ktype <> PropTypeInt) and (ktype <> PropTypeString) then ktype:=PropTypeInt;
+
+  KeyDefs[KeyDefCount].key:=key;
+  KeyDefs[KeyDefCount].ktype:=ktype;
+  KeyDefs[KeyDefCount].name:=name;
+  inc(KeyDefCount);
+  AddKeyDefNumbered:=true;
+end;
+
+//Rename or retype a key. Retyping is safe: every row keeps both its integer
+//value and its text, and the key type only decides which one is exported.
+function TMapCoreBase.SetKeyDef(n : integer;const name : string;ktype : integer) : boolean;
+var
+  f : integer;
+begin
+  SetKeyDef:=false;
+  if (n < 0) or (n >= KeyDefCount) then exit;
+  if not IsValidPropKeyName(name) then exit;
+  f:=FindKeyDefByName(name);
+  if (f >= 0) and (f <> n) then exit;
+  if (ktype <> PropTypeInt) and (ktype <> PropTypeString) then exit;
+  KeyDefs[n].name:=name;
+  KeyDefs[n].ktype:=ktype;
+  SetKeyDef:=true;
+end;
+
+function TMapCoreBase.KeyDefInUse(key : integer) : boolean;
+var
+  m,n : integer;
+begin
+  KeyDefInUse:=true;
+  for m:=0 to MapCount-1 do
+    for n:=0 to MapKV[m].Count-1 do
+      if MapKV[m].Rows[n].key = key then exit;
+  KeyDefInUse:=false;
+end;
+
+//False while any map still uses the key - delete those rows first.
+function TMapCoreBase.DeleteKeyDef(n : integer) : boolean;
+var
+  i : integer;
+begin
+  DeleteKeyDef:=false;
+  if (n < 0) or (n >= KeyDefCount) then exit;
+  if KeyDefInUse(KeyDefs[n].key) then exit;
+  for i:=n to KeyDefCount-2 do
+    KeyDefs[i]:=KeyDefs[i+1];
+  dec(KeyDefCount);
+  DeleteKeyDef:=true;
+end;
+
+procedure TMapCoreBase.ClearKeyDefs;
+begin
+  KeyDefCount:=0;
+end;
+
+//Hit boxes, paths, properties and undo history of one map slot - everything
+//that SetMapSize/SetMapProps leave alone. Used when a slot is freed, vacated
+//or reused so it cannot carry another map's data.
+procedure TMapCoreBase.ClearMapExtras(index : integer);
+begin
+  Map[index].HitBoxProps.HitBoxCount:=0;
+  Map[index].PathProps.PathCount:=0;
+  ClearProps(index);
+  ClearUndo(index);
+end;
+
+//Key import, shared by the JSON and binary loaders.
+//A full load replaces the key table. An insert or single map load MERGES by
+//name instead, because the incoming file numbered its keys independently:
+//a matching name reuses your number, a new name gets the next free one.
+//ImportedKey then translates each incoming row; 0 means drop the row.
+procedure TMapCoreBase.BeginKeyImport(merge : boolean);
+begin
+  KeyImpCount:=0;
+  KeyImpMerge:=merge;
+  if not merge then ClearKeyDefs;
+end;
+
+procedure TMapCoreBase.ImportKeyDef(oldkey : integer;const name : string;ktype : integer);
+var
+  slot, newkey : integer;
+  uname : string;
+begin
+  if KeyImpCount >= MaxPropKeys then exit;
+  uname:=UpperCase(name);
+  newkey:=0;
+  if KeyImpMerge then
+  begin
+    slot:=FindKeyDefByName(uname);
+    if slot >= 0 then
+      newkey:=KeyDefs[slot].key
+    else
+    begin
+      newkey:=AddKeyDef(uname,ktype);
+      if newkey < 0 then newkey:=0;
+    end;
+  end
+  else if AddKeyDefNumbered(oldkey,uname,ktype) then
+    newkey:=oldkey;
+
+  KeyImpOld[KeyImpCount]:=oldkey;
+  KeyImpNew[KeyImpCount]:=newkey;
+  inc(KeyImpCount);
+end;
+
+function TMapCoreBase.ImportedKey(oldkey : integer) : integer;
+var
+  i : integer;
+begin
+  ImportedKey:=0;
+  for i:=0 to KeyImpCount-1 do
+    if KeyImpOld[i] = oldkey then
+    begin
+      ImportedKey:=KeyImpNew[i];
+      exit;
+    end;
+end;
+
+//unit initialization - must stay LAST, after every routine
 begin
   MapCoreBase:=TMapCoreBase.Create;
 end.
-

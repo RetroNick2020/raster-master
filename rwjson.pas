@@ -343,6 +343,126 @@ end;
 
 { ===== map write ===== }
 
+{ ===== map key/value properties ===== }
+
+//Key numbers are project wide. A normal open replaces the key table; insert
+//mode merges by name, because the inserted project numbered its keys on its
+//own. The logic is MapCoreBase.BeginKeyImport - shared with the binary loader.
+
+//Keeps only what IsValidPropText allows, so a hand edited file cannot put a
+//double quote or a control character into an exported BASIC DATA line.
+function SanitisePropText(const s : string) : string;
+var
+  i : integer;
+  r : string;
+begin
+  r:='';
+  for i:=1 to Length(s) do
+    if (Ord(s[i]) >= 32) and (Ord(s[i]) <= 126) and (s[i] <> '"') then
+    begin
+      r:=r+s[i];
+      if Length(r) >= MaxPropStrLen then break;
+    end;
+  SanitisePropText:=r;
+end;
+
+procedure LoadKeyDefs(Root : TJSONObject; insertmode : boolean);
+var
+  KeyArr : TJSONArray;
+  KeyObj : TJSONObject;
+  i : integer;
+begin
+  MapCoreBase.BeginKeyImport(insertmode);   //a normal open clears the old keys
+  KeyArr:=Root.Get('propertyKeys', TJSONArray(nil));
+  if KeyArr = nil then exit;
+  for i:=0 to KeyArr.Count-1 do
+  begin
+    KeyObj:=TJSONObject(KeyArr[i]);
+    if KeyObj = nil then continue;
+    MapCoreBase.ImportKeyDef(KeyObj.Get('key',0),KeyObj.Get('name',''),
+                             KeyObj.Get('type',PropTypeInt));
+  end;
+end;
+
+function KeyDefsToJSON : TJSONArray;
+var
+  KeyObj : TJSONObject;
+  K : KeyDefRec;
+  i : integer;
+begin
+  KeyDefsToJSON:=TJSONArray.Create;
+  for i:=0 to MapCoreBase.GetKeyDefCount-1 do
+  begin
+    MapCoreBase.GetKeyDef(i,K);
+    KeyObj:=TJSONObject.Create;
+    KeyObj.Add('key', K.key);
+    KeyObj.Add('type', K.ktype);
+    KeyObj.Add('name', string(K.name));
+    KeyDefsToJSON.Add(KeyObj);
+  end;
+end;
+
+function MapPropsToJSON(index : integer) : TJSONArray;
+var
+  PropObj : TJSONObject;
+  P : KeyValueRec;
+  n : integer;
+begin
+  MapPropsToJSON:=TJSONArray.Create;
+  for n:=0 to MapCoreBase.GetPropCount(index)-1 do
+  begin
+    MapCoreBase.GetProp(index,n,P);
+    PropObj:=TJSONObject.Create;
+    PropObj.Add('id',      P.id);
+    PropObj.Add('idvalue', P.idvalue);
+    PropObj.Add('kind',    P.kind);
+    PropObj.Add('a',       P.a);
+    PropObj.Add('b',       P.b);
+    PropObj.Add('key',     P.key);
+    PropObj.Add('value',   P.value);
+    if P.text <> '' then PropObj.Add('text', P.text);
+    //tiles are held by uid so an image delete cannot move the property
+    if P.kind = PropKindTile then PropObj.Add('uid', GUIDToStr(P.uid));
+    MapPropsToJSON.Add(PropObj);
+  end;
+end;
+
+procedure JSONToMapProps(Obj : TJSONObject; index : integer);
+var
+  PropArr : TJSONArray;
+  PropObj : TJSONObject;
+  P : KeyValueRec;
+  n : integer;
+begin
+  //always clear - the slot may hold rows from a previously loaded project
+  MapCoreBase.ClearProps(index);
+  PropArr:=Obj.Get('properties', TJSONArray(nil));
+  if PropArr = nil then exit;
+
+  for n:=0 to PropArr.Count-1 do
+  begin
+    if n >= MaxMapProps then break;
+    PropObj:=TJSONObject(PropArr[n]);
+    if PropObj = nil then continue;
+
+    FillChar(P.uid,sizeof(P.uid),0);
+    P.id:=PropObj.Get('id',0);
+    P.idvalue:=PropObj.Get('idvalue',0);
+    P.kind:=PropObj.Get('kind',PropKindMap);
+    P.a:=PropObj.Get('a',0);
+    P.b:=PropObj.Get('b',0);
+    P.value:=PropObj.Get('value',0);
+    P.text:=SanitisePropText(PropObj.Get('text',''));
+    if P.kind = PropKindTile then P.uid:=StrToGUIDSafe(PropObj.Get('uid',''));
+
+    P.key:=MapCoreBase.ImportedKey(PropObj.Get('key',0));
+    if P.key = 0 then continue;              //key not in this project
+    if (P.kind < PropKindMap) or (P.kind > PropKindTile) then continue;
+
+    MapCoreBase.AddProp(index,P);            //also rejects duplicates
+  end;
+end;
+
 function MapToJSON(index : integer) : TJSONObject;
 var
   Obj, PropsObj, ExpObj, ClipObj, ScrollObj, HBObj, LayerObj : TJSONObject;
@@ -483,6 +603,9 @@ begin
     PathArr.Add(PathObj);
   end;
   Obj.Add('paths', PathArr);
+
+  //key/value properties - optional, older builds simply ignore them
+  Obj.Add('properties', MapPropsToJSON(index));
 
   //legacy copy of layer 0
   TileIdxArr:=TJSONArray.Create;
@@ -643,6 +766,10 @@ begin
       end;
     end;
   end;
+
+  //properties AFTER hit boxes and paths, so no owner-clearing hook can
+  //wipe them while the owners themselves are still being rebuilt
+  JSONToMapProps(Obj, index);
 
   //layers. A project saved before layers existed has no 'layers' array, so
   //fall back to the legacy top level tileIndexes/tileUIDs as a single layer.
@@ -847,6 +974,11 @@ begin
         MapArr.Add(MapToJSON(i));
       Root.Add('maps', MapArr);
 
+      //project wide property keys. A new optional array, NOT a version bump:
+      //OpenProjectJSON rejects any other version, so bumping it would stop
+      //older builds opening these files at all.
+      Root.Add('propertyKeys', KeyDefsToJSON);
+
       //animations
       AnimRoot:=AnimationsToJSON;
       Root.Add('animations', AnimRoot);
@@ -915,6 +1047,9 @@ begin
 
       for i:=0 to count-1 do
         JSONToImage(TJSONObject(ImgArr[i]), i + indexOffset);
+
+      { ---- property keys - BEFORE maps, JSONToMap remaps rows through them ---- }
+      LoadKeyDefs(Obj, insertmode);
 
       { ---- maps - same sequence as ReadAllMapsF ---- }
       MapArr:=Obj.Get('maps', TJSONArray(nil));

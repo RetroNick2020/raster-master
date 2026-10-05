@@ -62,6 +62,12 @@ procedure ResExportMaps(var F:File);
 //the exporter will actually write.
 function ExportLayerCount(index : integer) : integer;
 
+var
+  //Does the stream being read carry key/value properties? Set from the file
+  //header by ReadMaps, ReadMap and the project reader before any map is read:
+  //true for map v6 / project v8, false for map v5 / project v7.
+  MapStreamHasProps : boolean = true;
+
 implementation
 
 //Number of layers an export should emit for this map. Simple format stays
@@ -78,7 +84,9 @@ begin
     ExportLayerCount:=1;
 end;
 
-procedure ExportPascalMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean);
+//AsmOn: an assembler procedure of dw lines instead of an integer array
+procedure ExportPascalMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean;
+                                AsmOn : boolean; Lan : integer);
 var
   MapProps   : MapPropsRec;
   size : longint;
@@ -103,17 +111,19 @@ begin
  MWSetValuesTotal(mc,size);
  MWSetLan(mc,PascalLan);
  MWSetValueFormat(mc,ValueFormatDecimal);
+ MWSetAsm(mc,AsmOn);
 
  Writeln(mc.FTextPtr^,'(* Pascal Map Code Created By Raster Master *)');
  Writeln(mc.FTextPtr^,'(* Size =',size,' Width=',mwidth,' Height=',mheight,' Tile Width=',
          MapProps.tilewidth,' Tile Height=',MapProps.tileheight,' Layers=',nlayers,' *)');
+ WritePascalConstStart(mc.FTextPtr^,AsmOn);
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Size   = ',size,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Width  = ',mwidth,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Height = ',mheight,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Tile_Width  = ',MapProps.tilewidth,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Tile_Height = ',MapProps.tileheight,';');
  Writeln(mc.FTextPtr^,'  ',Imagename,'_Layers = ',nlayers,';');
- Writeln(mc.FTextPtr^,'  ',ImageName,' : array[0..',size-1,'] of integer = (');
+ WritePascalDataStart(mc.FTextPtr^,AsmOn,'  ',ImageName,size,'integer',Lan);
 end;
 
 procedure ExportCMapHeader(var mc : CodeGenRec; index : integer;ImageName : string;UseClipArea : boolean);
@@ -524,14 +534,15 @@ begin
   if MapLanIsBasic(Lan) then ExportBasicMapHeader(mc,index,ImageName,UseClipArea)
   else if MapLanIsBasicLN(Lan) then ExportBasicLNMapHeader(mc,index,ImageName,UseClipArea)
   else if MapLanIsC(Lan) then ExportCMapHeader(mc,index,ImageName,UseClipArea)
-  else if MapLanIsPascal(Lan) then ExportPascalMapHeader(mc,index,ImageName,UseClipArea)
+  else if MapLanIsPascal(Lan) then
+    ExportPascalMapHeader(mc,index,ImageName,UseClipArea,PascalAsmProcs and PascalAsmAllowed(Lan),Lan)
   else if MapLanIsJS(Lan) then ExportJSMapHeader(mc,index,ImageName,UseClipArea);
 
   ExportMapMain(mc,index,UseClipArea);
 
   if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then Writeln(F)
   else if MapLanIsC(Lan) then Writeln(F,'};')
-  else if MapLanIsPascal(Lan) then Writeln(F,');')
+  else if MapLanIsPascal(Lan) then WritePascalDataEnd(F,mc.AsmMode)
   else if MapLanIsJS(Lan) then Writeln(F,'];');
   {$I-}
   close(F);
@@ -567,14 +578,15 @@ begin
       if MapLanIsBasic(Lan) then ExportBasicMapHeader(mc,i,ImageName,False)
       else if MapLanIsBasicLN(Lan) then ExportBasicLNMapHeader(mc,i,ImageName,false)
       else if MapLanIsC(Lan) then ExportCMapHeader(mc,i,ImageName,false)
-      else if MapLanIsPascal(Lan) then ExportPascalMapHeader(mc,i,ImageName,false)
+      else if MapLanIsPascal(Lan) then
+        ExportPascalMapHeader(mc,i,ImageName,false,PascalAsmProcs and PascalAsmAllowed(Lan),Lan)
       else if MapLanIsJS(Lan) then ExportJSMapHeader(mc,i,ImageName,false);
 
       ExportMapMain(mc,i,false);
 
       if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then Writeln(F)
       else if MapLanIsC(Lan) then Writeln(F,'};')
-      else if MapLanIsPascal(Lan) then Writeln(F,');')
+      else if MapLanIsPascal(Lan) then WritePascalDataEnd(F,mc.AsmMode)
       else if MapLanIsJS(Lan) then Writeln(F,'];');
     end;
   end;
@@ -587,12 +599,125 @@ function ClassifyMapHeader(const head : MapHeaderRec) : integer;
 begin
   if head.SIG <> RMMapSig then
     ClassifyMapHeader:=MapReadBadSig
-  else if head.version < RMMapVersion then
+  else if head.version < MinReadMapVersion then
     ClassifyMapHeader:=MapReadOldVersion
   else if head.version > RMMapVersion then
     ClassifyMapHeader:=MapReadNewVersion
   else
     ClassifyMapHeader:=MapReadOK;
+end;
+
+//=============================================================================
+// KEY/VALUE PROPERTIES in the native map stream (map v6, project v8)
+//
+// The key table is written ONCE, before the maps, because keys are project
+// wide and every map's rows refer to them. Each map's rows follow its paths.
+// Rows are written field by field: KeyValueRec holds an AnsiString and a
+// TGUID, so it cannot be block-written as a record.
+//=============================================================================
+
+procedure WriteKeyDefsF(var F : File);
+var
+  i, count : integer;
+  K : KeyDefRec;
+begin
+  count:=MapCoreBase.GetKeyDefCount;
+  {$I-}
+  Blockwrite(F,count,sizeof(count));
+  for i:=0 to count-1 do
+  begin
+    MapCoreBase.GetKeyDef(i,K);
+    Blockwrite(F,K.key,sizeof(K.key));
+    Blockwrite(F,K.ktype,sizeof(K.ktype));
+    Blockwrite(F,K.name,sizeof(K.name));   //string[16] - fixed 17 bytes
+  end;
+  {$I+}
+end;
+
+//merge = insert or single map load: keys merge by name, see BeginKeyImport
+procedure ReadKeyDefsF(var F : File; merge : boolean);
+var
+  i, count : integer;
+  K : KeyDefRec;
+begin
+  MapCoreBase.BeginKeyImport(merge);
+  if not MapStreamHasProps then exit;   //v5 stream - no key table
+  {$I-}
+  Blockread(F,count,sizeof(count));
+  {$I+}
+  if IORESULT <> 0 then exit;
+  if (count < 0) or (count > MaxPropKeys) then exit;   //corrupt - read nothing
+  for i:=0 to count-1 do
+  begin
+    {$I-}
+    Blockread(F,K.key,sizeof(K.key));
+    Blockread(F,K.ktype,sizeof(K.ktype));
+    Blockread(F,K.name,sizeof(K.name));
+    {$I+}
+    if IORESULT <> 0 then exit;
+    MapCoreBase.ImportKeyDef(K.key,K.name,K.ktype);
+  end;
+end;
+
+procedure WritePropsF(var F : File; index : integer);
+var
+  n, count : integer;
+  P : KeyValueRec;
+  len : byte;
+begin
+  count:=MapCoreBase.GetPropCount(index);
+  {$I-}
+  Blockwrite(F,count,sizeof(count));
+  for n:=0 to count-1 do
+  begin
+    MapCoreBase.GetProp(index,n,P);
+    Blockwrite(F,P.id,sizeof(P.id));
+    Blockwrite(F,P.idvalue,sizeof(P.idvalue));
+    Blockwrite(F,P.kind,sizeof(P.kind));
+    Blockwrite(F,P.a,sizeof(P.a));
+    Blockwrite(F,P.b,sizeof(P.b));
+    Blockwrite(F,P.key,sizeof(P.key));
+    Blockwrite(F,P.value,sizeof(P.value));
+    Blockwrite(F,P.uid,sizeof(P.uid));
+    len:=Length(P.text);      //never over MaxPropStrLen (240)
+    Blockwrite(F,len,1);
+    if len > 0 then Blockwrite(F,P.text[1],len);
+  end;
+  {$I+}
+end;
+
+procedure ReadPropsF(var F : File; index : integer);
+var
+  n, count : integer;
+  P : KeyValueRec;
+  len : byte;
+begin
+  if not MapStreamHasProps then exit;
+  {$I-}
+  Blockread(F,count,sizeof(count));
+  {$I+}
+  if IORESULT <> 0 then exit;
+  if (count < 0) or (count > MaxMapProps) then exit;
+  for n:=0 to count-1 do
+  begin
+    {$I-}
+    Blockread(F,P.id,sizeof(P.id));
+    Blockread(F,P.idvalue,sizeof(P.idvalue));
+    Blockread(F,P.kind,sizeof(P.kind));
+    Blockread(F,P.a,sizeof(P.a));
+    Blockread(F,P.b,sizeof(P.b));
+    Blockread(F,P.key,sizeof(P.key));
+    Blockread(F,P.value,sizeof(P.value));
+    Blockread(F,P.uid,sizeof(P.uid));
+    Blockread(F,len,1);
+    SetLength(P.text,len);
+    if len > 0 then Blockread(F,P.text[1],len);
+    {$I+}
+    if IORESULT <> 0 then exit;
+    P.key:=MapCoreBase.ImportedKey(P.key);
+    if P.key = 0 then continue;          //key did not survive the import
+    MapCoreBase.AddProp(index,P);        //also rejects duplicates
+  end;
 end;
 
 Procedure ReadMaps(filename : string);
@@ -610,6 +735,7 @@ begin
  LastMapReadStatus:=ClassifyMapHeader(head);
  if LastMapReadStatus = MapReadOK then
  begin
+   MapStreamHasProps:=(head.version >= 6);
    ReadAllMapsF(F,head.MapCount,false);
  end;
  close(f);
@@ -632,6 +758,9 @@ begin
  LastMapReadStatus:=ClassifyMapHeader(head);
  if LastMapReadStatus = MapReadOK then
  begin
+   MapStreamHasProps:=(head.version >= 6);
+   //one map into the current slot - its keys MERGE into the project's
+   ReadKeyDefsF(F,true);
    ReadMapF(F,index); //just read one map
  end;
  close(f);
@@ -655,6 +784,10 @@ begin
    cmapCount:=0;
  end;
 
+ //keys BEFORE the maps - every map's rows are translated through them.
+ //A full load replaces the key table, an insert merges into it.
+ ReadKeyDefsF(F,insertmode);
+
  For i:=0 to MapCount-1 do
  begin
      ReadMapF(F,i+cmapcount);
@@ -673,6 +806,8 @@ var
  i,j,l        : integer;
  nlayers      : integer;
 begin
+ //the slot may hold rows from a previous project - and a v5 stream has none
+ MapCoreBase.ClearProps(index);
  Blockread(F,MapProps,sizeof(MapProps));
  Blockread(F,ExportProps,sizeof(ExportProps));
  Blockread(f,HBCount,sizeof(HBCount));
@@ -733,6 +868,9 @@ begin
    if IORESULT <>0 then exit;
    MapCoreBase.SetPath(index,i,PathProps);
  end;
+
+ //properties last, after the owners they refer to exist (v6 and later)
+ ReadPropsF(F,index);
 end;
 
 Procedure WriteMapF(var F : File; index : integer);
@@ -805,6 +943,9 @@ begin
    {$I+}
    if IORESULT <>0 then exit;
  end;
+
+ //properties - count first even when zero, same as hit boxes and paths
+ WritePropsF(F,index);
 end;
 
 Procedure WriteAllMapsF(var F : File);
@@ -813,6 +954,7 @@ var
  count : integer;
 begin
  count:=MapCoreBase.GetMapCount;
+ WriteKeyDefsF(F);   //once, before the maps - see ReadAllMapsF
  For i:=0 to count-1 do
  begin
      WriteMapF(F,i);
@@ -856,6 +998,7 @@ begin
  Blockwrite(F,head,sizeof(head));
  {$I+}
  if IORESULT <>0 then exit;
+ WriteKeyDefsF(F);   //a single map file carries the keys its rows use
  WriteMapF(F,index);
  close(f);
 end;

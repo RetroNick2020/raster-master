@@ -12,6 +12,24 @@ Interface
 Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
 
 Function RESBinary(filename:string):word;
+//RES Binary v3 - adds map properties, strings and keys. Export only.
+Function RESBinaryV3(filename:string):word;
+
+//Generic indexed image export - the sprite editor Export menu uses this.
+function WriteIndexedCodeToFile(x,y,x2,y2,Lan : integer; filename : string) : word;
+
+//Map key/value properties, shared with the map editor's own Export menu so
+//every route applies the same export rules. Call BuildPropExport(map) first,
+//then read the result through the accessors.
+procedure BuildPropExport(m : integer);
+function  PropExportRowCount : integer;
+function  PropExportField(r,f : integer) : integer;   //f 0..6 = id,idvalue,kind,a,b,key,value
+function  PropExportStrCount : integer;
+function  PropExportStr(i : integer) : string;
+function  PropExportMaxStrLen : integer;
+//One BASIC variable assignment for Lan, WITHOUT a line number - the naming
+//rules WriteBasicVariable uses, for callers that number lines themselves.
+function  BasicVariableText(Lan : integer;vname,vsubname : string;value : longint) : string;
 
 const
  MaxResItems = 255;
@@ -216,6 +234,26 @@ begin
 end;
 
 
+//The generic languages have no dialect of their own, so anything that depends
+//on one - labels, RESTORE, line numbering, palette syntax - uses its concrete
+//equivalent. Identity for every other language.
+function ConcreteLan(Lan : integer) : integer;
+begin
+  ConcreteLan:=Lan;
+  case Lan of
+    BasicLan   : ConcreteLan:=QBLan;
+    BasicLNLan : ConcreteLan:=GWLan;
+    CLan       : ConcreteLan:=TCLan;
+    PascalLan  : ConcreteLan:=TPLan;
+  end;
+end;
+
+function GetIndexedImageSize(width,height : integer) : longint;
+begin
+  //2 header values + one per pixel, as 16 bit words
+  GetIndexedImageSize:=(2+longint(width)*height)*2;
+end;
+
 //Image Export Propertis Dialog box the image type changes depending on what compiler is selected
 //we need a way to convert all the droplist combination to a simple format
 
@@ -224,7 +262,13 @@ var
   format : integer;
 begin
   format:=0;
-  case Compiler of TPLan:begin
+  case Compiler of
+                  //generic targets - one indexed format, no dialect specifics
+                  BasicLan,BasicLNLan,CLan,PascalLan:begin
+                           case ImageIndex of 1:format:=IndexedExportFormat;
+                           end;
+                         end;
+                  TPLan:begin
                            case ImageIndex of 1:format:=PutImageExportFormat;
                                               2:format:=XLibLBMExportFormat;
                                               3:format:=XLibPBMExportFormat;
@@ -357,7 +401,12 @@ var
 begin
  size:=0;
  ImageFormat:=ImageIndexToFormat(Lan,ImageType);
- Case Lan of TPLan:begin
+ Case Lan of BasicLan,BasicLNLan,CLan,PascalLan:begin
+                      Case ImageFormat of IndexedExportFormat:size:=GetIndexedImageSize(width,height);
+                      end;
+                    end;
+
+             TPLan:begin
                       Case ImageFormat of PutImageExportFormat:size:=GetXImageSize(width,height,ncolors);
                                           XLibLBMExportFormat,
                                           XLibPBMExportFormat:size:=GetLBMPBMImageSize(width,height); // Xlib LBM/PBM
@@ -676,7 +725,7 @@ begin
   end;
 end;
 
-procedure WriteBasicVariable(var data : BufferRec;Lan : integer;vname,vsubname : string;value : longint);
+function BasicVariableText(Lan : integer;vname,vsubname : string;value : longint) : string;
 var
  DotOrUnderScore : String;
 begin
@@ -688,21 +737,16 @@ begin
   end;
 
   if (Lan=AQBLan) or (Lan = FBLan) then
-  begin
-    writeln(data.fText,LineCountToStr(Lan),'Dim ',vname,DotOrUnderScore,vsubname,' As Integer = ',value);
-  end
-  else if (Lan=QB64Lan) then
-  begin
-    writeln(data.fText,LineCountToStr(Lan),'Const ',vname,DotOrUnderScore,vsubname,' = ',value);
-  end
-  else if (Lan=QBJSLan) then
-  begin
-    writeln(data.fText,LineCountToStr(Lan),'Const ',vname,DotOrUnderScore,vsubname,' = ',value);
-  end
+    BasicVariableText:='Dim '+vname+DotOrUnderScore+vsubname+' As Integer = '+IntToStr(value)
+  else if (Lan=QB64Lan) or (Lan=QBJSLan) then
+    BasicVariableText:='Const '+vname+DotOrUnderScore+vsubname+' = '+IntToStr(value)
   else
-  begin
-    writeln(data.fText,LineCountToStr(Lan),vname,DotOrUnderScore,vsubname,' = ',value);
-  end;
+    BasicVariableText:=vname+DotOrUnderScore+vsubname+' = '+IntToStr(value);
+end;
+
+procedure WriteBasicVariable(var data : BufferRec;Lan : integer;vname,vsubname : string;value : longint);
+begin
+  writeln(data.fText,LineCountToStr(Lan),BasicVariableText(Lan,vname,vsubname,value));
 end;
 
 procedure WriteFBBasicDimReadStub(var data : BufferRec;Lan : integer; name : string;size : longint);
@@ -880,6 +924,458 @@ begin
 end;
 
 
+//=============================================================================
+// GENERIC INDEXED IMAGE EXPORT (generic Basic / Basic Line# / C / Pascal)
+//
+// One layout for every target: width, height, then one colour index per pixel,
+// row by row. Used by the sprite editor's Export menu, RES Text Include and
+// RES Binary, so all three always agree.
+//
+// Values go out through the rmcodegen writer (MWWriteInteger), which already
+// knows each language's commas, DATA statements, line wrapping and GW-BASIC
+// line numbers - the same path rwmap.ExportMap uses for maps.
+//=============================================================================
+
+//x,y..x2,y2 is inclusive. WriteLabel is for the standalone menu export; the
+//RES include writes its own label first, so it passes false.
+procedure WriteIndexedCode(var F : Text; x,y,x2,y2,Lan : integer;
+                           ImageName : string; WriteLabel : boolean);
+var
+  AsmOn : boolean;
+  mc : CodeGenRec;
+  w,h,i,j,nColors : integer;
+  size : longint;
+begin
+  w:=x2-x+1;
+  h:=y2-y+1;
+  size:=2+longint(w)*h;          //values, not bytes
+  nColors:=GetMaxColor+1;
+
+  MWInit(mc,F);
+  MWSetValuesTotal(mc,size);
+  MWSetLan(mc,Lan);
+  AsmOn:=PascalAsmProcs and PascalAsmAllowed(Lan);   //generic Pascal qualifies
+  MWSetAsm(mc,AsmOn);
+  MWSetValueFormat(mc,ValueFormatDecimal);
+
+  if MapLanIsC(Lan) then
+  begin
+    Writeln(F,'/* C Indexed Image Created By Raster Master */');
+    Writeln(F,'/* Size =',size,' Width=',w,' Height=',h,' Colors=',nColors,' */');
+    Writeln(F,'/* width, height, then one colour index per pixel, row by row */');
+    Writeln(F,'#define ',ImageName,'_Size   ',size);
+    Writeln(F,'#define ',ImageName,'_Width  ',w);
+    Writeln(F,'#define ',ImageName,'_Height ',h);
+    Writeln(F,'#define ',ImageName,'_Colors ',nColors);
+    Writeln(F,'  ','int ',ImageName,'[',size,']  = {');
+  end
+  else if MapLanIsPascal(Lan) then
+  begin
+    Writeln(F,'(* Pascal Indexed Image Created By Raster Master *)');
+    Writeln(F,'(* Size =',size,' Width=',w,' Height=',h,' Colors=',nColors,' *)');
+    Writeln(F,'(* width, height, then one colour index per pixel, row by row *)');
+    WritePascalConstStart(F,AsmOn);
+    Writeln(F,'  ',ImageName,'_Size   = ',size,';');
+    Writeln(F,'  ',ImageName,'_Width  = ',w,';');
+    Writeln(F,'  ',ImageName,'_Height = ',h,';');
+    Writeln(F,'  ',ImageName,'_Colors = ',nColors,';');
+    WritePascalDataStart(F,AsmOn,'  ',ImageName,size,'integer',Lan);
+  end
+  else if MapLanIsBasicLN(Lan) then
+  begin
+    //line numbered BASIC has no labels - READs run in DATA order
+    Writeln(F,GetGWNextLineNumber,' ',#39,' Basic Indexed Image Created By Raster Master');
+    Writeln(F,GetGWNextLineNumber,' ',#39,' Size =',size,' Width=',w,' Height=',h,' Colors=',nColors);
+    Writeln(F,GetGWNextLineNumber,' ',#39,' width, height, then one colour index per pixel');
+  end
+  else
+  begin
+    if WriteLabel then Writeln(F,ImageName+'Label:');
+    Writeln(F,#39,' Basic Indexed Image Created By Raster Master');
+    Writeln(F,#39,' Size =',size,' Width=',w,' Height=',h,' Colors=',nColors);
+    Writeln(F,#39,' width, height, then one colour index per pixel, row by row');
+  end;
+
+  MWWriteInteger(mc,w);
+  MWWriteInteger(mc,h);
+  for j:=y to y2 do
+    for i:=x to x2 do
+    begin
+      {$I-}
+      MWWriteInteger(mc,GetPixel(i,j));
+      {$I+}
+      if IORESULT<>0 then exit;
+    end;
+
+  if MapLanIsC(Lan) then Writeln(F,'};')
+  else if MapLanIsPascal(Lan) then WritePascalDataEnd(F,AsmOn)
+  else Writeln(F);
+end;
+
+//standalone file for the sprite editor's Export menu
+//base file name without directory or extension. Done here rather than with
+//LazFileUtils.ExtractFileNameWithoutExt, which this unit does not use.
+function NameFromFileName(filename : string) : string;
+var
+  nm : string;
+  p  : integer;
+begin
+  nm:=ExtractFileName(filename);
+  p:=Length(nm);
+  while (p > 0) and (nm[p] <> '.') do dec(p);
+  if p > 1 then nm:=Copy(nm,1,p-1);
+  NameFromFileName:=nm;
+end;
+
+function WriteIndexedCodeToFile(x,y,x2,y2,Lan : integer; filename : string) : word;
+var
+  F : Text;
+  ImageName : string;
+  err : word;
+begin
+  SetCoreActive;   //pixels come from the image being edited, not a thumbnail
+  SetGWStartLineNumber(1000);
+  ImageName:=NameFromFileName(filename);
+  {$I-}
+  Assign(F,filename);
+  Rewrite(F);
+  {$I+}
+  //via a local: reading the function name back is a recursive CALL in {$MODE TP}
+  err:=IORESULT;
+  WriteIndexedCodeToFile:=err;
+  if err <> 0 then exit;
+
+  WriteIndexedCode(F,x,y,x2,y2,Lan,ImageName,true);
+
+  {$I-}
+  close(F);
+  {$I+}
+  WriteIndexedCodeToFile:=IORESULT;
+end;
+
+//RES binary payload: width, height, then the pixels, all as 16 bit words
+procedure WriteIndexedToBuffer(width,height : integer; var F : File);
+var
+  row : array[0..1023] of integer;
+  i,j,n : integer;
+begin
+  row[0]:=width;
+  row[1]:=height;
+  {$I-}
+  Blockwrite(F,row,2*sizeof(integer));
+  {$I+}
+  if IORESULT<>0 then exit;
+
+  for j:=0 to height-1 do
+  begin
+    n:=0;
+    for i:=0 to width-1 do
+    begin
+      row[n]:=GetPixel(i,j);
+      inc(n);
+      if n = 1024 then      //flush - a row wider than the buffer
+      begin
+        {$I-}
+        Blockwrite(F,row,longint(n)*sizeof(integer));
+        {$I+}
+        if IORESULT<>0 then exit;
+        n:=0;
+      end;
+    end;
+    if n > 0 then
+    begin
+      {$I-}
+      Blockwrite(F,row,longint(n)*sizeof(integer));
+      {$I+}
+      if IORESULT<>0 then exit;
+    end;
+  end;
+end;
+
+//=============================================================================
+// MAP KEY/VALUE PROPERTIES - export side. See the RES Binary v3 spec.
+//
+// BuildPropExport is the ONE place that decides which rows export and how
+// their owners translate from editor terms to exported terms. RES Text
+// Include and RES Binary v3 both call it, so the two can never disagree.
+//=============================================================================
+const
+  ResTypeProperties = 8;
+  ResTypeStrings    = 9;
+  ResTypeKeyDefs    = 10;
+  PropRowWords      = 7;   //id, idvalue, kind, a, b, key, value
+
+type
+  PropExportRec = record
+                    nrows : integer;
+                    rows  : array[0..MaxMapProps*PropRowWords-1] of integer;
+                    nstr  : integer;
+                    strs  : array[0..MaxMapProps-1] of string[MaxPropStrLen];
+                  end;
+var
+  PEx : PropExportRec;
+
+function Clamp16(v : longint) : integer;
+begin
+  if v < -32768 then v:=-32768;
+  if v > 32767 then v:=32767;
+  Clamp16:=v;
+end;
+
+//identical texts share one string table entry
+function PExAddString(const s : string) : integer;
+var
+  i : integer;
+begin
+  for i:=0 to PEx.nstr-1 do
+    if PEx.strs[i] = s then
+    begin
+      PExAddString:=i;
+      exit;
+    end;
+  PEx.strs[PEx.nstr]:=s;
+  PExAddString:=PEx.nstr;
+  inc(PEx.nstr);
+end;
+
+//Fills PEx with the exportable rows of map m, owners already translated.
+//Rows that no longer point at anything are dropped here, never in the editor:
+//  paths  -> the EXPORTED position; inactive or short paths are not exported
+//  tiles  -> held by uid, written as the tile's current image index
+//  cells  -> must be inside the exported map area
+//  keys   -> must still be defined
+procedure BuildPropExport(m : integer);
+var
+  n, w, h, hbc, ks, base : integer;
+  id, idvalue, kind, a, b, key, value : longint;
+  uid : TGUID;
+  txt : ShortString;
+  K   : KeyDefRec;
+begin
+  PEx.nrows:=0;
+  PEx.nstr:=0;
+  w:=MapCoreBase.GetExportWidth(m);
+  h:=MapCoreBase.GetExportHeight(m);
+  hbc:=MapCoreBase.GetHitBoxCount(m);
+
+  for n:=0 to MapCoreBase.GetPropCount(m)-1 do
+  begin
+    //field-by-field read: KeyValueRec holds an AnsiString and this unit is TP
+    MapCoreBase.GetPropFields(m,n,id,idvalue,kind,a,b,key,value,uid,txt);
+
+    ks:=MapCoreBase.FindKeyDef(key);
+    if ks < 0 then continue;
+    MapCoreBase.GetKeyDef(ks,K);
+
+    case kind of
+      PropKindMap    : begin
+                         a:=0;
+                         b:=0;
+                       end;
+      PropKindHitBox : begin
+                         if (a < 0) or (a >= hbc) then continue;
+                         b:=0;
+                       end;
+      PropKindPath   : begin
+                         a:=MapCoreBase.PathExportIndex(m,a);
+                         if a < 0 then continue;
+                         b:=0;
+                       end;
+      PropKindCell   : begin
+                         if (a < 0) or (a >= w) or (b < 0) or (b >= h) then continue;
+                       end;
+      PropKindTile   : begin
+                         a:=ImageThumbBase.FindUID(uid);
+                         if a < 0 then continue;
+                         b:=0;
+                       end;
+    else
+      continue;
+    end;
+
+    if K.ktype = PropTypeString then value:=PExAddString(txt);
+
+    base:=PEx.nrows*PropRowWords;
+    PEx.rows[base]  :=Clamp16(id);
+    PEx.rows[base+1]:=Clamp16(idvalue);
+    PEx.rows[base+2]:=Clamp16(kind);
+    PEx.rows[base+3]:=Clamp16(a);
+    PEx.rows[base+4]:=Clamp16(b);
+    PEx.rows[base+5]:=Clamp16(key);
+    PEx.rows[base+6]:=Clamp16(value);
+    inc(PEx.nrows);
+  end;
+end;
+
+//offset table + one length byte per string + the characters
+function PExStrPayloadSize : longint;
+var
+  i : integer;
+  t : longint;
+begin
+  t:=longint(PEx.nstr)*2;
+  for i:=0 to PEx.nstr-1 do inc(t,1+Length(PEx.strs[i]));
+  PExStrPayloadSize:=t;
+end;
+
+//Longest string in the current table. Pascal targets declare the string
+//array with this length: a plain "array of string" is 256 bytes an entry,
+//and 256 of those would fill Turbo Pascal's whole 64K data segment.
+function PExMaxStrLen : integer;
+var
+  i,m : integer;
+begin
+  m:=1;
+  for i:=0 to PEx.nstr-1 do
+    if Length(PEx.strs[i]) > m then m:=Length(PEx.strs[i]);
+  PExMaxStrLen:=m;
+end;
+
+//accessors for callers outside this unit - see the interface
+function PropExportRowCount : integer;
+begin
+  PropExportRowCount:=PEx.nrows;
+end;
+
+function PropExportField(r,f : integer) : integer;
+begin
+  PropExportField:=0;
+  if (r < 0) or (r >= PEx.nrows) or (f < 0) or (f >= PropRowWords) then exit;
+  PropExportField:=PEx.rows[r*PropRowWords+f];
+end;
+
+function PropExportStrCount : integer;
+begin
+  PropExportStrCount:=PEx.nstr;
+end;
+
+function PropExportStr(i : integer) : string;
+begin
+  PropExportStr:='';
+  if (i >= 0) and (i < PEx.nstr) then PropExportStr:=PEx.strs[i];
+end;
+
+function PropExportMaxStrLen : integer;
+begin
+  PropExportMaxStrLen:=PExMaxStrLen;
+end;
+
+//The same map Lan -> BASIC Lan mapping the hit box writer uses inline.
+function MapLanToBasicLan(MapLan : integer) : integer;
+begin
+  MapLanToBasicLan:=QBLan;
+  if (MapLan = BasicLnLan) or (MapLan = GWBasicLan) then MapLanToBasicLan:=GWLan
+  else if MapLan = FBBasicLan then MapLanToBasicLan:=FBLan
+  else if MapLan = AQBBasicLan then MapLanToBasicLan:=AQBLan
+  else if MapLan = BAMBasicLan then MapLanToBasicLan:=BAMLan;
+end;
+
+procedure WritePropRowNumbers(var t : text; r : integer);
+var
+  j : integer;
+begin
+  for j:=0 to PropRowWords-1 do
+  begin
+    if j > 0 then write(t,',');
+    write(t,PEx.rows[r*PropRowWords+j]);
+  end;
+end;
+
+//Strings are written a piece at a time and never assembled into one string:
+//in {$MODE TP} a string is a 255 character shortstring, and a 240 character
+//value with its quotes and escapes would not fit in one.
+procedure WriteCQuoted(var t : text; const s : string);   //C and JS
+var
+  i : integer;
+begin
+  write(t,'"');
+  for i:=1 to Length(s) do
+    if (s[i] = '\') or (s[i] = '"') then write(t,'\',s[i]) else write(t,s[i]);
+  write(t,'"');
+end;
+
+procedure WritePasQuoted(var t : text; const s : string);
+var
+  i : integer;
+begin
+  write(t,'''');
+  for i:=1 to Length(s) do
+    if s[i] = '''' then write(t,'''''') else write(t,s[i]);
+  write(t,'''');
+end;
+
+procedure WriteBasicStrDimReadStub(var data : BufferRec;Lan : integer; name : string;count : longint);
+begin
+  if (Lan<>GWLan) then writeln(data.fText,LineCountToStr(Lan),'Restore ',name,'Label');
+
+  if (Lan = FBLan) or (Lan = AQBLan) then
+  begin
+    writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'(',count,') As String');
+    writeln(data.fText,LineCountToStr(Lan),'For _rmi=0 to ',count-1);
+    writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'(_rmi)');
+    writeln(data.fText,LineCountToStr(Lan),'Next _rmi');
+  end
+  else
+  begin
+    writeln(data.fText,LineCountToStr(Lan),'Dim ',name,'$(',count,')');
+    writeln(data.fText,LineCountToStr(Lan),'For i=0 to ',count-1);
+    writeln(data.fText,LineCountToStr(Lan),'   Read ',name,'$(i)');
+    writeln(data.fText,LineCountToStr(Lan),'Next i');
+  end;
+end;
+
+//BASIC variables and DIM/READ stubs for properties, called at the END of
+//WriteBasicRMInit. GW-BASIC has no RESTORE to a label, so its READs consume
+//DATA strictly in file order: these stubs come right after the map hit box
+//stubs, and WritePropDataToBuffer runs right after the hit box DATA.
+procedure WritePropBasicStubs(var data : BufferRec);
+var
+  i, kn, Lan : integer;
+  MPE : MapExportFormatRec;
+  K : KeyDefRec;
+  nm : string;
+  keysdone : boolean;
+begin
+  keysdone:=false;
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i,MPE);
+    if MPE.MapFormat <= 0 then continue;
+    if not (MapLanIsBasic(MPE.Lan) or MapLanIsBasicLN(MPE.Lan)) then continue;
+    BuildPropExport(i);
+    if PEx.nrows = 0 then continue;
+
+    nm:=MPE.Name;
+    if nm = '' then nm:='map'+IntToStr(i);
+    Lan:=MapLanToBasicLan(MPE.Lan);
+
+    //RMKey, not Key: KEY is a reserved word in GW-BASIC and QBasic
+    if not keysdone then
+    begin
+      for kn:=0 to MapCoreBase.GetKeyDefCount-1 do
+      begin
+        MapCoreBase.GetKeyDef(kn,K);
+        WriteBasicVariable(data,Lan,'RMKey',K.name,K.key);
+      end;
+      keysdone:=true;
+    end;
+
+    WriteBasicVariable(data,Lan,nm+'Prop','Count',PEx.nrows);
+    WriteBasicVariable(data,Lan,nm+'Prop','Size',PEx.nrows*PropRowWords);
+    WriteBasicVariable(data,Lan,nm+'Prop','Id',i);
+    if (Lan = FBLan) or (Lan = AQBLan) then
+      WriteFBBasicDimReadStub(data,Lan,nm+'Prop',PEx.nrows*PropRowWords)
+    else
+      WriteBasicDimReadStub(data,Lan,nm+'Prop',PEx.nrows*PropRowWords);
+
+    if PEx.nstr > 0 then
+    begin
+      WriteBasicVariable(data,Lan,nm+'Str','Count',PEx.nstr);
+      WriteBasicStrDimReadStub(data,Lan,nm+'Str',PEx.nstr);
+    end;
+  end;
+end;
+
 procedure WriteBasicRMInit(var data : BufferRec);
 var
  count : integer;
@@ -894,6 +1390,7 @@ var
  MPE : MapExportFormatRec;
  mwidth,mheight : integer;
  Lan   : integer;
+ BLan  : integer;   //concrete BASIC dialect for a generic target
  Format : integer;
  ImageExportFormat : integer;
 begin
@@ -923,6 +1420,39 @@ begin
         end;
      end;
 
+
+     //Generic Basic and Basic (Line#). The stubs are written for the concrete
+     //dialect, which is what decides labels, RESTORE and line numbers. Sizes
+     //are in VALUES here, not bytes, because BASIC reads integers.
+     if (EO.Lan = BasicLan) or (EO.Lan = BasicLNLan) then
+     begin
+       BLan:=ConcreteLan(EO.Lan);
+       if DefIntFlag then
+       begin
+         Writeln(data.fText,LineCountToStr(BLan),'DEFINT A-Z');
+         DefIntFlag:=False;
+       end;
+
+       if EO.Palette > 0 then
+       begin
+         PalSize:=GetRESPaletteSize(nColors,EO.Lan,EO.Palette);
+         WriteBasicVariable(data,BLan,EO.Name+'Pal','Size',PalSize);
+         WriteBasicVariable(data,BLan,EO.Name+'Pal','Colors',nColors);
+         WriteBasicVariable(data,BLan,EO.Name+'Pal','Id',i);
+         WriteBasicDimReadStub(data,BLan,EO.Name+'Pal',PalSize);
+       end;
+
+       if ImageExportFormat = IndexedExportFormat then
+       begin
+         size:=2+longint(width)*height;
+         WriteBasicVariable(data,BLan,EO.Name,'Size',size);
+         WriteBasicVariable(data,BLan,EO.Name,'Width',width);
+         WriteBasicVariable(data,BLan,EO.Name,'Height',height);
+         WriteBasicVariable(data,BLan,EO.Name,'Colors',nColors);
+         WriteBasicVariable(data,BLan,EO.Name,'Id',i);
+         WriteBasicDimReadStub(data,BLan,EO.Name,size);
+       end;
+     end;
 
      if (EO.LAN in [BAMLan,ABLan,AQBLan,GWLan,QBLan,QB64Lan,QBJSLan,FBinQBModeLan,FBLan,PBLan]) then
      begin
@@ -1136,6 +1666,9 @@ begin
        WriteBasicDimReadStub(data,Lan,MPE.Name+'HitBox',size);
    end;
  end;
+
+ //properties - MUST stay after the hit box stubs, see WritePropBasicStubs
+ WritePropBasicStubs(data);
 end;
 
 
@@ -1225,6 +1758,170 @@ begin
       begin
         MapCoreBase.GetHitBox(i, j, HB);
         writeln(data.fText,LineCountToStr(Lan),'DATA ',HB.id,',',HB.value,',',HB.x,',',HB.y,',',HB.x2,',',HB.y2);
+      end;
+    end;
+  end;
+end;
+
+//Key constants, once per language family - keys are project wide.
+procedure WritePropKeys(var data : BufferRec; family : integer);   //1 C, 2 Pascal, 3 JS
+var
+  i : integer;
+  K : KeyDefRec;
+begin
+  case family of
+    1 : writeln(data.fText,'/* property keys - shared by every map */');
+    2 : begin
+          writeln(data.fText,'{ property keys - shared by every map }');
+          writeln(data.fText,'const');
+        end;
+    3 : begin
+          writeln(data.fText,'// property keys - shared by every map');
+          write(data.fText,'const RMKey = {');
+        end;
+  end;
+  for i:=0 to MapCoreBase.GetKeyDefCount-1 do
+  begin
+    MapCoreBase.GetKeyDef(i,K);
+    case family of
+      1 : writeln(data.fText,'#define RMKEY_',K.name,' ',K.key);
+      2 : writeln(data.fText,'  RMKey_',K.name,' = ',K.key,';');
+      3 : begin
+            if i > 0 then write(data.fText,', ');
+            write(data.fText,K.name,':',K.key);
+          end;
+    end;
+  end;
+  if family = 3 then writeln(data.fText,'};');
+end;
+
+//Map properties as source code, for every language family. Called straight
+//after WriteHitBoxDataToBuffer - see WritePropBasicStubs for why the
+//position matters to GW-BASIC.
+procedure WritePropDataToBuffer(var data : BufferRec);
+var
+  i, r, s2, Lan : integer;
+  MPE : MapExportFormatRec;
+  nm : string;
+  keysC, keysPas, keysJS : boolean;
+begin
+  keysC:=false;
+  keysPas:=false;
+  keysJS:=false;
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i,MPE);
+    if MPE.MapFormat <= 0 then continue;
+    BuildPropExport(i);
+    if PEx.nrows = 0 then continue;
+
+    nm:=MPE.Name;
+    if nm = '' then nm:='map'+IntToStr(i);
+
+    if MapLanIsC(MPE.Lan) then
+    begin
+      if not keysC then begin WritePropKeys(data,1); keysC:=true; end;
+      writeln(data.fText,'/* properties for ',nm,' - id,idvalue,kind,a,b,key,value */');
+      writeln(data.fText,'#define ',nm,'_prop_count ',PEx.nrows);
+      writeln(data.fText,'const int ',nm,'_prop[',PEx.nrows*PropRowWords,'] = {');
+      for r:=0 to PEx.nrows-1 do
+      begin
+        write(data.fText,'  ');
+        WritePropRowNumbers(data.fText,r);
+        if r < PEx.nrows-1 then writeln(data.fText,',') else writeln(data.fText);
+      end;
+      writeln(data.fText,'};');
+      if PEx.nstr > 0 then
+      begin
+        writeln(data.fText,'#define ',nm,'_str_count ',PEx.nstr);
+        writeln(data.fText,'const char *',nm,'_str[',PEx.nstr,'] = {');
+        for s2:=0 to PEx.nstr-1 do
+        begin
+          write(data.fText,'  ');
+          WriteCQuoted(data.fText,PEx.strs[s2]);
+          if s2 < PEx.nstr-1 then writeln(data.fText,',') else writeln(data.fText);
+        end;
+        writeln(data.fText,'};');
+      end;
+    end
+    else if MapLanIsPascal(MPE.Lan) then
+    begin
+      if not keysPas then begin WritePropKeys(data,2); keysPas:=true; end;
+      writeln(data.fText,'{ properties for ',nm,' - id,idvalue,kind,a,b,key,value }');
+      writeln(data.fText,'const');
+      writeln(data.fText,'  ',nm,'_prop_count = ',PEx.nrows,';');
+      writeln(data.fText,'  ',nm,'_prop : array[0..',PEx.nrows*PropRowWords-1,'] of integer = (');
+      for r:=0 to PEx.nrows-1 do
+      begin
+        write(data.fText,'    ');
+        WritePropRowNumbers(data.fText,r);
+        if r < PEx.nrows-1 then writeln(data.fText,',') else writeln(data.fText,');');
+      end;
+      if PEx.nstr > 0 then
+      begin
+        writeln(data.fText,'  ',nm,'_str_count = ',PEx.nstr,';');
+        writeln(data.fText,'  ',nm,'_str : array[0..',PEx.nstr-1,'] of string[',PExMaxStrLen,'] = (');
+        for s2:=0 to PEx.nstr-1 do
+        begin
+          write(data.fText,'    ');
+          WritePasQuoted(data.fText,PEx.strs[s2]);
+          if s2 < PEx.nstr-1 then writeln(data.fText,',') else writeln(data.fText,');');
+        end;
+      end;
+    end
+    else if MapLanIsJS(MPE.Lan) then
+    begin
+      if not keysJS then begin WritePropKeys(data,3); keysJS:=true; end;
+      writeln(data.fText,'// properties for ',nm);
+      writeln(data.fText,'const ',nm,'Props = [');
+      for r:=0 to PEx.nrows-1 do
+      begin
+        write(data.fText,'  {id:',PEx.rows[r*PropRowWords],
+                         ', idvalue:',PEx.rows[r*PropRowWords+1],
+                         ', kind:',PEx.rows[r*PropRowWords+2],
+                         ', a:',PEx.rows[r*PropRowWords+3],
+                         ', b:',PEx.rows[r*PropRowWords+4],
+                         ', key:',PEx.rows[r*PropRowWords+5],
+                         ', value:',PEx.rows[r*PropRowWords+6],'}');
+        if r < PEx.nrows-1 then writeln(data.fText,',') else writeln(data.fText);
+      end;
+      writeln(data.fText,'];');
+      if PEx.nstr > 0 then
+      begin
+        writeln(data.fText,'const ',nm,'Strings = [');
+        for s2:=0 to PEx.nstr-1 do
+        begin
+          write(data.fText,'  ');
+          WriteCQuoted(data.fText,PEx.strs[s2]);
+          if s2 < PEx.nstr-1 then writeln(data.fText,',') else writeln(data.fText);
+        end;
+        writeln(data.fText,'];');
+      end;
+    end
+    else
+    begin
+      //BASIC. LineCountToStr hands out one GW-BASIC line number per call, so
+      //it is called exactly once per output line.
+      Lan:=MapLanToBasicLan(MPE.Lan);
+      writeln(data.fText,LineCountToStr(Lan),'''Property data for ',nm,' - id,idvalue,kind,a,b,key,value');
+      WriteBasicLabel(data,Lan,nm+'Prop');
+      for r:=0 to PEx.nrows-1 do
+      begin
+        write(data.fText,LineCountToStr(Lan),'DATA ');
+        WritePropRowNumbers(data.fText,r);
+        writeln(data.fText);
+      end;
+      if PEx.nstr > 0 then
+      begin
+        writeln(data.fText,LineCountToStr(Lan),'''String data for ',nm);
+        WriteBasicLabel(data,Lan,nm+'Str');
+        //no escaping needed: the editor never allows a double quote
+        for s2:=0 to PEx.nstr-1 do
+        begin
+          write(data.fText,LineCountToStr(Lan),'DATA "');
+          write(data.fText,PEx.strs[s2]);
+          writeln(data.fText,'"');
+        end;
       end;
     end;
   end;
@@ -1464,7 +2161,7 @@ begin
 end;
 
 //exportonlyindex means export only the index, none of the other images.palette maps
-Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
+Function RESIncludeWork(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
 var
  data    : BufferRec;
  EO      : ImageExportFormatRec;
@@ -1504,8 +2201,9 @@ begin
 
    if (EO.Lan>0) and (EO.Palette > 0) then
    begin
-     WriteBasicLabel(data,EO.Lan,EO.Name+'Pal');
-     WritePalToArrayBuffer(data,EO.Name+'Pal',EO.Lan,EO.Palette);
+     //ConcreteLan: the generic targets borrow QBasic/GW-BASIC/TC/TP syntax
+     WriteBasicLabel(data,ConcreteLan(EO.Lan),EO.Name+'Pal');
+     WritePalToArrayBuffer(data,EO.Name+'Pal',ConcreteLan(EO.Lan),EO.Palette);
    end;
 
    case EO.Lan of TPLan,TMTLan,TCLan,FPLan,FBinQBModeLan,BAMLan,QBLan,GWLan,QCLan,QPLan,PBLan,OWLan:
@@ -1534,6 +2232,13 @@ begin
    end;
 
 //   if (EO.LAN=TPLan) AND (EO.Image = 2) then  // XLib LBM
+  //generic Basic / Basic Line# / C / Pascal - indexed pixels
+  if (EO.Lan in [BasicLan,BasicLNLan,CLan,PascalLan]) and (ImageExportFormat = IndexedExportFormat) then
+  begin
+    WriteBasicLabel(data,ConcreteLan(EO.Lan),EO.Name);
+    WriteIndexedCode(data.fText,0,0,width-1,height-1,EO.Lan,EO.Name,false);
+  end;
+
   if (EO.LAN=TPLan) AND (ImageExportFormat = XLibLBMExportFormat) then  // XLib LBM
   begin
      WriteTPLBMCodeToBuffer(data,0,0,width-1,height-1,i,EO.Name);
@@ -1621,6 +2326,9 @@ begin
  begin
      WriteMapsCodeToBuffer(data.fText);
      WriteHitBoxDataToBuffer(data);
+     //properties right after hit boxes and BEFORE paths - GW-BASIC reads DATA
+     //in file order, and the RMInit stubs expect them here
+     WritePropDataToBuffer(data);
      WritePathDataToBuffer(data);
      WriteSpriteHitBoxDataToBuffer(data,0,ImageThumbBase.GetCount);
      WriteAllAnimationCodeToBuffer(data.fText);
@@ -1631,9 +2339,26 @@ begin
      //would otherwise be left out entirely.
      WriteSpriteHitBoxDataToBuffer(data,StartIndex,count);
  end;
+ WritePascalIncludeEnd(data.fText,filename);   //only if a procedure re-opened const
  close(data.fText);
  {$I+}
- RESInclude:=IOResult;
+ RESIncludeWork:=IOResult;
+end;
+
+//RES Text Include, and the single-image include from a thumbnail. With the
+//Export menu's assembler option on, Pascal images and maps are written as
+//assembler procedures in INCLUDE MODE: the file still goes inside your const
+//section as before - each procedure re-opens const after it, and the file
+//ends with one constant so it never ends on a bare const. See rmcodegen.
+Function RESInclude(filename:string; index : integer; ExportOnlyIndex : Boolean):word;
+var
+  SaveInclude : boolean;
+begin
+  SaveInclude:=PascalAsmInclude;
+  PascalAsmInclude:=true;
+  PascalAsmReopened:=false;
+  RESInclude:=RESIncludeWork(filename,index,ExportOnlyIndex);
+  PascalAsmInclude:=SaveInclude;
 end;
 
 
@@ -1666,340 +2391,275 @@ begin
   end;
 end;
 
-Function RESBinary(filename:string):word;
+//=============================================================================
+// RES BINARY - shared directory builder (v2 and v3)
+//
+// BuildRESEntryList walks the project ONCE and records every resource in
+// payload order. RESBinary (v2) and RESBinaryV3 both write their directories
+// from this list, and both write payloads with WriteRESPayloads, so the two
+// formats can never disagree about sizes or order. Before this, the header
+// pass and the payload pass were two hand-kept copies of the same walk.
+//=============================================================================
+const
+  MaxRESEntries    = 4096;
+  RESErrTooMany    = 1000;   //more resources than MaxRESEntries
+
+type
+  RESEntryRec = record
+                  category, format, lan, subtype, parent, count, recsize : integer;
+                  size   : longint;
+                  name   : string[24];
+                  source : integer;   //image or map index the entry came from
+                end;
+
+  //v3 header and directory entry - 32 and 48 bytes, see the v3 spec
+  resv3headrec = packed record
+                   sig        : array[1..3] of char;
+                   ver        : byte;
+                   headersize : integer;
+                   entrysize  : integer;
+                   itemcount  : integer;
+                   bytecheck  : integer;
+                   diroffset  : longint;
+                   reserved   : array[1..16] of byte;
+                 end;
+
+  resv3rec = packed record
+               category, format, lan, subtype, parent, count, recsize, reserved : integer;
+               offset : longint;
+               size   : longint;
+               name   : array[1..24] of char;
+             end;
+
+  resv3keyrec = packed record
+                  key   : integer;
+                  ktype : integer;
+                  name  : array[1..16] of char;
+                end;
+
 var
- data    : BufferRec;
- EO      : ImageExportFormatRec;
- RR      : resrec;
- RH      : resheadrec;
- i       : integer;
- count   : integer;
- width   : integer;
- height  : integer;
- nColors : integer;
- Size    : LongInt;
- PalSize : Longint;
+  RESEntries       : array[0..MaxRESEntries-1] of RESEntryRec;
+  RESEntryCount    : integer;
+  RESEntryOverflow : boolean;
 
- HeaderSize  : LongInt;
- OffsetCount : LongInt;
- ExportCount : Integer;
- SLen        : integer;
- Error       : integer;
- MaskName    : string;
- PalName     : string;
- MapCount    : integer;
- MapName     : string;
- MapSize     : longint;
- MapExport   :  MapExportFormatRec;
- AnimCount   : integer;
- AnimName    : string;
- AnimSize    : longint;
- AnimExport  : AnimExportFormatRec;
- hbcount     : integer;
- HBName      : string;
- PathName    : string;
- pathvals    : integer;
- //longint for the same reason as vals above - {$MODE TP} integer is 16 bit
- pathbuf     : array[0..8191] of longint;
- ImageExportFormat : integer;
+function AddRESEntry(category,format,lan,subtype,parent,count,recsize : integer;
+                     size : longint; const name : string; source : integer) : integer;
 begin
- ExportCount:=ImageThumbBase.GetExportImageCount;
- inc(ExportCount,ImageThumbBase.GetExportMaskCount);
- inc(ExportCount,ImageThumbBase.GetExportPaletteCount);
- inc(ExportCount,MapCoreBase.GetExportMapCount);
- //sprite hit boxes are their own resources - the header is sized from this
- //count, so omitting them would shift every offset in the file
- inc(ExportCount,ImageThumbBase.GetExportHitBoxCount);
- //map hit boxes are their own resources too - same reason as above
- inc(ExportCount,GetExportMapHitBoxCount);
- //map paths are their own resources - same reason as above
- inc(ExportCount,MapCoreBase.GetExportPathCount);
- inc(ExportCount,AnimateBase.GetExportAnimCount);
-
- if ExportCount = 0 then exit;
-
- SetThumbActive;   // we are getting pixel data from core object ThumbBase
- assign(data.f,filename);
-{$I-}
- rewrite(data.f,1);
-{$I+}
- Error:=IORESULT;
- if Error<>0 then
- begin
-    RESBinary:=Error;
+  AddRESEntry:=-1;
+  if RESEntryCount >= MaxRESEntries then
+  begin
+    RESEntryOverflow:=true;
     exit;
- end;
+  end;
+  RESEntries[RESEntryCount].category:=category;
+  RESEntries[RESEntryCount].format:=format;
+  RESEntries[RESEntryCount].lan:=lan;
+  RESEntries[RESEntryCount].subtype:=subtype;
+  RESEntries[RESEntryCount].parent:=parent;
+  RESEntries[RESEntryCount].count:=count;
+  RESEntries[RESEntryCount].recsize:=recsize;
+  RESEntries[RESEntryCount].size:=size;
+  RESEntries[RESEntryCount].name:=name;
+  RESEntries[RESEntryCount].source:=source;
+  AddRESEntry:=RESEntryCount;
+  inc(RESEntryCount);
+end;
+
+function FindRESEntry(category,source : integer) : integer;
+var
+  i : integer;
+begin
+  FindRESEntry:=-1;
+  for i:=0 to RESEntryCount-1 do
+    if (RESEntries[i].category = category) and (RESEntries[i].source = source) then
+    begin
+      FindRESEntry:=i;
+      exit;
+    end;
+end;
+
+//Raster Master Lan -> frozen v3 language id. The sprite set (0..26) already
+//matches the v3 table; the map set folds onto the same language.
+function LanToV3(Lan : integer) : integer;
+begin
+  if (Lan >= 0) and (Lan <= 26) then
+    LanToV3:=Lan
+  else
+    case Lan of
+      FBBasicLan   : LanToV3:=10;
+      QB64BasicLan : LanToV3:=5;
+      AQBBasicLan  : LanToV3:=14;
+      BAMBasicLan  : LanToV3:=18;
+      QBJSBasicLan : LanToV3:=20;
+      GWBasicLan   : LanToV3:=7;
+      QBBasicLan   : LanToV3:=4;
+      TBBasicLan   : LanToV3:=6;
+      ABBasicLan   : LanToV3:=11;
+      FBQBBasicLan : LanToV3:=9;
+      TPPascalLan  : LanToV3:=1;
+      QPPascalLan  : LanToV3:=15;
+      FPPascalLan  : LanToV3:=8;
+      TMTPascalLan : LanToV3:=19;
+      APPascalLan  : LanToV3:=12;
+      TCCLan       : LanToV3:=2;
+      QCCLan       : LanToV3:=3;
+      OWCLan       : LanToV3:=17;
+      GCCCLan      : LanToV3:=16;
+      ACCLan       : LanToV3:=13;
+    else
+      LanToV3:=0;
+    end;
+end;
+
+//Order here IS the payload order - WriteRESPayloads, then (v3 only)
+//WriteRESV3Extras, must write in exactly this sequence.
+function BuildRESEntryList(v3 : boolean) : boolean;
+var
+ EO          : ImageExportFormatRec;
+ MapExport   : MapExportFormatRec;
+ AnimExport  : AnimExportFormatRec;
+ i, e, img, mp, par, count, width, height, nColors, hbcount, frames : integer;
+ pathvals    : integer;
+ ImageExportFormat : integer;
+ Size        : longint;
+ anyprops    : boolean;
+ //longint - see RESBinary: {$MODE TP} integer is 16 bit
+ pathbuf     : array[0..8191] of longint;
+begin
+ RESEntryCount:=0;
+ RESEntryOverflow:=false;
  count:=ImageThumbBase.GetCount;
- HeaderSize:=sizeof(RH)+Exportcount*sizeof(resrec);
- OffsetCount:=HeaderSize;
 
- //write the signature and record count
- RH.sig:='RES';
- RH.ver:=2;   //v2 = structured resource type encoding (see EncodeResType)
- RH.resitemcount:=Exportcount;
- {$I-}
- Blockwrite(data.f,RH,sizeof(RH));
- {$I+}
- Error:=IORESULT;
- if Error<>0 then
- begin
-  RESBinary:=Error;
-  exit;
- end;
-
- //write the header with all the correct offsets where the image is going to be located
+ //per image: palette, image, mask
  for i:=0 to count-1 do
  begin
    ImageThumbBase.GetExportOptions(i,EO);
    ImageExportFormat:=ImageIndexToFormat(EO.Lan,EO.Image);
-
    width:=ImageThumbBase.GetExportWidth(i);
    height:=ImageThumbBase.GetExportHeight(i);
    nColors:=ImageThumbBase.GetMaxColor(i)+1;
    Size:=GetRESImageSize(width,height,nColors,EO.Lan,EO.Image);
 
-
-   //write the palette first - if there is a palette
    if EO.Palette > 0 then
    begin
-     PalSize:=GetRESPaletteSize(nColors,EO.Lan,EO.Palette);
-
-     PalName:=EO.Name+'Pal';
-     fillchar(RR.rid,sizeof(RR.rid),32);
-     slen:=Length(PalName);
-     if slen > 20 then slen:=20;
-     Move(PalName[1],RR.rid,slen);
-
-     RR.size:=PalSize;
-     RR.offset:=OffsetCount;
-     RR.rt:=EncodeResType(ResTypePalette,EO.Lan,EO.Palette);
-
-     inc(OffsetCount,PalSize);
-     {$I-}
-     Blockwrite(data.f,RR,sizeof(RR));
-     {$I+}
-     Error:=IORESULT;
-     if Error<>0 then
-     begin
-       RESBinary:=Error;
-       exit;
-     end;
+     par:=-1;
+     if EO.Image > 0 then par:=RESEntryCount+1;   //its image is the next entry
+     e:=AddRESEntry(ResTypePalette,EO.Palette,EO.Lan,0,par,nColors,0,
+                    GetRESPaletteSize(nColors,EO.Lan,EO.Palette),EO.Name+'Pal',i);
    end;
 
-   //copy name field
-   fillchar(RR.rid,sizeof(RR.rid),32);
-   slen:=Length(EO.Name);
-   if slen > 20 then slen:=20;
-   Move(EO.Name[1],RR.rid,slen);
-
-   //calc size/offset
-   if EO.Image > 0  then
+   if EO.Image > 0 then
    begin
-     RR.size:=Size;
-     RR.offset:=OffsetCount;
-
-     RR.rt:=EncodeResType(ResTypeImage,EO.Lan,EO.Image);
-
-     inc(OffsetCount,Size);
-     {$I-}
-     Blockwrite(data.f,RR,sizeof(RR));
-
-     //if there is a mask image we write the info also - size is the same, offset and name will be different
-     if (ImageExportFormat=PutImageExportFormat) and (EO.Mask = 1) and (EO.Lan<>AQBLan) then    //only create mask for putimage = but not for Amiga AQB
-     begin
-       MaskName:=EO.Name+'Mask';
-       slen:=Length(MaskName);
-       if slen > 20 then slen:=20;
-       Move(MaskName[1],RR.rid,slen);
-
-       RR.rt:=EncodeResType(ResTypeImageMask,EO.Lan,EO.Image);  //masks get their own category so readers can tell them apart
-       RR.offset:=OffsetCount;
-       inc(OffsetCount,Size);
-       Blockwrite(data.f,RR,sizeof(RR));
-     end;
-
-     {$I+}
-     Error:=IORESULT;
-     if Error<>0 then
-     begin
-       RESBinary:=Error;
-       exit;
-     end;
+     img:=AddRESEntry(ResTypeImage,EO.Image,EO.Lan,0,-1,1,0,Size,EO.Name,i);
+     //only putimage gets a mask - but not Amiga AQB
+     if (ImageExportFormat=PutImageExportFormat) and (EO.Mask = 1) and (EO.Lan<>AQBLan) then
+       e:=AddRESEntry(ResTypeImageMask,EO.Image,EO.Lan,0,img,1,0,Size,EO.Name+'Mask',i);
    end;
-  end; //for count - finished wwriting all the image/pal header info
+ end;
 
-  // dump res header fields for Maps
-  MapCount:=MapCoreBase.GetMapCount;
-  for i:=0 to MapCount-1 do
-  begin
-      MapCoreBase.GetMapExportProps(i,MapExport);
-      if MapExport.MapFormat > 0 then
-      begin
-        width:=MapCoreBase.GetExportWidth(i);
-        height:=MapCoreBase.GetExportHeight(i);
-        //ExportLayerCount honours MapFormat: Simple exports one layer,
-        //Layered exports them all - the same rule the writer uses
-        MapSize:=GetRESMapSize(width,height,ExportLayerCount(i));
+ //maps
+ for i:=0 to MapCoreBase.GetMapCount-1 do
+ begin
+   MapCoreBase.GetMapExportProps(i,MapExport);
+   if MapExport.MapFormat > 0 then
+   begin
+     width:=MapCoreBase.GetExportWidth(i);
+     height:=MapCoreBase.GetExportHeight(i);
+     //ExportLayerCount honours MapFormat: Simple exports one layer,
+     //Layered exports them all - the same rule the writer uses
+     e:=AddRESEntry(ResTypeMap,MapExport.MapFormat,MapExport.Lan,0,-1,ExportLayerCount(i),0,
+                    GetRESMapSize(width,height,ExportLayerCount(i)),MapExport.Name,i);
+   end;
+ end;
 
-        fillchar(RR.rid,sizeof(RR.rid),32);
-        MapName:=MapExport.Name;
-        slen:=Length(MapName);
-        if slen > 20 then slen:=20;
-        Move(MapName[1],RR.rid,slen);
+ //sprite hit boxes. format carries the coordinate space for v2; v3 moves it
+ //to subtype and writes format 0
+ for i:=0 to ImageThumbBase.GetCount-1 do
+ begin
+   ImageThumbBase.GetExportOptions(i,EO);
+   hbcount:=ImageThumbBase.GetHitBoxCount(i);
+   if (EO.Image > 0) and (hbcount > 0) then
+     e:=AddRESEntry(ResTypeHitBox,HitBoxSpacePixel,EO.Lan,HitBoxSpacePixel,
+                    FindRESEntry(ResTypeImage,i),hbcount,0,GetRESHitBoxSize(hbcount),
+                    EO.Name+'HitBox',i);
+ end;
 
-        RR.size:=MapSize;
-        RR.offset:=OffsetCount;
-        RR.rt:=EncodeResType(ResTypeMap,MapExport.Lan,MapExport.MapFormat);
+ //map hit boxes
+ for i:=0 to MapCoreBase.GetMapCount-1 do
+ begin
+   MapCoreBase.GetMapExportProps(i,MapExport);
+   hbcount:=MapCoreBase.GetHitBoxCount(i);
+   if (MapExport.MapFormat > 0) and (hbcount > 0) then
+     e:=AddRESEntry(ResTypeHitBox,HitBoxSpaceTile,MapExport.Lan,HitBoxSpaceTile,
+                    FindRESEntry(ResTypeMap,i),hbcount,0,GetRESHitBoxSize(hbcount),
+                    MapExport.Name+'HitBox',i);
+ end;
 
-        inc(OffsetCount,MapSize);
-        {$I-}
-        Blockwrite(data.f,RR,sizeof(RR));
-        {$I+}
-        Error:=IORESULT;
-        if Error<>0 then
-        begin
-          RESBinary:=Error;
-          exit;
-        end;
-      end;
-  end;
+ //map paths
+ for i:=0 to MapCoreBase.GetMapCount-1 do
+ begin
+   MapCoreBase.GetMapExportProps(i,MapExport);
+   if (MapExport.MapFormat > 0) and (MapCoreBase.PathExportCount(i) > 0) then
+   begin
+     pathvals:=MapCoreBase.BuildPathExportArray(i,pathbuf);
+     if pathvals > 0 then
+       e:=AddRESEntry(ResTypePath,MapExport.MapFormat,MapExport.Lan,0,
+                      FindRESEntry(ResTypeMap,i),MapCoreBase.PathExportCount(i),0,
+                      GetRESPathSize(pathvals),MapExport.Name+'Path',i);
+   end;
+ end;
 
-  // dump res header fields for sprite hit boxes.
-  // MUST be walked in the same order as ResExportSpriteHitBoxes writes them,
-  // and placed between the map and animation blocks to match the data pass.
-  for i:=0 to ImageThumbBase.GetCount-1 do
-  begin
-      ImageThumbBase.GetExportOptions(i,EO);
-      hbcount:=ImageThumbBase.GetHitBoxCount(i);
-      if (EO.Image > 0) and (hbcount > 0) then
-      begin
-        fillchar(RR.rid,sizeof(RR.rid),32);
-        HBName:=EO.Name+'HitBox';
-        slen:=Length(HBName);
-        if slen > 20 then slen:=20;
-        Move(HBName[1],RR.rid,slen);
+ //animations - frame count word, then each frame's image index word
+ for i:=0 to AnimateBase.GetAnimationCount-1 do
+ begin
+   AnimateBase.GetAnimExportProps(i,AnimExport);
+   if AnimExport.AnimateFormat > 0 then
+   begin
+     frames:=AnimateBase.GetFrameCount(i);
+     e:=AddRESEntry(ResTypeAnimation,AnimExport.AnimateFormat,AnimExport.Lan,0,-1,
+                    frames,0,longint(1+frames)*2,AnimExport.Name,i);
+   end;
+ end;
 
-        RR.size:=GetRESHitBoxSize(hbcount);
-        RR.offset:=OffsetCount;
-        //Format is the coordinate space, not the image format. It used to be
-        //EO.Image, which said nothing about the hit box payload; it is now
-        //what tells a reader these numbers are pixels rather than tiles.
-        RR.rt:=EncodeResType(ResTypeHitBox,EO.Lan,HitBoxSpacePixel);
+ //v3 only: per map properties then strings, then the key table once
+ if v3 then
+ begin
+   anyprops:=false;
+   for i:=0 to MapCoreBase.GetMapCount-1 do
+   begin
+     MapCoreBase.GetMapExportProps(i,MapExport);
+     if MapExport.MapFormat <= 0 then continue;
+     BuildPropExport(i);
+     if PEx.nrows = 0 then continue;
+     mp:=FindRESEntry(ResTypeMap,i);
+     e:=AddRESEntry(ResTypeProperties,0,MapExport.Lan,0,mp,PEx.nrows,PropRowWords*2,
+                    longint(PEx.nrows)*PropRowWords*2,MapExport.Name+'Prop',i);
+     if PEx.nstr > 0 then
+       e:=AddRESEntry(ResTypeStrings,0,MapExport.Lan,0,mp,PEx.nstr,0,
+                      PExStrPayloadSize,MapExport.Name+'Str',i);
+     anyprops:=true;
+   end;
+   if anyprops then
+     e:=AddRESEntry(ResTypeKeyDefs,0,NoLan,0,-1,MapCoreBase.GetKeyDefCount,
+                    sizeof(resv3keyrec),longint(MapCoreBase.GetKeyDefCount)*sizeof(resv3keyrec),
+                    'KeyDefs',-1);
+ end;
 
-        inc(OffsetCount,RR.size);
-        {$I-}
-        Blockwrite(data.f,RR,sizeof(RR));
-        {$I+}
-        Error:=IORESULT;
-        if Error<>0 then
-        begin
-          RESBinary:=Error;
-          exit;
-        end;
-      end;
-  end;
+ BuildRESEntryList:=not RESEntryOverflow;
+end;
 
-  // dump res header fields for map hit boxes.
-  // MUST be walked in the same order as ResExportMapHitBoxes writes them,
-  // and placed between the sprite hit box and path blocks to match the
-  // data pass.
-  for i:=0 to MapCoreBase.GetMapCount-1 do
-  begin
-      MapCoreBase.GetMapExportProps(i,MapExport);
-      hbcount:=MapCoreBase.GetHitBoxCount(i);
-      if (MapExport.MapFormat > 0) and (hbcount > 0) then
-      begin
-        fillchar(RR.rid,sizeof(RR.rid),32);
-        HBName:=MapExport.Name+'HitBox';
-        slen:=Length(HBName);
-        if slen > 20 then slen:=20;
-        if slen > 0 then Move(HBName[1],RR.rid,slen);
-
-        RR.size:=GetRESHitBoxSize(hbcount);
-        RR.offset:=OffsetCount;
-        RR.rt:=EncodeResType(ResTypeHitBox,MapExport.Lan,HitBoxSpaceTile);
-
-        inc(OffsetCount,RR.size);
-        {$I-}
-        Blockwrite(data.f,RR,sizeof(RR));
-        {$I+}
-        Error:=IORESULT;
-        if Error<>0 then
-        begin
-          RESBinary:=Error;
-          exit;
-        end;
-      end;
-  end;
-
-  // dump res header fields for map paths.
-  // Walked in the same order as ResExportPaths writes, and placed after the
-  // sprite hit boxes to match the data pass.
-  for i:=0 to MapCoreBase.GetMapCount-1 do
-  begin
-      MapCoreBase.GetMapExportProps(i,MapExport);
-      if (MapExport.MapFormat > 0) and (MapCoreBase.PathExportCount(i) > 0) then
-      begin
-        pathvals:=MapCoreBase.BuildPathExportArray(i,pathbuf);
-        if pathvals <= 0 then continue;
-
-        fillchar(RR.rid,sizeof(RR.rid),32);
-        PathName:=MapExport.Name+'Path';
-        slen:=Length(PathName);
-        if slen > 20 then slen:=20;
-        Move(PathName[1],RR.rid,slen);
-
-        RR.size:=GetRESPathSize(pathvals);
-        RR.offset:=OffsetCount;
-        RR.rt:=EncodeResType(ResTypePath,MapExport.Lan,MapExport.MapFormat);
-
-        inc(OffsetCount,RR.size);
-        {$I-}
-        Blockwrite(data.f,RR,sizeof(RR));
-        {$I+}
-        Error:=IORESULT;
-        if Error<>0 then
-        begin
-          RESBinary:=Error;
-          exit;
-        end;
-      end;
-  end;
-
-  // dump res header fields for Animations
-  // data = frame count (word) followed by each frame's image index (word)
-  AnimCount:=AnimateBase.GetAnimationCount;
-  for i:=0 to AnimCount-1 do
-  begin
-      AnimateBase.GetAnimExportProps(i,AnimExport);
-      if AnimExport.AnimateFormat > 0 then
-      begin
-        AnimSize:=(1+AnimateBase.GetFrameCount(i))*2;
-
-        fillchar(RR.rid,sizeof(RR.rid),32);
-        AnimName:=AnimExport.Name;
-        slen:=Length(AnimName);
-        if slen > 20 then slen:=20;
-        if slen > 0 then Move(AnimName[1],RR.rid,slen);
-
-        RR.size:=AnimSize;
-        RR.offset:=OffsetCount;
-        RR.rt:=EncodeResType(ResTypeAnimation,AnimExport.Lan,AnimExport.AnimateFormat);
-
-        inc(OffsetCount,AnimSize);
-        {$I-}
-        Blockwrite(data.f,RR,sizeof(RR));
-        {$I+}
-        Error:=IORESULT;
-        if Error<>0 then
-        begin
-          RESBinary:=Error;
-          exit;
-        end;
-      end;
-  end;
-
-
+//Every payload of categories 1-7, in BuildRESEntryList order. Moved here
+//VERBATIM from RESBinary so v2 and v3 write byte-identical payloads.
+procedure WriteRESPayloads(var data : BufferRec);
+var
+ EO    : ImageExportFormatRec;
+ i     : integer;
+ count : integer;
+ width : integer;
+ height: integer;
+ ImageExportFormat : integer;
+begin
+ count:=ImageThumbBase.GetCount;
  InitBufferRec(data);
  //convert and dump image
  for i:=0 to count-1 do
@@ -2013,7 +2673,13 @@ begin
 
    if EO.Palette > 0 then WritePalToBuffer(data,EO.Palette);
 
-   Case EO.Lan of QCLan,QPLan,QBLan,GWLan,PBLan,BAMLan,QBJSLan:   //BAM and QBJS use the standard QB-family XGF binary format
+   Case EO.Lan of BasicLan,BasicLNLan,CLan,PascalLan:  //generic - indexed pixels
+                                    begin
+                                      if (ImageExportFormat = IndexedExportFormat) then
+                                        WriteIndexedToBuffer(width,height,data.f);
+                                    end;
+
+                  QCLan,QPLan,QBLan,GWLan,PBLan,BAMLan,QBJSLan:   //BAM and QBJS use the standard QB-family XGF binary format
                                     begin
                                       if (ImageExportFormat = PutImageExportFormat) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,0,data);
                                       if (ImageExportFormat = PutImageExportFormat) and (EO.Mask=1) then WriteXgfToBuffer(0,0,width-1,height-1,EO.Lan,1,data);
@@ -2092,11 +2758,243 @@ begin
  ResExportMapHitBoxes(data.f);    //map hit boxes, in header pass order
  ResExportPaths(data.f);          //map paths, in header pass order
  ResExportAnimations(data.f); //export the animations
+end;
+
+//v3 only payloads, in BuildRESEntryList order. Returns an IO error, 0 = ok.
+function WriteRESV3Extras(var F : File) : integer;
+var
+  i, s2, kn, err : integer;
+  MapExport : MapExportFormatRec;
+  anyprops : boolean;
+  offs : word;
+  wbuf : array[0..MaxMapProps-1] of word;
+  kr : resv3keyrec;
+  K : KeyDefRec;
+begin
+  WriteRESV3Extras:=0;
+  anyprops:=false;
+  for i:=0 to MapCoreBase.GetMapCount-1 do
+  begin
+    MapCoreBase.GetMapExportProps(i,MapExport);
+    if MapExport.MapFormat <= 0 then continue;
+    BuildPropExport(i);
+    if PEx.nrows = 0 then continue;
+
+    {$I-}
+    Blockwrite(F,PEx.rows,longint(PEx.nrows)*PropRowWords*2);
+    {$I+}
+    err:=IOResult;
+    if err <> 0 then begin WriteRESV3Extras:=err; exit; end;
+
+    if PEx.nstr > 0 then
+    begin
+      //offset of each string's length byte, from the payload start. Unsigned:
+      //the largest table is about 62K.
+      offs:=PEx.nstr*2;
+      for s2:=0 to PEx.nstr-1 do
+      begin
+        wbuf[s2]:=offs;
+        inc(offs,1+Length(PEx.strs[s2]));
+      end;
+      {$I-}
+      Blockwrite(F,wbuf,longint(PEx.nstr)*2);
+      //a shortstring is its length byte followed by its characters - which
+      //is exactly the on-disk layout the spec asks for
+      for s2:=0 to PEx.nstr-1 do
+        Blockwrite(F,PEx.strs[s2],1+Length(PEx.strs[s2]));
+      {$I+}
+      err:=IOResult;
+      if err <> 0 then begin WriteRESV3Extras:=err; exit; end;
+    end;
+    anyprops:=true;
+  end;
+
+  if anyprops then
+    for kn:=0 to MapCoreBase.GetKeyDefCount-1 do
+    begin
+      MapCoreBase.GetKeyDef(kn,K);
+      kr.key:=K.key;
+      kr.ktype:=K.ktype;
+      fillchar(kr.name,sizeof(kr.name),32);
+      if Length(K.name) > 0 then Move(K.name[1],kr.name,Length(K.name));
+      {$I-}
+      Blockwrite(F,kr,sizeof(kr));
+      {$I+}
+      err:=IOResult;
+      if err <> 0 then begin WriteRESV3Extras:=err; exit; end;
+    end;
+end;
+
+Function RESBinary(filename:string):word;
+var
+ data        : BufferRec;
+ RR          : resrec;
+ RH          : resheadrec;
+ i           : integer;
+ SLen        : integer;
+ Error       : integer;
+ HeaderSize  : LongInt;
+ OffsetCount : LongInt;
+begin
+ SetThumbActive;   // we are getting pixel data from core object ThumbBase
+ if not BuildRESEntryList(false) then
+ begin
+   RESBinary:=RESErrTooMany;
+   exit;
+ end;
+ if RESEntryCount = 0 then exit;
+
+ assign(data.f,filename);
+{$I-}
+ rewrite(data.f,1);
+{$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin
+    RESBinary:=Error;
+    exit;
+ end;
+ HeaderSize:=sizeof(RH)+longint(RESEntryCount)*sizeof(resrec);
+ OffsetCount:=HeaderSize;
+
+ //write the signature and record count
+ RH.sig:='RES';
+ RH.ver:=2;   //v2 = structured resource type encoding (see EncodeResType)
+ RH.resitemcount:=RESEntryCount;
+ {$I-}
+ Blockwrite(data.f,RH,sizeof(RH));
+ {$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin
+  RESBinary:=Error;
+  exit;
+ end;
+
+ //directory, straight from the shared list - v2 has no parent/count fields,
+ //so only category, lan, format, name and size are used
+ for i:=0 to RESEntryCount-1 do
+ begin
+   fillchar(RR.rid,sizeof(RR.rid),32);
+   slen:=Length(RESEntries[i].name);
+   if slen > 20 then slen:=20;
+   if slen > 0 then Move(RESEntries[i].name[1],RR.rid,slen);
+
+   RR.size:=RESEntries[i].size;
+   RR.offset:=OffsetCount;
+   RR.rt:=EncodeResType(RESEntries[i].category,RESEntries[i].lan,RESEntries[i].format);
+   inc(OffsetCount,RR.size);
+   {$I-}
+   Blockwrite(data.f,RR,sizeof(RR));
+   {$I+}
+   Error:=IORESULT;
+   if Error<>0 then
+   begin
+     RESBinary:=Error;
+     exit;
+   end;
+ end;
+
+ WriteRESPayloads(data);
 
  {$I-}
  close(data.f);
  {$I+}
  RESBinary:=IOResult;
+end;
+
+//RES Binary v3 - see the spec. Export only; Raster Master never reads it.
+Function RESBinaryV3(filename:string):word;
+var
+ data        : BufferRec;
+ H           : resv3headrec;
+ E           : resv3rec;
+ i           : integer;
+ SLen        : integer;
+ Error       : integer;
+ OffsetCount : LongInt;
+begin
+ RESBinaryV3:=0;
+ SetThumbActive;
+ if not BuildRESEntryList(true) then
+ begin
+   RESBinaryV3:=RESErrTooMany;
+   exit;
+ end;
+ if RESEntryCount = 0 then exit;
+
+ assign(data.f,filename);
+{$I-}
+ rewrite(data.f,1);
+{$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin
+   RESBinaryV3:=Error;
+   exit;
+ end;
+
+ fillchar(H,sizeof(H),0);
+ H.sig:='RES';
+ H.ver:=3;
+ H.headersize:=sizeof(resv3headrec);
+ H.entrysize:=sizeof(resv3rec);
+ H.itemcount:=RESEntryCount;
+ H.bytecheck:=$1234;   //a reader seeing $3412 knows to byte-swap
+ H.diroffset:=sizeof(resv3headrec);
+ {$I-}
+ Blockwrite(data.f,H,sizeof(H));
+ {$I+}
+ Error:=IORESULT;
+ if Error<>0 then
+ begin
+   RESBinaryV3:=Error;
+   exit;
+ end;
+
+ OffsetCount:=sizeof(resv3headrec)+longint(RESEntryCount)*sizeof(resv3rec);
+ for i:=0 to RESEntryCount-1 do
+ begin
+   E.category:=RESEntries[i].category;
+   E.format:=RESEntries[i].format;
+   if E.category = ResTypeHitBox then E.format:=0;   //space lives in subtype in v3
+   E.lan:=LanToV3(RESEntries[i].lan);
+   E.subtype:=RESEntries[i].subtype;
+   E.parent:=RESEntries[i].parent;
+   E.count:=RESEntries[i].count;
+   E.recsize:=RESEntries[i].recsize;
+   E.reserved:=0;
+   E.offset:=OffsetCount;
+   E.size:=RESEntries[i].size;
+   fillchar(E.name,sizeof(E.name),32);
+   slen:=Length(RESEntries[i].name);
+   if slen > 24 then slen:=24;
+   if slen > 0 then Move(RESEntries[i].name[1],E.name,slen);
+   inc(OffsetCount,E.size);
+   {$I-}
+   Blockwrite(data.f,E,sizeof(E));
+   {$I+}
+   Error:=IORESULT;
+   if Error<>0 then
+   begin
+     RESBinaryV3:=Error;
+     exit;
+   end;
+ end;
+
+ WriteRESPayloads(data);          //categories 1-7, byte-identical to v2
+ Error:=WriteRESV3Extras(data.f); //properties, strings, key table
+
+ {$I-}
+ close(data.f);
+ {$I+}
+ if Error <> 0 then
+ begin
+   i:=IOResult;   //clear the pending close status
+   RESBinaryV3:=Error;
+   exit;
+ end;
+ RESBinaryV3:=IOResult;
 end;
 
 

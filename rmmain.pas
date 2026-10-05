@@ -72,9 +72,9 @@ uses
   ActnList, StdActns, ColorPalette, Types, LResources, lclintf, rmconst,rmtools, rmcore, flood,
   rmcolor, rmcolorvga, rmcolorxga, rmamigaColor, uAbout, rwpal, rwraw, rwpcx, rwbmp,
   rmamigarwxgf, wjavascriptarray, rmthumb, wmodex, rwgif, rwxgf, rmexportprops,
-  rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,
+  rres, rwpng, wmouse, mapeditor, spriteimport,spritesheetexport,fontsheetexport, wraylib, rwilbm, rwaqb, rmapi,rmxgfcore,rmcodegen,
   fileprops,rmconfig,rmclipboard,soundgen,animate,setcustomspritesize,SetCustomCellSize,QBasicInterp, uPSCompiler, Clipbrd, LCLType, LMessages,
-  rwjson, uRetrobrush, brusheffects, idvalueprops,
+  rwjson, uRetrobrush, brusheffects, idvalueprops, rmscripteditor,
   //HitBoxRec/HitBoxesRec live here. rmmain only reached mapcore indirectly
   //through mapeditor, and Pascal does not re-export types that way.
   mapcore;
@@ -141,6 +141,13 @@ type
     ExportPropsMenu: TPopupMenu;
     ExportRESInclude: TMenuItem;
     ExportRESBinary: TMenuItem;
+    //RES Binary v3 - adds map properties, strings and keys
+    ExportRESBinaryV3: TMenuItem;
+    //generic indexed image export - width, height, then one index per pixel
+    ExportGenBasic, GenBasicIndexed : TMenuItem;
+    ExportGenBasicLN, GenBasicLNIndexed : TMenuItem;
+    ExportGenC, GenCIndexed : TMenuItem;
+    ExportGenPascal, GenPascalIndexed : TMenuItem;
     ExportTiledSep: TMenuItem;
     ExportTiled: TMenuItem;
     ExportTiledCurrentSheet: TMenuItem;
@@ -262,6 +269,9 @@ type
     NewImage: TMenuItem;
     ScriptMenuLoad: TMenuItem;
     ScriptMenuRun: TMenuItem;
+    ScriptMenuEditor: TMenuItem;
+    ExportPascalAsmSep: TMenuItem;
+    ExportPascalAsm: TMenuItem;
     ScriptMenu: TMenuItem;
     RMScript: TPSScript;
     qb64RGB: TMenuItem;
@@ -630,6 +640,8 @@ type
     procedure RMScriptCompile(Sender: TPSScript);
     procedure ScriptMenuLoadClick(Sender: TObject);
     procedure ScriptMenuRunClick(Sender: TObject);
+    procedure ScriptMenuEditorClick(Sender: TObject);
+    procedure ExportPascalAsmClick(Sender: TObject);
     procedure SpriteImportMenuClick(Sender: TObject);
     procedure ThumbPopUpMenuExportClick(Sender: TObject);
     procedure ThumbPopUpMenusaveClick(Sender: TObject);
@@ -668,6 +680,7 @@ type
     function  CheckExportProperties : TExportReadyRec;
     function  ConfirmExportProperties : boolean;
     procedure RESExportClick(Sender: TObject);
+    procedure GenericIndexedExportClick(Sender: TObject);
     procedure FileDeleteClick(Sender: TObject);
     procedure SaveProjectFileClick(Sender: TObject);
 
@@ -788,6 +801,14 @@ type
 
        ScriptLoaded   : integer;
        QBInterpreter  : TQBasicInterpreter;
+       //Script run state. SETIMAGE / SETMAP / SETLAYER change what the SCRIPT
+       //works on; the editors are put back where they were when it ends.
+       FScriptStartImage : integer;
+       FScriptImgUndo    : array of boolean;   //undo step already taken, per image
+       FScriptMap        : integer;
+       FScriptLayer      : integer;
+       FScriptMapUndo    : array of boolean;   //undo step already taken, per map
+       FScriptMapChanged : boolean;
        ScriptFileName : String;
 
        //true from a Ctrl+click mouse down until the matching mouse up. The
@@ -871,6 +892,8 @@ type
        procedure ApplyZoom(newsize : integer; useAnchor : boolean; anchorX : integer = 0; anchorY : integer = 0);
 
   public
+    //ticks the assembler option in both Export menus to match the setting
+    procedure SyncPascalAsmMenus;
        //TCustomForm declares this public - keep it public here rather than
        //narrowing it in a descendant
        function IsShortCut(var Message: TLMKey): Boolean; override;
@@ -880,6 +903,10 @@ type
        procedure DeleteImageByIndex(index : integer);
 
        procedure InitQBInterpreter;
+       //shared by Script > Run and the script editor, so both run against
+       //the same API and the same set-up
+       procedure RegisterQBAPI(Interp : TQBasicInterpreter);
+       procedure QBPrepareRun(Interp : TQBasicInterpreter);
        procedure QBScriptRun;
        procedure PascalScriptRun;
        procedure API_PutPixel(const Args: array of Double; const StrArgs: array of string);
@@ -887,6 +914,69 @@ type
        function  API_GetWidth(const Args: array of Double): Double;
        function  API_GetHeight(const Args: array of Double): Double;
        function  API_GetMaxColor(const Args: array of Double): Double;
+       //palette
+       procedure API_SetColorRGB(const Args: array of Double; const StrArgs: array of string);
+       function  API_GetPaletteMode(const Args: array of Double): Double;
+       procedure API_SetPaletteMode(const Args: array of Double; const StrArgs: array of string);
+       //dialogs
+       procedure API_ShowMessage(const Args: array of Double; const StrArgs: array of string);
+       function  API_GetOpenFileName(const Args: array of Double; const StrArgs: array of string): string;
+       function  API_GetSaveFileName(const Args: array of Double; const StrArgs: array of string): string;
+       //code generator - lets a script write its own export format
+       function  API_CGOpen(const Args: array of Double; const StrArgs: array of string): Double;
+       procedure API_CGOptions(const Args: array of Double; const StrArgs: array of string);
+       procedure API_CGWrite(const Args: array of Double; const StrArgs: array of string);
+       procedure API_CGWriteLn(const Args: array of Double; const StrArgs: array of string);
+       procedure API_CGWriteByte(const Args: array of Double; const StrArgs: array of string);
+       procedure API_CGWriteInteger(const Args: array of Double; const StrArgs: array of string);
+       procedure API_CGClose(const Args: array of Double; const StrArgs: array of string);
+       procedure API_CGClipboard(const Args: array of Double; const StrArgs: array of string);
+       //images
+       function  API_GetImageCount(const Args: array of Double): Double;
+       function  API_GetImage(const Args: array of Double): Double;
+       procedure API_SetImage(const Args: array of Double; const StrArgs: array of string);
+       function  API_GetImageName(const Args: array of Double; const StrArgs: array of string): string;
+       //maps - any map, any layer
+       function  API_GetMapCount(const Args: array of Double): Double;
+       function  API_GetMap(const Args: array of Double): Double;
+       procedure API_SetMap(const Args: array of Double; const StrArgs: array of string);
+       function  API_GetLayerCount(const Args: array of Double): Double;
+       function  API_GetLayer(const Args: array of Double): Double;
+       procedure API_SetLayer(const Args: array of Double; const StrArgs: array of string);
+       function  API_GetMapWidth(const Args: array of Double): Double;
+       function  API_GetMapHeight(const Args: array of Double): Double;
+       function  API_GetTileWidth(const Args: array of Double): Double;
+       function  API_GetTileHeight(const Args: array of Double): Double;
+       function  API_GetTileCount(const Args: array of Double): Double;
+       function  API_GetTile(const Args: array of Double): Double;
+       procedure API_SetTile(const Args: array of Double; const StrArgs: array of string);
+       //run bookkeeping - shared by QBasic and PascalScript
+       procedure ScriptPrepareRun;
+       procedure ScriptAfterRun;
+       procedure ScriptTouchImage;
+       procedure ScriptTouchMap(AMap : integer);
+       procedure RefreshAfterImageChange;
+       //The script API itself, with plain Pascal signatures. QBasic's API_
+       //routines unpack their arguments and call these; PascalScript
+       //registers them directly - so both languages behave identically.
+       //A-prefixed parameters: objfpc forbids a parameter named like a class
+       //member, and the form inherits members such as Color.
+       procedure ScriptPutPixel(AX,AY,AColor : integer);
+       procedure ScriptSetColorRGB(AIndex : integer; AR,AG,AB : byte);
+       procedure ScriptSetPaletteMode(AMode : integer);
+       procedure ScriptSetImage(AIndex : integer);
+       function  ScriptGetImageName : string;
+       function  ScriptGetMap : integer;
+       procedure ScriptSetMap(AMap : integer);
+       function  ScriptGetLayerCount : integer;
+       function  ScriptGetLayer : integer;
+       procedure ScriptSetLayer(ALayer : integer);
+       function  ScriptGetMapWidth : integer;
+       function  ScriptGetMapHeight : integer;
+       function  ScriptGetTileWidth : integer;
+       function  ScriptGetTileHeight : integer;
+       function  ScriptGetTile(AX,AY : integer) : integer;
+       procedure ScriptSetTile(AX,AY,ATile : integer);
        function  API_GetColorR(const Args: array of Double) : double;
        function  API_GetColorG(const Args: array of Double) : double;
        function  API_GetColorB(const Args: array of Double) : double;
@@ -4452,6 +4542,11 @@ begin
                                                                 filename:=GetTemporaryPathAndFileName;
                                                                 error:=RESInclude(FileName,0,FALSE);
                                                               end;
+                                          'GenBasicIndexed' : error:=WriteIndexedCodeToFile(x,y,x2,y2,BasicLan,FileName);
+                                          'GenBasicLNIndexed' : error:=WriteIndexedCodeToFile(x,y,x2,y2,BasicLNLan,FileName);
+                                          'GenCIndexed' : error:=WriteIndexedCodeToFile(x,y,x2,y2,CLan,FileName);
+                                          'GenPascalIndexed' : error:=WriteIndexedCodeToFile(x,y,x2,y2,PascalLan,FileName);
+
                                           'ABPutData' : error:=WriteAmigaBasicXGFDataFile(x,y,x2,y2,FileName);
                                           'ABPutPlusMaskData' : error:=WriteAmigaBasicXGFPlusMaskDataFile(x,y,x2,y2,FileName);
                                           'ABBobData' : error:=WriteAmigaBasicBobDataFile(x,y,x2,y2,filename,false);
@@ -4916,6 +5011,37 @@ begin
     MessageDlg('Export Properties',msg,mtWarning,[mbYes,mbNo],0) = mrYes;
 end;
 
+//Generic indexed image: width, height, then one colour index per pixel, row
+//by row. The menu item's Tag is the language - the writer lives in rres, so
+//this export matches what RES Text Include and RES Binary produce.
+procedure TRMMainForm.GenericIndexedExportClick(Sender: TObject);
+var
+ x,y,x2,y2 : integer;
+ Lan : integer;
+ error : word;
+begin
+   GetOpenSaveRegion(x,y,x2,y2);
+   Lan:=(Sender As TMenuItem).Tag;
+   ExportDialog.FileName:='';
+   Case Lan of CLan      : ExportDialog.Filter := 'C Indexed Array|*.c;*.h';
+               PascalLan : ExportDialog.Filter := 'Pascal Indexed Array|*.pas';
+   else
+     ExportDialog.Filter := 'Basic Indexed Data Statements|*.bas';
+   end;
+
+   if ExportTextFileToClipboard(Sender) then exit;
+
+   if ExportDialog.Execute then
+   begin
+     error:=WriteIndexedCodeToFile(x,y,x2,y2,Lan,ExportDialog.FileName);
+     if (error<>0) then
+     begin
+       ShowMessage('Error Saving file!');
+       exit;
+     end;
+   end;
+end;
+
 procedure TRMMainForm.RESExportClick(Sender: TObject);
 var
   Error : word;
@@ -4930,12 +5056,14 @@ begin
 
  Case (Sender As TMenuItem).Name of 'ExportRESInclude' : ExportDialog.Filter := 'RES Pascal Include|*.inc|RES Pascal Include|*.pas|RES C Include|*.h|RES C Include|*.c|RES BASIC Include|*.bi|RES BASIC Include|*.bas|All Files|*.*';
                                      'ExportRESBinary' : ExportDialog.Filter := 'RES Binary|*.res';
+                                     'ExportRESBinaryV3' : ExportDialog.Filter := 'RES Binary v3|*.res';
  end;
 
  if ExportDialog.Execute then
  begin
     Case (Sender As TMenuItem).Name of 'ExportRESInclude' : error:=RESInclude(ExportDialog.FileName,0,FALSE);
                                         'ExportRESBinary' : error:=RESBinary(ExportDialog.FileName);
+                                        'ExportRESBinaryV3' : error:=RESBinaryV3(ExportDialog.FileName);
     end;
     if error<>0 then
     begin
@@ -6165,7 +6293,15 @@ begin
    ImageThumbBase.CopyCoreToIndexImage(ImageThumbBase.GetCurrent); //copy again before we switch to new image
    ImageThumbBase.CopyIndexImageToCore(Item.Index);
    ImageThumbBase.SetCurrent(item.Index);
+   RefreshAfterImageChange;
+ end;
+end;
 
+//Everything on screen that depends on which image is loaded. Shared by the
+//thumbnail click and by a script that switched images, so the two can't
+//drift apart.
+procedure TRMMainForm.RefreshAfterImageChange;
+begin
    //hit boxes belong to the sprite - rebuild the list for the new one
    SelectedSpriteHitBox:=-1;
    UpdateSpriteHitBoxList;
@@ -6191,7 +6327,6 @@ begin
    UpdateZoomScroller;
    UpdateThumbView;
    CopyScrollPositionFromCore;
- end;
 end;
 
 procedure TRMMainForm.DeleteAllClick(Sender: TObject);
@@ -7511,7 +7646,9 @@ end;
 
 procedure TRMMainForm.RMScriptCompile(Sender: TPSScript);
 begin
-  Sender.AddFunction(@rm_putpixel, 'procedure putpixel(x,y,color : integer)');
+  //Writes go through the shared Script* methods, which take the undo step
+  //and keep the image/map selection - the same code QBasic uses.
+  Sender.AddMethod(Self,@TRMMainForm.ScriptPutPixel, 'procedure putpixel(x,y,color : integer)');
   Sender.AddFunction(@rm_getpixel, 'function getpixel(x,y : integer) : integer');
 
   Sender.AddFunction(@rm_getwidth,'function getwidth : integer');
@@ -7528,25 +7665,46 @@ begin
   Sender.AddFunction(@rm_cg_write,'procedure cgwrite(Line : string)');
   Sender.AddFunction(@rm_cg_writeln,'procedure cgwriteln');
   Sender.AddFunction(@rm_cg_write_byte,'procedure cgwritebyte(value : byte)');
+  Sender.AddFunction(@rm_cg_setclipboard,'procedure cgclipboard(onoff : boolean)');
   Sender.AddFunction(@rm_cg_write_integer,'procedure cgwriteinteger(value : integer)');
 
   Sender.AddFunction(@rm_getcliparea,'procedure getcliparea(var active,x1,y1,x2,y2 : integer)');
 
   Sender.AddFunction(@rm_getmaxcolor,'function  getmaxcolor : integer');
   Sender.AddFunction(@rm_getcolorrgb,'procedure getcolorrgb(index : integer;var r,g,b : byte)');
-  Sender.AddFunction(@rm_setcolorrgb,'procedure setcolorrgb(index : integer; r,g,b : byte)');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptSetColorRGB,'procedure setcolorrgb(index : integer; r,g,b : byte)');
 
   Sender.AddFunction(@rm_getpalettemode,'function getpalettemode : integer');
-  Sender.AddFunction(@rm_setpalettemode, 'procedure setpalettemode(mode : integer)');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptSetPaletteMode, 'procedure setpalettemode(mode : integer)');
 
-//  Sender.AddFunction(@rm_settileproperty,'procedure settileproperty(x,y : integer;tilepropertyname,value : string)');
-//  Sender.AddFunction(@rm_puttile, 'procedure puttile(x,y,index : integer)');
-//  Sender.AddFunction(@rm_gettile, 'function gettile(x,y : integer) : integer');
+  //images - setimage changes the image the script works on
+  Sender.AddFunction(@rm_image_count,'function getimagecount : integer');
+  Sender.AddFunction(@rm_image_current,'function getimage : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptSetImage,'procedure setimage(index : integer)');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetImageName,'function getimagename : string');
+
+  //maps - any map, any layer; the script's own selection
+  Sender.AddFunction(@rm_map_count,'function getmapcount : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetMap,'function getmap : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptSetMap,'procedure setmap(map : integer)');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetLayerCount,'function getlayercount : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetLayer,'function getlayer : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptSetLayer,'procedure setlayer(layer : integer)');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetMapWidth,'function getmapwidth : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetMapHeight,'function getmapheight : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetTileWidth,'function gettilewidth : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetTileHeight,'function gettileheight : integer');
+  Sender.AddFunction(@rm_gettilecount,'function gettilecount : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptGetTile,'function gettile(x,y : integer) : integer');
+  Sender.AddMethod(Self,@TRMMainForm.ScriptSetTile,'procedure settile(x,y,tile : integer)');
+  Sender.AddFunction(@rm_getmapselectarea,'procedure getmapselectarea(var active,x1,y1,x2,y2 : integer)');
 
 
 //FileCreate/FileWrite/FileClose lifted from Lazarus Pascal Script Example Page - don't seem to work - you let me know
-  Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer)');
-  Sender.AddFunction(@FileWrite, 'function FileWrite(Handle: Integer; const Buffer: pChar; Count: LongWord): Integer)');
+  //The two declarations below ended with a stray ")" - "...): integer)" - so
+  //PascalScript could not parse them and FileCreate/FileWrite never existed.
+  Sender.AddFunction(@FileCreate, 'Function FileCreate(const FileName: string): integer');
+  Sender.AddFunction(@FileWrite, 'function FileWrite(Handle: Integer; const Buffer: pChar; Count: LongWord): Integer');
   Sender.AddFunction(@FileClose, 'Procedure FileClose(handle: integer)');
 
 end;
@@ -7555,7 +7713,9 @@ procedure TRMMainForm.ScriptMenuLoadClick(Sender: TObject);
 var
  ext : string;
 begin
- OpenDialog1.Filter := 'QBasic Script|*.bas|Pascal Script|*.pas|All Files|*.*';
+ //QBasic only from the menu. PascalScript support is still here - .pas
+ //files are still recognised below - it is just no longer offered.
+ OpenDialog1.Filter := 'QBasic Script|*.bas|All Files|*.*';
  if OpenDialog1.Execute then
  begin
    ScriptFileName:=OpenDialog1.FileName;
@@ -7575,23 +7735,26 @@ procedure TRMMainForm.PascalScriptRun;
 var
   ErrorMsg : string;
   i : integer;
+  RunOK : boolean;
 begin
   if ScriptLoaded = NoScript then exit;
   RMScript.Script.LoadFromFile(ScriptFileName);
 
   if RMScript.compile then
   begin
-    SetCoreActive;
-    if not RMScript.execute then
-    begin
-      ShowMessage('Run-time error:' + RMScript.ExecErrorToString);
-    end
-    else
-    begin
-      UpdateActualArea;
-      UpdateZoomArea;
-      UpdateThumbview;
+    //the same start state and clean-up as a QBasic run: per-image and
+    //per-map undo, the editor back on its own image, a leftover code file
+    //closed, palette and map editor refreshed
+    ScriptPrepareRun;
+    RunOK:=false;
+    try
+      RunOK:=RMScript.execute;
+    finally
+      //even after a run-time error - the script may have drawn before failing
+      ScriptAfterRun;
     end;
+    if not RunOK then
+      ShowMessage('Run-time error:' + RMScript.ExecErrorToString);
   end
   else
   begin
@@ -7607,23 +7770,16 @@ procedure TRMMainForm.QBScriptRun;
 var
   Code: TStringList;
   ErrorMsg : string;
-  CA,CX,CY,CX2,CY2 : integer;
 begin
  if ScriptLoaded = NoScript then exit;
  Code := TStringList.Create;
  Code.LoadFromFile(ScriptFileName);
 
- SetCoreActive;
  ErrorMsg:='';
  try
   QBInterpreter.Reset;
   QBInterpreter.LoadProgram(code.text);
-  rm_getcliparea(CA,CX,CY,CX2,CY2);
-  QBInterpreter.SetGlobalVariable('CLIP_ACTIVE',CA);
-  QBInterpreter.SetGlobalVariable('CLIP_X1',CX);
-  QBInterpreter.SetGlobalVariable('CLIP_Y1',CY);
-  QBInterpreter.SetGlobalVariable('CLIP_X2',CX2);
-  QBInterpreter.SetGlobalVariable('CLIP_Y2',CY2);
+  QBPrepareRun(QBInterpreter);
   QBInterpreter.Execute;
  except
     on E: EQBasicError do
@@ -7639,9 +7795,7 @@ begin
  end;
 
  Code.Free;
- UpdateActualArea;
- UpdateZoomArea;
- UpdateThumbview;
+ ScriptAfterRun;
 end;
 
 procedure TRMMainForm.ScriptMenuRunClick(Sender: TObject);
@@ -7669,13 +7823,26 @@ begin
 end;
 
 // the API functions will be moved somewhere else in the future
+
+//The interpreter never checks argument counts, and a call written without
+//parentheses passes none at all. Fail with a clear script error rather than
+//read past the end of Args.
+procedure QBNeedArgs(const Args : array of Double; n : integer; const Name : string);
+begin
+  if Length(Args) < n then
+    raise Exception.Create(Name+' needs '+IntToStr(n)+' argument(s), written with '+
+                           'parentheses - e.g. '+Name+'(...)');
+end;
+
 procedure TRMMainForm.API_PutPixel(const Args: array of Double; const StrArgs: array of string);
 begin
- rm_putpixel(Trunc(Args[0]),Trunc(Args[1]),Trunc(Args[2]));
+ QBNeedArgs(Args,3,'PUTPIXEL');
+ ScriptPutPixel(Trunc(Args[0]),Trunc(Args[1]),Trunc(Args[2]));
 end;
 
 function TRMMainForm.API_GetPixel(const Args: array of Double): Double;
 begin
+ QBNeedArgs(Args,2,'GETPIXEL');
  result:=rm_getpixel(Trunc(Args[0]),Trunc(Args[1]));
 end;
 
@@ -7698,6 +7865,7 @@ function TRMMainForm.API_GetColorR(const Args: array of Double) : double;
 var
   r,g,b : byte;
 begin
+ QBNeedArgs(Args,1,'GETCOLORR');
   rm_getcolorrgb(Trunc(Args[0]),r,g,b);
   result:=r;
 end;
@@ -7706,6 +7874,7 @@ function TRMMainForm.API_GetColorG(const Args: array of Double) : double;
 var
   r,g,b : byte;
 begin
+ QBNeedArgs(Args,1,'GETCOLORG');
   rm_getcolorrgb(Trunc(Args[0]),r,g,b);
   result:=g;
 end;
@@ -7714,8 +7883,340 @@ function TRMMainForm.API_GetColorB(const Args: array of Double) : double;
 var
   r,g,b : byte;
 begin
+ QBNeedArgs(Args,1,'GETCOLORB');
   rm_getcolorrgb(Trunc(Args[0]),r,g,b);
   result:=b;
+end;
+
+//--- script API: palette, dialogs, code generator -------------------------
+
+//a script number as a byte - colour components and CGWRITEBYTE
+function QBByte(v : Double) : byte;
+begin
+  if v < 0 then QBByte:=0
+  else if v > 255 then QBByte:=255
+  else QBByte:=Round(v);
+end;
+
+//The interpreter hands string and numeric arguments over in two separate
+//lists, so string arguments are checked on their own.
+procedure QBNeedStr(const StrArgs : array of string; n : integer; const Name : string);
+begin
+  if Length(StrArgs) < n then
+    raise Exception.Create(Name+' needs '+IntToStr(n)+' string argument(s)');
+end;
+
+procedure TRMMainForm.API_SetColorRGB(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,4,'SETCOLORRGB');
+ ScriptSetColorRGB(Trunc(Args[0]),QBByte(Args[1]),QBByte(Args[2]),QBByte(Args[3]));
+end;
+
+function TRMMainForm.API_GetPaletteMode(const Args: array of Double): Double;
+begin
+ result:=rm_GetPaletteMode;
+end;
+
+procedure TRMMainForm.API_SetPaletteMode(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,1,'SETPALETTEMODE');
+ ScriptSetPaletteMode(Trunc(Args[0]));
+end;
+
+//SHOWMESSAGE "text" or SHOWMESSAGE n
+procedure TRMMainForm.API_ShowMessage(const Args: array of Double; const StrArgs: array of string);
+begin
+ if Length(StrArgs) > 0 then rm_showmessage(StrArgs[0])
+ else if Length(Args) > 0 then rm_showmessage(FloatToStr(Args[0]))
+ else raise Exception.Create('SHOWMESSAGE needs something to show');
+end;
+
+//GETOPENFILENAME$(filter$) - the chosen path, or "" if cancelled.
+//QBasic has no var parameters, so the name is the return value.
+function TRMMainForm.API_GetOpenFileName(const Args: array of Double; const StrArgs: array of string): string;
+var
+ fn,ext,filter : string;
+begin
+ result:='';
+ filter:='All Files|*.*';
+ if Length(StrArgs) > 0 then filter:=StrArgs[0];
+ if rm_getopenfilename(fn,ext,filter) then result:=fn;
+end;
+
+function TRMMainForm.API_GetSaveFileName(const Args: array of Double; const StrArgs: array of string): string;
+var
+ fn,ext,filter : string;
+begin
+ result:='';
+ filter:='All Files|*.*';
+ if Length(StrArgs) > 0 then filter:=StrArgs[0];
+ if rm_getsavefilename(fn,ext,filter) then result:=fn;
+end;
+
+
+//ok = CGOPEN(file$) - -1 (true) when the file was created, 0 otherwise
+function TRMMainForm.API_CGOpen(const Args: array of Double; const StrArgs: array of string): Double;
+begin
+ QBNeedStr(StrArgs,1,'CGOPEN');
+ //rm_cg_open closes a previous file itself
+ if rm_cg_open(StrArgs[0]) then result:=-1 else result:=0;
+end;
+
+//CGOPTIONS "VALUESPERLINE", "16" or CGOPTIONS "VALUESPERLINE", 16
+procedure TRMMainForm.API_CGOptions(const Args: array of Double; const StrArgs: array of string);
+var
+ v : string;
+begin
+ QBNeedStr(StrArgs,1,'CGOPTIONS');
+ if Length(StrArgs) >= 2 then v:=StrArgs[1]
+ else if Length(Args) >= 1 then v:=IntToStr(Round(Args[0]))
+ else raise Exception.Create('CGOPTIONS needs an option name and a value');
+ rm_cg_options(StrArgs[0],v);
+end;
+
+procedure TRMMainForm.API_CGWrite(const Args: array of Double; const StrArgs: array of string);
+begin
+ if Length(StrArgs) > 0 then rm_cg_write(StrArgs[0])
+ else if Length(Args) > 0 then rm_cg_write(FloatToStr(Args[0]))
+ else raise Exception.Create('CGWRITE needs something to write');
+end;
+
+procedure TRMMainForm.API_CGWriteLn(const Args: array of Double; const StrArgs: array of string);
+begin
+ rm_cg_writeln;
+end;
+
+procedure TRMMainForm.API_CGWriteByte(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,1,'CGWRITEBYTE');
+ rm_cg_write_byte(QBByte(Args[0]));
+end;
+
+procedure TRMMainForm.API_CGWriteInteger(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,1,'CGWRITEINTEGER');
+ rm_cg_write_integer(Round(Args[0]));
+end;
+
+//closing when nothing is open is harmless, not an error
+procedure TRMMainForm.API_CGClose(const Args: array of Double; const StrArgs: array of string);
+begin
+ rm_cg_close;
+end;
+
+//CGCLIPBOARD(1) - the next CGOPEN ... CGCLOSE goes to the clipboard instead
+//of a file; CGCLIPBOARD(0) back to files. Every run starts with it off.
+procedure TRMMainForm.API_CGClipboard(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,1,'CGCLIPBOARD');
+ rm_cg_setclipboard(Args[0] <> 0);
+end;
+
+//--- script API: images -------------------------------------------------
+//SETIMAGE changes the image the script works on. PUTPIXEL, GETWIDTH and the
+//rest then act on it. The editor returns to its image when the run ends.
+
+function TRMMainForm.API_GetImageCount(const Args: array of Double): Double;
+begin
+ result:=rm_image_count;
+end;
+
+function TRMMainForm.API_GetImage(const Args: array of Double): Double;
+begin
+ result:=rm_image_current;
+end;
+
+procedure TRMMainForm.API_SetImage(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,1,'SETIMAGE');
+ ScriptSetImage(Trunc(Args[0]));
+end;
+
+function TRMMainForm.API_GetImageName(const Args: array of Double; const StrArgs: array of string): string;
+begin
+ result:=ScriptGetImageName;
+end;
+
+//--- script API: maps ---------------------------------------------------
+//The script has its own map and layer, starting as the ones open in the map
+//editor. SETMAP / SETLAYER change them without changing the editor's view.
+
+function TRMMainForm.API_GetMapCount(const Args: array of Double): Double;
+begin
+ result:=rm_map_count;
+end;
+
+function TRMMainForm.API_GetMap(const Args: array of Double): Double;
+begin
+ result:=ScriptGetMap;
+end;
+
+//SETMAP also moves to that map's current layer
+procedure TRMMainForm.API_SetMap(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,1,'SETMAP');
+ ScriptSetMap(Trunc(Args[0]));
+end;
+
+function TRMMainForm.API_GetLayerCount(const Args: array of Double): Double;
+begin
+ result:=ScriptGetLayerCount;
+end;
+
+function TRMMainForm.API_GetLayer(const Args: array of Double): Double;
+begin
+ result:=ScriptGetLayer;
+end;
+
+procedure TRMMainForm.API_SetLayer(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,1,'SETLAYER');
+ ScriptSetLayer(Trunc(Args[0]));
+end;
+
+function TRMMainForm.API_GetMapWidth(const Args: array of Double): Double;
+begin
+ result:=ScriptGetMapWidth;
+end;
+
+function TRMMainForm.API_GetMapHeight(const Args: array of Double): Double;
+begin
+ result:=ScriptGetMapHeight;
+end;
+
+function TRMMainForm.API_GetTileWidth(const Args: array of Double): Double;
+begin
+ result:=ScriptGetTileWidth;
+end;
+
+function TRMMainForm.API_GetTileHeight(const Args: array of Double): Double;
+begin
+ result:=ScriptGetTileHeight;
+end;
+
+//tiles are the images, so this is the number of tiles SETTILE can use
+function TRMMainForm.API_GetTileCount(const Args: array of Double): Double;
+begin
+ result:=rm_gettilecount;
+end;
+
+//t = GETTILE(x, y) - the tile's image number, or -1 for an empty cell
+function TRMMainForm.API_GetTile(const Args: array of Double): Double;
+begin
+ QBNeedArgs(Args,2,'GETTILE');
+ result:=ScriptGetTile(Trunc(Args[0]),Trunc(Args[1]));
+end;
+
+//SETTILE(x, y, t) - t is an image number, or -1 to clear the cell
+procedure TRMMainForm.API_SetTile(const Args: array of Double; const StrArgs: array of string);
+begin
+ QBNeedArgs(Args,3,'SETTILE');
+ ScriptSetTile(Trunc(Args[0]),Trunc(Args[1]),Trunc(Args[2]));
+end;
+
+//=============================================================================
+// SCRIPT API - shared by QBasic (through the API_ wrappers) and PascalScript
+// (registered directly in RMScriptCompile). Writes take the undo step for the
+// image or map the first time they touch it in a run.
+//=============================================================================
+
+procedure TRMMainForm.ScriptPutPixel(AX,AY,AColor : integer);
+begin
+ ScriptTouchImage;
+ rm_putpixel(AX,AY,AColor);
+end;
+
+procedure TRMMainForm.ScriptSetColorRGB(AIndex : integer; AR,AG,AB : byte);
+begin
+ ScriptTouchImage;
+ rm_setcolorrgb(AIndex,AR,AG,AB);      //colour range checked there
+end;
+
+procedure TRMMainForm.ScriptSetPaletteMode(AMode : integer);
+begin
+ ScriptTouchImage;
+ rm_SetPaletteMode(AMode);
+end;
+
+//Changes the image the script works on. The thumbnail is built from the
+//loaded image, so refresh this one first if the run drew on it.
+procedure TRMMainForm.ScriptSetImage(AIndex : integer);
+begin
+ if AIndex = rm_image_current then exit;
+ if (rm_image_current < Length(FScriptImgUndo)) and FScriptImgUndo[rm_image_current] then
+   UpdateThumbView;
+ rm_image_select(AIndex);       //range checked there
+end;
+
+function TRMMainForm.ScriptGetImageName : string;
+begin
+ result:=rm_image_name(rm_image_current);
+end;
+
+//The script has its own map and layer, starting as the ones open in the map
+//editor. Changing them does not change what the map editor shows.
+function TRMMainForm.ScriptGetMap : integer;
+begin
+ result:=FScriptMap;
+end;
+
+//also moves to that map's current layer
+procedure TRMMainForm.ScriptSetMap(AMap : integer);
+begin
+ FScriptLayer:=rm_map_currentlayer(AMap);   //range checked there
+ FScriptMap:=AMap;
+end;
+
+function TRMMainForm.ScriptGetLayerCount : integer;
+begin
+ result:=rm_map_layercount(FScriptMap);
+end;
+
+function TRMMainForm.ScriptGetLayer : integer;
+begin
+ result:=FScriptLayer;
+end;
+
+procedure TRMMainForm.ScriptSetLayer(ALayer : integer);
+begin
+ if (ALayer < 0) or (ALayer >= rm_map_layercount(FScriptMap)) then
+   raise Exception.Create('SETLAYER: layer '+IntToStr(ALayer)+' does not exist - map '+
+                          IntToStr(FScriptMap)+' has layers 0 to '+
+                          IntToStr(rm_map_layercount(FScriptMap)-1));
+ FScriptLayer:=ALayer;
+end;
+
+function TRMMainForm.ScriptGetMapWidth : integer;
+begin
+ result:=rm_map_width(FScriptMap);
+end;
+
+function TRMMainForm.ScriptGetMapHeight : integer;
+begin
+ result:=rm_map_height(FScriptMap);
+end;
+
+function TRMMainForm.ScriptGetTileWidth : integer;
+begin
+ result:=rm_map_tilewidth(FScriptMap);
+end;
+
+function TRMMainForm.ScriptGetTileHeight : integer;
+begin
+ result:=rm_map_tileheight(FScriptMap);
+end;
+
+//the tile's image number, or -1 for an empty cell
+function TRMMainForm.ScriptGetTile(AX,AY : integer) : integer;
+begin
+ result:=rm_map_gettile(FScriptMap,FScriptLayer,AX,AY);
+end;
+
+//ATile is an image number, or -1 to clear the cell
+procedure TRMMainForm.ScriptSetTile(AX,AY,ATile : integer);
+begin
+ ScriptTouchMap(FScriptMap);
+ rm_map_settile(FScriptMap,FScriptLayer,AX,AY,ATile);
 end;
 
 procedure TRMMainForm.InitQBInterpreter;
@@ -7724,14 +8225,207 @@ begin
  QBInterpreter.Reset;
  QBInterpreter.OnPrint := @QBPrint;
  QBInterpreter.OnInput := @QBInput;
- QBInterpreter.RegisterProcedure('PUTPIXEL', 4, 4,@API_PUTPIXEL);
- QBInterpreter.RegisterFunction('GETPIXEL', 3, 3,@API_GETPIXEL);
- QBInterpreter.RegisterFunction('GETWIDTH', 0, 0,@API_GETWIDTH);
- QBInterpreter.RegisterFunction('GETHEIGHT', 0, 0,@API_GETHEIGHT);
- QBInterpreter.RegisterFunction('GETMAXCOLOR', 0, 0,@API_GETMAXCOLOR);
- QBInterpreter.RegisterFunction('GETCOLORR', 3, 3,@API_GETCOLORR);
- QBInterpreter.RegisterFunction('GETCOLORG', 3, 3,@API_GETCOLORG);
- QBInterpreter.RegisterFunction('GETCOLORB', 3, 3,@API_GETCOLORB);
+ RegisterQBAPI(QBInterpreter);
+end;
+
+//The Raster Master script API. Registered once per interpreter: Reset and
+//LoadProgram do not clear registrations.
+//
+//The min/max counts are documentation only - the interpreter stores them but
+//never checks them - so each API routine checks its own arguments (QBNeedArgs).
+//The counts used to be one or two higher than what the routines read.
+procedure TRMMainForm.RegisterQBAPI(Interp : TQBasicInterpreter);
+begin
+ Interp.RegisterProcedure('PUTPIXEL', 3, 3,@API_PUTPIXEL);
+ Interp.RegisterFunction('GETPIXEL', 2, 2,@API_GETPIXEL);
+ Interp.RegisterFunction('GETWIDTH', 0, 0,@API_GETWIDTH);
+ Interp.RegisterFunction('GETHEIGHT', 0, 0,@API_GETHEIGHT);
+ Interp.RegisterFunction('GETMAXCOLOR', 0, 0,@API_GETMAXCOLOR);
+ Interp.RegisterFunction('GETCOLORR', 1, 1,@API_GETCOLORR);
+ Interp.RegisterFunction('GETCOLORG', 1, 1,@API_GETCOLORG);
+ Interp.RegisterFunction('GETCOLORB', 1, 1,@API_GETCOLORB);
+
+ //palette
+ Interp.RegisterProcedure('SETCOLORRGB', 4, 4,@API_SetColorRGB);
+ Interp.RegisterFunction('GETPALETTEMODE', 0, 0,@API_GetPaletteMode);
+ Interp.RegisterProcedure('SETPALETTEMODE', 1, 1,@API_SetPaletteMode);
+ //dialogs
+ Interp.RegisterProcedure('SHOWMESSAGE', 1, 1,@API_ShowMessage);
+ Interp.RegisterStringFunction('GETOPENFILENAME$', 0, 1,@API_GetOpenFileName);
+ Interp.RegisterStringFunction('GETSAVEFILENAME$', 0, 1,@API_GetSaveFileName);
+ //code generator
+ Interp.RegisterMixedFunction('CGOPEN', 1, 1,@API_CGOpen);
+ Interp.RegisterProcedure('CGOPTIONS', 2, 2,@API_CGOptions);
+ Interp.RegisterProcedure('CGWRITE', 1, 1,@API_CGWrite);
+ Interp.RegisterProcedure('CGWRITELN', 0, 0,@API_CGWriteLn);
+ Interp.RegisterProcedure('CGWRITEBYTE', 1, 1,@API_CGWriteByte);
+ Interp.RegisterProcedure('CGWRITEINTEGER', 1, 1,@API_CGWriteInteger);
+ Interp.RegisterProcedure('CGCLOSE', 0, 0,@API_CGClose);
+ Interp.RegisterProcedure('CGCLIPBOARD', 1, 1,@API_CGClipboard);
+ //images
+ Interp.RegisterFunction('GETIMAGECOUNT', 0, 0,@API_GetImageCount);
+ Interp.RegisterFunction('GETIMAGE', 0, 0,@API_GetImage);
+ Interp.RegisterProcedure('SETIMAGE', 1, 1,@API_SetImage);
+ Interp.RegisterStringFunction('GETIMAGENAME$', 0, 0,@API_GetImageName);
+ //maps
+ Interp.RegisterFunction('GETMAPCOUNT', 0, 0,@API_GetMapCount);
+ Interp.RegisterFunction('GETMAP', 0, 0,@API_GetMap);
+ Interp.RegisterProcedure('SETMAP', 1, 1,@API_SetMap);
+ Interp.RegisterFunction('GETLAYERCOUNT', 0, 0,@API_GetLayerCount);
+ Interp.RegisterFunction('GETLAYER', 0, 0,@API_GetLayer);
+ Interp.RegisterProcedure('SETLAYER', 1, 1,@API_SetLayer);
+ Interp.RegisterFunction('GETMAPWIDTH', 0, 0,@API_GetMapWidth);
+ Interp.RegisterFunction('GETMAPHEIGHT', 0, 0,@API_GetMapHeight);
+ Interp.RegisterFunction('GETTILEWIDTH', 0, 0,@API_GetTileWidth);
+ Interp.RegisterFunction('GETTILEHEIGHT', 0, 0,@API_GetTileHeight);
+ Interp.RegisterFunction('GETTILECOUNT', 0, 0,@API_GetTileCount);
+ Interp.RegisterFunction('GETTILE', 2, 2,@API_GetTile);
+ Interp.RegisterProcedure('SETTILE', 3, 3,@API_SetTile);
+end;
+
+//After LoadProgram - it clears variables, so globals set earlier are lost.
+//After LoadProgram - it clears variables, so globals set earlier are lost.
+//State every script run starts from - QBasic and PascalScript alike.
+procedure TRMMainForm.ScriptPrepareRun;
+begin
+ SetCoreActive;
+ CopyScrollPositionToCore;
+ rm_cg_setclipboard(false);   //each run starts writing code to files
+
+ //Undo is taken lazily, the first time the run WRITES to an image or map
+ //(ScriptTouchImage / ScriptTouchMap), so each one the script changes gets
+ //its own undo step and a script that only reads adds none.
+ FScriptStartImage:=rm_image_current;
+ SetLength(FScriptImgUndo,0);
+ SetLength(FScriptImgUndo,rm_image_count);
+ FScriptMap:=rm_map_current;
+ FScriptLayer:=rm_map_currentlayer(FScriptMap);
+ SetLength(FScriptMapUndo,0);
+ SetLength(FScriptMapUndo,rm_map_count);
+ FScriptMapChanged:=false;
+end;
+
+//QBasic: the shared start state, plus the selection globals. After
+//LoadProgram - it clears variables, so globals set earlier are lost.
+procedure TRMMainForm.QBPrepareRun(Interp : TQBasicInterpreter);
+var
+  CA,CX,CY,CX2,CY2 : integer;
+begin
+ ScriptPrepareRun;
+
+ //the selections as the run starts - they describe the image and map that
+ //are open in the editors, not ones a script selects later
+ rm_getcliparea(CA,CX,CY,CX2,CY2);
+ Interp.SetGlobalVariable('CLIP_ACTIVE',CA);
+ Interp.SetGlobalVariable('CLIP_X1',CX);
+ Interp.SetGlobalVariable('CLIP_Y1',CY);
+ Interp.SetGlobalVariable('CLIP_X2',CX2);
+ Interp.SetGlobalVariable('CLIP_Y2',CY2);
+ rm_getmapselectarea(CA,CX,CY,CX2,CY2);
+ Interp.SetGlobalVariable('MAPCLIP_ACTIVE',CA);
+ Interp.SetGlobalVariable('MAPCLIP_X1',CX);
+ Interp.SetGlobalVariable('MAPCLIP_Y1',CY);
+ Interp.SetGlobalVariable('MAPCLIP_X2',CX2);
+ Interp.SetGlobalVariable('MAPCLIP_Y2',CY2);
+end;
+
+//Runs after every script, including one that failed or was stopped.
+procedure TRMMainForm.ScriptAfterRun;
+begin
+ //a script that stopped or failed between CGOPEN and CGCLOSE leaves its file
+ //open - close it so the next CGOPEN starts clean
+ if rm_cg_isopen then rm_cg_close;
+
+ if rm_image_current <> FScriptStartImage then
+ begin
+   //the script moved to other images - go back to the one being edited.
+   //Thumbnails are built from the loaded image, so refresh this one first.
+   if (rm_image_current < Length(FScriptImgUndo)) and FScriptImgUndo[rm_image_current] then
+     UpdateThumbView;
+   rm_image_select(FScriptStartImage);
+   RefreshAfterImageChange;
+ end
+ else
+ begin
+   UpdateActualArea;
+   UpdateZoomArea;
+   UpdateThumbview;
+   //SETCOLORRGB and SETPALETTEMODE change the palette panel and menu too
+   CoreToPalette;
+   UpdateColorBoxes;
+   UpdatePaletteMenu;
+ end;
+
+ //tiles changed - redraw the map editor
+ if FScriptMapChanged and Assigned(MapEdit) then
+   MapEdit.MapPaintBox.Invalidate;
+end;
+
+//First write to the loaded image in this run: take its undo step.
+procedure TRMMainForm.ScriptTouchImage;
+var
+  i : integer;
+begin
+  i:=rm_image_current;
+  if (i >= 0) and (i < Length(FScriptImgUndo)) and not FScriptImgUndo[i] then
+  begin
+    RMCoreBase.CopyToUndoBuf;
+    FScriptImgUndo[i]:=true;
+  end;
+end;
+
+//First write to a map in this run: take its undo step.
+procedure TRMMainForm.ScriptTouchMap(AMap : integer);
+begin
+  if (AMap >= 0) and (AMap < Length(FScriptMapUndo)) and not FScriptMapUndo[AMap] then
+  begin
+    MapCoreBase.CopyToUndo(AMap);
+    FScriptMapUndo[AMap]:=true;
+  end;
+  FScriptMapChanged:=true;
+end;
+
+//Export > Pascal Images and Maps as ASM Procs. Turbo Pascal, TMT and Free
+//Pascal image and map exports then write an assembler procedure of db/dw
+//lines instead of a typed-constant array, keeping the data out of the 64K
+//data segment. The map editor's Export menu has the same switch.
+procedure TRMMainForm.ExportPascalAsmClick(Sender: TObject);
+begin
+ PascalAsmProcs:=not PascalAsmProcs;
+ SyncPascalAsmMenus;
+end;
+
+procedure TRMMainForm.SyncPascalAsmMenus;
+begin
+ ExportPascalAsm.Checked:=PascalAsmProcs;
+ if Assigned(MapEdit) then MapEdit.MapExportPascalAsm.Checked:=PascalAsmProcs;
+end;
+
+procedure TRMMainForm.ScriptMenuEditorClick(Sender: TObject);
+var
+  F : TRMScriptEditorForm;
+begin
+ F:=GetScriptEditorForm;
+ if not Assigned(F.OnSetupInterpreter) then
+ begin
+   F.OnSetupInterpreter:=@RegisterQBAPI;
+   F.OnBeforeRun:=@QBPrepareRun;
+   F.OnAfterRun:=@ScriptAfterRun;
+   F.AddAPIKeywords(['PUTPIXEL','GETPIXEL','GETWIDTH','GETHEIGHT','GETMAXCOLOR',
+                     'GETCOLORR','GETCOLORG','GETCOLORB',
+                     'SETCOLORRGB','GETPALETTEMODE','SETPALETTEMODE',
+                     'SHOWMESSAGE','GETOPENFILENAME$','GETSAVEFILENAME$',
+                     'CGOPEN','CGOPTIONS','CGWRITE','CGWRITELN','CGWRITEBYTE',
+                     'CGWRITEINTEGER','CGCLOSE','CGCLIPBOARD',
+                     'GETIMAGECOUNT','GETIMAGE','SETIMAGE','GETIMAGENAME$',
+                     'GETMAPCOUNT','GETMAP','SETMAP','GETLAYERCOUNT','GETLAYER','SETLAYER',
+                     'GETMAPWIDTH','GETMAPHEIGHT','GETTILEWIDTH','GETTILEHEIGHT',
+                     'GETTILECOUNT','GETTILE','SETTILE',
+                     'CLIP_ACTIVE','CLIP_X1','CLIP_Y1','CLIP_X2','CLIP_Y2',
+                     'MAPCLIP_ACTIVE','MAPCLIP_X1','MAPCLIP_Y1','MAPCLIP_X2','MAPCLIP_Y2']);
+ end;
+ F.Show;
+ F.BringToFront;
 end;
 
 { ===== Brush Tool ===== }

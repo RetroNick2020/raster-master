@@ -387,6 +387,17 @@ begin
                              ComboMask.ItemIndex:=EO.Mask;
                              ComboPalette.ItemIndex:=EO.Palette;
                    end;
+       //generic targets - one image format, no mask
+       BasicLan,BasicLNLan,CLan,PascalLan:begin
+                             ComboImage.Items.Clear;
+                             ComboMask.Items.Clear;
+                             ComboImage.Items.Add('None');
+                             ComboImage.Items.Add('Indexed Pixels');
+                             ComboMask.Items.Add('None');
+                             ComboImage.ItemIndex:=EO.Image;
+                             ComboMask.ItemIndex:=0;
+                             ComboPalette.ItemIndex:=EO.Palette;
+                           end;
     end;
 end;
 
@@ -456,6 +467,12 @@ begin
    ComboCompiler.Items.Add('TMT Pascal');
    ComboCompiler.Items.Add('QBJS');
    ComboCompiler.Items.Add('JSON');            //21 JSONSpriteLan (rwjson)
+   //22..25 generic targets. The item INDEX is the Lan value - see
+   //GetExportProps - so these must stay in rmconst's order.
+   ComboCompiler.Items.Add('Basic (Generic)');
+   ComboCompiler.Items.Add('Basic Line# (Generic)');
+   ComboCompiler.Items.Add('C (Generic)');
+   ComboCompiler.Items.Add('Pascal (Generic)');
 
    ComboCompiler.ItemIndex:=0;
    ComboImage.Items.Clear;

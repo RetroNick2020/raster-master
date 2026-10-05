@@ -4,7 +4,7 @@
 
 Unit rwxgf;
  Interface
-   uses SysUtils,LazFileUtils,rmconst,rmcore,rmthumb,rmxgfcore,bits,gwbasic;
+   uses SysUtils,LazFileUtils,rmconst,rmcore,rmthumb,rmxgfcore,bits,gwbasic,rmcodegen;
 
 
 
@@ -18,6 +18,10 @@ type
 
                 ArraySize : longword;
                 ByteWriteCount : longword;
+                //Pascal: write "db" lines for an assembler procedure instead
+                //of a typed-constant array. Reset by action 0; the writers
+                //that support it set it after.
+                AsmProc : boolean;
  end;
 
  //Action 0 = init ncounter/buffer,Action 1 = write byte to buffer, action 2= flush buffer
@@ -723,6 +727,7 @@ begin
        buffer.arraysize:=0;
        buffer.ByteWriteCount:=0;
        buffer.error:=0;
+       buffer.AsmProc:=false;
    end
    else if action = 1 then
    begin
@@ -731,17 +736,49 @@ begin
        if buffer.bufcount = 20 then                      //every 20 bytes write to const line
        begin
            //write the const value
-           write(buffer.ftext,'  ');
-
-           for i:=1 to 20 do
+           if buffer.AsmProc then
            begin
-             write(buffer.ftext,'$',HexStr(buffer.buflist[i],2));
-             inc(buffer.ByteWriteCount);
-             if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+             //an assembler line stands alone: its own db, commas only between
+             //its values, always ended - action 2 writes the end;
+             write(buffer.ftext,'  db ');
+             for i:=1 to 20 do
+             begin
+               write(buffer.ftext,'$',HexStr(buffer.buflist[i],2));
+               inc(buffer.ByteWriteCount);
+               if i < 20 then write(buffer.ftext,',');
+             end;
+             writeln(buffer.ftext);
+           end
+           else
+           begin
+             write(buffer.ftext,'  ');
+
+             for i:=1 to 20 do
+             begin
+               write(buffer.ftext,'$',HexStr(buffer.buflist[i],2));
+               inc(buffer.ByteWriteCount);
+               if buffer.ByteWriteCount < buffer.ArraySize then write(buffer.ftext,',');
+             end;
+             if buffer.ByteWriteCount < buffer.ArraySize then writeln(buffer.ftext);
            end;
-           if buffer.ByteWriteCount < buffer.ArraySize then writeln(buffer.ftext);
            buffer.bufcount:=0;
        end;
+   end
+   else if (action = 2) and buffer.AsmProc then  //remaining data, then end the procedure
+   begin
+       if buffer.bufcount > 0 then
+       begin
+         write(buffer.ftext,'  db ');
+         for i:=1 to buffer.bufcount do
+         begin
+           write(buffer.ftext,'$',HexStr(buffer.buflist[i],2));
+           inc(buffer.ByteWriteCount);
+           if i < buffer.bufcount then write(buffer.ftext,',');
+         end;
+         writeln(buffer.ftext);
+       end;
+       WritePascalAsmEnd(buffer.ftext);   //end; - and in a RES include, re-open const
+       buffer.bufcount:=0;
    end
    else if action = 2 then  //write the remaining data
    begin
@@ -974,16 +1011,18 @@ begin
 {$I-}
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
+ data.AsmProc:=PascalAsmProcs;   //assembler procedure instead of an array
 
  writeln(data.ftext,'(* Turbo Pascal PutImage Bitmap Code Created By Raster Master *)');
  writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ WritePascalConstStart(data.ftext,data.AsmProc);
  writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
  writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
  writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
  writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
  writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
 
- writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WritePascalDataStart(data.ftext,data.AsmProc,' ',Imagename,size,'byte',TPLan);
  WriteXGFBuffer(BWriter,data,x,y,x2,y2,TPLan);
  writeln(data.ftext);
 
@@ -1007,16 +1046,18 @@ begin
 {$I-}
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
+ data.AsmProc:=PascalAsmProcs;   //assembler procedure instead of an array
 
  writeln(data.ftext,'(* TMT Pascal PutImage Bitmap Code Created By Raster Master *)');
  writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ WritePascalConstStart(data.ftext,data.AsmProc);
  writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
  writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
  writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
  writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
  writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
 
- writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WritePascalDataStart(data.ftext,data.AsmProc,' ',Imagename,size,'byte',TMTLan);
  WriteXGFBufferTMT(BWriter,data,x,y,x2,y2);
 
  writeln(data.ftext);
@@ -1178,16 +1219,18 @@ begin
 {$I-}
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
+ data.AsmProc:=PascalAsmProcs;   //assembler procedure instead of an array
 
  writeln(data.ftext,'(* FreePascal PutImage Bitmap Code Created By Raster Master *)');
  writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ WritePascalConstStart(data.ftext,data.AsmProc);
  writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
  writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
  writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
  writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
  writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
 
- writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WritePascalDataStart(data.ftext,data.AsmProc,' ',Imagename,size,'byte',FPLan);
  WriteXGFBufferFP(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
 

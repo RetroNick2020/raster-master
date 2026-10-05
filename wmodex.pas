@@ -1,6 +1,6 @@
 unit wmodex;
 interface
- uses SysUtils,LazFileUtils,bits,rmconst,rwxgf,rmxgfcore;
+ uses SysUtils,LazFileUtils,bits,rmconst,rwxgf,rmxgfcore,rmcodegen;
 
  type
    linebuftype = array[0..2047] of byte;
@@ -110,15 +110,17 @@ begin
 {$I-}
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
+ data.AsmProc:=PascalAsmProcs;   //assembler procedure instead of an array
 
  writeln(data.ftext,'(* Turbo Pascal DOS XLIB PBM Bitmap Created By Raster Master *)');
  writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ WritePascalConstStart(data.ftext,data.AsmProc);
  writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
  writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
  writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
  writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
  writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
- writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WritePascalDataStart(data.ftext,data.AsmProc,' ',Imagename,size,'byte',TPLan);
  WritePBMBuffer(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
 
@@ -144,15 +146,17 @@ begin
 {$I-}
  BWriter(0,data,0);  //init the data record
  data.ArraySize:=size;
+ data.AsmProc:=PascalAsmProcs;   //assembler procedure instead of an array
 
  writeln(data.ftext,'(* Turbo Pascal DOS XLIB LBM Bitmap Code Created By Raster Master *)');
  writeln(data.ftext,'(* Size= ', Size,' Width= ',width,' Height= ',height, ' Colors= ',nColors,' *)');
+ WritePascalConstStart(data.ftext,data.AsmProc);
  writeln(data.ftext,' ',Imagename,'_Size = ',size,';');
  writeln(data.ftext,' ',Imagename,'_Width = ',width,';');
  writeln(data.ftext,' ',Imagename,'_Height = ',height,';');
  writeln(data.ftext,' ',Imagename,'_Colors = ',nColors,';');
  writeln(data.ftext,' ',Imagename,'_Id = ',imageId,';');
- writeln(data.ftext,' ',Imagename, ' : array[0..',size-1,'] of byte = (');
+ WritePascalDataStart(data.ftext,data.AsmProc,' ',Imagename,size,'byte',TPLan);
  WriteLBMBuffer(BWriter,data,x,y,x2,y2);
  writeln(data.ftext);
 

@@ -1,7 +1,7 @@
 object RMMainForm: TRMMainForm
-  Left = 335
+  Left = 246
   Height = 859
-  Top = 197
+  Top = 218
   Width = 1600
   Align = alClient
   Caption = 'Raster Master'
@@ -927,12 +927,20 @@ object RMMainForm: TRMMainForm
       end
       object MenuItem9: TMenuItem
         Caption = 'Export'
+        object ExportPascalAsm: TMenuItem
+          Caption = 'Pascal Images and Maps as ASM Procs'
+          OnClick = ExportPascalAsmClick
+        end
         object ExportRESInclude: TMenuItem
           Caption = 'RES Text Include File'
           OnClick = RESExportClick
         end
         object ExportRESBinary: TMenuItem
           Caption = 'RES Binary File'
+          OnClick = RESExportClick
+        end
+        object ExportRESBinaryV3: TMenuItem
+          Caption = 'RES Binary v3 File'
           OnClick = RESExportClick
         end
         object ExportTiledSep: TMenuItem
@@ -973,6 +981,38 @@ object RMMainForm: TRMMainForm
         object ExportJSONRES: TMenuItem
           Caption = 'JSON RES'
           OnClick = ExportJSONRESClick
+        end
+        object ExportGenBasic: TMenuItem
+          Caption = 'Basic (Generic)'
+          object GenBasicIndexed: TMenuItem
+            Tag = 22
+            Caption = 'Indexed Data Statements'
+            OnClick = GenericIndexedExportClick
+          end
+        end
+        object ExportGenBasicLN: TMenuItem
+          Caption = 'Basic Line# (Generic)'
+          object GenBasicLNIndexed: TMenuItem
+            Tag = 23
+            Caption = 'Indexed Data Statements'
+            OnClick = GenericIndexedExportClick
+          end
+        end
+        object ExportGenC: TMenuItem
+          Caption = 'C (Generic)'
+          object GenCIndexed: TMenuItem
+            Tag = 24
+            Caption = 'Indexed Array'
+            OnClick = GenericIndexedExportClick
+          end
+        end
+        object ExportGenPascal: TMenuItem
+          Caption = 'Pascal (Generic)'
+          object GenPascalIndexed: TMenuItem
+            Tag = 25
+            Caption = 'Indexed Array'
+            OnClick = GenericIndexedExportClick
+          end
         end
         object AmigaBasic: TMenuItem
           Caption = 'AmigaBasic'
@@ -1436,6 +1476,9 @@ object RMMainForm: TRMMainForm
             Caption = 'PutImage File'
             OnClick = TMTPascalClick
           end
+        end
+        object ExportPascalAsmSep: TMenuItem
+          Caption = '-'
         end
       end
       object BulkExportPNG: TMenuItem
@@ -2310,6 +2353,10 @@ object RMMainForm: TRMMainForm
     end
     object ScriptMenu: TMenuItem
       Caption = 'Script'
+      object ScriptMenuEditor: TMenuItem
+        Caption = 'Script Editor...'
+        OnClick = ScriptMenuEditorClick
+      end
       object ScriptMenuLoad: TMenuItem
         Caption = 'Load from file'
         OnClick = ScriptMenuLoadClick

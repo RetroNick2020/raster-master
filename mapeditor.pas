@@ -71,7 +71,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,Types,Math,
   ComCtrls, CheckLst, Menus,rmconst,rmthumb,mapcore,rwmap,mapexiportprops,rmcodegen,drawprocs,rmtools,rmclipboard,
   rmconfig, LCLType,setcustommapsize,setcustomtilesize,rmcore,rwtmx,rwpng,
-  idvalueprops;
+  idvalueprops, mapprops;
 
 const
   AddImage = 1;
@@ -99,6 +99,14 @@ type
     TabHitBoxes: TTabSheet;
     TabPaths: TTabSheet;
     PathListView: TListView;
+    //key/value properties tab
+    TabProps: TTabSheet;
+    PropListView: TListView;
+    PropButtonPanel: TPanel;
+    BtnPropAdd: TButton;
+    BtnPropEdit: TButton;
+    BtnPropDelete: TButton;
+    BtnPropKeys: TButton;
     HitBoxButtonPanel: TPanel;
     BtnHitBoxAdd: TButton;
     BtnHitBoxDel: TButton;
@@ -196,28 +204,32 @@ type
     ExportHitBoxC: TMenuItem;
     ExportHitBoxPascal: TMenuItem;
     //extended compiler export menu items
-    MnuMapExpAB, MD_AB, HB_AB, PD_AB : TMenuItem;
-    MnuMapExpAC, MD_AC, HB_AC, PD_AC : TMenuItem;
-    MnuMapExpAP, MD_AP, HB_AP, PD_AP : TMenuItem;
-    MnuMapExpAQB, MD_AQB, HB_AQB, PD_AQB : TMenuItem;
-    MnuMapExpBAM, MD_BAM, HB_BAM, PD_BAM : TMenuItem;
-    MnuMapExpFBQB, MD_FBQB, HB_FBQB, PD_FBQB : TMenuItem;
-    MnuMapExpFB, MD_FB, HB_FB, PD_FB : TMenuItem;
-    MnuMapExpFP, MD_FP, HB_FP, PD_FP : TMenuItem;
-    MnuMapExpGCC, MD_GCC, HB_GCC, PD_GCC : TMenuItem;
-    MnuMapExpGW, MD_GW, HB_GW, PD_GW : TMenuItem;
-    MnuMapExpJS, MD_JS, HB_JS, PD_JS : TMenuItem;
-    MnuMapExpJSON, MD_JSON, HB_JSON, PD_JSON : TMenuItem;
-    MnuMapExpOW, MD_OW, HB_OW, PD_OW : TMenuItem;
-    MnuMapExpQB, MD_QB, HB_QB, PD_QB : TMenuItem;
-    MnuMapExpQB64, MD_QB64, HB_QB64, PD_QB64 : TMenuItem;
-    MnuMapExpQBJS, MD_QBJS, HB_QBJS, PD_QBJS : TMenuItem;
-    MnuMapExpQC, MD_QC, HB_QC, PD_QC : TMenuItem;
-    MnuMapExpQP, MD_QP, HB_QP, PD_QP : TMenuItem;
-    MnuMapExpTB, MD_TB, HB_TB, PD_TB : TMenuItem;
-    MnuMapExpTP, MD_TP, HB_TP, PD_TP : TMenuItem;
-    MnuMapExpTC, MD_TC, HB_TC, PD_TC : TMenuItem;
-    MnuMapExpTMT, MD_TMT, HB_TMT, PD_TMT : TMenuItem;
+    //path and property items for the four generic menus (Basic, Basic Line#,
+    //C, Pascal) - same tag-based handlers as the language menus below
+    PD_BAS, KV_BAS, PD_BASLN, KV_BASLN, PD_C, KV_C, PD_PAS, KV_PAS : TMenuItem;
+    MnuMapExpAB, MD_AB, HB_AB, PD_AB, KV_AB : TMenuItem;
+    MapExportPascalAsmSep, MapExportPascalAsm : TMenuItem;
+    MnuMapExpAC, MD_AC, HB_AC, PD_AC, KV_AC : TMenuItem;
+    MnuMapExpAP, MD_AP, HB_AP, PD_AP, KV_AP : TMenuItem;
+    MnuMapExpAQB, MD_AQB, HB_AQB, PD_AQB, KV_AQB : TMenuItem;
+    MnuMapExpBAM, MD_BAM, HB_BAM, PD_BAM, KV_BAM : TMenuItem;
+    MnuMapExpFBQB, MD_FBQB, HB_FBQB, PD_FBQB, KV_FBQB : TMenuItem;
+    MnuMapExpFB, MD_FB, HB_FB, PD_FB, KV_FB : TMenuItem;
+    MnuMapExpFP, MD_FP, HB_FP, PD_FP, KV_FP : TMenuItem;
+    MnuMapExpGCC, MD_GCC, HB_GCC, PD_GCC, KV_GCC : TMenuItem;
+    MnuMapExpGW, MD_GW, HB_GW, PD_GW, KV_GW : TMenuItem;
+    MnuMapExpJS, MD_JS, HB_JS, PD_JS, KV_JS : TMenuItem;
+    MnuMapExpJSON, MD_JSON, HB_JSON, PD_JSON, KV_JSON : TMenuItem;
+    MnuMapExpOW, MD_OW, HB_OW, PD_OW, KV_OW : TMenuItem;
+    MnuMapExpQB, MD_QB, HB_QB, PD_QB, KV_QB : TMenuItem;
+    MnuMapExpQB64, MD_QB64, HB_QB64, PD_QB64, KV_QB64 : TMenuItem;
+    MnuMapExpQBJS, MD_QBJS, HB_QBJS, PD_QBJS, KV_QBJS : TMenuItem;
+    MnuMapExpQC, MD_QC, HB_QC, PD_QC, KV_QC : TMenuItem;
+    MnuMapExpQP, MD_QP, HB_QP, PD_QP, KV_QP : TMenuItem;
+    MnuMapExpTB, MD_TB, HB_TB, PD_TB, KV_TB : TMenuItem;
+    MnuMapExpTP, MD_TP, HB_TP, PD_TP, KV_TP : TMenuItem;
+    MnuMapExpTC, MD_TC, HB_TC, PD_TC, KV_TC : TMenuItem;
+    MnuMapExpTMT, MD_TMT, HB_TMT, PD_TMT, KV_TMT : TMenuItem;
 
     MazeMenu: TMenuItem;
     MnuMazeEasy, MnuMazeMedium, MnuMazeHard : TMenuItem;
@@ -322,6 +334,10 @@ type
     //ID/Value editors - shared modal from the idvalueprops unit
     procedure BtnHitBoxPropsClick(Sender: TObject);
     procedure BtnPathPropsClick(Sender: TObject);
+    procedure BtnPropAddClick(Sender: TObject);
+    procedure BtnPropEditClick(Sender: TObject);
+    procedure BtnPropDeleteClick(Sender: TObject);
+    procedure BtnPropKeysClick(Sender: TObject);
     procedure TransparentToggleClick(Sender: TObject);
     procedure ListView1Click(Sender: TObject);
     //--- path tool. These MUST stay in the published section: the LFM
@@ -362,6 +378,8 @@ type
     procedure MenuExportMapDataLanClick(Sender: TObject);
     procedure MenuExportHitBoxLanClick(Sender: TObject);
     procedure MenuExportPathDataLanClick(Sender: TObject);
+    procedure MenuExportPropDataLanClick(Sender: TObject);
+    procedure MapExportPascalAsmClick(Sender: TObject);
     procedure MazeGenerateClick(Sender: TObject);
     procedure MazeSetWallTileClick(Sender: TObject);
     procedure MazeSetPathTileClick(Sender: TObject);
@@ -545,6 +563,7 @@ type
     //rewritten whenever something changes rather than on every mouse move.
     procedure UpdateStatusSettings;
     procedure RefreshMapPanels;
+    procedure UpdatePropListView;
     //re-sync cached state after a project load - see the implementation
     procedure RefreshAfterProjectLoad;
     procedure RefreshLayerPanel;
@@ -572,6 +591,8 @@ type
 
     procedure ExportHitBoxes(filename : string; lan : integer);
     procedure ExportPathData(filename : string; lan : integer);
+    procedure ExportPropData(filename : string; lan : integer);
+    procedure SetExportFilterForLan(Lan : integer);
 
     procedure MapPreviewPlotTile(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
     procedure MapPreviewPlotTileTransparent(MPCanvas : TCanvas;mx,my : integer;var TTile : TileRec);
@@ -586,7 +607,7 @@ var
 
 implementation
 
-uses rmmain;
+uses rmmain, rres;   //rres: BuildPropExport and BasicVariableText
 
 {$R *.lfm}
 
@@ -1957,6 +1978,8 @@ begin
     PathListView.Items.EndUpdate;
   end;
   UpdateStatusSettings;
+  //deleting a path drops or renumbers property rows
+  UpdatePropListView;
 end;
 
 procedure TMapEdit.StartNewPath(tx,ty : integer);
@@ -2277,6 +2300,8 @@ begin
 
   TabHitBoxes.Caption:='Hit Boxes ('+IntToStr(hbcount)+')';
   UpdateStatusSettings;
+  //deleting a hit box drops or renumbers property rows
+  UpdatePropListView;
 end;
 
 procedure TMapEdit.HitBoxesToggleClick(Sender: TObject);
@@ -2444,7 +2469,7 @@ begin
                                      'ExportHitBoxPascal':ExportHitBoxes(FileName,PascalLan);
  else
    //Tag-based dispatch for extended compiler targets. Menu item names carry
-   //the kind (MD_ map data, HB_ hitboxes, PD_ path data) and Tag holds the
+   //the kind (MD_ map data, HB_ hitboxes, PD_ path data, KV_ properties) and Tag holds the
    //Lan constant, so every language target is handled by these three lines.
    if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'MD_') then
      ExportMap(FileName,mi.Tag,True)
@@ -2452,6 +2477,8 @@ begin
      ExportHitBoxes(FileName,mi.Tag)
    else if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'PD_') then
      ExportPathData(FileName,mi.Tag)
+   else if (mi.Tag > 0) and (Copy(mi.Name,1,3) = 'KV_') then
+     ExportPropData(FileName,mi.Tag)
    else
    begin
      result:=false;  //did not find a supported format return false
@@ -2482,18 +2509,7 @@ begin
  if ExportTextFileToClipboard(Sender) then exit;
 
  Lan:=(Sender as TMenuItem).Tag;
- if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
-   SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*'
- else if MapLanIsPascal(Lan) then
-   SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*'
- else if MapLanIsC(Lan) then
-   SaveDialog1.Filter := 'c|*.c;*.h|All Files|*.*'
- else if MapLanIsJS(Lan) then
-   SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
- else if MapLanIsJSON(Lan) then
-   SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
- else
-   SaveDialog1.Filter := 'All Files|*.*';
+ SetExportFilterForLan(Lan);
 
  if SaveDialog1.Execute then
  begin
@@ -2502,13 +2518,9 @@ begin
 end;
 
 
-procedure TMapEdit.MenuExportPathDataLanClick(Sender: TObject);
-var
-  Lan : integer;
+//Save dialog filter for a menu Lan - one place instead of a copy per handler.
+procedure TMapEdit.SetExportFilterForLan(Lan : integer);
 begin
-  if ExportTextFileToClipboard(Sender) then exit;
-
-  Lan:=(Sender as TMenuItem).Tag;
   if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
     SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*'
   else if MapLanIsPascal(Lan) then
@@ -2521,6 +2533,247 @@ begin
     SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
   else
     SaveDialog1.Filter := 'All Files|*.*';
+end;
+
+//Key/value properties of the current map in the menu's language.
+//
+//The rows come from rres.BuildPropExport - the same builder RES Text Include
+//and RES Binary v3 use - so the owner translation (exported path position,
+//tile uid -> index, dropped rows) can never differ between the exports.
+procedure TMapEdit.ExportPropData(filename : string; lan : integer);
+var
+  F : TextFile;
+  exportname : string;
+  r, j, n, ns, linenum : integer;
+  K : KeyDefRec;
+
+  function RowText(row : integer) : string;
+  var
+    f2 : integer;
+  begin
+    Result:='';
+    for f2:=0 to 6 do
+    begin
+      if f2 > 0 then Result:=Result+',';
+      Result:=Result+IntToStr(PropExportField(row,f2));
+    end;
+  end;
+
+  //C, JS and JSON share one escaping rule
+  function CQuote(const t : string) : string;
+  var
+    c : integer;
+  begin
+    Result:='"';
+    for c:=1 to Length(t) do
+      if (t[c] = '\') or (t[c] = '"') then Result:=Result+'\'+t[c]
+      else Result:=Result+t[c];
+    Result:=Result+'"';
+  end;
+
+  function PasQuote(const t : string) : string;
+  begin
+    Result:=''''+StringReplace(t,'''','''''',[rfReplaceAll])+'''';
+  end;
+
+  function KeyTypeName(kt : integer) : string;
+  begin
+    if kt = PropTypeString then Result:='string' else Result:='integer';
+  end;
+
+  //one BASIC line - numbered for line-numbered targets
+  procedure BasLine(const t : string);
+  begin
+    if MapLanIsBasicLN(lan) then
+    begin
+      WriteLn(F,IntToStr(linenum)+' '+t);
+      inc(linenum,10);
+    end
+    else
+      WriteLn(F,t);
+  end;
+
+begin
+  exportname:=MapCoreBase.GetExportName(CurrentMap);
+  if exportname = '' then exportname:='map' + IntToStr(CurrentMap);
+
+  BuildPropExport(CurrentMap);
+  n:=PropExportRowCount;
+  ns:=PropExportStrCount;
+  if n = 0 then
+  begin
+    //rows are also dropped when their key, hit box, path or tile is gone
+    ShowMessage('This map has no properties to export.');
+    exit;
+  end;
+
+  AssignFile(F, filename);
+  Rewrite(F);
+
+  if MapLanIsC(lan) then
+  begin
+    WriteLn(F,'/* Properties for '+exportname+' - created by Raster Master */');
+    WriteLn(F,'/* row: id,idvalue,kind,a,b,key,value                       */');
+    WriteLn(F,'/* kind 0=map 1=hit box 2=path 3=cell(a=x,b=y) 4=tile(a=tile) */');
+    for j:=0 to MapCoreBase.GetKeyDefCount-1 do
+    begin
+      MapCoreBase.GetKeyDef(j,K);
+      WriteLn(F,'#define RMKEY_'+K.name+' '+IntToStr(K.key));
+    end;
+    WriteLn(F,'#define '+exportname+'_prop_count '+IntToStr(n));
+    WriteLn(F,'const int '+exportname+'_prop['+IntToStr(n*7)+'] = {');
+    for r:=0 to n-1 do
+      if r < n-1 then WriteLn(F,'  '+RowText(r)+',') else WriteLn(F,'  '+RowText(r));
+    WriteLn(F,'};');
+    if ns > 0 then
+    begin
+      WriteLn(F,'#define '+exportname+'_str_count '+IntToStr(ns));
+      WriteLn(F,'const char *'+exportname+'_str['+IntToStr(ns)+'] = {');
+      for r:=0 to ns-1 do
+        if r < ns-1 then WriteLn(F,'  '+CQuote(PropExportStr(r))+',')
+                    else WriteLn(F,'  '+CQuote(PropExportStr(r)));
+      WriteLn(F,'};');
+    end;
+  end
+  else if MapLanIsPascal(lan) then
+  begin
+    WriteLn(F,'{ Properties for '+exportname+' - created by Raster Master }');
+    WriteLn(F,'{ row: id,idvalue,kind,a,b,key,value                       }');
+    WriteLn(F,'{ kind 0=map 1=hit box 2=path 3=cell(a=x,b=y) 4=tile(a=tile) }');
+    WriteLn(F,'const');
+    for j:=0 to MapCoreBase.GetKeyDefCount-1 do
+    begin
+      MapCoreBase.GetKeyDef(j,K);
+      WriteLn(F,'  RMKey_'+K.name+' = '+IntToStr(K.key)+';');
+    end;
+    WriteLn(F,'  '+exportname+'_prop_count = '+IntToStr(n)+';');
+    WriteLn(F,'  '+exportname+'_prop : array[0..'+IntToStr(n*7-1)+'] of integer = (');
+    for r:=0 to n-1 do
+      if r < n-1 then WriteLn(F,'    '+RowText(r)+',') else WriteLn(F,'    '+RowText(r)+');');
+    if ns > 0 then
+    begin
+      WriteLn(F,'  '+exportname+'_str_count = '+IntToStr(ns)+';');
+      //sized to the longest string, not string[255] - see PExMaxStrLen in rres
+      WriteLn(F,'  '+exportname+'_str : array[0..'+IntToStr(ns-1)+'] of string['+
+                IntToStr(PropExportMaxStrLen)+'] = (');
+      for r:=0 to ns-1 do
+        if r < ns-1 then WriteLn(F,'    '+PasQuote(PropExportStr(r))+',')
+                    else WriteLn(F,'    '+PasQuote(PropExportStr(r))+');');
+    end;
+  end
+  else if MapLanIsJS(lan) then
+  begin
+    WriteLn(F,'// Properties for '+exportname+' - created by Raster Master');
+    WriteLn(F,'// kind 0=map 1=hit box 2=path 3=cell(a=x,b=y) 4=tile(a=tile)');
+    Write(F,'const RMKey = {');
+    for j:=0 to MapCoreBase.GetKeyDefCount-1 do
+    begin
+      MapCoreBase.GetKeyDef(j,K);
+      if j > 0 then Write(F,', ');
+      Write(F,K.name+':'+IntToStr(K.key));
+    end;
+    WriteLn(F,'};');
+    WriteLn(F,'const '+exportname+'Props = [');
+    for r:=0 to n-1 do
+    begin
+      Write(F,'  {id:'+IntToStr(PropExportField(r,0))+', idvalue:'+IntToStr(PropExportField(r,1))+
+              ', kind:'+IntToStr(PropExportField(r,2))+', a:'+IntToStr(PropExportField(r,3))+
+              ', b:'+IntToStr(PropExportField(r,4))+', key:'+IntToStr(PropExportField(r,5))+
+              ', value:'+IntToStr(PropExportField(r,6))+'}');
+      if r < n-1 then WriteLn(F,',') else WriteLn(F);
+    end;
+    WriteLn(F,'];');
+    if ns > 0 then
+    begin
+      WriteLn(F,'const '+exportname+'Strings = [');
+      for r:=0 to ns-1 do
+        if r < ns-1 then WriteLn(F,'  '+CQuote(PropExportStr(r))+',')
+                    else WriteLn(F,'  '+CQuote(PropExportStr(r)));
+      WriteLn(F,'];');
+    end;
+  end
+  else if MapLanIsJSON(lan) then
+  begin
+    WriteLn(F,'{');
+    WriteLn(F,'  "name": '+CQuote(exportname)+',');
+    WriteLn(F,'  "format": "row = id,idvalue,kind,a,b,key,value; kind 0=map 1=hitbox 2=path 3=cell 4=tile",');
+    WriteLn(F,'  "keys": [');
+    for j:=0 to MapCoreBase.GetKeyDefCount-1 do
+    begin
+      MapCoreBase.GetKeyDef(j,K);
+      Write(F,'    {"name": "'+K.name+'", "key": '+IntToStr(K.key)+', "type": "'+KeyTypeName(K.ktype)+'"}');
+      if j < MapCoreBase.GetKeyDefCount-1 then WriteLn(F,',') else WriteLn(F);
+    end;
+    WriteLn(F,'  ],');
+    WriteLn(F,'  "properties": [');
+    for r:=0 to n-1 do
+      if r < n-1 then WriteLn(F,'    ['+RowText(r)+'],') else WriteLn(F,'    ['+RowText(r)+']');
+    WriteLn(F,'  ],');
+    WriteLn(F,'  "strings": [');
+    for r:=0 to ns-1 do
+      if r < ns-1 then WriteLn(F,'    '+CQuote(PropExportStr(r))+',')
+                  else WriteLn(F,'    '+CQuote(PropExportStr(r)));
+    WriteLn(F,'  ]');
+    WriteLn(F,'}');
+  end
+  else
+  begin
+    //BASIC, numbered or not. Variable naming comes from rres.BasicVariableText,
+    //so it matches RES Text Include exactly (dot, underscore, Const or Dim).
+    linenum:=1000;
+    BasLine(''' Properties for '+exportname+' - created by Raster Master');
+    BasLine(''' row: id,idvalue,kind,a,b,key,value');
+    BasLine(''' kind 0=map 1=hit box 2=path 3=cell(a=x,b=y) 4=tile(a=tile)');
+    for j:=0 to MapCoreBase.GetKeyDefCount-1 do
+    begin
+      MapCoreBase.GetKeyDef(j,K);
+      BasLine(BasicVariableText(lan,'RMKey',K.name,K.key));
+    end;
+    BasLine(BasicVariableText(lan,exportname+'Prop','Count',n));
+    BasLine(BasicVariableText(lan,exportname+'Prop','Size',n*7));
+    //line-numbered BASIC has no labels - its READs run in DATA order
+    if not MapLanIsBasicLN(lan) then WriteLn(F,exportname+'PropLabel:');
+    for r:=0 to n-1 do
+      BasLine('DATA '+RowText(r));
+    if ns > 0 then
+    begin
+      BasLine(BasicVariableText(lan,exportname+'Str','Count',ns));
+      if not MapLanIsBasicLN(lan) then WriteLn(F,exportname+'StrLabel:');
+      //no escaping: the editor never allows a double quote in a value
+      for r:=0 to ns-1 do
+        BasLine('DATA "'+PropExportStr(r)+'"');
+    end;
+  end;
+
+  CloseFile(F);
+end;
+
+//the same switch as the main Export menu's - see TRMMainForm.ExportPascalAsmClick
+procedure TMapEdit.MapExportPascalAsmClick(Sender: TObject);
+begin
+ PascalAsmProcs:=not PascalAsmProcs;
+ RMMainForm.SyncPascalAsmMenus;
+end;
+
+procedure TMapEdit.MenuExportPropDataLanClick(Sender: TObject);
+var
+  Lan : integer;
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+  Lan:=(Sender as TMenuItem).Tag;
+  SetExportFilterForLan(Lan);
+  if SaveDialog1.Execute then
+    ExportPropData(SaveDialog1.FileName,Lan);
+end;
+
+procedure TMapEdit.MenuExportPathDataLanClick(Sender: TObject);
+var
+  Lan : integer;
+begin
+  if ExportTextFileToClipboard(Sender) then exit;
+
+  Lan:=(Sender as TMenuItem).Tag;
+  SetExportFilterForLan(Lan);
 
   if SaveDialog1.Execute then
     ExportPathData(SaveDialog1.FileName,Lan);
@@ -2555,29 +2808,10 @@ var
   F : TextFile;
   exportname : string;
   tw,th : integer;
-  i,j,k,p : integer;
-  P1 : PathRec;
-  npaths,segcount,dirn,steps : integer;
-  offs : array[0..MaxPaths-1] of integer;
-  idx  : array[0..MaxPaths-1] of integer;
-  total,linenum : integer;
-  vals : array of integer;
+  npaths,linenum : integer;
+  vals : array of longint;
   nvals : integer;
   line : string;
-
-  function SegCountOf(var PP : PathRec) : integer;
-  begin
-    if PP.PointCount < 2 then SegCountOf:=0
-    else if PP.closed then SegCountOf:=PP.PointCount
-    else SegCountOf:=PP.PointCount-1;
-  end;
-
-  procedure PushVal(v : integer);
-  begin
-    if nvals >= Length(vals) then SetLength(vals,Length(vals)+256);
-    vals[nvals]:=v;
-    inc(nvals);
-  end;
 
   //Emit the flat array wrapped at a sensible width.
   //  numbered - prepend BASIC line numbers
@@ -2622,74 +2856,22 @@ begin
   tw:=MapCoreBase.GetMapTileWidth(CurrentMap);
   th:=MapCoreBase.GetMapTileHeight(CurrentMap);
 
-  //gather the exportable paths first - the offset table has to be emitted
-  //before the blocks, so every size must be known up front
-  npaths:=0;
-  for p:=0 to MapCoreBase.GetPathCount(CurrentMap)-1 do
-  begin
-    if not MapCoreBase.GetPathActive(CurrentMap,p) then continue;
-    MapCoreBase.GetPath(CurrentMap,p,P1);
-    if SegCountOf(P1) = 0 then continue;
-    idx[npaths]:=p;
-    inc(npaths);
-    if npaths >= MaxPaths then break;
-  end;
-
-  if npaths = 0 then
+  //The array comes from mapcore.BuildPathExportArray - the SAME builder RES
+  //export uses. This routine used to build its own copy, which was not updated
+  //when id/value were added to the path header, so the two exports disagreed.
+  SetLength(vals,8192);
+  nvals:=MapCoreBase.BuildPathExportArray(CurrentMap,vals);
+  if nvals = 0 then
   begin
     ShowMessage('This map has no active paths with at least two points.');
     exit;
   end;
-
-  total:=1+npaths;
-  for i:=0 to npaths-1 do
+  if nvals < 0 then
   begin
-    offs[i]:=total;
-    MapCoreBase.GetPath(CurrentMap,idx[i],P1);
-    total:=total + 7 + SegCountOf(P1)*4;
+    ShowMessage('This map''s paths are too large to export.');
+    exit;
   end;
-
-  //build the flat array once, then format it per language
-  nvals:=0;
-  SetLength(vals,total+16);
-  PushVal(npaths);
-  for i:=0 to npaths-1 do PushVal(offs[i]);
-
-  for i:=0 to npaths-1 do
-  begin
-    MapCoreBase.GetPath(CurrentMap,idx[i],P1);
-    segcount:=SegCountOf(P1);
-
-    PushVal(P1.Points[0].x);
-    PushVal(P1.Points[0].y);
-    PushVal(P1.Points[0].x*tw + tw div 2);
-    PushVal(P1.Points[0].y*th + th div 2);
-    if P1.closed then PushVal(1) else PushVal(0);
-    PushVal(P1.mode);
-    PushVal(segcount);
-
-    for j:=0 to segcount-1 do
-    begin
-      k:=j+1;
-      if k >= P1.PointCount then k:=0;
-      dirn:=MapCoreBase.DirectionBetween(P1.Points[j].x,P1.Points[j].y,
-                                         P1.Points[k].x,P1.Points[k].y);
-      if dirn < 0 then
-      begin
-        //identical waypoints - keep a zero length hop so segCount stays true
-        PushVal(0); PushVal(0); PushVal(0); PushVal(P1.Points[k].delay);
-        continue;
-      end;
-      steps:=abs(P1.Points[k].x-P1.Points[j].x);
-      if abs(P1.Points[k].y-P1.Points[j].y) > steps then
-        steps:=abs(P1.Points[k].y-P1.Points[j].y);
-
-      PushVal(PathDirX[dirn]);
-      PushVal(PathDirY[dirn]);
-      PushVal(steps*tw);
-      PushVal(P1.Points[k].delay);
-    end;
-  end;
+  npaths:=vals[0];
 
   AssignFile(F, filename);
   Rewrite(F);
@@ -2698,7 +2880,7 @@ begin
   begin
     WriteLn(F,'/* Path data for '+exportname+' - created by Raster Master */');
     WriteLn(F,'/* [0]=path count, [1..count]=offset of each path header.   */');
-    WriteLn(F,'/* header: sx,sy,px,py,closed,mode,segcount then segcount   */');
+    WriteLn(F,'/* header: id,value,sx,sy,px,py,closed,mode,segcount then segcount   */');
     WriteLn(F,'/* groups of dx,dy,pixels,delay. mode 0=once 1=loop 2=pong  */');
     WriteLn(F,'#define '+exportname+'_path_size '+IntToStr(nvals));
     WriteLn(F,'#define '+exportname+'_path_count '+IntToStr(npaths));
@@ -2710,7 +2892,7 @@ begin
   begin
     WriteLn(F,'{ Path data for '+exportname+' - created by Raster Master }');
     WriteLn(F,'{ [0]=path count, [1..count]=offset of each path header.   }');
-    WriteLn(F,'{ header: sx,sy,px,py,closed,mode,segcount then segcount   }');
+    WriteLn(F,'{ header: id,value,sx,sy,px,py,closed,mode,segcount then segcount   }');
     WriteLn(F,'{ groups of dx,dy,pixels,delay. mode 0=once 1=loop 2=pong  }');
     WriteLn(F,'const');
     WriteLn(F,'  '+exportname+'_path_size = '+IntToStr(nvals)+';');
@@ -2722,7 +2904,7 @@ begin
   begin
     WriteLn(F,'// Path data for '+exportname+' - created by Raster Master');
     WriteLn(F,'// [0]=path count, [1..count]=offset of each path header.');
-    WriteLn(F,'// header: sx,sy,px,py,closed,mode,segcount then segcount');
+    WriteLn(F,'// header: id,value,sx,sy,px,py,closed,mode,segcount then segcount');
     WriteLn(F,'// groups of dx,dy,pixels,delay. mode 0=once 1=loop 2=pingpong');
     WriteLn(F,'const '+exportname+'PathCount = '+IntToStr(npaths)+';');
     WriteLn(F,'const '+exportname+'Paths = [');
@@ -2736,7 +2918,7 @@ begin
     WriteLn(F,'  "pathCount": '+IntToStr(npaths)+',');
     WriteLn(F,'  "tileWidth": '+IntToStr(tw)+',');
     WriteLn(F,'  "tileHeight": '+IntToStr(th)+',');
-    WriteLn(F,'  "format": "flat: [0]=count, [1..count]=header offsets, header=sx,sy,px,py,closed,mode,segcount, then segcount x (dx,dy,pixels,delay)",');
+    WriteLn(F,'  "format": "flat: [0]=count, [1..count]=header offsets, header=id,value,sx,sy,px,py,closed,mode,segcount, then segcount x (dx,dy,pixels,delay)",');
     WriteLn(F,'  "data": [');
     WriteValues('    ','',12,false,true);
     WriteLn(F,'  ]');
@@ -2749,7 +2931,7 @@ begin
     inc(linenum,10);
     WriteLn(F,IntToStr(linenum)+' REM [0]=count [1..count]=header offsets');
     inc(linenum,10);
-    WriteLn(F,IntToStr(linenum)+' REM header sx,sy,px,py,closed,mode,segcount');
+    WriteLn(F,IntToStr(linenum)+' REM header id,value,sx,sy,px,py,closed,mode,segcount');
     inc(linenum,10);
     WriteLn(F,IntToStr(linenum)+' REM then segcount groups of dx,dy,pixels,delay');
     inc(linenum,10);
@@ -2762,7 +2944,7 @@ begin
     //plain BASIC - QBasic, QB64, FreeBASIC, AmigaBasic and friends
     WriteLn(F,''' Path data for '+exportname+' - created by Raster Master');
     WriteLn(F,''' Single integer array. P(0)=path count, P(1..count)=offset of');
-    WriteLn(F,''' each path header. Header: sx,sy,px,py,closed,mode,segcount');
+    WriteLn(F,''' each path header. Header: id,value,sx,sy,px,py,closed,mode,segcount');
     WriteLn(F,''' then segcount groups of dx,dy,pixels,delay.');
     WriteLn(F,''' mode: 0=once 1=loop 2=pingpong');
     WriteLn(F,''' Tile size '+IntToStr(tw)+'x'+IntToStr(th));
@@ -2784,18 +2966,7 @@ begin
  if ExportTextFileToClipboard(Sender) then exit;
 
  Lan:=(Sender as TMenuItem).Tag;
- if MapLanIsBasic(Lan) or MapLanIsBasicLN(Lan) then
-   SaveDialog1.Filter := 'Basic|*.bas|All Files|*.*'
- else if MapLanIsPascal(Lan) then
-   SaveDialog1.Filter := 'Pascal|*.pas|All Files|*.*'
- else if MapLanIsC(Lan) then
-   SaveDialog1.Filter := 'c|*.c;*.h|All Files|*.*'
- else if MapLanIsJS(Lan) then
-   SaveDialog1.Filter := 'JavaScript|*.js|All Files|*.*'
- else if MapLanIsJSON(Lan) then
-   SaveDialog1.Filter := 'JSON|*.json|All Files|*.*'
- else
-   SaveDialog1.Filter := 'All Files|*.*';
+ SetExportFilterForLan(Lan);
 
  if SaveDialog1.Execute then
  begin
@@ -3582,6 +3753,160 @@ begin
   RefreshMapPanels;
   UpdateMenus;
   MapPaintBox.Invalidate;
+end;
+
+//=============================================================================
+// KEY/VALUE PROPERTIES TAB - see the RES Binary v3 spec
+//=============================================================================
+
+procedure TMapEdit.UpdatePropListView;
+var
+  n, slot, ti : integer;
+  P : KeyValueRec;
+  K : KeyDefRec;
+  item : TListItem;
+  isstr : boolean;
+begin
+  if PropListView = nil then exit;   //called while the form is still streaming
+  PropListView.Items.BeginUpdate;
+  try
+    PropListView.Items.Clear;
+    for n:=0 to MapCoreBase.GetPropCount(CurrentMap)-1 do
+    begin
+      MapCoreBase.GetProp(CurrentMap,n,P);
+      item:=PropListView.Items.Add;
+      item.Caption:=PropKindName(P.kind);
+
+      case P.kind of
+        PropKindHitBox : item.SubItems.Add('#'+IntToStr(P.a));
+        PropKindPath   : if MapCoreBase.IsValidPath(CurrentMap,P.a) then
+                           item.SubItems.Add(MapCoreBase.GetPathName(CurrentMap,P.a))
+                         else
+                           item.SubItems.Add('#'+IntToStr(P.a));
+        PropKindCell   : item.SubItems.Add(IntToStr(P.a)+','+IntToStr(P.b));
+        PropKindTile   : begin
+                           //by uid - shows the tile's CURRENT index
+                           ti:=ImageThumbBase.FindUID(P.uid);
+                           if ti >= 0 then item.SubItems.Add('#'+IntToStr(ti))
+                                      else item.SubItems.Add('deleted');
+                         end;
+      else
+        item.SubItems.Add('-');
+      end;
+
+      isstr:=false;
+      slot:=MapCoreBase.FindKeyDef(P.key);
+      if slot >= 0 then
+      begin
+        MapCoreBase.GetKeyDef(slot,K);
+        item.SubItems.Add(K.name);
+        isstr:=(K.ktype = PropTypeString);
+      end
+      else
+        item.SubItems.Add('?');
+
+      if isstr then item.SubItems.Add('"'+P.text+'"')
+               else item.SubItems.Add(IntToStr(P.value));
+      item.SubItems.Add(IntToStr(P.id));
+      item.SubItems.Add(IntToStr(P.idvalue));
+    end;
+  finally
+    PropListView.Items.EndUpdate;
+  end;
+  TabProps.Caption:='Properties ('+IntToStr(MapCoreBase.GetPropCount(CurrentMap))+')';
+end;
+
+//Adds a row, pre-filled with the selected hit box, else the selected path,
+//else the map itself.
+procedure TMapEdit.BtnPropAddClick(Sender: TObject);
+var
+  P : KeyValueRec;
+  K : KeyDefRec;
+begin
+  FillChar(P.uid,sizeof(P.uid),0);
+  P.id:=0; P.idvalue:=0; P.a:=0; P.b:=0; P.value:=0; P.text:='';
+  P.kind:=PropKindMap;
+  if MapCoreBase.IsValidHitBox(CurrentMap,SelectedHitBox) then
+  begin
+    P.kind:=PropKindHitBox;
+    P.a:=SelectedHitBox;
+  end
+  else if MapCoreBase.IsValidPath(CurrentMap,SelectedPath) then
+  begin
+    P.kind:=PropKindPath;
+    P.a:=SelectedPath;
+  end;
+  P.key:=0;
+  if MapCoreBase.GetKeyDefCount > 0 then
+  begin
+    MapCoreBase.GetKeyDef(0,K);
+    P.key:=K.key;
+  end;
+
+  if not EditPropDialog('Add Property',P,
+           MapCoreBase.GetHitBoxCount(CurrentMap),MapCoreBase.GetPathCount(CurrentMap),
+           MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),
+           ImageThumbBase.GetCount) then exit;
+
+  //the dialog works in image indices; storage is by uid
+  if P.kind = PropKindTile then P.uid:=ImageThumbBase.GetUID(P.a);
+
+  MapCoreBase.CopyToUndo(CurrentMap);
+  if MapCoreBase.AddProp(CurrentMap,P) < 0 then
+    ShowMessage('That already has this key, or the map has '+
+                IntToStr(MaxMapProps)+' properties.');
+  UpdatePropListView;
+end;
+
+procedure TMapEdit.BtnPropEditClick(Sender: TObject);
+var
+  P : KeyValueRec;
+  n : integer;
+begin
+  if PropListView.Selected = nil then
+  begin
+    ShowMessage('Select a property first.');
+    exit;
+  end;
+  n:=PropListView.Selected.Index;
+  MapCoreBase.GetProp(CurrentMap,n,P);
+  if P.kind = PropKindTile then
+  begin
+    P.a:=ImageThumbBase.FindUID(P.uid);
+    if P.a < 0 then P.a:=0;   //tile deleted - let the user pick another
+  end;
+
+  if not EditPropDialog('Edit Property',P,
+           MapCoreBase.GetHitBoxCount(CurrentMap),MapCoreBase.GetPathCount(CurrentMap),
+           MapCoreBase.GetMapWidth(CurrentMap),MapCoreBase.GetMapHeight(CurrentMap),
+           ImageThumbBase.GetCount) then exit;
+
+  if P.kind = PropKindTile then P.uid:=ImageThumbBase.GetUID(P.a);
+
+  MapCoreBase.CopyToUndo(CurrentMap);
+  if not MapCoreBase.SetProp(CurrentMap,n,P) then
+    ShowMessage('Another property already has that key on the same target.');
+  UpdatePropListView;
+end;
+
+procedure TMapEdit.BtnPropDeleteClick(Sender: TObject);
+begin
+  if PropListView.Selected = nil then
+  begin
+    ShowMessage('Select a property first.');
+    exit;
+  end;
+  MapCoreBase.CopyToUndo(CurrentMap);
+  MapCoreBase.DeleteProp(CurrentMap,PropListView.Selected.Index);
+  UpdatePropListView;
+end;
+
+//Keys are project wide and not part of undo - renaming a key is a naming
+//decision, not a map edit.
+procedure TMapEdit.BtnPropKeysClick(Sender: TObject);
+begin
+  ShowKeyDefsDialog;
+  UpdatePropListView;
 end;
 
 procedure TMapEdit.RefreshMapPanels;

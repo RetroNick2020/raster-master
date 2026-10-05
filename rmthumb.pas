@@ -20,7 +20,11 @@ Const
   RMProjectSig = 'RMP';
   //v7 = sprite hit boxes. v6 = map paths. v5 = map layers.
   //BREAKING at each step - older project files cannot be loaded.
-  RMProjectVersion = 7;
+  RMProjectVersion = 8;   //v8 = map key/value properties in the map stream
+  //Oldest project this build can read. v8 only appended data to the map
+  //stream, so v7 projects still open - rwmap is told which via
+  //MapStreamHasProps.
+  MinReadProjectVersion = 7;
 
   //LastProjectReadStatus values
   ProjectReadOK         = 0;
@@ -893,7 +897,7 @@ begin
  //classify first so the caller can explain a refusal to load
  if head.sig <> RMProjectSig then
    LastProjectReadStatus:=ProjectReadBadSig
- else if head.version < RMProjectVersion then
+ else if head.version < MinReadProjectVersion then
    LastProjectReadStatus:=ProjectReadOldVersion
  else if head.version > RMProjectVersion then
    LastProjectReadStatus:=ProjectReadNewVersion
@@ -920,6 +924,7 @@ begin
      ReadImageFromProject(F,i+indexoffset);
    end;
 
+   MapStreamHasProps:=(head.version >= 8);   //v7 projects carry no properties
    ReadAllMapsF(F,head.MapCount,insertmode);  //there is always atleast one map - even if it blank
 
    if head.AnimCount > 0 then AnimateBase.ReadAnimations(F,head.AnimCount,InsertMode);

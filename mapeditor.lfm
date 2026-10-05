@@ -447,6 +447,102 @@ object MapEdit: TMapEdit
           end
         end
       end
+      object TabProps: TTabSheet
+        Caption = 'Properties'
+        ClientHeight = 179
+        ClientWidth = 312
+        object PropListView: TListView
+          Left = 0
+          Height = 151
+          Top = 0
+          Width = 312
+          Align = alClient
+          Columns = <          
+            item
+              Caption = 'Attached to'
+              Width = 72
+            end          
+            item
+              Caption = 'Target'
+              Width = 70
+            end          
+            item
+              Caption = 'Key'
+              Width = 80
+            end          
+            item
+              Caption = 'Value'
+              Width = 90
+            end          
+            item
+              Caption = 'ID'
+              Width = 40
+            end          
+            item
+              Caption = 'ID Value'
+              Width = 55
+            end>
+          HideSelection = False
+          ReadOnly = True
+          RowSelect = True
+          TabOrder = 0
+          ViewStyle = vsReport
+          OnDblClick = BtnPropEditClick
+        end
+        object PropButtonPanel: TPanel
+          Left = 0
+          Height = 28
+          Top = 151
+          Width = 312
+          Align = alBottom
+          BevelOuter = bvNone
+          ClientHeight = 28
+          ClientWidth = 312
+          TabOrder = 1
+          object BtnPropAdd: TButton
+            Left = 2
+            Height = 24
+            Hint = 'Add a property - attaches to the selected hit box or path if there is one'
+            Top = 2
+            Width = 56
+            Caption = 'Add'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 0
+            OnClick = BtnPropAddClick
+          end
+          object BtnPropEdit: TButton
+            Left = 60
+            Height = 24
+            Top = 2
+            Width = 56
+            Caption = 'Edit'
+            TabOrder = 1
+            OnClick = BtnPropEditClick
+          end
+          object BtnPropDelete: TButton
+            Left = 118
+            Height = 24
+            Top = 2
+            Width = 56
+            Caption = 'Delete'
+            TabOrder = 2
+            OnClick = BtnPropDeleteClick
+          end
+          object BtnPropKeys: TButton
+            Left = 176
+            Height = 24
+            Hint = 'Define the keys - shared by every map in the project'
+            Top = 2
+            Width = 66
+            Caption = 'Keys...'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 3
+            OnClick = BtnPropKeysClick
+          end
+        end
+      end
     end
   end
   object LeftPanel: TPanel
@@ -1001,6 +1097,16 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Data'
             OnClick = ExportHitBoxBasicClick
           end
+          object PD_BAS: TMenuItem
+            Tag = 22
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
+          end
+          object KV_BAS: TMenuItem
+            Tag = 22
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MenuItem13: TMenuItem
           Caption = 'Basic (Line# )'
@@ -1013,6 +1119,16 @@ object MapEdit: TMapEdit
             Tag = 23
             Caption = 'HitBox Data'
             OnClick = ExportHitBoxBasicLNClick
+          end
+          object PD_BASLN: TMenuItem
+            Tag = 23
+            Caption = 'Path Data Statements'
+            OnClick = MenuExportPathDataLanClick
+          end
+          object KV_BASLN: TMenuItem
+            Tag = 23
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MenuItem6: TMenuItem
@@ -1027,6 +1143,16 @@ object MapEdit: TMapEdit
             Caption = 'HitBox Array'
             OnClick = ExportHitBoxCClick
           end
+          object PD_C: TMenuItem
+            Tag = 24
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
+          object KV_C: TMenuItem
+            Tag = 24
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MenuItem7: TMenuItem
           Caption = 'Pascal'
@@ -1039,6 +1165,16 @@ object MapEdit: TMapEdit
             Tag = 25
             Caption = 'HitBox Array'
             OnClick = ExportHitBoxPascalClick
+          end
+          object PD_PAS: TMenuItem
+            Tag = 25
+            Caption = 'Path Array'
+            OnClick = MenuExportPathDataLanClick
+          end
+          object KV_PAS: TMenuItem
+            Tag = 25
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpAB: TMenuItem
@@ -1058,6 +1194,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_AB: TMenuItem
+            Tag = 11
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpAC: TMenuItem
           Caption = 'Amiga C'
@@ -1075,6 +1216,11 @@ object MapEdit: TMapEdit
             Tag = 13
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_AC: TMenuItem
+            Tag = 13
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpAP: TMenuItem
@@ -1094,6 +1240,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_AP: TMenuItem
+            Tag = 12
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpAQB: TMenuItem
           Caption = 'Amiga QuickBasic AQB'
@@ -1111,6 +1262,11 @@ object MapEdit: TMapEdit
             Tag = 14
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_AQB: TMenuItem
+            Tag = 14
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpBAM: TMenuItem
@@ -1130,6 +1286,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_BAM: TMenuItem
+            Tag = 18
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpFBQB: TMenuItem
           Caption = 'FreeBASIC - QB Mode'
@@ -1147,6 +1308,11 @@ object MapEdit: TMapEdit
             Tag = 9
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_FBQB: TMenuItem
+            Tag = 9
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpFB: TMenuItem
@@ -1166,6 +1332,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_FB: TMenuItem
+            Tag = 10
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpFP: TMenuItem
           Caption = 'FreePascal'
@@ -1183,6 +1354,11 @@ object MapEdit: TMapEdit
             Tag = 8
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_FP: TMenuItem
+            Tag = 8
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpGCC: TMenuItem
@@ -1202,6 +1378,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_GCC: TMenuItem
+            Tag = 16
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpGW: TMenuItem
           Caption = 'GWBASIC'
@@ -1219,6 +1400,11 @@ object MapEdit: TMapEdit
             Tag = 7
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_GW: TMenuItem
+            Tag = 7
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpJS: TMenuItem
@@ -1238,6 +1424,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_JS: TMenuItem
+            Tag = 26
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpJSON: TMenuItem
           Caption = 'JSON'
@@ -1255,6 +1446,11 @@ object MapEdit: TMapEdit
             Tag = 21
             Caption = 'Path Data (JSON)'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_JSON: TMenuItem
+            Tag = 21
+            Caption = 'Property Data (JSON)'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpOW: TMenuItem
@@ -1274,6 +1470,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_OW: TMenuItem
+            Tag = 17
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpQB: TMenuItem
           Caption = 'QBasic\QuickBasic'
@@ -1291,6 +1492,11 @@ object MapEdit: TMapEdit
             Tag = 4
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_QB: TMenuItem
+            Tag = 4
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpQB64: TMenuItem
@@ -1310,6 +1516,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_QB64: TMenuItem
+            Tag = 5
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpQBJS: TMenuItem
           Caption = 'QBJS'
@@ -1327,6 +1538,11 @@ object MapEdit: TMapEdit
             Tag = 20
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_QBJS: TMenuItem
+            Tag = 20
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpQC: TMenuItem
@@ -1346,6 +1562,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_QC: TMenuItem
+            Tag = 3
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpQP: TMenuItem
           Caption = 'Quick Pascal'
@@ -1363,6 +1584,11 @@ object MapEdit: TMapEdit
             Tag = 15
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_QP: TMenuItem
+            Tag = 15
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpTB: TMenuItem
@@ -1382,6 +1608,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Data Statements'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_TB: TMenuItem
+            Tag = 6
+            Caption = 'Property Data Statements'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpTP: TMenuItem
           Caption = 'Turbo Pascal'
@@ -1399,6 +1630,11 @@ object MapEdit: TMapEdit
             Tag = 1
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_TP: TMenuItem
+            Tag = 1
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpTC: TMenuItem
@@ -1418,6 +1654,11 @@ object MapEdit: TMapEdit
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
           end
+          object KV_TC: TMenuItem
+            Tag = 2
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
+          end
         end
         object MnuMapExpTMT: TMenuItem
           Caption = 'TMT Pascal'
@@ -1435,6 +1676,11 @@ object MapEdit: TMapEdit
             Tag = 19
             Caption = 'Path Array'
             OnClick = MenuExportPathDataLanClick
+          end
+          object KV_TMT: TMenuItem
+            Tag = 19
+            Caption = 'Property Array'
+            OnClick = MenuExportPropDataLanClick
           end
         end
         object MnuMapExpTiledSep: TMenuItem
@@ -1464,6 +1710,13 @@ object MapEdit: TMapEdit
             Caption = 'All Maps - Image Collection (shared .tsx)'
             OnClick = MenuExportTmxClick
           end
+        end
+        object MapExportPascalAsmSep: TMenuItem
+          Caption = '-'
+        end
+        object MapExportPascalAsm: TMenuItem
+          Caption = 'Pascal Images and Maps as ASM Procs'
+          OnClick = MapExportPascalAsmClick
         end
       end
     end
